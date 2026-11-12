@@ -3,11 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/theme/app_colors.dart';
+import '../../../app/widgets/pulsing_red_heart.dart';
 import '../../../app/widgets/solfa_logo.dart';
 import '../../../core/models/domain_models.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/utils/note_formatter.dart';
 import '../../practice/application/practice_session_controller.dart';
+import '../../support_developer/application/rewarded_ad_controller.dart';
 import '../../topics/presentation/topics_screen.dart';
 
 /// UI-02: Trang chủ (UC-01 & UC-02)
@@ -42,6 +44,8 @@ class HomeScreen extends ConsumerWidget {
     final progressAsync = ref.watch(overallProgressProvider);
     final topicsAsync = ref.watch(topicsListProvider);
     final selectedDuration = ref.watch(selectedPracticeDurationProvider);
+    final adState = ref.watch(rewardedAdProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -389,59 +393,102 @@ class HomeScreen extends ConsumerWidget {
             },
           ),
           const SizedBox(height: 8),
-          Card(
-            child: InkWell(
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: isDark
+                    ? [
+                        const Color(0xFF280D20).withOpacity(0.92),
+                        const Color(0xFF120B28).withOpacity(0.92),
+                      ]
+                    : [
+                        const Color(0xFFFFF0F3),
+                        const Color(0xFFFFF8FA),
+                      ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
               borderRadius: BorderRadius.circular(20),
-              onTap: () => context.push('/support-developer'),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 12,
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 42,
-                      height: 42,
-                      decoration: BoxDecoration(
-                        color: AppColors.accentCoral.withOpacity(0.14),
-                        borderRadius: BorderRadius.circular(13),
-                      ),
-                      child: const Icon(
-                        Icons.smart_display_rounded,
-                        color: AppColors.accentCoral,
+              border: Border.all(
+                color: kHeartRedColor.withOpacity(isDark ? 0.55 : 0.42),
+                width: 1.5,
+              ),
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(20),
+                onTap: () => context.push('/support-developer'),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 13,
+                  ),
+                  child: Row(
+                    children: [
+                      const PulsingRedHeart(
                         size: 22,
+                        showGlowBadge: true,
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Ủng hộ nhà phát triển (Xem video 15s)',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w800,
-                              fontSize: 14.5,
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Expanded(
+                                  child: Text(
+                                    'Ủng hộ nhà phát triển',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 14.5,
+                                    ),
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: kHeartRedColor.withOpacity(0.18),
+                                    borderRadius: BorderRadius.circular(99),
+                                  ),
+                                  child: Text(
+                                    adState.supportedCount > 0
+                                        ? '🏅 ${adState.prestigePoints} Uy tín'
+                                        : '❤️ 15s miễn phí',
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w800,
+                                      color: kHeartRedColor,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                          SizedBox(height: 2),
-                          Text(
-                            'Tự nguyện xem video quảng cáo ngắn khi có mạng',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(fontSize: 12),
-                          ),
-                        ],
+                            const SizedBox(height: 3),
+                            Text(
+                              adState.supportedCount > 0
+                                  ? 'Huy hiệu: ${adState.supporterBadgeTitle} (${adState.supportedCount} ❤️ đã trao)'
+                                  : 'Tặng 1 trái tim đỏ qua video 15s để nhận Huy hiệu Tri Ân',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    const Icon(
-                      Icons.chevron_right_rounded,
-                      color: AppColors.accentCoral,
-                    ),
-                  ],
+                      const SizedBox(width: 4),
+                      const Icon(
+                        Icons.chevron_right_rounded,
+                        color: kHeartRedColor,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

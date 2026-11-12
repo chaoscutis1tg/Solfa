@@ -429,6 +429,12 @@ class OverallProgressStats {
 
   bool get hasAnyHistory => totalAnswered > 0 || recentSessions.isNotEmpty;
 
+  int get completedSessionsCount {
+    final fromTopics =
+        topicStats.fold<int>(0, (sum, t) => sum + t.completedSessions);
+    return fromTopics > 0 ? fromTopics : recentSessions.length;
+  }
+
   double get overallAccuracyPercent =>
       totalAnswered <= 0 ? 0.0 : (totalCorrect / totalAnswered) * 100.0;
 }

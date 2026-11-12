@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/theme/app_colors.dart';
 import '../../../app/widgets/animated_ui.dart';
+import '../../../app/widgets/pulsing_red_heart.dart';
 import '../../../app/widgets/solfa_background.dart';
 import '../../../app/widgets/solfa_logo.dart';
 import '../../../core/providers/app_providers.dart';
@@ -70,10 +71,11 @@ class _SupportDeveloperScreenState
     if (completed == true && mounted) {
       await audioService.playSessionCompleteFanfare();
       if (!mounted) return;
-      final count = ref.read(rewardedAdProvider).supportedCount;
+      final updatedState = ref.read(rewardedAdProvider);
+      final count = updatedState.supportedCount;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          backgroundColor: AppColors.correct,
+          backgroundColor: kHeartRedColor,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
@@ -84,7 +86,7 @@ class _SupportDeveloperScreenState
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'Cảm ơn bạn! Đã ghi nhận lượt xem video ủng hộ thứ #$count.',
+                  '🎉 Cảm ơn bạn! +100 Điểm Uy Tín (Lượt ủng hộ #$count • ${updatedState.supporterBadgeTitle}).',
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
               ),
@@ -92,6 +94,78 @@ class _SupportDeveloperScreenState
           ),
         ),
       );
+      if (!audioService.isTestMode && mounted) {
+        await showDialog<void>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(22),
+            ),
+            contentPadding: const EdgeInsets.fromLTRB(20, 22, 20, 16),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.auto_awesome_rounded,
+                        color: AppColors.accentAmber, size: 26),
+                    SizedBox(width: 10),
+                    PulsingRedHeart(size: 42, showGlowBadge: true),
+                    SizedBox(width: 10),
+                    Icon(Icons.celebration_rounded,
+                        color: AppColors.accentAmber, size: 26),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                const Text(
+                  'Cảm ơn trái tim đỏ của bạn!',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: kHeartRedColor.withOpacity(0.14),
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                  child: Text(
+                    '+100 Điểm Uy Tín • Tổng: ${updatedState.prestigePoints} điểm',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 13,
+                      color: kHeartRedColor,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Huy hiệu hiện tại: ${updatedState.supporterBadgeTitle}\n(Đã hiển thị vinh danh trên Trang chủ của bạn)',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 12.8, height: 1.38),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: kHeartRedColor,
+                    minimumSize: const Size(double.infinity, 44),
+                  ),
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  icon: const Icon(Icons.favorite_rounded, size: 18),
+                  label: const Text('Tuyệt vời!'),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
     }
   }
 
@@ -142,7 +216,7 @@ class _SupportDeveloperScreenState
                               child: Container(
                                 padding: const EdgeInsets.all(5),
                                 decoration: const BoxDecoration(
-                                  color: AppColors.accentCoral,
+                                  color: kHeartRedColor,
                                   shape: BoxShape.circle,
                                 ),
                                 child: const Icon(
@@ -235,12 +309,12 @@ class _SupportDeveloperScreenState
                             children: [
                               Expanded(
                                 child: Text(
-                                  'Số lượt bạn đã ủng hộ trên thiết bị này: ${adState.supportedCount}',
+                                  'Số lượt bạn đã ủng hộ trên thiết bị này: ${adState.supportedCount} (${adState.prestigePoints} điểm Uy tín)',
                                   key: const Key('text_supported_count'),
                                   style: const TextStyle(
                                     fontWeight: FontWeight.w800,
                                     fontSize: 13,
-                                    color: AppColors.primary,
+                                    color: kHeartRedColor,
                                   ),
                                 ),
                               ),

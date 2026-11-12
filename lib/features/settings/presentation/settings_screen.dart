@@ -3,10 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/theme/app_colors.dart';
+import '../../../app/widgets/pulsing_red_heart.dart';
 import '../../../app/widgets/solfa_background.dart';
 import '../../../app/widgets/solfa_logo.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../practice/application/practice_session_controller.dart';
+import '../../support_developer/application/rewarded_ad_controller.dart';
 
 /// UI-11: Cài đặt ứng dụng (UC-15 & BR-14)
 class SettingsScreen extends ConsumerWidget {
@@ -131,6 +133,7 @@ class SettingsScreen extends ConsumerWidget {
     final notifier = ref.read(appSettingsProvider.notifier);
     final audioService = ref.watch(audioServiceProvider);
     final selectedDuration = ref.watch(selectedPracticeDurationProvider);
+    final adState = ref.watch(rewardedAdProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return SolfaBackground(
@@ -525,43 +528,117 @@ class SettingsScreen extends ConsumerWidget {
 
             // 4. Hỗ trợ, Quản lý dữ liệu & Pháp lý
             const _SectionHeader(
-              icon: Icons.shield_outlined,
-              title: 'Hỗ trợ, Dữ liệu & Pháp lý',
+              icon: Icons.favorite_rounded,
+              title: 'Hỗ trợ Nhà phát triển & Pháp lý',
             ),
             const SizedBox(height: 8),
+
+            // Highlighted Standalone Red-Heart Developer Support Card
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: isDark
+                      ? [
+                          const Color(0xFF280D20).withOpacity(0.92),
+                          const Color(0xFF140B29).withOpacity(0.92),
+                        ]
+                      : [
+                          const Color(0xFFFFF0F3),
+                          const Color(0xFFFFF8FA),
+                        ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: kHeartRedColor.withOpacity(isDark ? 0.55 : 0.42),
+                  width: 1.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: kHeartRedColor.withOpacity(isDark ? 0.18 : 0.12),
+                    blurRadius: 14,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: ListTile(
+                  key: const Key('tile_support_developer'),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 6,
+                  ),
+                  leading: const PulsingRedHeart(
+                    size: 22,
+                    showGlowBadge: true,
+                  ),
+                  title: Row(
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          'Hỗ trợ nhà phát triển',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: kHeartRedColor.withOpacity(0.18),
+                          borderRadius: BorderRadius.circular(99),
+                          border: Border.all(
+                            color: kHeartRedColor.withOpacity(0.45),
+                          ),
+                        ),
+                        child: Text(
+                          adState.supportedCount > 0
+                              ? '❤️ ${adState.supportedCount} lần • +${adState.prestigePoints}đ'
+                              : '❤️ Ủng hộ 15s',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            color: kHeartRedColor,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  subtitle: Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      adState.supportedCount > 0
+                          ? 'Danh hiệu: ${adState.supporterBadgeTitle} • Bấm để trao thêm ❤️'
+                          : 'Xem video ngắn 15s tự nguyện để nhận Huy hiệu Tri Ân & Điểm Uy Tín',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        height: 1.32,
+                      ),
+                    ),
+                  ),
+                  trailing: const Icon(
+                    Icons.chevron_right_rounded,
+                    color: kHeartRedColor,
+                  ),
+                  onTap: () => context.push('/support-developer'),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 10),
+
             Card(
               child: Column(
                 children: [
-                  ListTile(
-                    key: const Key('tile_support_developer'),
-                    leading: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.14),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
-                        Icons.favorite_rounded,
-                        color: AppColors.primary,
-                        size: 20,
-                      ),
-                    ),
-                    title: const Text(
-                      'Hỗ trợ nhà phát triển',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 14.5,
-                      ),
-                    ),
-                    subtitle: const Text(
-                      'Xem quảng cáo ngắn tự nguyện khi có mạng',
-                      style: TextStyle(fontSize: 12),
-                    ),
-                    trailing: const Icon(Icons.chevron_right_rounded),
-                    onTap: () => context.push('/support-developer'),
-                  ),
-                  const Divider(height: 1),
                   ListTile(
                     key: const Key('tile_privacy_legal'),
                     leading: Container(

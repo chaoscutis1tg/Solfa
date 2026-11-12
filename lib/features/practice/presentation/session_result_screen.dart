@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/theme/app_colors.dart';
+import '../../../app/widgets/pulsing_red_heart.dart';
 import '../../../app/widgets/solfa_background.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/utils/note_formatter.dart';
+import '../../support_developer/application/rewarded_ad_controller.dart';
 import '../application/practice_session_controller.dart';
 
 /// UI-07: Kết quả & Bảng điểm phiên luyện tập (UC-11)
@@ -31,6 +33,13 @@ class _SessionResultScreenState extends ConsumerState<SessionResultScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(practiceSessionProvider);
+    final progressAsync = ref.watch(overallProgressProvider);
+    final adState = ref.watch(rewardedAdProvider);
+    final completedSessions =
+        progressAsync.valueOrNull?.completedSessionsCount ?? 0;
+    final isMilestoneNudge =
+        (completedSessions > 0 && completedSessions % 3 == 0) ||
+            adState.supportedCount == 0;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final accuracy = state.accuracyPercent;
     final isHighAccuracy = accuracy >= 70.0;
@@ -460,29 +469,100 @@ class _SessionResultScreenState extends ConsumerState<SessionResultScreen> {
 
               const SizedBox(height: 10),
 
-              // 5. Voluntary Support Developer Shortcut
-              Center(
-                child: TextButton.icon(
-                  style: TextButton.styleFrom(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                    minimumSize: const Size(0, 34),
+              // 5. Gentle Milestone Red-Heart Nudge Card (Every 3 sessions or first time)
+              if (isMilestoneNudge)
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: isDark
+                          ? [
+                              const Color(0xFF280D20).withOpacity(0.92),
+                              const Color(0xFF130B29).withOpacity(0.92),
+                            ]
+                          : [
+                              const Color(0xFFFFF0F3),
+                              const Color(0xFFFFF8FA),
+                            ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: kHeartRedColor.withOpacity(isDark ? 0.55 : 0.42),
+                      width: 1.4,
+                    ),
                   ),
-                  onPressed: () => context.push('/support-developer'),
-                  icon: const Icon(
-                    Icons.favorite_rounded,
-                    size: 16,
-                    color: AppColors.accentCoral,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(18),
+                      onTap: () => context.push('/support-developer'),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        child: Row(
+                          children: [
+                            const PulsingRedHeart(
+                              size: 20,
+                              showGlowBadge: true,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    completedSessions > 0 &&
+                                            completedSessions % 3 == 0
+                                        ? 'Cột mốc $completedSessions phiên học! Tặng Solfa 1 ❤️ nhé?'
+                                        : 'Tặng 1 ❤️ (15s) ủng hộ nhà phát triển',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 13.2,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  const Text(
+                                    'Nhận ngay +100 Điểm Uy Tín & Huy hiệu Tri Ân trên Trang chủ',
+                                    style: TextStyle(fontSize: 11.5),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Icon(
+                              Icons.chevron_right_rounded,
+                              color: kHeartRedColor,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
-                  label: const Text(
-                    'Xem video ngắn ủng hộ nhà phát triển',
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w700,
+                )
+              else
+                Center(
+                  child: TextButton.icon(
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 6,
+                      ),
+                      minimumSize: const Size(0, 34),
+                    ),
+                    onPressed: () => context.push('/support-developer'),
+                    icon: const PulsingRedHeart(size: 16),
+                    label: Text(
+                      'Tặng thêm ❤️ ủng hộ (${adState.supporterBadgeTitle})',
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w800,
+                        color: kHeartRedColor,
+                      ),
                     ),
                   ),
                 ),
-              ),
             ],
           ),
         ),

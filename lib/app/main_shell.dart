@@ -4,7 +4,9 @@ import 'package:go_router/go_router.dart';
 
 import '../core/providers/app_providers.dart';
 import '../features/metronome/application/metronome_controller.dart';
+import '../features/support_developer/application/rewarded_ad_controller.dart';
 import 'theme/app_colors.dart';
+import 'widgets/pulsing_red_heart.dart';
 import 'widgets/solfa_background.dart';
 import 'widgets/solfa_logo.dart';
 
@@ -28,6 +30,7 @@ class MainShell extends ConsumerWidget {
     final currentIndex = navigationShell.currentIndex;
     final progressAsync = ref.watch(overallProgressProvider);
     final streakDays = progressAsync.valueOrNull?.currentStreakDays ?? 0;
+    final adState = ref.watch(rewardedAdProvider);
 
     return SolfaBackground(
       child: Scaffold(
@@ -52,6 +55,44 @@ class MainShell extends ConsumerWidget {
             ],
           ),
           actions: [
+            // Red Heart Supporter / Prestige Pill
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                key: const Key('btn_header_support_heart'),
+                borderRadius: BorderRadius.circular(99),
+                onTap: () => context.push('/support-developer'),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: kHeartRedColor.withOpacity(0.16),
+                    borderRadius: BorderRadius.circular(99),
+                    border: Border.all(
+                      color: kHeartRedColor.withOpacity(0.50),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const PulsingRedHeart(size: 15),
+                      const SizedBox(width: 5),
+                      Text(
+                        adState.supportedCount > 0
+                            ? '${adState.prestigePoints}đ'
+                            : 'Ủng hộ',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: kHeartRedColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 6),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(

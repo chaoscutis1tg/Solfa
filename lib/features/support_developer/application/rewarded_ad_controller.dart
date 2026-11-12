@@ -26,6 +26,8 @@ class RewardedAdState {
         'Quảng cáo video có thưởng hoàn toàn tự nguyện, cần kết nối Internet và không khóa bất kỳ bài học nào.',
   });
 
+  int get prestigePoints => supportedCount * 100;
+
   String get supporterBadgeTitle {
     if (supportedCount >= 10) return 'Đại sứ Vàng Solfa';
     if (supportedCount >= 5) return 'Nhà tài trợ Cảm âm';
@@ -58,6 +60,7 @@ class RewardedAdNotifier extends StateNotifier<RewardedAdState> {
 
   Future<void> _loadSupportCount() async {
     final val = await _db.getSetting('developer_support_count');
+    if (!mounted) return;
     final count = int.tryParse(val ?? '0') ?? 0;
     state = state.copyWith(supportedCount: count);
   }
