@@ -1,0 +1,1514 @@
+{
+  "content_version": 3,
+  "topics": [
+    {
+      "id": "topic_notes",
+      "code": "note_recognition",
+      "name": "Nhận biết nốt",
+      "description": "Nghe cao độ Đô (C) – Si (B) và đối chiếu trực tiếp trên phím đàn Piano.",
+      "sort_order": 1,
+      "is_enabled": true
+    },
+    {
+      "id": "topic_intervals",
+      "code": "interval_recognition",
+      "name": "Nhận biết quãng",
+      "description": "Phân biệt khoảng cách cao độ từ quãng 2 đến quãng 8 (giai điệu & hòa thanh).",
+      "sort_order": 2,
+      "is_enabled": true
+    },
+    {
+      "id": "topic_keys",
+      "code": "key_recognition",
+      "name": "Nhận biết giọng",
+      "description": "Cảm nhận màu sắc Trưởng – Thứ và nhận diện hóa biểu các giọng cơ bản.",
+      "sort_order": 3,
+      "is_enabled": true
+    },
+    {
+      "id": "topic_chords",
+      "code": "chord_recognition",
+      "name": "Nhận biết hợp âm",
+      "description": "Phân biệt hợp âm Trưởng, Thứ, Tăng, Giảm và hợp âm 7.",
+      "sort_order": 4,
+      "is_enabled": false
+    },
+    {
+      "id": "topic_melody",
+      "code": "melody_recognition",
+      "name": "Nhận biết giai điệu",
+      "description": "Ghi nhớ và xác định chuỗi nốt giai điệu ngắn.",
+      "sort_order": 5,
+      "is_enabled": false
+    },
+    {
+      "id": "topic_rhythm",
+      "code": "rhythm_recognition",
+      "name": "Nhận biết nhịp điệu",
+      "description": "Nhận diện mẫu tiết tấu và các loại nhịp 2/4, 3/4, 4/4, 6/8.",
+      "sort_order": 6,
+      "is_enabled": false
+    }
+  ],
+  "levels": [
+    {
+      "id": "lvl_notes_basic",
+      "topic_id": "topic_notes",
+      "code": "basic",
+      "name": "Cơ bản",
+      "difficulty": 1,
+      "unlock_rule": "always_unlocked"
+    },
+    {
+      "id": "lvl_notes_inter",
+      "topic_id": "topic_notes",
+      "code": "intermediate",
+      "name": "Trung bình",
+      "difficulty": 2,
+      "unlock_rule": "complete_prev_2_sessions_70"
+    },
+    {
+      "id": "lvl_notes_adv",
+      "topic_id": "topic_notes",
+      "code": "advanced",
+      "name": "Nâng cao",
+      "difficulty": 3,
+      "unlock_rule": "complete_prev_2_sessions_70"
+    },
+    {
+      "id": "lvl_intervals_basic",
+      "topic_id": "topic_intervals",
+      "code": "basic",
+      "name": "Cơ bản",
+      "difficulty": 1,
+      "unlock_rule": "always_unlocked"
+    },
+    {
+      "id": "lvl_intervals_inter",
+      "topic_id": "topic_intervals",
+      "code": "intermediate",
+      "name": "Trung bình",
+      "difficulty": 2,
+      "unlock_rule": "complete_prev_2_sessions_70"
+    },
+    {
+      "id": "lvl_intervals_adv",
+      "topic_id": "topic_intervals",
+      "code": "advanced",
+      "name": "Nâng cao",
+      "difficulty": 3,
+      "unlock_rule": "complete_prev_2_sessions_70"
+    },
+    {
+      "id": "lvl_keys_basic",
+      "topic_id": "topic_keys",
+      "code": "basic",
+      "name": "Cơ bản",
+      "difficulty": 1,
+      "unlock_rule": "always_unlocked"
+    },
+    {
+      "id": "lvl_keys_inter",
+      "topic_id": "topic_keys",
+      "code": "intermediate",
+      "name": "Trung bình",
+      "difficulty": 2,
+      "unlock_rule": "complete_prev_2_sessions_70"
+    },
+    {
+      "id": "lvl_keys_adv",
+      "topic_id": "topic_keys",
+      "code": "advanced",
+      "name": "Nâng cao",
+      "difficulty": 3,
+      "unlock_rule": "complete_prev_2_sessions_70"
+    }
+  ],
+  "questions": [
+    {
+      "id": "q_note_b01",
+      "topic_id": "topic_notes",
+      "level_id": "lvl_notes_basic",
+      "type": "listen_note",
+      "prompt": "Nghe âm thanh (có thể đối chiếu nốt Đô chuẩn C4) và chọn tên nốt đúng:",
+      "explanation": "Đây là nốt Đô (C4) – tần số chuẩn 261.6 Hz, trùng khớp hoàn toàn với nốt tham chiếu Đô.",
+      "audio_asset": "assets/audio/notes/c4.wav",
+      "difficulty": 1,
+      "version": 1,
+      "options": [
+        {
+          "id": "q_note_b01_o1",
+          "option_key": "C4",
+          "label": "Đô (C)",
+          "is_correct": true,
+          "sort_order": 1
+        },
+        {
+          "id": "q_note_b01_o2",
+          "option_key": "D4",
+          "label": "Rê (D)",
+          "is_correct": false,
+          "sort_order": 2
+        },
+        {
+          "id": "q_note_b01_o3",
+          "option_key": "E4",
+          "label": "Mi (E)",
+          "is_correct": false,
+          "sort_order": 3
+        },
+        {
+          "id": "q_note_b01_o4",
+          "option_key": "G4",
+          "label": "Sol (G)",
+          "is_correct": false,
+          "sort_order": 4
+        }
+      ]
+    },
+    {
+      "id": "q_note_b02",
+      "topic_id": "topic_notes",
+      "level_id": "lvl_notes_basic",
+      "type": "listen_note",
+      "prompt": "Nghe nốt nhạc trong quãng tám trung (Octave 4) và chọn đáp án đúng:",
+      "explanation": "Nốt Rê (D4) cao hơn nốt Đô (C4) một cung nguyên (quãng 2 trưởng).",
+      "audio_asset": "assets/audio/notes/d4.wav",
+      "difficulty": 1,
+      "version": 1,
+      "options": [
+        {
+          "id": "q_note_b02_o1",
+          "option_key": "C4",
+          "label": "Đô (C)",
+          "is_correct": false,
+          "sort_order": 1
+        },
+        {
+          "id": "q_note_b02_o2",
+          "option_key": "D4",
+          "label": "Rê (D)",
+          "is_correct": true,
+          "sort_order": 2
+        },
+        {
+          "id": "q_note_b02_o3",
+          "option_key": "F4",
+          "label": "Fa (F)",
+          "is_correct": false,
+          "sort_order": 3
+        },
+        {
+          "id": "q_note_b02_o4",
+          "option_key": "A4",
+          "label": "La (A)",
+          "is_correct": false,
+          "sort_order": 4
+        }
+      ]
+    },
+    {
+      "id": "q_note_b03",
+      "topic_id": "topic_notes",
+      "level_id": "lvl_notes_basic",
+      "type": "listen_note",
+      "prompt": "Nghe âm thanh và cho biết đây là nốt nào trong thang âm Đô Trưởng:",
+      "explanation": "Nốt Mi (E4) là bậc III của âm giai Đô Trưởng, tạo cảm giác sáng và ấm khi so với Đô (C4).",
+      "audio_asset": "assets/audio/notes/e4.wav",
+      "difficulty": 1,
+      "version": 1,
+      "options": [
+        {
+          "id": "q_note_b03_o1",
+          "option_key": "D4",
+          "label": "Rê (D)",
+          "is_correct": false,
+          "sort_order": 1
+        },
+        {
+          "id": "q_note_b03_o2",
+          "option_key": "E4",
+          "label": "Mi (E)",
+          "is_correct": true,
+          "sort_order": 2
+        },
+        {
+          "id": "q_note_b03_o3",
+          "option_key": "G4",
+          "label": "Sol (G)",
+          "is_correct": false,
+          "sort_order": 3
+        },
+        {
+          "id": "q_note_b03_o4",
+          "option_key": "B4",
+          "label": "Si (B)",
+          "is_correct": false,
+          "sort_order": 4
+        }
+      ]
+    },
+    {
+      "id": "q_note_b04",
+      "topic_id": "topic_notes",
+      "level_id": "lvl_notes_basic",
+      "type": "listen_note",
+      "prompt": "Nghe âm thanh và chọn tên nốt tương ứng:",
+      "explanation": "Nốt Sol (G4) cách nốt Đô (C4) một quãng 5 đúng (bậc V trong giọng Đô Trưởng).",
+      "audio_asset": "assets/audio/notes/g4.wav",
+      "difficulty": 1,
+      "version": 1,
+      "options": [
+        {
+          "id": "q_note_b04_o1",
+          "option_key": "E4",
+          "label": "Mi (E)",
+          "is_correct": false,
+          "sort_order": 1
+        },
+        {
+          "id": "q_note_b04_o2",
+          "option_key": "F4",
+          "label": "Fa (F)",
+          "is_correct": false,
+          "sort_order": 2
+        },
+        {
+          "id": "q_note_b04_o3",
+          "option_key": "G4",
+          "label": "Sol (G)",
+          "is_correct": true,
+          "sort_order": 3
+        },
+        {
+          "id": "q_note_b04_o4",
+          "option_key": "A4",
+          "label": "La (A)",
+          "is_correct": false,
+          "sort_order": 4
+        }
+      ]
+    },
+    {
+      "id": "q_note_b05",
+      "topic_id": "topic_notes",
+      "level_id": "lvl_notes_basic",
+      "type": "compare_pitch",
+      "prompt": "Nghe hai nốt phát liên tiếp. Nốt thứ hai có cao độ như thế nào so với nốt thứ nhất?",
+      "explanation": "Nốt đầu là Đô (C4), nốt sau là Sol (G4) nên nốt thứ hai cao hơn rõ rệt.",
+      "audio_asset": "assets/audio/notes/cmp_c4_g4.wav",
+      "difficulty": 1,
+      "version": 1,
+      "options": [
+        {
+          "id": "q_note_b05_o1",
+          "option_key": "higher",
+          "label": "Nốt thứ hai cao hơn",
+          "is_correct": true,
+          "sort_order": 1
+        },
+        {
+          "id": "q_note_b05_o2",
+          "option_key": "lower",
+          "label": "Nốt thứ hai thấp hơn",
+          "is_correct": false,
+          "sort_order": 2
+        },
+        {
+          "id": "q_note_b05_o3",
+          "option_key": "equal",
+          "label": "Hai nốt bằng nhau",
+          "is_correct": false,
+          "sort_order": 3
+        }
+      ]
+    },
+    {
+      "id": "q_note_b06",
+      "topic_id": "topic_notes",
+      "level_id": "lvl_notes_basic",
+      "type": "compare_pitch",
+      "prompt": "Nghe hai nốt phát liên tiếp và so sánh cao độ của nốt thứ hai so với nốt đầu:",
+      "explanation": "Nốt đầu là Sol (G4), nốt thứ hai đi xuống Rê (D4) nên thấp hơn.",
+      "audio_asset": "assets/audio/notes/cmp_g4_d4.wav",
+      "difficulty": 1,
+      "version": 1,
+      "options": [
+        {
+          "id": "q_note_b06_o1",
+          "option_key": "higher",
+          "label": "Nốt thứ hai cao hơn",
+          "is_correct": false,
+          "sort_order": 1
+        },
+        {
+          "id": "q_note_b06_o2",
+          "option_key": "lower",
+          "label": "Nốt thứ hai thấp hơn",
+          "is_correct": true,
+          "sort_order": 2
+        },
+        {
+          "id": "q_note_b06_o3",
+          "option_key": "equal",
+          "label": "Hai nốt bằng nhau",
+          "is_correct": false,
+          "sort_order": 3
+        }
+      ]
+    },
+    {
+      "id": "q_note_b07",
+      "topic_id": "topic_notes",
+      "level_id": "lvl_notes_basic",
+      "type": "piano_key",
+      "prompt": "Nghe âm thanh và nhìn bàn phím Piano minh họa: Phím nằm ngay bên trái cụm 2 phím đen là nốt gì?",
+      "explanation": "Trên đàn Piano, phím trắng nằm ngay bên trái cụm 2 phím đen luôn là nốt Đô (C).",
+      "audio_asset": "assets/audio/notes/c4.wav",
+      "difficulty": 1,
+      "version": 1,
+      "options": [
+        {
+          "id": "q_note_b07_o1",
+          "option_key": "C4",
+          "label": "Đô (C)",
+          "is_correct": true,
+          "sort_order": 1
+        },
+        {
+          "id": "q_note_b07_o2",
+          "option_key": "F4",
+          "label": "Fa (F)",
+          "is_correct": false,
+          "sort_order": 2
+        },
+        {
+          "id": "q_note_b07_o3",
+          "option_key": "G4",
+          "label": "Sol (G)",
+          "is_correct": false,
+          "sort_order": 3
+        },
+        {
+          "id": "q_note_b07_o4",
+          "option_key": "B4",
+          "label": "Si (B)",
+          "is_correct": false,
+          "sort_order": 4
+        }
+      ]
+    },
+    {
+      "id": "q_note_b08",
+      "topic_id": "topic_notes",
+      "level_id": "lvl_notes_basic",
+      "type": "piano_key",
+      "prompt": "Nghe âm thanh: Phím trắng nằm ngay bên trái cụm 3 phím đen trên đàn Piano là nốt gì?",
+      "explanation": "Phím trắng đầu tiên bên trái cụm 3 phím đen là nốt Fa (F4), cao hơn Mi (E4) nửa cung.",
+      "audio_asset": "assets/audio/notes/f4.wav",
+      "difficulty": 1,
+      "version": 1,
+      "options": [
+        {
+          "id": "q_note_b08_o1",
+          "option_key": "C4",
+          "label": "Đô (C)",
+          "is_correct": false,
+          "sort_order": 1
+        },
+        {
+          "id": "q_note_b08_o2",
+          "option_key": "E4",
+          "label": "Mi (E)",
+          "is_correct": false,
+          "sort_order": 2
+        },
+        {
+          "id": "q_note_b08_o3",
+          "option_key": "F4",
+          "label": "Fa (F)",
+          "is_correct": true,
+          "sort_order": 3
+        },
+        {
+          "id": "q_note_b08_o4",
+          "option_key": "A4",
+          "label": "La (A)",
+          "is_correct": false,
+          "sort_order": 4
+        }
+      ]
+    },
+    {
+      "id": "q_note_b09",
+      "topic_id": "topic_notes",
+      "level_id": "lvl_notes_basic",
+      "type": "listen_note",
+      "prompt": "Nghe âm chuẩn 440 Hz và chọn tên nốt nhạc tương ứng:",
+      "explanation": "Tần số 440 Hz chính là nốt La chuẩn (A4) dùng để lên dây nhạc cụ quốc tế.",
+      "audio_asset": "assets/audio/notes/a4.wav",
+      "difficulty": 1,
+      "version": 1,
+      "options": [
+        {
+          "id": "q_note_b09_o1",
+          "option_key": "F4",
+          "label": "Fa (F)",
+          "is_correct": false,
+          "sort_order": 1
+        },
+        {
+          "id": "q_note_b09_o2",
+          "option_key": "G4",
+          "label": "Sol (G)",
+          "is_correct": false,
+          "sort_order": 2
+        },
+        {
+          "id": "q_note_b09_o3",
+          "option_key": "A4",
+          "label": "La (A)",
+          "is_correct": true,
+          "sort_order": 3
+        },
+        {
+          "id": "q_note_b09_o4",
+          "option_key": "B4",
+          "label": "Si (B)",
+          "is_correct": false,
+          "sort_order": 4
+        }
+      ]
+    },
+    {
+      "id": "q_note_b10",
+      "topic_id": "topic_notes",
+      "level_id": "lvl_notes_basic",
+      "type": "compare_pitch",
+      "prompt": "Nghe hai âm liên tiếp và cho biết quan hệ cao độ giữa chúng:",
+      "explanation": "Cả hai âm đều phát nốt Rê (D4) ở cùng tần số nên có cao độ bằng nhau.",
+      "audio_asset": "assets/audio/notes/cmp_d4_d4.wav",
+      "difficulty": 1,
+      "version": 1,
+      "options": [
+        {
+          "id": "q_note_b10_o1",
+          "option_key": "higher",
+          "label": "Nốt thứ hai cao hơn",
+          "is_correct": false,
+          "sort_order": 1
+        },
+        {
+          "id": "q_note_b10_o2",
+          "option_key": "lower",
+          "label": "Nốt thứ hai thấp hơn",
+          "is_correct": false,
+          "sort_order": 2
+        },
+        {
+          "id": "q_note_b10_o3",
+          "option_key": "equal",
+          "label": "Hai nốt bằng nhau",
+          "is_correct": true,
+          "sort_order": 3
+        }
+      ]
+    },
+    {
+      "id": "q_note_i01",
+      "topic_id": "topic_notes",
+      "level_id": "lvl_notes_inter",
+      "type": "listen_note",
+      "prompt": "Nghe nốt nhạc và đối chiếu với nốt Đô chuẩn (C4) để xác định tên nốt:",
+      "explanation": "Nốt Si (B4) là bậc VII (nốt dẫn) nằm ngay dưới Đô cao (C5) nửa cung.",
+      "audio_asset": "assets/audio/notes/b4.wav",
+      "difficulty": 2,
+      "version": 1,
+      "options": [
+        {
+          "id": "q_note_i01_o1",
+          "option_key": "G4",
+          "label": "Sol (G)",
+          "is_correct": false,
+          "sort_order": 1
+        },
+        {
+          "id": "q_note_i01_o2",
+          "option_key": "A4",
+          "label": "La (A)",
+          "is_correct": false,
+          "sort_order": 2
+        },
+        {
+          "id": "q_note_i01_o3",
+          "option_key": "B4",
+          "label": "Si (B)",
+          "is_correct": true,
+          "sort_order": 3
+        },
+        {
+          "id": "q_note_i01_o4",
+          "option_key": "F4",
+          "label": "Fa (F)",
+          "is_correct": false,
+          "sort_order": 4
+        }
+      ]
+    },
+    {
+      "id": "q_note_i02",
+      "topic_id": "topic_notes",
+      "level_id": "lvl_notes_inter",
+      "type": "compare_pitch",
+      "prompt": "Nghe hai nốt cách nhau nửa cung. Nốt thứ hai cao hơn hay thấp hơn nốt đầu?",
+      "explanation": "Nốt đầu là Mi (E4), nốt sau là Fa (F4) cao hơn đúng 1/2 cung.",
+      "audio_asset": "assets/audio/notes/cmp_e4_f4.wav",
+      "difficulty": 2,
+      "version": 1,
+      "options": [
+        {
+          "id": "q_note_i02_o1",
+          "option_key": "higher",
+          "label": "Cao hơn (đi lên nửa cung)",
+          "is_correct": true,
+          "sort_order": 1
+        },
+        {
+          "id": "q_note_i02_o2",
+          "option_key": "lower",
+          "label": "Thấp hơn (đi xuống nửa cung)",
+          "is_correct": false,
+          "sort_order": 2
+        },
+        {
+          "id": "q_note_i02_o3",
+          "option_key": "equal",
+          "label": "Bằng nhau",
+          "is_correct": false,
+          "sort_order": 3
+        }
+      ]
+    },
+    {
+      "id": "q_note_i03",
+      "topic_id": "topic_notes",
+      "level_id": "lvl_notes_inter",
+      "type": "listen_note",
+      "prompt": "Nghe nốt có dấu hóa trong quãng tám 4 (có thể nghe C4 tham chiếu):",
+      "explanation": "Nốt Fa thăng (F#4) nằm chính giữa Fa (F4) và Sol (G4), cách C4 một quãng 4 tăng.",
+      "audio_asset": "assets/audio/notes/fsharp4.wav",
+      "difficulty": 2,
+      "version": 1,
+      "options": [
+        {
+          "id": "q_note_i03_o1",
+          "option_key": "F4",
+          "label": "Fa (F)",
+          "is_correct": false,
+          "sort_order": 1
+        },
+        {
+          "id": "q_note_i03_o2",
+          "option_key": "F#4",
+          "label": "Fa thăng (F#)",
+          "is_correct": true,
+          "sort_order": 2
+        },
+        {
+          "id": "q_note_i03_o3",
+          "option_key": "G4",
+          "label": "Sol (G)",
+          "is_correct": false,
+          "sort_order": 3
+        },
+        {
+          "id": "q_note_i03_o4",
+          "option_key": "G#4",
+          "label": "Sol thăng (G#)",
+          "is_correct": false,
+          "sort_order": 4
+        }
+      ]
+    },
+    {
+      "id": "q_note_a01",
+      "topic_id": "topic_notes",
+      "level_id": "lvl_notes_adv",
+      "type": "listen_note",
+      "prompt": "[Nâng cao - Không tham chiếu] Nghe và nhận diện chính xác tên nốt và quãng tám:",
+      "explanation": "Đây là nốt Đô cao (C5) ở quãng tám 5 (tần số 523.25 Hz).",
+      "audio_asset": "assets/audio/notes/c5.wav",
+      "difficulty": 3,
+      "version": 1,
+      "options": [
+        {
+          "id": "q_note_a01_o1",
+          "option_key": "C4",
+          "label": "Đô 4 (C4)",
+          "is_correct": false,
+          "sort_order": 1
+        },
+        {
+          "id": "q_note_a01_o2",
+          "option_key": "G4",
+          "label": "Sol 4 (G4)",
+          "is_correct": false,
+          "sort_order": 2
+        },
+        {
+          "id": "q_note_a01_o3",
+          "option_key": "C5",
+          "label": "Đô 5 (C5)",
+          "is_correct": true,
+          "sort_order": 3
+        },
+        {
+          "id": "q_note_a01_o4",
+          "option_key": "E5",
+          "label": "Mi 5 (E5)",
+          "is_correct": false,
+          "sort_order": 4
+        }
+      ]
+    },
+    {
+      "id": "q_note_a02",
+      "topic_id": "topic_notes",
+      "level_id": "lvl_notes_adv",
+      "type": "listen_note",
+      "prompt": "[Nâng cao - Không tham chiếu] Nghe nốt trầm ở quãng tám 3 và chọn đáp án đúng:",
+      "explanation": "Đây là nốt Sol trầm (G3) ở quãng tám 3.",
+      "audio_asset": "assets/audio/notes/g3.wav",
+      "difficulty": 3,
+      "version": 1,
+      "options": [
+        {
+          "id": "q_note_a02_o1",
+          "option_key": "E3",
+          "label": "Mi 3 (E3)",
+          "is_correct": false,
+          "sort_order": 1
+        },
+        {
+          "id": "q_note_a02_o2",
+          "option_key": "G3",
+          "label": "Sol 3 (G3)",
+          "is_correct": true,
+          "sort_order": 2
+        },
+        {
+          "id": "q_note_a02_o3",
+          "option_key": "A3",
+          "label": "La 3 (A3)",
+          "is_correct": false,
+          "sort_order": 3
+        },
+        {
+          "id": "q_note_a02_o4",
+          "option_key": "C4",
+          "label": "Đô 4 (C4)",
+          "is_correct": false,
+          "sort_order": 4
+        }
+      ]
+    },
+    {
+      "id": "q_int_b01",
+      "topic_id": "topic_intervals",
+      "level_id": "lvl_intervals_basic",
+      "type": "interval_melodic",
+      "prompt": "Nghe hai nốt đi lên từ Đô (C4). Khoảng cách giữa hai nốt này là quãng mấy?",
+      "explanation": "Đô (C4) lên Rê (D4) cách nhau 1 cung nguyên, gọi là Quãng 2 trưởng (M2).",
+      "audio_asset": "assets/audio/intervals/c4_M2_asc.wav",
+      "difficulty": 1,
+      "version": 1,
+      "options": [
+        {
+          "id": "q_int_b01_o1",
+          "option_key": "M2",
+          "label": "Quãng 2 trưởng",
+          "is_correct": true,
+          "sort_order": 1
+        },
+        {
+          "id": "q_int_b01_o2",
+          "option_key": "M3",
+          "label": "Quãng 3 trưởng",
+          "is_correct": false,
+          "sort_order": 2
+        },
+        {
+          "id": "q_int_b01_o3",
+          "option_key": "P5",
+          "label": "Quãng 5 đúng",
+          "is_correct": false,
+          "sort_order": 3
+        },
+        {
+          "id": "q_int_b01_o4",
+          "option_key": "P8",
+          "label": "Quãng 8 đúng",
+          "is_correct": false,
+          "sort_order": 4
+        }
+      ]
+    },
+    {
+      "id": "q_int_b02",
+      "topic_id": "topic_intervals",
+      "level_id": "lvl_intervals_basic",
+      "type": "interval_melodic",
+      "prompt": "Nghe hai nốt đi lên tạo màu sắc tươi sáng (Đô → Mi). Đây là quãng nào?",
+      "explanation": "Đô (C4) lên Mi (E4) gồm 2 cung nguyên (4 nửa cung), là Quãng 3 trưởng (M3).",
+      "audio_asset": "assets/audio/intervals/c4_M3_asc.wav",
+      "difficulty": 1,
+      "version": 1,
+      "options": [
+        {
+          "id": "q_int_b02_o1",
+          "option_key": "M2",
+          "label": "Quãng 2 trưởng",
+          "is_correct": false,
+          "sort_order": 1
+        },
+        {
+          "id": "q_int_b02_o2",
+          "option_key": "M3",
+          "label": "Quãng 3 trưởng",
+          "is_correct": true,
+          "sort_order": 2
+        },
+        {
+          "id": "q_int_b02_o3",
+          "option_key": "P4",
+          "label": "Quãng 4 đúng",
+          "is_correct": false,
+          "sort_order": 3
+        },
+        {
+          "id": "q_int_b02_o4",
+          "option_key": "P5",
+          "label": "Quãng 5 đúng",
+          "is_correct": false,
+          "sort_order": 4
+        }
+      ]
+    },
+    {
+      "id": "q_int_b03",
+      "topic_id": "topic_intervals",
+      "level_id": "lvl_intervals_basic",
+      "type": "interval_melodic",
+      "prompt": "Nghe hai nốt đi lên gợi âm hưởng mở đầu Quốc ca / nhạc kèn (Đô → Fa):",
+      "explanation": "Đô (C4) lên Fa (F4) cách nhau 2,5 cung (5 nửa cung), là Quãng 4 đúng (P4).",
+      "audio_asset": "assets/audio/intervals/c4_P4_asc.wav",
+      "difficulty": 1,
+      "version": 1,
+      "options": [
+        {
+          "id": "q_int_b03_o1",
+          "option_key": "M3",
+          "label": "Quãng 3 trưởng",
+          "is_correct": false,
+          "sort_order": 1
+        },
+        {
+          "id": "q_int_b03_o2",
+          "option_key": "P4",
+          "label": "Quãng 4 đúng",
+          "is_correct": true,
+          "sort_order": 2
+        },
+        {
+          "id": "q_int_b03_o3",
+          "option_key": "P5",
+          "label": "Quãng 5 đúng",
+          "is_correct": false,
+          "sort_order": 3
+        },
+        {
+          "id": "q_int_b03_o4",
+          "option_key": "P8",
+          "label": "Quãng 8 đúng",
+          "is_correct": false,
+          "sort_order": 4
+        }
+      ]
+    },
+    {
+      "id": "q_int_b04",
+      "topic_id": "topic_intervals",
+      "level_id": "lvl_intervals_basic",
+      "type": "interval_melodic",
+      "prompt": "Nghe hai nốt đi lên có độ hòa hợp vững chãi (gợi giai điệu Twinkle Twinkle Little Star):",
+      "explanation": "Đô (C4) lên Sol (G4) cách nhau 3,5 cung (7 nửa cung), là Quãng 5 đúng (P5).",
+      "audio_asset": "assets/audio/intervals/c4_P5_asc.wav",
+      "difficulty": 1,
+      "version": 1,
+      "options": [
+        {
+          "id": "q_int_b04_o1",
+          "option_key": "M2",
+          "label": "Quãng 2 trưởng",
+          "is_correct": false,
+          "sort_order": 1
+        },
+        {
+          "id": "q_int_b04_o2",
+          "option_key": "P4",
+          "label": "Quãng 4 đúng",
+          "is_correct": false,
+          "sort_order": 2
+        },
+        {
+          "id": "q_int_b04_o3",
+          "option_key": "P5",
+          "label": "Quãng 5 đúng",
+          "is_correct": true,
+          "sort_order": 3
+        },
+        {
+          "id": "q_int_b04_o4",
+          "option_key": "P8",
+          "label": "Quãng 8 đúng",
+          "is_correct": false,
+          "sort_order": 4
+        }
+      ]
+    },
+    {
+      "id": "q_int_b05",
+      "topic_id": "topic_intervals",
+      "level_id": "lvl_intervals_basic",
+      "type": "interval_melodic",
+      "prompt": "Nghe hai nốt có cùng tên Đô nhưng cách nhau một bậc quãng tám (C4 → C5):",
+      "explanation": "Khoảng cách 12 nửa cung giữa C4 và C5 là Quãng 8 đúng (Octave - P8).",
+      "audio_asset": "assets/audio/intervals/c4_P8_asc.wav",
+      "difficulty": 1,
+      "version": 1,
+      "options": [
+        {
+          "id": "q_int_b05_o1",
+          "option_key": "M3",
+          "label": "Quãng 3 trưởng",
+          "is_correct": false,
+          "sort_order": 1
+        },
+        {
+          "id": "q_int_b05_o2",
+          "option_key": "P5",
+          "label": "Quãng 5 đúng",
+          "is_correct": false,
+          "sort_order": 2
+        },
+        {
+          "id": "q_int_b05_o3",
+          "option_key": "M6",
+          "label": "Quãng 6 trưởng",
+          "is_correct": false,
+          "sort_order": 3
+        },
+        {
+          "id": "q_int_b05_o4",
+          "option_key": "P8",
+          "label": "Quãng 8 đúng (Octave)",
+          "is_correct": true,
+          "sort_order": 4
+        }
+      ]
+    },
+    {
+      "id": "q_int_i01",
+      "topic_id": "topic_intervals",
+      "level_id": "lvl_intervals_inter",
+      "type": "interval_melodic",
+      "prompt": "Nghe hai nốt đi lên mang màu sắc trầm buồn (C4 → Eb4). Đây là quãng gì?",
+      "explanation": "Cách nhau 1,5 cung (3 nửa cung) là Quãng 3 thứ (m3), đặc trưng của hợp âm thứ.",
+      "audio_asset": "assets/audio/intervals/c4_m3_asc.wav",
+      "difficulty": 2,
+      "version": 1,
+      "options": [
+        {
+          "id": "q_int_i01_o1",
+          "option_key": "m2",
+          "label": "Quãng 2 thứ",
+          "is_correct": false,
+          "sort_order": 1
+        },
+        {
+          "id": "q_int_i01_o2",
+          "option_key": "m3",
+          "label": "Quãng 3 thứ",
+          "is_correct": true,
+          "sort_order": 2
+        },
+        {
+          "id": "q_int_i01_o3",
+          "option_key": "M3",
+          "label": "Quãng 3 trưởng",
+          "is_correct": false,
+          "sort_order": 3
+        },
+        {
+          "id": "q_int_i01_o4",
+          "option_key": "P4",
+          "label": "Quãng 4 đúng",
+          "is_correct": false,
+          "sort_order": 4
+        }
+      ]
+    },
+    {
+      "id": "q_int_i02",
+      "topic_id": "topic_intervals",
+      "level_id": "lvl_intervals_inter",
+      "type": "interval_melodic",
+      "prompt": "Nghe quãng giai điệu đi xuống từ Sol (G4) về Đô (C4). Xác định tên quãng:",
+      "explanation": "Sol (G4) đi xuống Đô (C4) là Quãng 5 đúng đi xuống (P5 descending).",
+      "audio_asset": "assets/audio/intervals/c4_P5_desc.wav",
+      "difficulty": 2,
+      "version": 1,
+      "options": [
+        {
+          "id": "q_int_i02_o1",
+          "option_key": "M3",
+          "label": "Quãng 3 trưởng đi xuống",
+          "is_correct": false,
+          "sort_order": 1
+        },
+        {
+          "id": "q_int_i02_o2",
+          "option_key": "P4",
+          "label": "Quãng 4 đúng đi xuống",
+          "is_correct": false,
+          "sort_order": 2
+        },
+        {
+          "id": "q_int_i02_o3",
+          "option_key": "P5",
+          "label": "Quãng 5 đúng đi xuống",
+          "is_correct": true,
+          "sort_order": 3
+        },
+        {
+          "id": "q_int_i02_o4",
+          "option_key": "P8",
+          "label": "Quãng 8 đúng đi xuống",
+          "is_correct": false,
+          "sort_order": 4
+        }
+      ]
+    },
+    {
+      "id": "q_int_i03",
+      "topic_id": "topic_intervals",
+      "level_id": "lvl_intervals_inter",
+      "type": "interval_melodic",
+      "prompt": "Nghe hai nốt đi lên từ C4 đến A4 (9 nửa cung). Đây là quãng nào?",
+      "explanation": "Từ Đô (C4) lên La (A4) là Quãng 6 trưởng (M6), có âm hưởng rộng mở và ấm áp.",
+      "audio_asset": "assets/audio/intervals/c4_M6_asc.wav",
+      "difficulty": 2,
+      "version": 1,
+      "options": [
+        {
+          "id": "q_int_i03_o1",
+          "option_key": "P5",
+          "label": "Quãng 5 đúng",
+          "is_correct": false,
+          "sort_order": 1
+        },
+        {
+          "id": "q_int_i03_o2",
+          "option_key": "m6",
+          "label": "Quãng 6 thứ",
+          "is_correct": false,
+          "sort_order": 2
+        },
+        {
+          "id": "q_int_i03_o3",
+          "option_key": "M6",
+          "label": "Quãng 6 trưởng",
+          "is_correct": true,
+          "sort_order": 3
+        },
+        {
+          "id": "q_int_i03_o4",
+          "option_key": "M7",
+          "label": "Quãng 7 trưởng",
+          "is_correct": false,
+          "sort_order": 4
+        }
+      ]
+    },
+    {
+      "id": "q_int_a01",
+      "topic_id": "topic_intervals",
+      "level_id": "lvl_intervals_adv",
+      "type": "interval_harmonic",
+      "prompt": "Nghe hai nốt phát ĐỒNG THỜI (quãng hòa thanh) có độ căng thẳng đặc trưng (3 cung):",
+      "explanation": "Khoảng cách 6 nửa cung (C4 - F#4) là Quãng 4 tăng / 5 giảm (Tritone), có tính nghịch và căng thẳng mạnh.",
+      "audio_asset": "assets/audio/intervals/c4_tritone_harm.wav",
+      "difficulty": 3,
+      "version": 1,
+      "options": [
+        {
+          "id": "q_int_a01_o1",
+          "option_key": "P4",
+          "label": "Quãng 4 đúng",
+          "is_correct": false,
+          "sort_order": 1
+        },
+        {
+          "id": "q_int_a01_o2",
+          "option_key": "tritone",
+          "label": "Quãng 4 tăng / 5 giảm (Tritone)",
+          "is_correct": true,
+          "sort_order": 2
+        },
+        {
+          "id": "q_int_a01_o3",
+          "option_key": "P5",
+          "label": "Quãng 5 đúng",
+          "is_correct": false,
+          "sort_order": 3
+        },
+        {
+          "id": "q_int_a01_o4",
+          "option_key": "M6",
+          "label": "Quãng 6 trưởng",
+          "is_correct": false,
+          "sort_order": 4
+        }
+      ]
+    },
+    {
+      "id": "q_int_a02",
+      "topic_id": "topic_intervals",
+      "level_id": "lvl_intervals_adv",
+      "type": "interval_harmonic",
+      "prompt": "Nghe quãng hòa thanh (hai nốt phát cùng lúc) và xác định chất lượng quãng:",
+      "explanation": "Hai nốt cách nhau 11 nửa cung (C4 và B4) tạo nên Quãng 7 trưởng (M7) sắc nét.",
+      "audio_asset": "assets/audio/intervals/c4_M7_harm.wav",
+      "difficulty": 3,
+      "version": 1,
+      "options": [
+        {
+          "id": "q_int_a02_o1",
+          "option_key": "M6",
+          "label": "Quãng 6 trưởng",
+          "is_correct": false,
+          "sort_order": 1
+        },
+        {
+          "id": "q_int_a02_o2",
+          "option_key": "m7",
+          "label": "Quãng 7 thứ",
+          "is_correct": false,
+          "sort_order": 2
+        },
+        {
+          "id": "q_int_a02_o3",
+          "option_key": "M7",
+          "label": "Quãng 7 trưởng",
+          "is_correct": true,
+          "sort_order": 3
+        },
+        {
+          "id": "q_int_a02_o4",
+          "option_key": "P8",
+          "label": "Quãng 8 đúng",
+          "is_correct": false,
+          "sort_order": 4
+        }
+      ]
+    },
+    {
+      "id": "q_key_b01",
+      "topic_id": "topic_keys",
+      "level_id": "lvl_keys_basic",
+      "type": "key_quality",
+      "prompt": "Nghe chuỗi hòa âm I – IV – V – I sau đây và cho biết đoạn nhạc thuộc điệu thức nào?",
+      "explanation": "Chuỗi hợp âm kết thúc vững chãi ở hợp âm Đô Trưởng (C-E-G) với quãng 3 trưởng sáng rõ → Điệu Trưởng (Major).",
+      "audio_asset": "assets/audio/keys/c_major.wav",
+      "difficulty": 1,
+      "version": 1,
+      "options": [
+        {
+          "id": "q_key_b01_o1",
+          "option_key": "major",
+          "label": "Giọng Trưởng (Major) – tươi sáng, vững chãi",
+          "is_correct": true,
+          "sort_order": 1
+        },
+        {
+          "id": "q_key_b01_o2",
+          "option_key": "minor",
+          "label": "Giọng Thứ (Minor) – trầm lắng, mềm mại",
+          "is_correct": false,
+          "sort_order": 2
+        }
+      ]
+    },
+    {
+      "id": "q_key_b02",
+      "topic_id": "topic_keys",
+      "level_id": "lvl_keys_basic",
+      "type": "key_quality",
+      "prompt": "Nghe chuỗi hòa âm i – iv – V – i và xác định màu sắc điệu thức:",
+      "explanation": "Hợp âm chủ La Thứ (A-C-E) có bậc III là quãng 3 thứ tạo màu sắc trầm lắng đặc trưng của Giọng Thứ (Minor).",
+      "audio_asset": "assets/audio/keys/a_minor.wav",
+      "difficulty": 1,
+      "version": 1,
+      "options": [
+        {
+          "id": "q_key_b02_o1",
+          "option_key": "major",
+          "label": "Giọng Trưởng (Major)",
+          "is_correct": false,
+          "sort_order": 1
+        },
+        {
+          "id": "q_key_b02_o2",
+          "option_key": "minor",
+          "label": "Giọng Thứ (Minor)",
+          "is_correct": true,
+          "sort_order": 2
+        }
+      ]
+    },
+    {
+      "id": "q_key_b03",
+      "topic_id": "topic_keys",
+      "level_id": "lvl_keys_basic",
+      "type": "key_signature",
+      "prompt": "Nghe chuỗi hòa âm giọng Đô Trưởng (C Major). Giọng Đô Trưởng có bao nhiêu dấu hóa ở hóa biểu?",
+      "explanation": "Đô Trưởng (C Major) và giọng song song La Thứ (A Minor) không có dấu thăng hay dấu giáng nào ở hóa biểu.",
+      "audio_asset": "assets/audio/keys/c_major.wav",
+      "difficulty": 1,
+      "version": 1,
+      "options": [
+        {
+          "id": "q_key_b03_o1",
+          "option_key": "0",
+          "label": "0 dấu hóa (Không thăng, không giáng)",
+          "is_correct": true,
+          "sort_order": 1
+        },
+        {
+          "id": "q_key_b03_o2",
+          "option_key": "1s",
+          "label": "1 dấu thăng (Fa#)",
+          "is_correct": false,
+          "sort_order": 2
+        },
+        {
+          "id": "q_key_b03_o3",
+          "option_key": "1b",
+          "label": "1 dấu giáng (Sib)",
+          "is_correct": false,
+          "sort_order": 3
+        },
+        {
+          "id": "q_key_b03_o4",
+          "option_key": "2s",
+          "label": "2 dấu thăng (Fa#, Đô#)",
+          "is_correct": false,
+          "sort_order": 4
+        }
+      ]
+    },
+    {
+      "id": "q_key_b04",
+      "topic_id": "topic_keys",
+      "level_id": "lvl_keys_basic",
+      "type": "key_quality",
+      "prompt": "Nghe chuỗi hòa âm sau và nhận biết đây là giọng Trưởng hay giọng Thứ:",
+      "explanation": "Đây là chuỗi hòa âm giọng Sol Trưởng (G Major) có màu sắc sáng rõ của điệu thức Trưởng.",
+      "audio_asset": "assets/audio/keys/g_major.wav",
+      "difficulty": 1,
+      "version": 1,
+      "options": [
+        {
+          "id": "q_key_b04_o1",
+          "option_key": "major",
+          "label": "Giọng Trưởng (Major)",
+          "is_correct": true,
+          "sort_order": 1
+        },
+        {
+          "id": "q_key_b04_o2",
+          "option_key": "minor",
+          "label": "Giọng Thứ (Minor)",
+          "is_correct": false,
+          "sort_order": 2
+        }
+      ]
+    },
+    {
+      "id": "q_key_b05",
+      "topic_id": "topic_keys",
+      "level_id": "lvl_keys_basic",
+      "type": "key_quality",
+      "prompt": "Nghe chuỗi hòa âm sau và phân biệt màu sắc Trưởng / Thứ:",
+      "explanation": "Đây là chuỗi hòa âm giọng Rê Thứ (D Minor) mang màu sắc sâu lắng của điệu Thứ.",
+      "audio_asset": "assets/audio/keys/d_minor.wav",
+      "difficulty": 1,
+      "version": 1,
+      "options": [
+        {
+          "id": "q_key_b05_o1",
+          "option_key": "major",
+          "label": "Giọng Trưởng (Major)",
+          "is_correct": false,
+          "sort_order": 1
+        },
+        {
+          "id": "q_key_b05_o2",
+          "option_key": "minor",
+          "label": "Giọng Thứ (Minor)",
+          "is_correct": true,
+          "sort_order": 2
+        }
+      ]
+    },
+    {
+      "id": "q_key_i01",
+      "topic_id": "topic_keys",
+      "level_id": "lvl_keys_inter",
+      "type": "key_signature",
+      "prompt": "Nghe chuỗi hòa âm giọng Sol Trưởng (G Major). Hóa biểu của Sol Trưởng có dấu hóa nào?",
+      "explanation": "Sol Trưởng (G Major) và Mi Thứ (E Minor) có 1 dấu thăng tại nốt Fa (F#).",
+      "audio_asset": "assets/audio/keys/g_major.wav",
+      "difficulty": 2,
+      "version": 1,
+      "options": [
+        {
+          "id": "q_key_i01_o1",
+          "option_key": "0",
+          "label": "Không có dấu hóa",
+          "is_correct": false,
+          "sort_order": 1
+        },
+        {
+          "id": "q_key_i01_o2",
+          "option_key": "1s",
+          "label": "1 dấu thăng (Fa#)",
+          "is_correct": true,
+          "sort_order": 2
+        },
+        {
+          "id": "q_key_i01_o3",
+          "option_key": "1b",
+          "label": "1 dấu giáng (Sib)",
+          "is_correct": false,
+          "sort_order": 3
+        },
+        {
+          "id": "q_key_i01_o4",
+          "option_key": "2s",
+          "label": "2 dấu thăng (Fa#, Đô#)",
+          "is_correct": false,
+          "sort_order": 4
+        }
+      ]
+    },
+    {
+      "id": "q_key_i02",
+      "topic_id": "topic_keys",
+      "level_id": "lvl_keys_inter",
+      "type": "key_signature",
+      "prompt": "Nghe chuỗi hòa âm giọng Fa Trưởng (F Major). Hóa biểu của Fa Trưởng có dấu hóa nào?",
+      "explanation": "Fa Trưởng (F Major) và Rê Thứ (D Minor) có 1 dấu giáng tại nốt Si (Bb).",
+      "audio_asset": "assets/audio/keys/f_major.wav",
+      "difficulty": 2,
+      "version": 1,
+      "options": [
+        {
+          "id": "q_key_i02_o1",
+          "option_key": "1s",
+          "label": "1 dấu thăng (Fa#)",
+          "is_correct": false,
+          "sort_order": 1
+        },
+        {
+          "id": "q_key_i02_o2",
+          "option_key": "1b",
+          "label": "1 dấu giáng (Sib)",
+          "is_correct": true,
+          "sort_order": 2
+        },
+        {
+          "id": "q_key_i02_o3",
+          "option_key": "2b",
+          "label": "2 dấu giáng (Sib, Mib)",
+          "is_correct": false,
+          "sort_order": 3
+        },
+        {
+          "id": "q_key_i02_o4",
+          "option_key": "0",
+          "label": "Không có dấu hóa",
+          "is_correct": false,
+          "sort_order": 4
+        }
+      ]
+    },
+    {
+      "id": "q_key_i03",
+      "topic_id": "topic_keys",
+      "level_id": "lvl_keys_inter",
+      "type": "key_center",
+      "prompt": "Nghe chuỗi hòa âm (có thể đối chiếu C4) và xác định tên giọng Thứ sau đây:",
+      "explanation": "Chuỗi hòa âm kết về âm chủ La (A3) với quãng 3 thứ La–Đô → Giọng La Thứ (A Minor).",
+      "audio_asset": "assets/audio/keys/a_minor.wav",
+      "difficulty": 2,
+      "version": 1,
+      "options": [
+        {
+          "id": "q_key_i03_o1",
+          "option_key": "Am",
+          "label": "La Thứ (A Minor)",
+          "is_correct": true,
+          "sort_order": 1
+        },
+        {
+          "id": "q_key_i03_o2",
+          "option_key": "C",
+          "label": "Đô Trưởng (C Major)",
+          "is_correct": false,
+          "sort_order": 2
+        },
+        {
+          "id": "q_key_i03_o3",
+          "option_key": "Dm",
+          "label": "Rê Thứ (D Minor)",
+          "is_correct": false,
+          "sort_order": 3
+        },
+        {
+          "id": "q_key_i03_o4",
+          "option_key": "G",
+          "label": "Sol Trưởng (G Major)",
+          "is_correct": false,
+          "sort_order": 4
+        }
+      ]
+    },
+    {
+      "id": "q_key_a01",
+      "topic_id": "topic_keys",
+      "level_id": "lvl_keys_adv",
+      "type": "key_center",
+      "prompt": "Nghe chuỗi hòa âm có 2 dấu thăng (Fa#, Đô#) và màu sắc Trưởng tươi sáng. Đây là giọng nào?",
+      "explanation": "Giọng Trưởng có 2 dấu thăng (Fa#, Đô#) và âm chủ cao hơn Đô 1 cung là Rê Trưởng (D Major).",
+      "audio_asset": "assets/audio/keys/d_major.wav",
+      "difficulty": 3,
+      "version": 1,
+      "options": [
+        {
+          "id": "q_key_a01_o1",
+          "option_key": "G",
+          "label": "Sol Trưởng (G Major)",
+          "is_correct": false,
+          "sort_order": 1
+        },
+        {
+          "id": "q_key_a01_o2",
+          "option_key": "D",
+          "label": "Rê Trưởng (D Major)",
+          "is_correct": true,
+          "sort_order": 2
+        },
+        {
+          "id": "q_key_a01_o3",
+          "option_key": "Bm",
+          "label": "Si Thứ (B Minor)",
+          "is_correct": false,
+          "sort_order": 3
+        },
+        {
+          "id": "q_key_a01_o4",
+          "option_key": "Bb",
+          "label": "Si giáng Trưởng (Bb Major)",
+          "is_correct": false,
+          "sort_order": 4
+        }
+      ]
+    },
+    {
+      "id": "q_key_a02",
+      "topic_id": "topic_keys",
+      "level_id": "lvl_keys_adv",
+      "type": "key_center",
+      "prompt": "Nghe chuỗi hòa âm có 2 dấu giáng (Sib, Mib) và màu sắc Thứ trầm lắng. Đây là giọng nào?",
+      "explanation": "Giọng Thứ song song với Si giáng Trưởng (2 dấu giáng) là Sol Thứ (G Minor).",
+      "audio_asset": "assets/audio/keys/g_minor.wav",
+      "difficulty": 3,
+      "version": 1,
+      "options": [
+        {
+          "id": "q_key_a02_o1",
+          "option_key": "Dm",
+          "label": "Rê Thứ (D Minor)",
+          "is_correct": false,
+          "sort_order": 1
+        },
+        {
+          "id": "q_key_a02_o2",
+          "option_key": "Em",
+          "label": "Mi Thứ (E Minor)",
+          "is_correct": false,
+          "sort_order": 2
+        },
+        {
+          "id": "q_key_a02_o3",
+          "option_key": "Gm",
+          "label": "Sol Thứ (G Minor)",
+          "is_correct": true,
+          "sort_order": 3
+        },
+        {
+          "id": "q_key_a02_o4",
+          "option_key": "Bb",
+          "label": "Si giáng Trưởng (Bb Major)",
+          "is_correct": false,
+          "sort_order": 4
+        }
+      ]
+    }
+  ],
+  "metronome_presets": [
+    {
+      "id": "preset_slow",
+      "name": "Luyện chậm (Largo)",
+      "bpm": 60,
+      "numerator": 4,
+      "denominator": 4,
+      "sound_type": "woodblock"
+    },
+    {
+      "id": "preset_walk",
+      "name": "Vừa phải (Andante)",
+      "bpm": 90,
+      "numerator": 4,
+      "denominator": 4,
+      "sound_type": "click"
+    },
+    {
+      "id": "preset_waltz",
+      "name": "Nhịp Valse 3/4",
+      "bpm": 110,
+      "numerator": 3,
+      "denominator": 4,
+      "sound_type": "bell"
+    },
+    {
+      "id": "preset_allegro",
+      "name": "Nhanh (Allegro)",
+      "bpm": 132,
+      "numerator": 4,
+      "denominator": 4,
+      "sound_type": "click"
+    }
+  ]
+}

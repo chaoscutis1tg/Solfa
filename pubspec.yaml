@@ -1,0 +1,41 @@
+name: solfa
+description: "Solfa – Ứng dụng luyện cảm âm, kiến thức âm nhạc và máy đếm nhịp offline-first."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.5.3
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  flutter_riverpod: ^2.5.1
+  go_router: ^14.2.7
+  sqflite: ^2.3.3+1
+  sqflite_common_ffi: ^2.3.3
+  path: ^1.9.0
+  path_provider: ^2.1.4
+  shared_preferences: ^2.3.2
+  audioplayers: ^6.1.0
+  fl_chart: ^0.69.0
+  wakelock_plus: ^1.2.8
+  connectivity_plus: ^6.0.5
+  uuid: ^4.5.0
+  intl: ^0.19.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/data/
+    - assets/images/
+    - assets/audio/notes/
+    - assets/audio/intervals/
+    - assets/audio/keys/
+    - assets/audio/metronome/
+    - assets/audio/sfx/

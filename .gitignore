@@ -1,0 +1,114 @@
+# ==============================================================================
+# Solfa – Flutter / Dart / Android / iOS / Desktop .gitignore
+# ==============================================================================
+
+# 1. Hệ điều hành & Tệp tạm (OS & Miscellaneous)
+*.class
+*.log
+*.pyc
+*.swp
+*.bak
+*.tmp
+*~
+.DS_Store
+Thumbs.db
+Desktop.ini
+.atom/
+.buildlog/
+.history/
+.svn/
+migrate_working_dir/
+
+# Tệp khóa tạm của Microsoft Word / Excel (Office temporary lock files)
+~$*.doc
+~$*.docx
+~$*.xls
+~$*.xlsx
+~$*.ppt
+~$*.pptx
+
+# 2. IDE & Trình soạn thảo (IntelliJ / Android Studio / VS Code / Cursor)
+*.iml
+*.ipr
+*.iws
+.idea/
+.vscode/
+.cursor/
+
+# 3. Flutter / Dart / Pub
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+build/
+coverage/
+flutter_export_environment.sh
+GeneratedPluginRegistrant.java
+
+# Symbolication & Obfuscation
+app.*.symbols
+app.*.map.json
+
+# 4. Android / Gradle / Keystore bảo mật
+/android/.gradle/
+/android/captures/
+/android/local.properties
+/android/key.properties
+/android/gradlew.bat.bak
+/android/app/debug/
+/android/app/profile/
+/android/app/release/
+**/android/**/GeneratedPluginRegistrant.java
+*.apk
+*.aab
+*.ap_
+*.dex
+*.jks
+*.keystore
+
+# 5. iOS / macOS (CocoaPods & Xcode)
+**/ios/Pods/
+**/ios/.symlinks/
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/ephemeral/
+**/ios/Runner/GeneratedPluginRegistrant.*
+**/macos/Flutter/ephemeral/
+**/macos/Pods/
+*.mode1v3
+*.mode2v3
+*.moved-aside
+*.pbxuser
+*.perspectivev3
+**/*sync/
+**/xcuserdata/
+**/DerivedData/
+
+# 6. Windows / Linux / Web
+**/windows/flutter/generated_plugin_registrant.cc
+**/windows/flutter/generated_plugin_registrant.h
+**/windows/flutter/generated_plugins.cmake
+**/windows/flutter/ephemeral/
+**/linux/flutter/generated_plugin_registrant.cc
+**/linux/flutter/generated_plugin_registrant.h
+**/linux/flutter/generated_plugins.cmake
+**/linux/flutter/ephemeral/
+
+# 7. Python & Công cụ tạo âm thanh (tool/)
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+
+# 8. Biến môi trường & Khóa bí mật (Secrets & Env)
+.env
+.env.*
+*.pem
+*.p12
