@@ -19,8 +19,8 @@ class AppColors {
   static const Color textSecondaryLight = Color(0xFF34527E);
 
   // Dark mode surfaces & crisp starlight typography (for bg_dark.jpg)
-  static const Color backgroundDark = Color(0xFF070D30);
-  static const Color surfaceDark = Color(0xFF101B4A);
+  static const Color backgroundDark = Color(0xFF040714);
+  static const Color surfaceDark = Color(0xFF0A1026);
   static const Color textPrimaryDark = Color(0xFFF4F8FF);
   static const Color textSecondaryDark = Color(0xFFA8C0E8);
 

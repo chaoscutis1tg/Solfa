@@ -608,7 +608,27 @@ def generate_logos_and_icons() -> None:
     if os.path.exists(src_bg_light):
         shutil.copyfile(src_bg_light, dst_bg_light)
     if os.path.exists(src_bg_dark):
-        shutil.copyfile(src_bg_dark, dst_bg_dark)
+        dark_img = Image.open(src_bg_dark).convert("RGB")
+        # Darken the background significantly into a deep midnight-obsidian tone
+        # while preserving subtle neon musical note highlights
+        def darken_channel_r(v: int) -> int:
+            norm = v / 255.0
+            return int(max(0, min(255, ((norm ** 1.55) * 0.44) * 255.0)))
+
+        def darken_channel_g(v: int) -> int:
+            norm = v / 255.0
+            return int(max(0, min(255, ((norm ** 1.55) * 0.44) * 255.0)))
+
+        def darken_channel_b(v: int) -> int:
+            norm = v / 255.0
+            return int(max(0, min(255, ((norm ** 1.68) * 0.36) * 255.0)))
+
+        r_ch, g_ch, b_ch = dark_img.split()
+        r_ch = r_ch.point(darken_channel_r)
+        g_ch = g_ch.point(darken_channel_g)
+        b_ch = b_ch.point(darken_channel_b)
+        darkened = Image.merge("RGB", (r_ch, g_ch, b_ch))
+        darkened.save(dst_bg_dark, "JPEG", quality=94)
 
     if os.path.exists(src_logo):
         img = Image.open(src_logo).convert("RGBA")

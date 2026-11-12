@@ -1,8 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'app_colors.dart';
 
 class AppTheme {
+  static const SystemUiOverlayStyle lightOverlayStyle = SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.dark,
+    statusBarBrightness: Brightness.light,
+    systemNavigationBarColor: Color(0xFFBCE8FF),
+    systemNavigationBarDividerColor: Color(0xFFBCE8FF),
+    systemNavigationBarIconBrightness: Brightness.dark,
+    systemNavigationBarContrastEnforced: false,
+  );
+
+  static const SystemUiOverlayStyle darkOverlayStyle = SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.light,
+    statusBarBrightness: Brightness.dark,
+    systemNavigationBarColor: Color(0xFF040714),
+    systemNavigationBarDividerColor: Color(0xFF040714),
+    systemNavigationBarIconBrightness: Brightness.light,
+    systemNavigationBarContrastEnforced: false,
+  );
+
   static ThemeData get lightTheme {
     final colorScheme = ColorScheme.fromSeed(
       seedColor: AppColors.primary,
@@ -49,6 +70,7 @@ class AppTheme {
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
         foregroundColor: AppColors.textPrimaryLight,
+        systemOverlayStyle: lightOverlayStyle,
         elevation: 0,
         centerTitle: false,
         titleTextStyle: TextStyle(
@@ -192,6 +214,7 @@ class AppTheme {
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
         foregroundColor: AppColors.textPrimaryDark,
+        systemOverlayStyle: darkOverlayStyle,
         elevation: 0,
         centerTitle: false,
         titleTextStyle: TextStyle(
@@ -202,20 +225,20 @@ class AppTheme {
         ),
       ),
       cardTheme: CardTheme(
-        color: AppColors.surfaceDark.withOpacity(0.84),
+        color: AppColors.surfaceDark.withOpacity(0.90),
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
           side: BorderSide(
-            color: AppColors.secondary.withOpacity(0.24),
-            width: 1.2,
+            color: AppColors.secondary.withOpacity(0.20),
+            width: 1.1,
           ),
         ),
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: const Color(0xFF15235C).withOpacity(0.85),
+        backgroundColor: const Color(0xFF0E1738).withOpacity(0.90),
         selectedColor: AppColors.primary,
         labelStyle: const TextStyle(
           color: AppColors.textPrimaryDark,
@@ -227,7 +250,7 @@ class AppTheme {
           fontSize: 13,
           fontWeight: FontWeight.w800,
         ),
-        side: BorderSide(color: AppColors.secondary.withOpacity(0.30)),
+        side: BorderSide(color: AppColors.secondary.withOpacity(0.26)),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),
@@ -252,12 +275,12 @@ class AppTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.secondary,
-          backgroundColor: const Color(0xFF0E1944).withOpacity(0.70),
+          backgroundColor: const Color(0xFF0A112B).withOpacity(0.82),
           minimumSize: const Size(double.infinity, 48),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           side: BorderSide(
-            color: AppColors.secondary.withOpacity(0.65),
-            width: 1.5,
+            color: AppColors.secondary.withOpacity(0.55),
+            width: 1.4,
           ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15),
@@ -269,11 +292,11 @@ class AppTheme {
         ),
       ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: const Color(0xFF0B1336).withOpacity(0.94),
+        backgroundColor: const Color(0xFF050816).withOpacity(0.96),
         surfaceTintColor: Colors.transparent,
         elevation: 8,
         height: 68,
-        indicatorColor: AppColors.secondary.withOpacity(0.24),
+        indicatorColor: AppColors.secondary.withOpacity(0.22),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           final isSelected = states.contains(WidgetState.selected);
           return TextStyle(
