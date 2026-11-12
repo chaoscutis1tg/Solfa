@@ -185,19 +185,23 @@ def generate_notes() -> None:
 
 def generate_intervals() -> None:
     intervals_dir = os.path.join(ASSETS_DIR, "audio", "intervals")
+    if os.path.exists(intervals_dir):
+        for old_f in os.listdir(intervals_dir):
+            if old_f.endswith(".wav"):
+                os.remove(os.path.join(intervals_dir, old_f))
     interval_defs = [
-        ("m2", 1),
-        ("M2", 2),
-        ("m3", 3),
-        ("M3", 4),
-        ("P4", 5),
+        ("min2", 1),
+        ("maj2", 2),
+        ("min3", 3),
+        ("maj3", 4),
+        ("p4", 5),
         ("tritone", 6),
-        ("P5", 7),
-        ("m6", 8),
-        ("M6", 9),
-        ("m7", 10),
-        ("M7", 11),
-        ("P8", 12),
+        ("p5", 7),
+        ("min6", 8),
+        ("maj6", 9),
+        ("min7", 10),
+        ("maj7", 11),
+        ("p8", 12),
     ]
     roots = [("c4", 60), ("f4", 65), ("g4", 67)]
     for root_name, root_midi in roots:
@@ -960,7 +964,7 @@ def generate_seed_json() -> None:
             "type": "interval_melodic",
             "prompt": "Nghe hai nốt đi lên từ Đô (C4). Khoảng cách giữa hai nốt này là quãng mấy?",
             "explanation": "Đô (C4) lên Rê (D4) cách nhau 1 cung nguyên, gọi là Quãng 2 trưởng (M2).",
-            "audio_asset": "assets/audio/intervals/c4_M2_asc.wav",
+            "audio_asset": "assets/audio/intervals/c4_maj2_asc.wav",
             "difficulty": 1,
             "version": 1,
             "options": [
@@ -977,7 +981,7 @@ def generate_seed_json() -> None:
             "type": "interval_melodic",
             "prompt": "Nghe hai nốt đi lên tạo màu sắc tươi sáng (Đô → Mi). Đây là quãng nào?",
             "explanation": "Đô (C4) lên Mi (E4) gồm 2 cung nguyên (4 nửa cung), là Quãng 3 trưởng (M3).",
-            "audio_asset": "assets/audio/intervals/c4_M3_asc.wav",
+            "audio_asset": "assets/audio/intervals/c4_maj3_asc.wav",
             "difficulty": 1,
             "version": 1,
             "options": [
@@ -992,9 +996,9 @@ def generate_seed_json() -> None:
             "topic_id": "topic_intervals",
             "level_id": "lvl_intervals_basic",
             "type": "interval_melodic",
-            "prompt": "Nghe hai nốt đi lên gợi âm hưởng mở đầu Quốc ca / nhạc kèn (Đô → Fa):",
+            "prompt": "Nghe hai nốt đi lên gợi âm hưởng mở đầu nhạc hiệu / kèn lệnh (Đô → Fa):",
             "explanation": "Đô (C4) lên Fa (F4) cách nhau 2,5 cung (5 nửa cung), là Quãng 4 đúng (P4).",
-            "audio_asset": "assets/audio/intervals/c4_P4_asc.wav",
+            "audio_asset": "assets/audio/intervals/c4_p4_asc.wav",
             "difficulty": 1,
             "version": 1,
             "options": [
@@ -1009,9 +1013,9 @@ def generate_seed_json() -> None:
             "topic_id": "topic_intervals",
             "level_id": "lvl_intervals_basic",
             "type": "interval_melodic",
-            "prompt": "Nghe hai nốt đi lên có độ hòa hợp vững chãi (gợi giai điệu Twinkle Twinkle Little Star):",
+            "prompt": "Nghe hai nốt đi lên có độ hòa hợp vững chãi (Đô → Sol, bậc I lên bậc V):",
             "explanation": "Đô (C4) lên Sol (G4) cách nhau 3,5 cung (7 nửa cung), là Quãng 5 đúng (P5).",
-            "audio_asset": "assets/audio/intervals/c4_P5_asc.wav",
+            "audio_asset": "assets/audio/intervals/c4_p5_asc.wav",
             "difficulty": 1,
             "version": 1,
             "options": [
@@ -1028,7 +1032,7 @@ def generate_seed_json() -> None:
             "type": "interval_melodic",
             "prompt": "Nghe hai nốt có cùng tên Đô nhưng cách nhau một bậc quãng tám (C4 → C5):",
             "explanation": "Khoảng cách 12 nửa cung giữa C4 và C5 là Quãng 8 đúng (Octave - P8).",
-            "audio_asset": "assets/audio/intervals/c4_P8_asc.wav",
+            "audio_asset": "assets/audio/intervals/c4_p8_asc.wav",
             "difficulty": 1,
             "version": 1,
             "options": [
@@ -1045,7 +1049,7 @@ def generate_seed_json() -> None:
             "type": "interval_melodic",
             "prompt": "Nghe hai nốt đi lên mang màu sắc trầm buồn (C4 → Eb4). Đây là quãng gì?",
             "explanation": "Cách nhau 1,5 cung (3 nửa cung) là Quãng 3 thứ (m3), đặc trưng của hợp âm thứ.",
-            "audio_asset": "assets/audio/intervals/c4_m3_asc.wav",
+            "audio_asset": "assets/audio/intervals/c4_min3_asc.wav",
             "difficulty": 2,
             "version": 1,
             "options": [
@@ -1062,7 +1066,7 @@ def generate_seed_json() -> None:
             "type": "interval_melodic",
             "prompt": "Nghe quãng giai điệu đi xuống từ Sol (G4) về Đô (C4). Xác định tên quãng:",
             "explanation": "Sol (G4) đi xuống Đô (C4) là Quãng 5 đúng đi xuống (P5 descending).",
-            "audio_asset": "assets/audio/intervals/c4_P5_desc.wav",
+            "audio_asset": "assets/audio/intervals/c4_p5_desc.wav",
             "difficulty": 2,
             "version": 1,
             "options": [
@@ -1079,7 +1083,7 @@ def generate_seed_json() -> None:
             "type": "interval_melodic",
             "prompt": "Nghe hai nốt đi lên từ C4 đến A4 (9 nửa cung). Đây là quãng nào?",
             "explanation": "Từ Đô (C4) lên La (A4) là Quãng 6 trưởng (M6), có âm hưởng rộng mở và ấm áp.",
-            "audio_asset": "assets/audio/intervals/c4_M6_asc.wav",
+            "audio_asset": "assets/audio/intervals/c4_maj6_asc.wav",
             "difficulty": 2,
             "version": 1,
             "options": [
@@ -1113,7 +1117,7 @@ def generate_seed_json() -> None:
             "type": "interval_harmonic",
             "prompt": "Nghe quãng hòa thanh (hai nốt phát cùng lúc) và xác định chất lượng quãng:",
             "explanation": "Hai nốt cách nhau 11 nửa cung (C4 và B4) tạo nên Quãng 7 trưởng (M7) sắc nét.",
-            "audio_asset": "assets/audio/intervals/c4_M7_harm.wav",
+            "audio_asset": "assets/audio/intervals/c4_maj7_harm.wav",
             "difficulty": 3,
             "version": 1,
             "options": [
@@ -1295,7 +1299,7 @@ def generate_seed_json() -> None:
     ]
 
     seed_data = {
-        "content_version": 3,
+        "content_version": 4,
         "topics": topics,
         "levels": levels,
         "questions": questions,

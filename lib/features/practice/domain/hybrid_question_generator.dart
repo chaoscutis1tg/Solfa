@@ -130,19 +130,42 @@ class HybridQuestionGenerator {
     final List<QuestionModel> generated = [];
 
     if (topicId == 'topic_notes') {
-      final noteDefs = [
-        ('c4', 'C4', 'Đô (C)', 'Nốt Đô (C4) nằm ngay bên trái cụm 2 phím đen, tần số 261.6 Hz.'),
-        ('d4', 'D4', 'Rê (D)', 'Nốt Rê (D4) nằm giữa 2 phím đen C# và D#, cao hơn Đô 1 cung.'),
-        ('e4', 'E4', 'Mi (E)', 'Nốt Mi (E4) nằm bên phải cụm 2 phím đen, là bậc III của Đô Trưởng.'),
-        ('f4', 'F4', 'Fa (F)', 'Nốt Fa (F4) nằm bên trái cụm 3 phím đen, cách Mi nửa cung.'),
-        ('g4', 'G4', 'Sol (G)', 'Nốt Sol (G4) cách Đô (C4) một quãng 5 đúng vững chãi.'),
-        ('a4', 'A4', 'La (A)', 'Nốt La (A4) có tần số chuẩn 440 Hz, bậc VI trong giọng Đô Trưởng.'),
-        ('b4', 'B4', 'Si (B)', 'Nốt Si (B4) là nốt dẫn nằm ngay dưới Đô cao (C5) nửa cung.'),
-      ];
-
       final isAdvanced = levelId.contains('adv');
       final isInter = levelId.contains('inter');
       final diff = isAdvanced ? 3 : (isInter ? 2 : 1);
+
+      final baseNotes = [
+        ('c4', 'C4', 'Đô (C4)', 'Nốt Đô (C4) nằm ngay bên trái cụm 2 phím đen, tần số 261.6 Hz.'),
+        ('d4', 'D4', 'Rê (D4)', 'Nốt Rê (D4) nằm giữa 2 phím đen C# và D#, cao hơn Đô 1 cung.'),
+        ('e4', 'E4', 'Mi (E4)', 'Nốt Mi (E4) nằm bên phải cụm 2 phím đen, là bậc III của Đô Trưởng.'),
+        ('f4', 'F4', 'Fa (F4)', 'Nốt Fa (F4) nằm bên trái cụm 3 phím đen, cách Mi nửa cung.'),
+        ('g4', 'G4', 'Sol (G4)', 'Nốt Sol (G4) cách Đô (C4) một quãng 5 đúng vững chãi.'),
+        ('a4', 'A4', 'La (A4)', 'Nốt La (A4) có tần số chuẩn 440 Hz, bậc VI trong giọng Đô Trưởng.'),
+        ('b4', 'B4', 'Si (B4)', 'Nốt Si (B4) là nốt dẫn nằm ngay dưới Đô cao (C5) nửa cung.'),
+      ];
+
+      final interAccidentalNotes = [
+        ('csharp4', 'C#4', 'Đô# / Rêb (C#4)', 'Nốt Đô thăng (C#4 / Db4) là phím đen đầu tiên trong cụm 2 phím đen.'),
+        ('dsharp4', 'D#4', 'Rê# / Mib (D#4)', 'Nốt Rê thăng (D#4 / Eb4) tạo quãng 3 thứ trầm buồn khi tính từ Đô (C4).'),
+        ('fsharp4', 'F#4', 'Fa# / Solb (F#4)', 'Nốt Fa thăng (F#4 / Gb4) là phím đen đầu tiên trong cụm 3 phím đen.'),
+        ('gsharp4', 'G#4', 'Sol# / Lab (G#4)', 'Nốt Sol thăng (G#4 / Ab4) nằm ở giữa cụm 3 phím đen.'),
+        ('asharp4', 'A#4', 'La# / Sib (A#4)', 'Nốt La thăng (A#4 / Bb4) là phím đen ngoài cùng bên phải của cụm 3 phím đen.'),
+      ];
+
+      final advMultiOctaveNotes = [
+        ('c3', 'C3', 'Đô trầm (C3)', 'Nốt Đô quãng 3 (C3 - 130.8 Hz), thấp hơn Đô chuẩn (C4) đúng 1 quãng tám.'),
+        ('g3', 'G3', 'Sol trầm (G3)', 'Nốt Sol quãng 3 (G3 - 196.0 Hz), nằm ở âm vực trầm ấm dưới C4.'),
+        ('a3', 'A3', 'La trầm (A3)', 'Nốt La quãng 3 (A3 - 220.0 Hz), thấp hơn La chuẩn (A4) đúng 1 quãng tám.'),
+        ('c5', 'C5', 'Đô cao (C5)', 'Nốt Đô quãng 5 (C5 - 523.3 Hz), cao hơn Đô chuẩn (C4) đúng 1 quãng tám.'),
+        ('e5', 'E5', 'Mi cao (E5)', 'Nốt Mi quãng 5 (E5 - 659.3 Hz), mang âm sắc sáng rõ ở quãng tám trên.'),
+        ('g5', 'G5', 'Sol cao (G5)', 'Nốt Sol quãng 5 (G5 - 784.0 Hz), nằm ở âm vực cao trong sáng.'),
+      ];
+
+      final noteDefs = [
+        ...baseNotes,
+        if (isInter) ...interAccidentalNotes,
+        if (isAdvanced) ...advMultiOctaveNotes,
+      ];
 
       for (int i = 0; i < noteDefs.length; i++) {
         final (fileKey, optKey, label, desc) = noteDefs[i];
@@ -176,8 +199,10 @@ class HybridQuestionGenerator {
             levelId: levelId,
             type: i.isEven ? 'listen_note' : 'piano_key',
             prompt: isAdvanced
-                ? '[Nâng cao - Không tham chiếu] Nghe âm thanh và chọn chính xác tên nốt:'
-                : 'Nghe nốt nhạc (có thể bấm nghe nốt chuẩn Đô C4) và chọn đáp án đúng:',
+                ? '[Nâng cao - Đa quãng tám] Nghe âm thanh (không tham chiếu C4) và chọn chính xác tên nốt:'
+                : (isInter
+                    ? 'Nghe cao độ nốt nhạc (bao gồm cả dấu hóa #/b, đối chiếu C4) và chọn đáp án đúng:'
+                    : 'Nghe nốt nhạc (có thể bấm nghe nốt chuẩn Đô C4) và chọn đáp án đúng:'),
             explanation: desc,
             audioAsset: 'assets/audio/notes/$fileKey.wav',
             difficulty: diff,
@@ -193,13 +218,19 @@ class HybridQuestionGenerator {
       final modeSuffix = isAdvanced ? 'harm' : (isInter ? 'desc' : 'asc');
 
       final intervalDefs = [
-        ('M2', 'Quãng 2 trưởng', 'Cách nhau 1 cung nguyên (2 nửa cung).'),
-        ('m3', 'Quãng 3 thứ', 'Cách nhau 1,5 cung (3 nửa cung), âm hưởng mềm mại/trầm.'),
-        ('M3', 'Quãng 3 trưởng', 'Cách nhau 2 cung (4 nửa cung), âm hưởng sáng rõ.'),
-        ('P4', 'Quãng 4 đúng', 'Cách nhau 2,5 cung (5 nửa cung), âm hưởng mở đầu hào hùng.'),
-        ('P5', 'Quãng 5 đúng', 'Cách nhau 3,5 cung (7 nửa cung), độ hòa hợp rất vững.'),
-        ('M6', 'Quãng 6 trưởng', 'Cách nhau 4,5 cung (9 nửa cung), âm hưởng ấm áp.'),
-        ('P8', 'Quãng 8 đúng (Octave)', 'Cách nhau 6 cung (12 nửa cung), lặp lại tên nốt ở quãng tám mới.'),
+        ('maj2', 'Quãng 2 trưởng', 'Cách nhau 1 cung nguyên (2 nửa cung).'),
+        ('min3', 'Quãng 3 thứ', 'Cách nhau 1,5 cung (3 nửa cung), âm hưởng mềm mại/trầm.'),
+        ('maj3', 'Quãng 3 trưởng', 'Cách nhau 2 cung (4 nửa cung), âm hưởng sáng rõ.'),
+        ('p4', 'Quãng 4 đúng', 'Cách nhau 2,5 cung (5 nửa cung), âm hưởng mở đầu vững vàng.'),
+        ('p5', 'Quãng 5 đúng', 'Cách nhau 3,5 cung (7 nửa cung), độ hòa hợp rất vững.'),
+        ('maj6', 'Quãng 6 trưởng', 'Cách nhau 4,5 cung (9 nửa cung), âm hưởng ấm áp.'),
+        ('p8', 'Quãng 8 đúng (Octave)', 'Cách nhau 6 cung (12 nửa cung), lặp lại tên nốt ở quãng tám mới.'),
+        if (isInter || isAdvanced)
+          ('min2', 'Quãng 2 thứ', 'Cách nhau nửa cung (1 bán âm), tạo cảm giác sát gần kịch tính.'),
+        if (isAdvanced)
+          ('tritone', 'Quãng 4 tăng / 5 giảm (Tritone)', 'Cách nhau 3 cung nguyên (6 nửa cung), có độ căng hòa thanh mạnh.'),
+        if (isAdvanced)
+          ('maj7', 'Quãng 7 trưởng', 'Cách nhau 5,5 cung (11 nửa cung), âm hưởng sắc nét hiện đại.'),
       ];
 
       for (int i = 0; i < intervalDefs.length; i++) {

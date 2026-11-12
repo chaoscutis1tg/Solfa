@@ -524,7 +524,7 @@ class _RewardedVideoAdPlayerDialogState
   void initState() {
     super.initState();
     if (!widget.isTestMode) {
-      widget.onPlayPreviewSound('audio/keys/c_major_cadence.wav');
+      widget.onPlayPreviewSound('assets/audio/keys/c_major.wav');
       _videoTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
         if (!mounted) return;
         setState(() {
@@ -534,9 +534,9 @@ class _RewardedVideoAdPlayerDialogState
         // Play pleasant musical cues on scene transitions
         if (!_isMuted) {
           if (_elapsedSeconds == 5) {
-            widget.onPlayPreviewSound('audio/intervals/c4_g4_asc.wav');
+            widget.onPlayPreviewSound('assets/audio/intervals/c4_p5_asc.wav');
           } else if (_elapsedSeconds == 10) {
-            widget.onPlayPreviewSound('audio/keys/g_major_cadence.wav');
+            widget.onPlayPreviewSound('assets/audio/keys/g_major.wav');
           }
         }
 

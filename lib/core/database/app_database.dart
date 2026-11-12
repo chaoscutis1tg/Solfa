@@ -278,6 +278,27 @@ class AppDatabase {
           conflictAlgorithm: ConflictAlgorithm.ignore,
         );
       }
+
+      // Normalize any legacy interval audio paths from earlier versions
+      const legacyIntervalFixes = <String, String>{
+        '_M2_': '_maj2_',
+        '_m2_': '_min2_',
+        '_M3_': '_maj3_',
+        '_m3_': '_min3_',
+        '_P4_': '_p4_',
+        '_P5_': '_p5_',
+        '_M6_': '_maj6_',
+        '_m6_': '_min6_',
+        '_M7_': '_maj7_',
+        '_m7_': '_min7_',
+        '_P8_': '_p8_',
+      };
+      for (final entry in legacyIntervalFixes.entries) {
+        await txn.rawUpdate(
+          'UPDATE questions SET audio_asset = REPLACE(audio_asset, ?, ?) WHERE audio_asset LIKE ?',
+          [entry.key, entry.value, '%${entry.key}%'],
+        );
+      }
     });
   }
 

@@ -54,6 +54,77 @@ class SettingsScreen extends ConsumerWidget {
     }
   }
 
+  Future<void> _showPrivacyAndLegalDialog(BuildContext context) async {
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.verified_user_rounded, color: AppColors.primary, size: 22),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Quyền riêng tư & Pháp lý',
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+              ),
+            ),
+          ],
+        ),
+        content: const SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '1. Bảo vệ dữ liệu cá nhân (Offline-First)',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5),
+              ),
+              SizedBox(height: 4),
+              Text(
+                '• Solfa hoạt động 100% ngoại tuyến (Offline-first) cho toàn bộ tính năng học tập và máy đếm nhịp.\n'
+                '• Ứng dụng KHÔNG yêu cầu đăng ký tài khoản, KHÔNG thu thập họ tên, email, vị trí, danh bạ hay microphone.\n'
+                '• Lịch sử học tập và cài đặt chỉ lưu cục bộ trên thiết bị của bạn (SQLite) và có thể xóa vĩnh viễn bất kỳ lúc nào tại mục "Xóa dữ liệu lịch sử học tập" (tuân thủ Nghị định 13/2023/NĐ-CP & Google Play Data Safety).',
+                style: TextStyle(fontSize: 12.5, height: 1.42),
+              ),
+              SizedBox(height: 12),
+              Text(
+                '2. Bản quyền âm thanh & Nội dung học thuật',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5),
+              ),
+              SizedBox(height: 4),
+              Text(
+                '• Toàn bộ mẫu âm thanh nốt nhạc Piano, quãng, vòng hòa âm và tiếng máy đếm nhịp cơ học (44.1kHz PCM WAV) được tổng hợp độc quyền bằng thuật toán xử lý tín hiệu số (DSP) của Solfa.\n'
+                '• Nội dung nhạc lý thuộc phạm vi kiến thức âm nhạc phổ quát, không sử dụng bản ghi âm hoặc tác phẩm có bản quyền của bên thứ ba.',
+                style: TextStyle(fontSize: 12.5, height: 1.42),
+              ),
+              SizedBox(height: 12),
+              Text(
+                '3. Chính sách Quảng cáo tự nguyện',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5),
+              ),
+              SizedBox(height: 4),
+              Text(
+                '• Solfa cam kết không hiển thị quảng cáo tự động gây gián đoạn bài học.\n'
+                '• Quyền kết nối Internet chỉ được sử dụng khi bạn chủ động bấm xem video tại mục "Hỗ trợ nhà phát triển".',
+                style: TextStyle(fontSize: 12.5, height: 1.42),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              minimumSize: const Size(110, 40),
+            ),
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Đã hiểu'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(appSettingsProvider);
@@ -452,10 +523,10 @@ class SettingsScreen extends ConsumerWidget {
 
             const SizedBox(height: 16),
 
-            // 4. Hỗ trợ nhà phát triển & Quản lý dữ liệu
+            // 4. Hỗ trợ, Quản lý dữ liệu & Pháp lý
             const _SectionHeader(
               icon: Icons.shield_outlined,
-              title: 'Hỗ trợ & Quản lý dữ liệu',
+              title: 'Hỗ trợ, Dữ liệu & Pháp lý',
             ),
             const SizedBox(height: 8),
             Card(
@@ -489,6 +560,76 @@ class SettingsScreen extends ConsumerWidget {
                     ),
                     trailing: const Icon(Icons.chevron_right_rounded),
                     onTap: () => context.push('/support-developer'),
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    key: const Key('tile_privacy_legal'),
+                    leading: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: AppColors.correct.withOpacity(0.14),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.verified_user_outlined,
+                        color: AppColors.correct,
+                        size: 20,
+                      ),
+                    ),
+                    title: const Text(
+                      'Chính sách Quyền riêng tư & Pháp lý',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 14.5,
+                      ),
+                    ),
+                    subtitle: const Text(
+                      'Bảo vệ dữ liệu cá nhân, bản quyền âm thanh & điều khoản',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () => _showPrivacyAndLegalDialog(context),
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    key: const Key('tile_open_source_licenses'),
+                    leading: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: AppColors.secondary.withOpacity(0.14),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.description_outlined,
+                        color: AppColors.secondary,
+                        size: 20,
+                      ),
+                    ),
+                    title: const Text(
+                      'Giấy phép mã nguồn mở',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 14.5,
+                      ),
+                    ),
+                    subtitle: const Text(
+                      'Danh mục thư viện phần mềm nguồn mở (MIT / BSD / Apache)',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () => showLicensePage(
+                      context: context,
+                      applicationName: 'Solfa Studio',
+                      applicationVersion: '1.1.0 (Offline-First)',
+                      applicationIcon: const Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: SolfaLogo(size: 56),
+                      ),
+                      applicationLegalese:
+                          '© 2026 Solfa Studio. Bản quyền âm thanh DSP 44.1kHz và nội dung nhạc lý thuộc về Solfa.',
+                    ),
                   ),
                   const Divider(height: 1),
                   ListTile(
