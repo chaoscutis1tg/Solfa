@@ -15,7 +15,7 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace = "vn.solfa.app.solfa"
-    compileSdk = 35
+    compileSdk = 36
     ndkVersion = "26.1.10909125"
 
     compileOptions {
@@ -29,8 +29,8 @@ android {
 
     defaultConfig {
         applicationId = "vn.solfa.app.solfa"
-        minSdk = flutter.minSdkVersion
-        targetSdk = 35
+        minSdk = 24
+        targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
@@ -49,6 +49,9 @@ android {
     buildTypes {
         release {
             signingConfig = keystorePropertiesFile.exists() ? signingConfigs.release : signingConfigs.debug
+            ndk {
+                debugSymbolLevel 'SYMBOL_TABLE'
+            }
         }
     }
 }
