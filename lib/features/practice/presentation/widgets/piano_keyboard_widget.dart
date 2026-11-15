@@ -261,16 +261,14 @@ class _PianoKeyboardWidgetState extends State<PianoKeyboardWidget> {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.only(top: 5),
+          padding: const EdgeInsets.only(top: 4),
           child: Text(
             widget.showHighlight
-                ? '💡 Chạm vào các phím đàn để nghe và so sánh cao độ trực tiếp'
-                : (widget.enableBlackKeys
-                    ? '🎹 Chạm trực tiếp phím trắng/đen (#/b) để chọn đáp án hoặc chọn A/B/C/D bên dưới'
-                    : '🎹 Chạm trực tiếp phím trắng (Đô–Si) để chọn đáp án hoặc chọn A/B/C/D bên dưới'),
+                ? '💡 Chạm phím đàn để nghe đối chiếu cao độ'
+                : '🎹 Chạm phím đàn hoặc chọn đáp án bên dưới',
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 11.2,
+              fontSize: 11,
               fontWeight: FontWeight.w600,
               color: Theme.of(context)
                   .textTheme

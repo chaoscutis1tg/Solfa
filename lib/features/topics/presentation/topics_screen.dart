@@ -92,47 +92,53 @@ class TopicsScreen extends ConsumerWidget {
             // 1. Practice Duration & Scoring Selector Card
             Card(
               child: Padding(
-                padding: const EdgeInsets.all(15),
+                padding: const EdgeInsets.all(13),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.14),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Icon(
-                            Icons.timer_outlined,
-                            color: AppColors.primary,
-                            size: 20,
+                        const Icon(
+                          Icons.timer_outlined,
+                          color: AppColors.primary,
+                          size: 19,
+                        ),
+                        const SizedBox(width: 8),
+                        const Expanded(
+                          child: Text(
+                            'Thời gian luyện tập',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
                         ),
-                        const SizedBox(width: 10),
-                        const Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Thời gian luyện tập & Tính điểm',
-                                style: TextStyle(
-                                  fontSize: 15.5,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                              SizedBox(height: 2),
-                              Text(
-                                'Đếm trực tiếp số nốt Đúng / Sai (+10 điểm / nốt đúng)',
-                                style: TextStyle(fontSize: 12),
-                              ),
-                            ],
+                        TextButton.icon(
+                          key: const Key('btn_topics_open_free_piano'),
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            minimumSize: const Size(0, 32),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            backgroundColor:
+                                const Color(0xFF635BFF).withOpacity(0.12),
+                            foregroundColor: const Color(0xFF635BFF),
+                          ),
+                          onPressed: () => showFreePianoExplorerSheet(context),
+                          icon: const Icon(Icons.piano_rounded, size: 16),
+                          label: const Text(
+                            'Đàn C3–C5',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
                     Row(
                       children: [
                         _DurationOptionButton(
@@ -179,24 +185,6 @@ class TopicsScreen extends ConsumerWidget {
                               .state = 0,
                         ),
                       ],
-                    ),
-                    const SizedBox(height: 10),
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        key: const Key('btn_topics_open_free_piano'),
-                        style: OutlinedButton.styleFrom(
-                          minimumSize: const Size(double.infinity, 40),
-                        ),
-                        onPressed: () => showFreePianoExplorerSheet(context),
-                        icon: const Icon(Icons.piano_rounded, size: 18),
-                        label: const FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text(
-                            'Mở Đàn Piano & Tra cứu Khuông nhạc tự do (C3–C5)',
-                          ),
-                        ),
-                      ),
                     ),
                   ],
                 ),
@@ -315,11 +303,13 @@ class TopicsScreen extends ConsumerWidget {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 8),
                           Text(
                             topic.description,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style:
-                                const TextStyle(fontSize: 13.5, height: 1.38),
+                                const TextStyle(fontSize: 13, height: 1.32),
                           ),
                           if (topic.id == 'topic_notes' ||
                               topic.id == 'topic_staff_reading') ...[

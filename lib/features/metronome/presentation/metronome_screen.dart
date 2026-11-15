@@ -626,7 +626,7 @@ class _MetronomeScreenState extends ConsumerState<MetronomeScreen>
 
                 const SizedBox(height: 10),
                 const Text(
-                  'Chia nhỏ phách (Subdivision • Tempo Lite)',
+                  'Chia nhỏ phách (Subdivision)',
                   style: TextStyle(
                     fontSize: 13.5,
                     fontWeight: FontWeight.w800,
@@ -653,7 +653,7 @@ class _MetronomeScreenState extends ConsumerState<MetronomeScreen>
 
                 const SizedBox(height: 10),
                 const Text(
-                  'Âm sắc máy đếm nhịp (Chuẩn Tempo Lite & Cơ học)',
+                  'Âm sắc nhịp',
                   style: TextStyle(
                     fontSize: 13.5,
                     fontWeight: FontWeight.w800,
@@ -977,8 +977,8 @@ class _BeatIndicatorHeader extends ConsumerWidget {
                     fit: BoxFit.scaleDown,
                     child: Text(
                       beatData.isRunning
-                          ? 'Phách hiện tại: ${beatData.currentBeat} / ${beatData.numerator} (Chạm số phách để đổi Nhấn/Thường/Tắt)'
-                          : 'Chạm số phách bên dưới để đổi: Nhấn (Cam) • Thường (Xanh) • Tắt',
+                          ? 'Phách ${beatData.currentBeat} / ${beatData.numerator}'
+                          : 'Chạm số phách để đổi: Nhấn • Thường • Tắt',
                       maxLines: 1,
                       style: TextStyle(
                         fontWeight: FontWeight.w700,

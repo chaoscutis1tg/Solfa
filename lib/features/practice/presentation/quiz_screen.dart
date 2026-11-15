@@ -603,33 +603,15 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
                   ),
                 ),
 
-                const SizedBox(height: 10),
-                Padding(
-                  padding: const EdgeInsets.only(left: 4, bottom: 6),
-                  child: Row(
-                    children: [
-                      const Text(
-                        'Chọn đáp án:',
-                        style: TextStyle(
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Đúng: tự chuyển sau 0.8s • Sai: dừng giải thích',
-                          textAlign: TextAlign.right,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: Theme.of(context).textTheme.bodySmall?.color,
-                          ),
-                        ),
-                      ),
-                    ],
+                const SizedBox(height: 8),
+                const Padding(
+                  padding: EdgeInsets.only(left: 4, bottom: 5),
+                  child: Text(
+                    'Chọn đáp án:',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
 

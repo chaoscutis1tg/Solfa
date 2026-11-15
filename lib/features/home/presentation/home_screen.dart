@@ -74,7 +74,7 @@ class HomeScreen extends ConsumerWidget {
         children: [
           // 1. Hero Quick Practice Banner (UC-02)
           Container(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
                 colors: [
@@ -97,65 +97,38 @@ class HomeScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
+                const Row(
                   children: [
-                    Flexible(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.18),
-                          borderRadius: BorderRadius.circular(99),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.bolt_rounded,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Phòng luyện cảm âm nhanh',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 19,
+                              fontWeight: FontWeight.w800,
+                              height: 1.2,
+                            ),
+                          ),
+                          SizedBox(height: 3),
+                          Text(
+                            'Tính điểm Đúng / Sai trực tiếp • 100% Offline',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
                               color: Color(0xFFFFD166),
-                              size: 15,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
                             ),
-                            SizedBox(width: 4),
-                            Flexible(
-                              child: Text(
-                                'Tính điểm nốt Đúng / Sai • Offline',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    const SolfaLogo(size: 44, showShadow: false),
+                    SizedBox(width: 8),
+                    SolfaLogo(size: 40, showShadow: false),
                   ],
-                ),
-                const SizedBox(height: 10),
-                const Text(
-                  'Phòng luyện cảm âm nhanh',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20.5,
-                    fontWeight: FontWeight.w800,
-                    height: 1.22,
-                  ),
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  'Chọn thời gian luyện tập (60 giây, 15 phút, 1 tiếng hoặc Không giới hạn) và xem điểm số nốt đúng/sai trực tiếp.',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.92),
-                    fontSize: 13,
-                    height: 1.35,
-                  ),
                 ),
                 const SizedBox(height: 12),
                 // Quick Duration Mode Pills
@@ -194,71 +167,77 @@ class HomeScreen extends ConsumerWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 14),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    key: const Key('btn_quick_practice'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: AppColors.primaryDark,
-                      elevation: 0,
-                      minimumSize: const Size(double.infinity, 50),
-                    ),
-                    onPressed: () => _startQuickPractice(context, ref),
-                    icon: const Icon(
-                      Icons.play_circle_fill_rounded,
-                      size: 22,
-                      color: AppColors.accentAmber,
-                    ),
-                    label: Text(
-                      'Luyện tập ngay (${TopicsScreen.durationLabel(selectedDuration)})',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    key: const Key('btn_quick_staff_reading'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      backgroundColor: Colors.white.withOpacity(0.14),
-                      side: BorderSide(
-                        color: Colors.white.withOpacity(0.45),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 6,
+                      child: ElevatedButton.icon(
+                        key: const Key('btn_quick_practice'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: AppColors.primaryDark,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          minimumSize: const Size(double.infinity, 44),
+                        ),
+                        onPressed: () => _startQuickPractice(context, ref),
+                        icon: const Icon(
+                          Icons.play_circle_fill_rounded,
+                          size: 20,
+                          color: AppColors.accentAmber,
+                        ),
+                        label: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            'Luyện tập ngay (${TopicsScreen.durationLabel(selectedDuration)})',
+                          ),
+                        ),
                       ),
-                      minimumSize: const Size(double.infinity, 44),
                     ),
-                    onPressed: () => _startQuickPractice(
-                      context,
-                      ref,
-                      topicId: 'topic_staff_reading',
+                    const SizedBox(width: 8),
+                    Expanded(
+                      flex: 5,
+                      child: OutlinedButton.icon(
+                        key: const Key('btn_quick_staff_reading'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          backgroundColor: Colors.white.withOpacity(0.14),
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          side: BorderSide(
+                            color: Colors.white.withOpacity(0.45),
+                          ),
+                          minimumSize: const Size(double.infinity, 44),
+                        ),
+                        onPressed: () => _startQuickPractice(
+                          context,
+                          ref,
+                          topicId: 'topic_staff_reading',
+                        ),
+                        icon: const Icon(
+                          Icons.menu_book_rounded,
+                          size: 18,
+                          color: Color(0xFFFFD166),
+                        ),
+                        label: const FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text('Đọc khuông 𝄞/𝄢'),
+                        ),
+                      ),
                     ),
-                    icon: const Icon(
-                      Icons.menu_book_rounded,
-                      size: 19,
-                      color: Color(0xFFFFD166),
-                    ),
-                    label: Text(
-                      'Luyện Đọc nốt nhạc trên khuông (${TopicsScreen.durationLabel(selectedDuration)})',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
+                  ],
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
 
-          // 2. Quick Utility Bento Row (Metronome + Review)
+          // 2. Quick Utility Bento Row (Đàn Piano C3–C5 + Ôn câu sai)
           progressAsync.maybeWhen(
             data: (stats) => _buildUtilityRow(context, stats),
             orElse: () => _buildUtilityRow(context, null),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
 
           // 3. Progress / First-Time Guidance Section (UC-01)
           progressAsync.when(
@@ -277,67 +256,7 @@ class HomeScreen extends ConsumerWidget {
             data: (stats) => _buildProgressSection(context, ref, stats),
           ),
 
-          const SizedBox(height: 12),
-
-          // 3b. Free Piano & Staff Explorer Card (C3–C5)
-          Card(
-            child: InkWell(
-              key: const Key('btn_open_free_piano_explorer'),
-              borderRadius: BorderRadius.circular(20),
-              onTap: () => showFreePianoExplorerSheet(context),
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF635BFF).withOpacity(0.14),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
-                        Icons.piano_rounded,
-                        color: Color(0xFF635BFF),
-                        size: 22,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Đàn Piano & Tra cứu Khuông nhạc (C3–C5)',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w800,
-                              fontSize: 14,
-                            ),
-                          ),
-                          SizedBox(height: 2),
-                          Text(
-                            'Bấm phím nghe tự do • Xem vị trí Khóa Sol 𝄞, Khóa Fa 𝄢 & tần số Hz',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(fontSize: 11.5),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Icon(
-                      Icons.chevron_right_rounded,
-                      color: Color(0xFF635BFF),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
 
           // 4. Core Topics Section Header
           Row(
@@ -396,28 +315,31 @@ class HomeScreen extends ConsumerWidget {
                       .firstOrNull;
                   final accent = AppColors.topicAccent(topic.code);
                   return Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
+                    padding: const EdgeInsets.only(bottom: 8),
                     child: Card(
                       child: InkWell(
                         borderRadius: BorderRadius.circular(20),
                         onTap: () => context.push('/topics/${topic.id}'),
                         child: Padding(
-                          padding: const EdgeInsets.all(15),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 11,
+                          ),
                           child: Column(
                             children: [
                               Row(
                                 children: [
                                   Container(
-                                    width: 48,
-                                    height: 48,
+                                    width: 42,
+                                    height: 42,
                                     decoration: BoxDecoration(
                                       color: accent.withOpacity(0.14),
-                                      borderRadius: BorderRadius.circular(14),
+                                      borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Icon(
                                       _iconForTopic(topic.code),
                                       color: accent,
-                                      size: 25,
+                                      size: 22,
                                     ),
                                   ),
                                   const SizedBox(width: 12),
@@ -435,7 +357,7 @@ class HomeScreen extends ConsumerWidget {
                                                 overflow:
                                                     TextOverflow.ellipsis,
                                                 style: const TextStyle(
-                                                  fontSize: 16,
+                                                  fontSize: 15,
                                                   fontWeight: FontWeight.w800,
                                                 ),
                                               ),
@@ -457,7 +379,7 @@ class HomeScreen extends ConsumerWidget {
                                                 child: Text(
                                                   '${topicAcc.accuracyPercent.toStringAsFixed(0)}%',
                                                   style: TextStyle(
-                                                    fontSize: 12,
+                                                    fontSize: 11.5,
                                                     fontWeight: FontWeight.w800,
                                                     color: accent,
                                                   ),
@@ -465,14 +387,14 @@ class HomeScreen extends ConsumerWidget {
                                               ),
                                           ],
                                         ),
-                                        const SizedBox(height: 3),
+                                        const SizedBox(height: 2),
                                         Text(
                                           topic.description,
-                                          maxLines: 2,
+                                          maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                           style: const TextStyle(
-                                            fontSize: 13,
-                                            height: 1.32,
+                                            fontSize: 12.2,
+                                            height: 1.28,
                                           ),
                                         ),
                                       ],
@@ -487,13 +409,13 @@ class HomeScreen extends ConsumerWidget {
                               ),
                               if (topicAcc != null &&
                                   topicAcc.totalAnswered > 0) ...[
-                                const SizedBox(height: 10),
+                                const SizedBox(height: 8),
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(99),
                                   child: LinearProgressIndicator(
                                     value: (topicAcc.accuracyPercent / 100.0)
                                         .clamp(0.0, 1.0),
-                                    minHeight: 5,
+                                    minHeight: 4,
                                     backgroundColor: accent.withOpacity(0.14),
                                     valueColor:
                                         AlwaysStoppedAnimation<Color>(accent),
@@ -624,45 +546,46 @@ class HomeScreen extends ConsumerWidget {
         Expanded(
           child: Card(
             child: InkWell(
+              key: const Key('btn_open_free_piano_explorer'),
               borderRadius: BorderRadius.circular(20),
-              onTap: () => context.go('/metronome'),
+              onTap: () => showFreePianoExplorerSheet(context),
               child: Padding(
-                padding: const EdgeInsets.all(13),
+                padding: const EdgeInsets.all(12),
                 child: Row(
                   children: [
                     Container(
-                      width: 40,
-                      height: 40,
+                      width: 38,
+                      height: 38,
                       decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.14),
-                        borderRadius: BorderRadius.circular(12),
+                        color: const Color(0xFF635BFF).withOpacity(0.14),
+                        borderRadius: BorderRadius.circular(11),
                       ),
                       child: const Icon(
-                        Icons.av_timer_rounded,
-                        color: AppColors.primary,
-                        size: 22,
+                        Icons.piano_rounded,
+                        color: Color(0xFF635BFF),
+                        size: 20,
                       ),
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 9),
                     const Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Metronome',
+                            'Đàn & Khuông',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontWeight: FontWeight.w800,
-                              fontSize: 14,
+                              fontSize: 13.5,
                             ),
                           ),
                           SizedBox(height: 2),
                           Text(
-                            'Tempo Lite & Nhịp cơ',
+                            'Tra cứu C3–C5 & Hợp âm',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(fontSize: 11.5),
+                            style: TextStyle(fontSize: 11),
                           ),
                         ],
                       ),
@@ -680,18 +603,18 @@ class HomeScreen extends ConsumerWidget {
               borderRadius: BorderRadius.circular(20),
               onTap: () => context.push('/review'),
               child: Padding(
-                padding: const EdgeInsets.all(13),
+                padding: const EdgeInsets.all(12),
                 child: Row(
                   children: [
                     Container(
-                      width: 40,
-                      height: 40,
+                      width: 38,
+                      height: 38,
                       decoration: BoxDecoration(
                         color: (pendingCount > 0
                                 ? AppColors.wrong
                                 : AppColors.correct)
                             .withOpacity(0.14),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(11),
                       ),
                       child: Icon(
                         pendingCount > 0
@@ -700,10 +623,10 @@ class HomeScreen extends ConsumerWidget {
                         color: pendingCount > 0
                             ? AppColors.wrong
                             : AppColors.correct,
-                        size: 21,
+                        size: 20,
                       ),
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 9),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -714,7 +637,7 @@ class HomeScreen extends ConsumerWidget {
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontWeight: FontWeight.w800,
-                              fontSize: 14,
+                              fontSize: 13.5,
                             ),
                           ),
                           const SizedBox(height: 2),
@@ -725,7 +648,7 @@ class HomeScreen extends ConsumerWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              fontSize: 11.5,
+                              fontSize: 11,
                               fontWeight: pendingCount > 0
                                   ? FontWeight.w700
                                   : FontWeight.w500,
