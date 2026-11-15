@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../features/battle/presentation/battle_screen.dart';
 import '../features/home/presentation/home_screen.dart';
 import '../features/home/presentation/splash_screen.dart';
 import '../features/metronome/presentation/metronome_screen.dart';
@@ -118,6 +119,13 @@ GoRouter createSolfaRouter({String initialLocation = '/'}) {
         path: '/support-developer',
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const SupportDeveloperScreen(),
+      ),
+
+      // UI-13: Đấu Trường Âm Nhạc 1v1 (Battle Arena)
+      GoRoute(
+        path: '/battle',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const BattleScreen(),
       ),
     ],
   );

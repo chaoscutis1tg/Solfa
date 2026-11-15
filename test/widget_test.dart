@@ -7,6 +7,7 @@ import 'package:solfa/core/audio/audio_service.dart';
 import 'package:solfa/core/database/app_database.dart';
 import 'package:solfa/core/models/domain_models.dart';
 import 'package:solfa/core/providers/app_providers.dart';
+import 'package:solfa/features/battle/application/battle_controller.dart';
 import 'package:solfa/features/metronome/application/metronome_controller.dart';
 import 'package:solfa/features/practice/application/practice_session_controller.dart';
 import 'package:solfa/features/support_developer/application/rewarded_ad_controller.dart';
@@ -1083,6 +1084,128 @@ void main() {
           isNot(equals(fullQuestions[20].correctOption.optionKey)),
         );
         await sessionNotifier.abandonSessionIfIncomplete();
+      },
+    );
+
+    testWidgets(
+      'TC-21: Nút Nav Diamond Chiến đấu ở giữa & Đấu Trường Âm Nhạc 1v1 (Ghép trận, Bot AI 4 cấp, Đấu 2 người Split-Screen, Thanh máu HP, Bạo kích Combo & Bậc Xếp Hạng)',
+      (tester) async {
+        tester.view.physicalSize = const Size(360 * 3.0, 680 * 3.0);
+        tester.view.devicePixelRatio = 3.0;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+
+        await tester.runAsync(() async {
+          await db.seedContent();
+          await container.read(appSettingsProvider.notifier).loadSettings();
+          await container.read(overallProgressProvider.future);
+          await container.read(topicsListProvider.future);
+        });
+
+        Future<void> pumpFrames([int ms = 300]) async {
+          await tester.pump();
+          await tester.pump(Duration(milliseconds: ms));
+        }
+
+        final router = createSolfaRouter(initialLocation: '/home');
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: SolfaApp(customRouter: router),
+          ),
+        );
+        await pumpFrames();
+
+        // 1. Kiểm tra Nút Diamond CTA Chiến đấu nằm chính giữa thanh Bottom Nav
+        expect(find.byKey(const Key('btn_nav_diamond_battle')), findsOneWidget);
+        expect(find.byKey(const Key('nav_tab_home')), findsOneWidget);
+        expect(find.byKey(const Key('nav_tab_topics')), findsOneWidget);
+        expect(find.byKey(const Key('nav_tab_metronome')), findsOneWidget);
+        expect(find.byKey(const Key('nav_tab_progress')), findsOneWidget);
+
+        // Bấm vào nút Diamond ở giữa -> Mở màn hình Đấu Trường Âm Nhạc 1v1 (/battle)
+        await tester.tap(find.byKey(const Key('btn_nav_diamond_battle')));
+        await pumpFrames(350);
+        expect(find.byKey(const Key('battle_lobby_view')), findsOneWidget);
+        expect(tester.takeException(), isNull);
+
+        final battleNotifier = container.read(battleProvider.notifier);
+
+        // 2. Chế độ 1: Ghép Trận Ngẫu Nhiên 1v1 (Smart Matchmaking) + Bạo kích Combo -> Hạ gục K.O. & Thưởng +2 ⭐
+        await tester.runAsync(() async {
+          battleNotifier.setBattleMode(BattleMode.smartMatchmaking);
+          battleNotifier.setSelectedTopicId('all');
+          await battleNotifier.startBattle(seed: 88, roundCount: 8);
+        });
+        await pumpFrames(250);
+        expect(
+          find.byKey(const Key('battle_vs_matchmaking_view')),
+          findsOneWidget,
+        );
+        expect(tester.takeException(), isNull);
+
+        await tester.runAsync(() async {
+          await battleNotifier.enterArenaNow();
+        });
+        await pumpFrames(250);
+        expect(
+          find.byKey(const Key('battle_fighting_arena_view')),
+          findsOneWidget,
+        );
+        expect(tester.takeException(), isNull);
+
+        // Trả lời đúng liên tiếp cho tới khi K.O. đối thủ (player2Hp == 0)
+        await tester.runAsync(() async {
+          while (container.read(battleProvider).phase == BattlePhase.fighting) {
+            final curQ = container.read(battleProvider).currentQuestion!;
+            await battleNotifier.submitPlayer1Answer(curQ.correctOption);
+            await battleNotifier.nextRound();
+          }
+        });
+        await pumpFrames(250);
+
+        final afterMatch1 = container.read(battleProvider);
+        expect(afterMatch1.phase, equals(BattlePhase.finished));
+        expect(afterMatch1.didPlayer1Win, isTrue);
+        expect(afterMatch1.player2Hp, equals(0));
+        expect(afterMatch1.player1MaxCombo, greaterThanOrEqualTo(3));
+        expect(afterMatch1.starsDeltaLastMatch, equals(2));
+        expect(afterMatch1.totalStars, equals(2));
+        expect(afterMatch1.totalWins, equals(1));
+        expect(find.byKey(const Key('battle_result_view')), findsOneWidget);
+        expect(tester.takeException(), isNull);
+
+        // 3. Chế độ 2: Đấu 2 Người Trên 1 Máy (Local Split-Screen 1v1)
+        await tester.runAsync(() async {
+          await battleNotifier.backToLobby();
+          battleNotifier.setBattleMode(BattleMode.localSplitScreen);
+          battleNotifier.setSelectedTopicId('topic_notes');
+          await battleNotifier.startBattle(seed: 105, roundCount: 4);
+          await battleNotifier.enterArenaNow();
+        });
+        await pumpFrames(250);
+        expect(find.byKey(const Key('battle_p1_opt_0')), findsOneWidget);
+        expect(find.byKey(const Key('battle_p2_opt_0')), findsOneWidget);
+        expect(tester.takeException(), isNull);
+
+        // Hiệp 1: Người chơi 1 bấm sai (bị khóa và tự mất -12 HP), Người chơi 2 bấm đúng và tung đòn!
+        await tester.runAsync(() async {
+          final q1 = container.read(battleProvider).currentQuestion!;
+          final wrongOpt = q1.options.firstWhere((o) => !o.isCorrect);
+          await battleNotifier.submitPlayer1Answer(wrongOpt);
+          expect(container.read(battleProvider).p1LockedOut, isTrue);
+          expect(container.read(battleProvider).player1Hp, equals(88));
+          expect(container.read(battleProvider).isRoundResolved, isFalse);
+
+          await battleNotifier.submitPlayer2Answer(q1.correctOption);
+          expect(container.read(battleProvider).isRoundResolved, isTrue);
+          expect(container.read(battleProvider).roundWinner, equals('p2'));
+          expect(container.read(battleProvider).player1Hp, lessThan(88));
+        });
+        await pumpFrames(200);
+        expect(tester.takeException(), isNull);
       },
     );
   });
