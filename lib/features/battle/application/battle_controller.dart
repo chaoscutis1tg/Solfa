@@ -104,16 +104,19 @@ class BattleRankInfo {
 
 class BattleState {
   static const int maxHp = 100;
+  static const int maxDailyFreeBattles = 5;
 
   final BattlePhase phase;
   final BattleMode mode;
   final BotDifficulty botDifficulty;
   final String selectedTopicId; // 'all' or specific topic_id
 
-  // Persistent Rank Stats
+  // Persistent Rank & Daily Turn Stats
   final int totalStars;
   final int totalWins;
   final int totalMatches;
+  final int remainingBattlesToday;
+  final int adRestoredTurnsToday;
 
   // Match Fighters
   final String player1Name;
@@ -156,6 +159,8 @@ class BattleState {
     this.totalStars = 0,
     this.totalWins = 0,
     this.totalMatches = 0,
+    this.remainingBattlesToday = maxDailyFreeBattles,
+    this.adRestoredTurnsToday = 0,
     this.player1Name = 'Bạn',
     this.player1Title = 'Chiến binh Solfa',
     this.player2Name = 'Đối thủ',
@@ -187,6 +192,8 @@ class BattleState {
 
   BattleRankInfo get rankInfo => BattleRankInfo.fromStars(totalStars);
 
+  bool get canStartBattle => remainingBattlesToday > 0;
+
   QuestionModel? get currentQuestion =>
       (currentRoundIndex >= 0 && currentRoundIndex < questions.length)
           ? questions[currentRoundIndex]
@@ -217,6 +224,8 @@ class BattleState {
     int? totalStars,
     int? totalWins,
     int? totalMatches,
+    int? remainingBattlesToday,
+    int? adRestoredTurnsToday,
     String? player1Name,
     String? player1Title,
     String? player2Name,
@@ -257,6 +266,10 @@ class BattleState {
       totalStars: totalStars ?? this.totalStars,
       totalWins: totalWins ?? this.totalWins,
       totalMatches: totalMatches ?? this.totalMatches,
+      remainingBattlesToday:
+          remainingBattlesToday ?? this.remainingBattlesToday,
+      adRestoredTurnsToday:
+          adRestoredTurnsToday ?? this.adRestoredTurnsToday,
       player1Name: player1Name ?? this.player1Name,
       player1Title: player1Title ?? this.player1Title,
       player2Name: player2Name ?? this.player2Name,
@@ -343,6 +356,11 @@ class BattleNotifier extends StateNotifier<BattleState> {
     _autoNextRoundTimer = null;
   }
 
+  String _todayDateKey() {
+    final now = DateTime.now();
+    return '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+  }
+
   Future<void> loadRankStats() async {
     try {
       final stars =
@@ -351,10 +369,57 @@ class BattleNotifier extends StateNotifier<BattleState> {
           int.tryParse(await _db.getSetting('battle_wins') ?? '0') ?? 0;
       final matches =
           int.tryParse(await _db.getSetting('battle_matches') ?? '0') ?? 0;
+
+      final today = _todayDateKey();
+      final savedDate = await _db.getSetting('battle_energy_date');
+      int remainingTurns = BattleState.maxDailyFreeBattles;
+      int adRestoredToday = 0;
+
+      if (savedDate == today) {
+        remainingTurns = int.tryParse(
+              await _db.getSetting('battle_remaining_turns') ??
+                  '${BattleState.maxDailyFreeBattles}',
+            ) ??
+            BattleState.maxDailyFreeBattles;
+        adRestoredToday = int.tryParse(
+              await _db.getSetting('battle_ad_restored_today') ?? '0',
+            ) ??
+            0;
+      } else {
+        await _db.setSetting('battle_energy_date', today);
+        await _db.setSetting(
+          'battle_remaining_turns',
+          BattleState.maxDailyFreeBattles.toString(),
+        );
+        await _db.setSetting('battle_ad_restored_today', '0');
+      }
+
+      if (!mounted) return;
       state = state.copyWith(
         totalStars: stars,
         totalWins: wins,
         totalMatches: matches,
+        remainingBattlesToday: remainingTurns.clamp(0, 99),
+        adRestoredTurnsToday: adRestoredToday.clamp(0, 999),
+      );
+    } catch (_) {}
+  }
+
+  /// Restores +1 battle turn after the user completes watching a Rewarded Video Ad.
+  Future<void> restoreTurnFromRewardedAd({int turns = 1}) async {
+    final added = turns.clamp(1, 10);
+    final nextTurns = (state.remainingBattlesToday + added).clamp(0, 99);
+    final nextRestored = (state.adRestoredTurnsToday + added).clamp(0, 999);
+    state = state.copyWith(
+      remainingBattlesToday: nextTurns,
+      adRestoredTurnsToday: nextRestored,
+    );
+    try {
+      await _db.setSetting('battle_energy_date', _todayDateKey());
+      await _db.setSetting('battle_remaining_turns', nextTurns.toString());
+      await _db.setSetting(
+        'battle_ad_restored_today',
+        nextRestored.toString(),
       );
     } catch (_) {}
   }
@@ -372,8 +437,12 @@ class BattleNotifier extends StateNotifier<BattleState> {
   }
 
   /// Starts a 1v1 Battle Match (Matchmaking, Bot AI, or Local Split-Screen).
-  Future<void> startBattle({int? seed, int roundCount = 10}) async {
-    if (_isBusy) return;
+  /// Consumes 1 daily battle turn. Returns false if no turns remain today.
+  Future<bool> startBattle({int? seed, int roundCount = 10}) async {
+    if (_isBusy) return false;
+    if (state.remainingBattlesToday <= 0) {
+      return false;
+    }
     _isBusy = true;
     try {
       _cancelAllTimers();
@@ -391,8 +460,15 @@ class BattleNotifier extends StateNotifier<BattleState> {
 
       if (questions.isEmpty || !mounted) {
         if (mounted) state = state.copyWith(isLoading: false);
-        return;
+        return false;
       }
+
+      // Deduct 1 daily battle turn and persist to SQLite
+      final nextTurns = (state.remainingBattlesToday - 1).clamp(0, 99);
+      try {
+        await _db.setSetting('battle_energy_date', _todayDateKey());
+        await _db.setSetting('battle_remaining_turns', nextTurns.toString());
+      } catch (_) {}
 
       // Resolve fighter names & avatars based on mode
       String p1Name = 'Bạn';
@@ -439,6 +515,7 @@ class BattleNotifier extends StateNotifier<BattleState> {
 
       state = state.copyWith(
         isLoading: false,
+        remainingBattlesToday: nextTurns,
         phase: state.mode == BattleMode.smartMatchmaking
             ? BattlePhase.matchmaking
             : BattlePhase.vsIntro,
@@ -471,7 +548,7 @@ class BattleNotifier extends StateNotifier<BattleState> {
       );
 
       if (_audioService.isTestMode) {
-        return;
+        return true;
       }
 
       if (state.phase == BattlePhase.matchmaking) {
@@ -489,6 +566,7 @@ class BattleNotifier extends StateNotifier<BattleState> {
           enterArenaNow();
         });
       }
+      return true;
     } finally {
       _isBusy = false;
     }

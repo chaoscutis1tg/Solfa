@@ -1132,8 +1132,14 @@ void main() {
         expect(tester.takeException(), isNull);
 
         final battleNotifier = container.read(battleProvider.notifier);
+        expect(
+          container.read(battleProvider).remainingBattlesToday,
+          equals(BattleState.maxDailyFreeBattles),
+          reason: 'Mỗi ngày người chơi được cấp mặc định 5 lượt Đấu Trường miễn phí',
+        );
+        expect(find.byKey(const Key('battle_daily_turns_card')), findsOneWidget);
 
-        // 2. Chế độ 1: Ghép Trận Ngẫu Nhiên 1v1 (Smart Matchmaking) + Bạo kích Combo -> Hạ gục K.O. & Thưởng +2 ⭐
+        // 2. Chế độ 1: Ghép Trận Ngẫu Nhiên 1v1 (Smart Matchmaking) + Bạo kích Combo -> Hạ gục K.O. & Thưởng +2 ⭐ (Trừ 1 lượt: 5 -> 4)
         await tester.runAsync(() async {
           battleNotifier.setBattleMode(BattleMode.smartMatchmaking);
           battleNotifier.setSelectedTopicId('all');
@@ -1174,6 +1180,7 @@ void main() {
         expect(afterMatch1.starsDeltaLastMatch, equals(2));
         expect(afterMatch1.totalStars, equals(2));
         expect(afterMatch1.totalWins, equals(1));
+        expect(afterMatch1.remainingBattlesToday, equals(4));
         expect(find.byKey(const Key('battle_result_view')), findsOneWidget);
         expect(tester.takeException(), isNull);
 
@@ -1247,6 +1254,47 @@ void main() {
         });
         await pumpFrames(250);
         expect(find.byKey(const Key('battle_lobby_view')), findsOneWidget);
+        expect(container.read(battleProvider).remainingBattlesToday, equals(2));
+
+        // 6. Kiểm tra giới hạn 5 lượt/ngày: Dùng nốt 2 lượt còn lại (2 -> 1 -> 0) và kiểm tra chặn lượt thứ 6 + Xem QC hồi +1 lượt
+        await tester.runAsync(() async {
+          final ok4 = await battleNotifier.startBattle(seed: 111, roundCount: 4);
+          expect(ok4, isTrue);
+          expect(container.read(battleProvider).remainingBattlesToday, equals(1));
+          await battleNotifier.backToLobby();
+
+          final ok5 = await battleNotifier.startBattle(seed: 222, roundCount: 4);
+          expect(ok5, isTrue);
+          expect(container.read(battleProvider).remainingBattlesToday, equals(0));
+          expect(container.read(battleProvider).canStartBattle, isFalse);
+          await battleNotifier.backToLobby();
+
+          // Lượt thứ 6 khi đã hết 5 lượt miễn phí -> bị chặn (trả về false)
+          final ok6Blocked =
+              await battleNotifier.startBattle(seed: 333, roundCount: 4);
+          expect(ok6Blocked, isFalse);
+          expect(container.read(battleProvider).phase, equals(BattlePhase.lobby));
+        });
+        await pumpFrames(250);
+        expect(tester.takeException(), isNull);
+
+        // Xem 1 quảng cáo (hồi +1 lượt đấu & +100 Điểm Uy Tín ủng hộ nhà phát triển) -> Có thể vào trận lại ngay!
+        await tester.runAsync(() async {
+          await container
+              .read(rewardedAdProvider.notifier)
+              .completeWatchingAd(watchedToEnd: true);
+          await battleNotifier.restoreTurnFromRewardedAd(turns: 1);
+          expect(container.read(battleProvider).remainingBattlesToday, equals(1));
+          expect(container.read(battleProvider).adRestoredTurnsToday, equals(1));
+          expect(container.read(battleProvider).canStartBattle, isTrue);
+
+          final okAfterAd =
+              await battleNotifier.startBattle(seed: 444, roundCount: 4);
+          expect(okAfterAd, isTrue);
+          expect(container.read(battleProvider).remainingBattlesToday, equals(0));
+          await battleNotifier.backToLobby();
+        });
+        await pumpFrames(250);
         expect(tester.takeException(), isNull);
       },
     );

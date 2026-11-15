@@ -3,10 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/theme/app_colors.dart';
+import '../../../app/widgets/pulsing_red_heart.dart';
 import '../../../app/widgets/solfa_background.dart';
 import '../../../core/models/domain_models.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../practice/presentation/widgets/musical_staff_widget.dart';
+import '../../support_developer/presentation/support_developer_screen.dart';
 import '../application/battle_controller.dart';
 
 class BattleScreen extends ConsumerStatefulWidget {
@@ -60,6 +62,130 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
     } else if (state == AppLifecycleState.resumed) {
       ref.read(battleProvider.notifier).onAppResumed();
     }
+  }
+
+  Future<void> _handleWatchAdForTurn(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final restored = await showSolfaRewardedVideoAdModal(context, ref);
+    if (!context.mounted) return;
+    if (restored) {
+      final turns = ref.read(battleProvider).remainingBattlesToday;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: AppColors.correct,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          content: Row(
+            children: [
+              const Icon(Icons.bolt_rounded, color: Colors.white),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Đã hồi +1 Lượt Đấu Trường (Hiện có: $turns lượt) & +100 Điểm Uy Tín ủng hộ nhà phát triển!',
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _showOutOfTurnsDialog(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final shouldWatch = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        key: const Key('dialog_out_of_battle_turns'),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(22),
+        ),
+        contentPadding: const EdgeInsets.fromLTRB(20, 22, 20, 16),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 58,
+              height: 58,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF59E0B).withOpacity(0.16),
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: const Icon(
+                Icons.bolt_rounded,
+                color: Color(0xFFF59E0B),
+                size: 32,
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Đã Hết 5 Lượt Đấu Hôm Nay!',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Mỗi ngày Đấu Trường tặng 5 lượt miễn phí. Hãy xem 1 video quảng cáo ngắn (15 giây) để hồi ngay +1 lượt thi đấu và nhận +100 Điểm Uy Tín ủng hộ nhà phát triển nhé!',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 13, height: 1.38),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              height: 46,
+              child: ElevatedButton.icon(
+                key: const Key('btn_confirm_watch_ad_turn'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF4F46E5),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                onPressed: () => Navigator.of(ctx).pop(true),
+                icon: const Icon(Icons.smart_display_rounded, size: 20),
+                label: const Text(
+                  'Xem Video 15s (+1 Lượt Đấu)',
+                  style: TextStyle(fontWeight: FontWeight.w800),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Để sau'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (shouldWatch == true && context.mounted) {
+      await _handleWatchAdForTurn(context, ref);
+    }
+  }
+
+  Future<void> _onTapStartOrRematch(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final state = ref.read(battleProvider);
+    if (!state.canStartBattle) {
+      await _showOutOfTurnsDialog(context, ref);
+      return;
+    }
+    await ref.read(battleProvider.notifier).startBattle();
   }
 
   @override
@@ -123,6 +249,55 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
               ],
             ),
             actions: [
+              // Daily Battle Energy Pill (5 turns/day)
+              InkWell(
+                borderRadius: BorderRadius.circular(99),
+                onTap: () => _handleWatchAdForTurn(context, ref),
+                child: Container(
+                  key: const Key('badge_battle_turns_appbar'),
+                  margin: const EdgeInsets.only(right: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: (state.canStartBattle
+                            ? const Color(0xFFF59E0B)
+                            : AppColors.wrong)
+                        .withOpacity(0.16),
+                    borderRadius: BorderRadius.circular(99),
+                    border: Border.all(
+                      color: (state.canStartBattle
+                              ? const Color(0xFFF59E0B)
+                              : AppColors.wrong)
+                          .withOpacity(0.55),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.bolt_rounded,
+                        size: 15,
+                        color: state.canStartBattle
+                            ? const Color(0xFFF59E0B)
+                            : AppColors.wrong,
+                      ),
+                      const SizedBox(width: 2),
+                      Text(
+                        '${state.remainingBattlesToday}/${BattleState.maxDailyFreeBattles}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w900,
+                          color: state.canStartBattle
+                              ? (isDark
+                                  ? Colors.white
+                                  : const Color(0xFFD97706))
+                              : AppColors.wrong,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
               Container(
                 margin: const EdgeInsets.only(right: 12),
                 padding:
@@ -319,7 +494,11 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
             ],
           ),
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 12),
+
+        // 1B. Daily 5-Battle Energy & Watch-Ad Recovery Card
+        _buildDailyTurnsEnergyCard(context, ref, state, isDark),
+        const SizedBox(height: 16),
 
         // 2. Choose Battle Mode (Smart Matchmaking / Bot AI / Local 2P Split-Screen)
         const Text(
@@ -435,26 +614,176 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
           child: ElevatedButton.icon(
             key: const Key('btn_start_battle_now'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF4F46E5),
+              backgroundColor: state.canStartBattle
+                  ? const Color(0xFF4F46E5)
+                  : const Color(0xFFD97706),
               foregroundColor: Colors.white,
               elevation: 4,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
             ),
-            onPressed: state.isLoading ? null : () => notifier.startBattle(),
-            icon: const Icon(Icons.flash_on_rounded, size: 22),
-            label: const Text(
-              'VÀO ĐẤU TRƯỜNG NGAY (10 HIỆP)',
-              style: TextStyle(
-                fontSize: 15,
+            onPressed: state.isLoading
+                ? null
+                : () => _onTapStartOrRematch(context, ref),
+            icon: Icon(
+              state.canStartBattle
+                  ? Icons.flash_on_rounded
+                  : Icons.smart_display_rounded,
+              size: 22,
+            ),
+            label: Text(
+              state.canStartBattle
+                  ? 'VÀO ĐẤU TRƯỜNG NGAY (CÒN ${state.remainingBattlesToday}/${BattleState.maxDailyFreeBattles} LƯỢT)'
+                  : 'HẾT LƯỢT HÔM NAY • XEM QC HỒI +1 LƯỢT',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 14,
                 fontWeight: FontWeight.w900,
-                letterSpacing: 0.4,
+                letterSpacing: 0.3,
               ),
             ),
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildDailyTurnsEnergyCard(
+    BuildContext context,
+    WidgetRef ref,
+    BattleState state,
+    bool isDark,
+  ) {
+    final remaining = state.remainingBattlesToday;
+    const maxFree = BattleState.maxDailyFreeBattles;
+    final hasTurns = remaining > 0;
+    final accentColor = hasTurns ? const Color(0xFFF59E0B) : AppColors.wrong;
+
+    return Container(
+      key: const Key('battle_daily_turns_card'),
+      padding: const EdgeInsets.all(13),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.surfaceDark : Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: accentColor.withOpacity(0.45),
+          width: 1.4,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: accentColor.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                alignment: Alignment.center,
+                child: Icon(
+                  Icons.bolt_rounded,
+                  color: accentColor,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      hasTurns
+                          ? 'Năng lượng Đấu Trường: $remaining/$maxFree lượt hôm nay'
+                          : 'Đã dùng hết $maxFree/$maxFree lượt miễn phí hôm nay',
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w800,
+                        color: hasTurns ? null : AppColors.wrong,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    const Text(
+                      'Mỗi ngày có 5 lượt miễn phí • Xem 1 QC (15s) = Hồi +1 lượt & ủng hộ nhà phát triển',
+                      style: TextStyle(fontSize: 11.2, height: 1.28),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              // 5 Energy Bolt Segment Capsules
+              Expanded(
+                child: Row(
+                  children: [
+                    for (int i = 0; i < maxFree; i++) ...[
+                      if (i > 0) const SizedBox(width: 5),
+                      Expanded(
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 260),
+                          height: 10,
+                          decoration: BoxDecoration(
+                            gradient: i < remaining
+                                ? const LinearGradient(
+                                    colors: [
+                                      Color(0xFFF59E0B),
+                                      Color(0xFF4F46E5),
+                                    ],
+                                  )
+                                : null,
+                            color: i < remaining
+                                ? null
+                                : (isDark
+                                    ? Colors.white.withOpacity(0.12)
+                                    : const Color(0xFFE2E8F0)),
+                            borderRadius: BorderRadius.circular(99),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              OutlinedButton.icon(
+                key: const Key('btn_battle_watch_ad_turn'),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(0, 34),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  side: const BorderSide(
+                    color: kHeartRedColor,
+                    width: 1.3,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                onPressed: () => _handleWatchAdForTurn(context, ref),
+                icon: const PulsingRedHeart(size: 13),
+                label: const Text(
+                  '+1 Lượt (Xem QC)',
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w800,
+                    color: kHeartRedColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -883,47 +1212,67 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
           ),
         ),
 
-        // 2. Floating Combat Damage / Crit Banner
+        // 2. Floating Combat Damage / Crit Banner with smooth scale entrance
         if (state.combatBannerText != null) ...[
           const SizedBox(height: 8),
-          Container(
-            key: const Key('battle_combat_banner'),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: state.lastHitWasCrit
-                    ? [const Color(0xFFF59E0B), const Color(0xFFEF4444)]
-                    : (state.roundWinner == 'p1'
-                        ? [const Color(0xFF10B981), const Color(0xFF059669)]
-                        : [const Color(0xFFEC4899), const Color(0xFFBE185D)]),
-              ),
-              borderRadius: BorderRadius.circular(12),
+          TweenAnimationBuilder<double>(
+            key: ValueKey('banner_${state.currentRoundIndex}_${state.combatBannerText}'),
+            tween: Tween<double>(begin: 0.92, end: 1.0),
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutBack,
+            builder: (context, scale, child) => Transform.scale(
+              scale: scale,
+              child: child,
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  state.lastHitWasCrit
-                      ? Icons.local_fire_department_rounded
+            child: Container(
+              key: const Key('battle_combat_banner'),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: state.lastHitWasCrit
+                      ? [const Color(0xFFF59E0B), const Color(0xFFEF4444)]
                       : (state.roundWinner == 'p1'
-                          ? Icons.bolt_rounded
-                          : Icons.shield_rounded),
-                  color: Colors.white,
-                  size: 16,
+                          ? [const Color(0xFF10B981), const Color(0xFF059669)]
+                          : [const Color(0xFFEC4899), const Color(0xFFBE185D)]),
                 ),
-                const SizedBox(width: 6),
-                Flexible(
-                  child: Text(
-                    state.combatBannerText!,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: (state.lastHitWasCrit
+                            ? const Color(0xFFF59E0B)
+                            : const Color(0xFF4F46E5))
+                        .withOpacity(0.28),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    state.lastHitWasCrit
+                        ? Icons.local_fire_department_rounded
+                        : (state.roundWinner == 'p1'
+                            ? Icons.bolt_rounded
+                            : Icons.shield_rounded),
+                    color: Colors.white,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      state.combatBannerText!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ],
@@ -1102,11 +1451,16 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
         const SizedBox(height: 4),
         ClipRRect(
           borderRadius: BorderRadius.circular(99),
-          child: LinearProgressIndicator(
-            value: hpRatio,
-            minHeight: 9,
-            backgroundColor: color.withOpacity(0.14),
-            valueColor: AlwaysStoppedAnimation<Color>(hpColor),
+          child: TweenAnimationBuilder<double>(
+            tween: Tween<double>(begin: 1.0, end: hpRatio),
+            duration: const Duration(milliseconds: 350),
+            curve: Curves.easeOutCubic,
+            builder: (context, animatedRatio, _) => LinearProgressIndicator(
+              value: animatedRatio,
+              minHeight: 9,
+              backgroundColor: color.withOpacity(0.14),
+              valueColor: AlwaysStoppedAnimation<Color>(hpColor),
+            ),
           ),
         ),
         const SizedBox(height: 3),
@@ -1526,21 +1880,37 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
             ],
           ),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 16),
+        // Daily Turns Status & Watch-Ad Recovery on Result Screen
+        _buildDailyTurnsEnergyCard(context, ref, state, isDark),
+        const SizedBox(height: 14),
         SizedBox(
           width: double.infinity,
           height: 50,
           child: ElevatedButton.icon(
             key: const Key('btn_battle_rematch'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF4F46E5),
+              backgroundColor: state.canStartBattle
+                  ? const Color(0xFF4F46E5)
+                  : const Color(0xFFD97706),
               foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
             ),
-            onPressed: () => notifier.startBattle(),
-            icon: const Icon(Icons.replay_rounded),
-            label: const Text(
-              'TÁI ĐẤU NGAY',
-              style: TextStyle(fontWeight: FontWeight.w900),
+            onPressed: () => _onTapStartOrRematch(context, ref),
+            icon: Icon(
+              state.canStartBattle
+                  ? Icons.replay_rounded
+                  : Icons.smart_display_rounded,
+            ),
+            label: Text(
+              state.canStartBattle
+                  ? 'TÁI ĐẤU NGAY (CÒN ${state.remainingBattlesToday}/${BattleState.maxDailyFreeBattles} LƯỢT)'
+                  : 'HẾT LƯỢT • XEM QC HỒI +1 LƯỢT ĐẤU',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontWeight: FontWeight.w900),
             ),
           ),
         ),

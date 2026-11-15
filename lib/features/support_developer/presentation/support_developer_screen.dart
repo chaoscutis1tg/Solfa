@@ -9,7 +9,74 @@ import '../../../app/widgets/pulsing_red_heart.dart';
 import '../../../app/widgets/solfa_background.dart';
 import '../../../app/widgets/solfa_logo.dart';
 import '../../../core/providers/app_providers.dart';
+import '../../battle/application/battle_controller.dart';
 import '../application/rewarded_ad_controller.dart';
+
+/// Opens the 15-second Rewarded Video Ad modal and, upon completion,
+/// grants +1 Battle Arena turn AND +100 Developer Supporter Prestige Points.
+Future<bool> showSolfaRewardedVideoAdModal(
+  BuildContext context,
+  WidgetRef ref,
+) async {
+  final notifier = ref.read(rewardedAdProvider.notifier);
+  final currentStatus = ref.read(rewardedAdProvider).status;
+
+  if (currentStatus != RewardedAdStatus.ready) {
+    final ok = await notifier.loadRewardedAd();
+    if (!ok) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: AppColors.warning,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+            content: const Row(
+              children: [
+                Icon(Icons.wifi_off_rounded, color: Colors.white),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Chưa có kết nối Internet để tải quảng cáo hồi lượt. Bạn vẫn có thể luyện tập không giới hạn tại Phòng luyện tập!',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+      return false;
+    }
+  }
+
+  if (!context.mounted) return false;
+  final audioService = ref.read(audioServiceProvider);
+  final completed = await showDialog<bool>(
+    context: context,
+    barrierDismissible: false,
+    builder: (ctx) => _RewardedVideoAdPlayerDialog(
+      isTestMode: audioService.isTestMode,
+      onPlayPreviewSound: (asset) {
+        audioService.playAsset(asset);
+      },
+      onStopSound: () {
+        audioService.stop();
+      },
+    ),
+  );
+
+  await audioService.stop();
+  await notifier.completeWatchingAd(watchedToEnd: completed == true);
+
+  if (completed == true) {
+    await ref.read(battleProvider.notifier).restoreTurnFromRewardedAd(turns: 1);
+    await audioService.playSessionCompleteFanfare();
+    return true;
+  }
+  return false;
+}
 
 /// UI-12: Hỗ trợ nhà phát triển – Xem Video Quảng Cáo Có Thưởng (UC-16 & Section 13)
 class SupportDeveloperScreen extends ConsumerStatefulWidget {
@@ -69,6 +136,7 @@ class _SupportDeveloperScreenState
         .completeWatchingAd(watchedToEnd: completed == true);
 
     if (completed == true && mounted) {
+      await ref.read(battleProvider.notifier).restoreTurnFromRewardedAd(turns: 1);
       await audioService.playSessionCompleteFanfare();
       if (!mounted) return;
       final updatedState = ref.read(rewardedAdProvider);
@@ -86,7 +154,7 @@ class _SupportDeveloperScreenState
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'Cảm ơn bạn! +100 Điểm Uy Tín (Lượt ủng hộ #$count • ${updatedState.supporterBadgeTitle}).',
+                  'Cảm ơn bạn! +1 Lượt Đấu Trường & +100 Điểm Uy Tín (Lượt ủng hộ #$count • ${updatedState.supporterBadgeTitle}).',
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
               ),
