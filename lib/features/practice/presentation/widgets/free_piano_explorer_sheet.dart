@@ -49,7 +49,7 @@ class _FreePianoExplorerSheetState
   )> _harmonySamples = [
     (
       'C_maj',
-      '🎹 Đô Trưởng (C)',
+      'Đô Trưởng (C)',
       'Hợp âm Đô Trưởng (C – E – G)',
       'Cấu tạo: Đô (C4) + Mi (E4, +4 bán âm) + Sol (G4, +7 bán âm). Âm sắc tươi sáng, vững chãi.',
       'assets/audio/keys/chord_c_maj.wav',
@@ -57,7 +57,7 @@ class _FreePianoExplorerSheetState
     ),
     (
       'A_min',
-      '🎹 La Thứ (Am)',
+      'La Thứ (Am)',
       'Hợp âm La Thứ (A – C – E)',
       'Cấu tạo: La (A) + Đô (C, +3 bán âm) + Mi (E, +7 bán âm). Âm sắc trữ tình, sâu lắng.',
       'assets/audio/keys/chord_a_min.wav',
@@ -65,7 +65,7 @@ class _FreePianoExplorerSheetState
     ),
     (
       'F_maj',
-      '🎹 Fa Trưởng (F)',
+      'Fa Trưởng (F)',
       'Hợp âm Fa Trưởng (F – A – C)',
       'Cấu tạo: Fa (F) + La (A, +4 bán âm) + Đô (C, +7 bán âm). Bậc IV ấm áp trong giọng Đô trưởng.',
       'assets/audio/keys/chord_f_maj.wav',
@@ -73,7 +73,7 @@ class _FreePianoExplorerSheetState
     ),
     (
       'G_dom7',
-      '🎹 Sol Bảy (G7)',
+      'Sol Bảy (G7)',
       'Hợp âm Bảy Át Sol 7 (G – B – D – F)',
       'Cấu tạo 4 nốt: Sol (G) + Si (B) + Rê (D) + Fa (F). Tạo lực hút mạnh về hợp âm chủ Đô Trưởng.',
       'assets/audio/keys/chord_g_dom7.wav',
@@ -81,7 +81,7 @@ class _FreePianoExplorerSheetState
     ),
     (
       'C_aug',
-      '🎹 Đô Tăng (Caug)',
+      'Đô Tăng (Caug)',
       'Hợp âm Đô Tăng (C – E – G♯)',
       'Cấu tạo: Đô (C4) + Mi (E4, +4 bán âm) + Sol thăng (G♯4, +8 bán âm). Màu sắc lơ lửng, kịch tính.',
       'assets/audio/keys/chord_c_aug.wav',
@@ -89,7 +89,7 @@ class _FreePianoExplorerSheetState
     ),
     (
       'B_dim',
-      '🎹 Si Giảm (Bdim)',
+      'Si Giảm (Bdim)',
       'Hợp âm Si Giảm (B – D – F)',
       'Cấu tạo: Si (B) + Rê (D, +3 bán âm) + Fa (F, +6 bán âm). Quãng 5 giảm căng thẳng, hút về Đô.',
       'assets/audio/keys/chord_b_dim.wav',
@@ -97,7 +97,7 @@ class _FreePianoExplorerSheetState
     ),
     (
       'M3',
-      '📏 Quãng 3 Trưởng',
+      'Quãng 3 Trưởng',
       'Quãng 3 Trưởng (Đô C4 → Mi E4)',
       'Khoảng cách 2 cung (4 bán âm) từ Đô (C4) lên Mi (E4) — nền tảng của hợp âm Trưởng.',
       'assets/audio/intervals/int_m3_maj_c4_e4.wav',
@@ -105,7 +105,7 @@ class _FreePianoExplorerSheetState
     ),
     (
       'P5',
-      '📏 Quãng 5 Đúng',
+      'Quãng 5 Đúng',
       'Quãng 5 Đúng (Đô C4 → Sol G4)',
       'Khoảng cách 3.5 cung (7 bán âm) từ Đô (C4) lên Sol (G4) — âm thanh hòa hợp hoàn hảo.',
       'assets/audio/intervals/int_p5_c4_g4.wav',
@@ -471,12 +471,24 @@ class _FreePianoExplorerSheetState
               const SizedBox(height: 10),
 
               // Quick Chord & Interval Multi-Key Explorer Strip
-              const Text(
-                '🎶 Bấm thử Hợp âm & Quãng chuẩn (Tô sáng các phím cấu thành):',
-                style: TextStyle(
-                  fontSize: 11.8,
-                  fontWeight: FontWeight.w800,
-                ),
+              const Row(
+                children: [
+                  Icon(
+                    Icons.library_music_rounded,
+                    size: 14,
+                    color: AppColors.primary,
+                  ),
+                  SizedBox(width: 5),
+                  Expanded(
+                    child: Text(
+                      'Bấm thử Hợp âm & Quãng chuẩn (Tô sáng các phím cấu thành):',
+                      style: TextStyle(
+                        fontSize: 11.8,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 6),
               SingleChildScrollView(

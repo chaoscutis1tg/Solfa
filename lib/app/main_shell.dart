@@ -461,33 +461,12 @@ class _DiamondBattleCtaButtonState extends State<_DiamondBattleCtaButton>
                       ),
                       child: Transform.rotate(
                         angle: -math.pi / 4,
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            const Icon(
-                              Icons.sports_kabaddi_rounded,
-                              color: Colors.white,
-                              size: 24,
-                            ),
-                            Positioned(
-                              right: 8,
-                              top: 8,
-                              child: Container(
-                                width: 13,
-                                height: 13,
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFFF59E0B),
-                                  shape: BoxShape.circle,
-                                ),
-                                alignment: Alignment.center,
-                                child: const Icon(
-                                  Icons.music_note_rounded,
-                                  size: 9,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ],
+                        child: const Center(
+                          child: Icon(
+                            Icons.sports_kabaddi_rounded,
+                            color: Colors.white,
+                            size: 25,
+                          ),
                         ),
                       ),
                     ),

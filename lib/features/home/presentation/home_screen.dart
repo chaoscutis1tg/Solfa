@@ -497,15 +497,28 @@ class HomeScreen extends ConsumerWidget {
                                     color: kHeartRedColor.withOpacity(0.18),
                                     borderRadius: BorderRadius.circular(99),
                                   ),
-                                  child: Text(
-                                    adState.supportedCount > 0
-                                        ? '🏅 ${adState.prestigePoints} Uy tín'
-                                        : '❤️ 15s miễn phí',
-                                    style: const TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w800,
-                                      color: kHeartRedColor,
-                                    ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        adState.supportedCount > 0
+                                            ? Icons.military_tech_rounded
+                                            : Icons.favorite_rounded,
+                                        size: 12,
+                                        color: kHeartRedColor,
+                                      ),
+                                      const SizedBox(width: 3),
+                                      Text(
+                                        adState.supportedCount > 0
+                                            ? '${adState.prestigePoints} Uy tín'
+                                            : '15s miễn phí',
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w800,
+                                          color: kHeartRedColor,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],
@@ -513,7 +526,7 @@ class HomeScreen extends ConsumerWidget {
                             const SizedBox(height: 3),
                             Text(
                               adState.supportedCount > 0
-                                  ? 'Huy hiệu: ${adState.supporterBadgeTitle} (${adState.supportedCount} ❤️ đã trao)'
+                                  ? 'Huy hiệu: ${adState.supporterBadgeTitle} (${adState.supportedCount} tim đã trao)'
                                   : 'Tặng 1 trái tim đỏ qua video 15s để nhận Huy hiệu Tri Ân',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -820,8 +833,8 @@ class HomeScreen extends ConsumerWidget {
                       Expanded(
                         child: Text(
                           stats.isDailyGoalReached
-                              ? '🎯 Hoàn thành mục tiêu hôm nay (${stats.todayAnsweredCount}/${stats.dailyGoalTarget} nốt)!'
-                              : '🎯 Mục tiêu hôm nay: ${stats.todayAnsweredCount}/${stats.dailyGoalTarget} nốt',
+                              ? 'Hoàn thành mục tiêu hôm nay (${stats.todayAnsweredCount}/${stats.dailyGoalTarget} nốt)!'
+                              : 'Mục tiêu hôm nay: ${stats.todayAnsweredCount}/${stats.dailyGoalTarget} nốt',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
@@ -840,13 +853,38 @@ class HomeScreen extends ConsumerWidget {
                             color: AppColors.accentAmber.withOpacity(0.15),
                             borderRadius: BorderRadius.circular(99),
                           ),
-                          child: Text(
-                            '🏆 ${stats.bestScore}đ • 🔥x${stats.bestComboStreak}',
-                            style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.accentAmber,
-                            ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.emoji_events_rounded,
+                                size: 12,
+                                color: AppColors.accentAmber,
+                              ),
+                              const SizedBox(width: 2),
+                              Text(
+                                '${stats.bestScore}đ',
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.accentAmber,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              const Icon(
+                                Icons.local_fire_department_rounded,
+                                size: 12,
+                                color: AppColors.accentAmber,
+                              ),
+                              Text(
+                                'x${stats.bestComboStreak}',
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.accentAmber,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       const SizedBox(width: 4),
@@ -964,9 +1002,24 @@ class HomeScreen extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  '🎯 Đặt mục tiêu luyện tập hàng ngày',
-                  style: TextStyle(fontSize: 16.5, fontWeight: FontWeight.w800),
+                const Row(
+                  children: [
+                    Icon(
+                      Icons.flag_circle_rounded,
+                      color: AppColors.primary,
+                      size: 20,
+                    ),
+                    SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        'Đặt mục tiêu luyện tập hàng ngày',
+                        style: TextStyle(
+                          fontSize: 16.5,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 4),
                 const Text(

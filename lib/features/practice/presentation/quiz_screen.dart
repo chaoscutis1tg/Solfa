@@ -944,7 +944,7 @@ class _PracticeRoomScoreboardHeader extends ConsumerWidget {
                       children: [
                         _QuickTimeModePill(
                           key: const Key('quiz_mode_listen_notes'),
-                          label: '🎧 Nghe nốt',
+                          label: 'Nghe nốt',
                           isSelected: scoreState.topicId == 'topic_notes',
                           isDark: isDark,
                           onTap: () => ref
@@ -954,7 +954,7 @@ class _PracticeRoomScoreboardHeader extends ConsumerWidget {
                         const SizedBox(width: 6),
                         _QuickTimeModePill(
                           key: const Key('quiz_mode_read_staff'),
-                          label: '🎼 Đọc nốt nhạc',
+                          label: 'Đọc nốt nhạc',
                           isSelected:
                               scoreState.topicId == 'topic_staff_reading',
                           isDark: isDark,
@@ -1090,7 +1090,7 @@ class _PracticeRoomScoreboardHeader extends ConsumerWidget {
                 Expanded(
                   child: _ScoreBadgeBox(
                     label: scoreState.currentCombo >= 2
-                        ? '🔥 Combo x${scoreState.currentCombo}'
+                        ? 'Combo x${scoreState.currentCombo}'
                         : 'Điểm số',
                     value: '${scoreState.scorePoints}',
                     color: AppColors.accentAmber,

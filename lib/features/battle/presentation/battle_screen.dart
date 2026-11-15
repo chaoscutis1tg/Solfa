@@ -98,20 +98,29 @@ class BattleScreen extends ConsumerWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      state.rankInfo.badgeEmoji,
-                      style: const TextStyle(fontSize: 13),
+                    Icon(
+                      state.rankInfo.badgeIcon,
+                      size: 15,
+                      color: isDark
+                          ? Colors.white
+                          : Color(state.rankInfo.colorHex),
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      '${state.totalStars} ⭐',
+                      '${state.totalStars}',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 12.5,
                         fontWeight: FontWeight.w800,
                         color: isDark
                             ? Colors.white
                             : Color(state.rankInfo.colorHex),
                       ),
+                    ),
+                    const SizedBox(width: 2),
+                    const Icon(
+                      Icons.star_rounded,
+                      size: 14,
+                      color: Color(0xFFF59E0B),
                     ),
                   ],
                 ),
@@ -192,9 +201,10 @@ class BattleScreen extends ConsumerWidget {
                       ),
                     ),
                     alignment: Alignment.center,
-                    child: Text(
-                      rank.badgeEmoji,
-                      style: const TextStyle(fontSize: 26),
+                    child: Icon(
+                      rank.badgeIcon,
+                      color: Colors.white,
+                      size: 28,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -221,12 +231,26 @@ class BattleScreen extends ConsumerWidget {
                           ),
                         ),
                         const SizedBox(height: 2),
-                        Text(
-                          '${state.totalStars} / ${rank.nextTierStars} ⭐ để thăng bậc tiếp theo',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.white.withOpacity(0.88),
-                          ),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.star_rounded,
+                              size: 14,
+                              color: Color(0xFFFBBF24),
+                            ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                '${state.totalStars} / ${rank.nextTierStars} Sao để thăng bậc tiếp theo',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.white.withOpacity(0.88),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -268,7 +292,7 @@ class BattleScreen extends ConsumerWidget {
           key: const Key('btn_battle_mode_matchmaking'),
           title: 'Ghép Trận Ngẫu Nhiên 1v1',
           subtitle:
-              'Hệ thống quét Radar ghép đối thủ cùng mức Rank, thắng nhận +1 đến +2 ⭐',
+              'Hệ thống quét Radar ghép đối thủ cùng mức Rank, thắng nhận +1 đến +2 Sao',
           icon: Icons.radar_rounded,
           accent: const Color(0xFF6366F1),
           isSelected: state.mode == BattleMode.smartMatchmaking,
@@ -293,15 +317,22 @@ class BattleScreen extends ConsumerWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
-              for (final (diff, label, emoji) in const [
-                (BotDifficulty.rookie, 'Tập Sự (Dễ)', '🤖'),
-                (BotDifficulty.academy, 'Học Viện (Vừa)', '🎹'),
-                (BotDifficulty.maestro, 'Nhạc Trưởng (Khó)', '🎼'),
-                (BotDifficulty.legend, 'Huyền Thoại (Siêu Cấp)', '👑'),
+              for (final (diff, label, botIcon) in const [
+                (BotDifficulty.rookie, 'Tập Sự (Dễ)', Icons.smart_toy_rounded),
+                (BotDifficulty.academy, 'Học Viện (Vừa)', Icons.school_rounded),
+                (BotDifficulty.maestro, 'Nhạc Trưởng (Khó)', Icons.auto_awesome_rounded),
+                (BotDifficulty.legend, 'Huyền Thoại (Siêu Cấp)', Icons.workspace_premium_rounded),
               ])
                 ChoiceChip(
                   key: Key('chip_bot_${diff.name}'),
-                  label: Text('$emoji $label'),
+                  avatar: Icon(
+                    botIcon,
+                    size: 16,
+                    color: state.botDifficulty == diff
+                        ? const Color(0xFFEC4899)
+                        : AppColors.textSecondaryLight,
+                  ),
+                  label: Text(label),
                   selected: state.botDifficulty == diff,
                   onSelected: (_) => notifier.setBotDifficulty(diff),
                 ),
@@ -525,16 +556,29 @@ class BattleScreen extends ConsumerWidget {
               color: const Color(0xFF6366F1).withOpacity(0.16),
               borderRadius: BorderRadius.circular(99),
             ),
-            child: Text(
-              isScanning
-                  ? '📡 ĐANG QUÉT RADAR TÌM ĐỐI THỦ CÙNG HẠNG...'
-                  : '⚡ ĐÃ KHÓA MỤC TIÊU! CHUẨN BỊ GIAO ĐẤU ⚡',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF6366F1),
-              ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  isScanning ? Icons.radar_rounded : Icons.bolt_rounded,
+                  size: 16,
+                  color: const Color(0xFF6366F1),
+                ),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    isScanning
+                        ? 'ĐANG QUÉT RADAR TÌM ĐỐI THỦ CÙNG HẠNG...'
+                        : 'ĐÃ KHÓA MỤC TIÊU! CHUẨN BỊ GIAO ĐẤU',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF6366F1),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 22),
@@ -543,7 +587,7 @@ class BattleScreen extends ConsumerWidget {
           _buildVsFighterCard(
             name: state.player1Name,
             subtitle: state.player1Title,
-            emoji: '🛡️',
+            icon: Icons.shield_rounded,
             accent: const Color(0xFF4F46E5),
             isDark: isDark,
           ),
@@ -582,7 +626,7 @@ class BattleScreen extends ConsumerWidget {
           _buildVsFighterCard(
             name: state.player2Name,
             subtitle: state.player2Title,
-            emoji: state.player2AvatarEmoji,
+            icon: state.player2AvatarIcon,
             accent: const Color(0xFFEC4899),
             isDark: isDark,
           ),
@@ -616,7 +660,7 @@ class BattleScreen extends ConsumerWidget {
   Widget _buildVsFighterCard({
     required String name,
     required String subtitle,
-    required String emoji,
+    required IconData icon,
     required Color accent,
     required bool isDark,
   }) {
@@ -645,7 +689,7 @@ class BattleScreen extends ConsumerWidget {
               shape: BoxShape.circle,
             ),
             alignment: Alignment.center,
-            child: Text(emoji, style: const TextStyle(fontSize: 24)),
+            child: Icon(icon, color: accent, size: 25),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -816,14 +860,31 @@ class BattleScreen extends ConsumerWidget {
               ),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Text(
-              state.combatBannerText!,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w900,
-                color: Colors.white,
-              ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  state.lastHitWasCrit
+                      ? Icons.local_fire_department_rounded
+                      : (state.roundWinner == 'p1'
+                          ? Icons.bolt_rounded
+                          : Icons.shield_rounded),
+                  color: Colors.white,
+                  size: 16,
+                ),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    state.combatBannerText!,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -987,18 +1048,28 @@ class BattleScreen extends ConsumerWidget {
 
   Widget _buildComboBadge(int combo) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
         color: const Color(0xFFF59E0B).withOpacity(0.2),
         borderRadius: BorderRadius.circular(99),
       ),
-      child: Text(
-        '🔥x$combo',
-        style: const TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w900,
-          color: Color(0xFFF59E0B),
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.local_fire_department_rounded,
+            size: 12,
+            color: Color(0xFFF59E0B),
+          ),
+          Text(
+            'x$combo',
+            style: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w900,
+              color: Color(0xFFF59E0B),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1054,13 +1125,28 @@ class BattleScreen extends ConsumerWidget {
             ),
             child: Column(
               children: [
-                const Text(
-                  '🔵 NGƯỜI CHƠI 1',
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w900,
-                    color: Color(0xFF4F46E5),
-                  ),
+                const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.shield_rounded,
+                      size: 13,
+                      color: Color(0xFF4F46E5),
+                    ),
+                    SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        'NGƯỜI CHƠI 1',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFF4F46E5),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 6),
                 for (int i = 0; i < curQ.options.length; i++) ...[
@@ -1095,13 +1181,28 @@ class BattleScreen extends ConsumerWidget {
             ),
             child: Column(
               children: [
-                const Text(
-                  '🔴 NGƯỜI CHƠI 2',
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w900,
-                    color: Color(0xFFEC4899),
-                  ),
+                const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.local_fire_department_rounded,
+                      size: 13,
+                      color: Color(0xFFEC4899),
+                    ),
+                    SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        'NGƯỜI CHƠI 2',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFFEC4899),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 6),
                 for (int i = 0; i < curQ.options.length; i++) ...[
@@ -1221,16 +1322,23 @@ class BattleScreen extends ConsumerWidget {
         : (p1Won ? AppColors.correct : AppColors.wrong);
 
     final String headline;
+    final IconData headlineIcon;
     if (state.mode == BattleMode.localSplitScreen) {
       headline = state.isDraw
-          ? '🤝 HÒA KỊCH TÍNH!'
+          ? 'HÒA KỊCH TÍNH!'
           : (p1Won
-              ? '🏆 NGƯỜI CHƠI 1 CHIẾN THẮNG!'
-              : '🏆 NGƯỜI CHƠI 2 CHIẾN THẮNG!');
+              ? 'NGƯỜI CHƠI 1 CHIẾN THẮNG!'
+              : 'NGƯỜI CHƠI 2 CHIẾN THẮNG!');
+      headlineIcon = state.isDraw
+          ? Icons.handshake_rounded
+          : Icons.emoji_events_rounded;
     } else {
       headline = state.isDraw
-          ? '🤝 BẤT PHÂN THẮNG BẠI!'
-          : (p1Won ? '🏆 CHIẾN THẮNG VINH QUANG!' : '🛡️ THẤT BẠI SÁT NÚT!');
+          ? 'BẤT PHÂN THẮNG BẠI!'
+          : (p1Won ? 'CHIẾN THẮNG VINH QUANG!' : 'THẤT BẠI SÁT NÚT!');
+      headlineIcon = state.isDraw
+          ? Icons.handshake_rounded
+          : (p1Won ? Icons.emoji_events_rounded : Icons.shield_rounded);
     }
 
     return ListView(
@@ -1246,15 +1354,30 @@ class BattleScreen extends ConsumerWidget {
           ),
           child: Column(
             children: [
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: bannerColor.withOpacity(0.14),
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: Icon(
+                  headlineIcon,
+                  color: bannerColor,
+                  size: 30,
+                ),
+              ),
+              const SizedBox(height: 10),
               Text(
-                state.isKnockOut ? '⚡ K.O. HẠ GỤC TUYỆT ĐỐI! ⚡' : 'KẾT THÚC TRẬN ĐẤU',
+                state.isKnockOut ? 'K.O. HẠ GỤC TUYỆT ĐỐI!' : 'KẾT THÚC TRẬN ĐẤU',
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w900,
                   color: bannerColor,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               Text(
                 headline,
                 textAlign: TextAlign.center,
@@ -1273,17 +1396,31 @@ class BattleScreen extends ConsumerWidget {
                     color: const Color(0xFFF59E0B).withOpacity(0.16),
                     borderRadius: BorderRadius.circular(99),
                   ),
-                  child: Text(
-                    state.starsDeltaLastMatch > 0
-                        ? '+${state.starsDeltaLastMatch} ⭐ Thưởng Chiến Thắng (Hạng ${state.rankInfo.tierName})'
-                        : (state.starsDeltaLastMatch < 0
-                            ? '${state.starsDeltaLastMatch} ⭐ (Hạng ${state.rankInfo.tierName})'
-                            : 'Giữ nguyên ⭐ (Hạng ${state.rankInfo.tierName})'),
-                    style: const TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFFF59E0B),
-                    ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.star_rounded,
+                        size: 16,
+                        color: Color(0xFFF59E0B),
+                      ),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          state.starsDeltaLastMatch > 0
+                              ? '+${state.starsDeltaLastMatch} Sao Thưởng Chiến Thắng (Hạng ${state.rankInfo.tierName})'
+                              : (state.starsDeltaLastMatch < 0
+                                  ? '${state.starsDeltaLastMatch} Sao (Hạng ${state.rankInfo.tierName})'
+                                  : 'Giữ nguyên Sao (Hạng ${state.rankInfo.tierName})'),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFFF59E0B),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               const SizedBox(height: 18),

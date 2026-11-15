@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -34,14 +35,14 @@ enum BattlePhase {
 
 class BattleRankInfo {
   final String tierName;
-  final String badgeEmoji;
+  final IconData badgeIcon;
   final int currentStars;
   final int nextTierStars;
   final int colorHex;
 
   const BattleRankInfo({
     required this.tierName,
-    required this.badgeEmoji,
+    required this.badgeIcon,
     required this.currentStars,
     required this.nextTierStars,
     required this.colorHex,
@@ -60,7 +61,7 @@ class BattleRankInfo {
     if (s >= 35) {
       return BattleRankInfo(
         tierName: 'Đại Cao Thủ Solfa',
-        badgeEmoji: '👑',
+        badgeIcon: Icons.workspace_premium_rounded,
         currentStars: s,
         nextTierStars: s + 10,
         colorHex: 0xFFEC4899,
@@ -68,7 +69,7 @@ class BattleRankInfo {
     } else if (s >= 22) {
       return BattleRankInfo(
         tierName: 'Kim Cương',
-        badgeEmoji: '💎',
+        badgeIcon: Icons.diamond_rounded,
         currentStars: s,
         nextTierStars: 35,
         colorHex: 0xFF06B6D4,
@@ -76,7 +77,7 @@ class BattleRankInfo {
     } else if (s >= 12) {
       return BattleRankInfo(
         tierName: 'Vàng',
-        badgeEmoji: '🏆',
+        badgeIcon: Icons.emoji_events_rounded,
         currentStars: s,
         nextTierStars: 22,
         colorHex: 0xFFF59E0B,
@@ -84,7 +85,7 @@ class BattleRankInfo {
     } else if (s >= 5) {
       return BattleRankInfo(
         tierName: 'Bạc',
-        badgeEmoji: '🛡️',
+        badgeIcon: Icons.shield_rounded,
         currentStars: s,
         nextTierStars: 12,
         colorHex: 0xFF94A3B8,
@@ -92,7 +93,7 @@ class BattleRankInfo {
     } else {
       return BattleRankInfo(
         tierName: 'Đồng',
-        badgeEmoji: '⚔️',
+        badgeIcon: Icons.military_tech_rounded,
         currentStars: s,
         nextTierStars: 5,
         colorHex: 0xFFCD7F32,
@@ -119,7 +120,7 @@ class BattleState {
   final String player1Title;
   final String player2Name;
   final String player2Title;
-  final String player2AvatarEmoji;
+  final IconData player2AvatarIcon;
 
   // Active Match Combat State
   final List<QuestionModel> questions;
@@ -159,7 +160,7 @@ class BattleState {
     this.player1Title = 'Chiến binh Solfa',
     this.player2Name = 'Đối thủ',
     this.player2Title = 'Cao thủ Cảm âm',
-    this.player2AvatarEmoji = '🎹',
+    this.player2AvatarIcon = Icons.piano_rounded,
     this.questions = const [],
     this.currentRoundIndex = 0,
     this.player1Hp = maxHp,
@@ -220,7 +221,7 @@ class BattleState {
     String? player1Title,
     String? player2Name,
     String? player2Title,
-    String? player2AvatarEmoji,
+    IconData? player2AvatarIcon,
     List<QuestionModel>? questions,
     int? currentRoundIndex,
     int? player1Hp,
@@ -260,7 +261,7 @@ class BattleState {
       player1Title: player1Title ?? this.player1Title,
       player2Name: player2Name ?? this.player2Name,
       player2Title: player2Title ?? this.player2Title,
-      player2AvatarEmoji: player2AvatarEmoji ?? this.player2AvatarEmoji,
+      player2AvatarIcon: player2AvatarIcon ?? this.player2AvatarIcon,
       questions: questions ?? this.questions,
       currentRoundIndex: currentRoundIndex ?? this.currentRoundIndex,
       player1Hp: player1Hp ?? this.player1Hp,
@@ -297,16 +298,16 @@ class BattleState {
 class BattleNotifier extends StateNotifier<BattleState> {
   static final Random _rng = Random();
 
-  static const List<(String name, String title, String emoji)>
+  static const List<(String name, String title, IconData icon)>
       _onlineChallengers = [
-    ('Minh Khôi', 'Nhạc viện TP.HCM • Piano', '🎹'),
-    ('Bảo Ngọc', 'Học viện Âm nhạc • Violin', '🎻'),
-    ('Hoàng Nam', 'Guitarist Acoustic', '🎸'),
-    ('Thanh Trúc', 'Soprano Vocalist', '🎤'),
-    ('Đức Anh', 'Jazz Saxophone', '🎷'),
-    ('Linh Đan', 'Cao thủ Đọc Khuông', '🎼'),
-    ('Tuấn Kiệt', 'Trống & Tiết tấu', '🥁'),
-    ('Hà My', 'Thính giác Tuyệt đối', '🎧'),
+    ('Minh Khôi', 'Nhạc viện TP.HCM • Piano', Icons.piano_rounded),
+    ('Bảo Ngọc', 'Học viện Âm nhạc • Violin', Icons.music_note_rounded),
+    ('Hoàng Nam', 'Guitarist Acoustic', Icons.audiotrack_rounded),
+    ('Thanh Trúc', 'Soprano Vocalist', Icons.mic_rounded),
+    ('Đức Anh', 'Jazz Saxophone', Icons.queue_music_rounded),
+    ('Linh Đan', 'Cao thủ Đọc Khuông', Icons.library_music_rounded),
+    ('Tuấn Kiệt', 'Trống & Tiết tấu', Icons.timer_rounded),
+    ('Hà My', 'Thính giác Tuyệt đối', Icons.hearing_rounded),
   ];
 
   final AppDatabase _db;
@@ -319,6 +320,7 @@ class BattleNotifier extends StateNotifier<BattleState> {
   Timer? _botActionTimer;
   Timer? _autoNextRoundTimer;
   DateTime? _roundStartedAt;
+  bool _isBusy = false;
 
   BattleNotifier(
     this._db,
@@ -370,124 +372,131 @@ class BattleNotifier extends StateNotifier<BattleState> {
 
   /// Starts a 1v1 Battle Match (Matchmaking, Bot AI, or Local Split-Screen).
   Future<void> startBattle({int? seed, int roundCount = 10}) async {
-    _cancelAllTimers();
-    await _audioService.stop();
-    state = state.copyWith(isLoading: true);
+    if (_isBusy) return;
+    _isBusy = true;
+    try {
+      _cancelAllTimers();
+      try {
+        await _audioService.stop();
+      } catch (_) {}
+      state = state.copyWith(isLoading: true);
 
-    final rng = seed != null ? Random(seed) : _rng;
-    final questions = await _buildBattleQuestionSet(
-      topicId: state.selectedTopicId,
-      targetCount: roundCount,
-      seed: seed,
-    );
+      final rng = seed != null ? Random(seed) : _rng;
+      final questions = await _buildBattleQuestionSet(
+        topicId: state.selectedTopicId,
+        targetCount: roundCount.clamp(1, 20),
+        seed: seed,
+      );
 
-    if (questions.isEmpty) {
-      state = state.copyWith(isLoading: false);
-      return;
-    }
-
-    // Resolve fighter names & avatars based on mode
-    String p1Name = 'Bạn';
-    String p1Title = 'Hạng ${state.rankInfo.tierName}';
-    String p2Name = 'Đối thủ';
-    String p2Title = 'Cao thủ Cảm âm';
-    String p2Emoji = '🎹';
-
-    if (state.mode == BattleMode.localSplitScreen) {
-      p1Name = 'Người chơi 1';
-      p1Title = 'Góc Xanh Indigo';
-      p2Name = 'Người chơi 2';
-      p2Title = 'Góc Đỏ Crimson';
-      p2Emoji = '🔥';
-    } else if (state.mode == BattleMode.botAi) {
-      switch (state.botDifficulty) {
-        case BotDifficulty.rookie:
-          p2Name = 'Bot Tập Sự';
-          p2Title = 'AI Cấp 1 • Tốc độ Chậm';
-          p2Emoji = '🤖';
-          break;
-        case BotDifficulty.academy:
-          p2Name = 'Bot Học Viện';
-          p2Title = 'AI Cấp 2 • Cân bằng';
-          p2Emoji = '🎹';
-          break;
-        case BotDifficulty.maestro:
-          p2Name = 'Bot Nhạc Trưởng';
-          p2Title = 'AI Cấp 3 • Phản xạ Nhanh';
-          p2Emoji = '🎼';
-          break;
-        case BotDifficulty.legend:
-          p2Name = 'Bot Huyền Thoại';
-          p2Title = 'AI Cấp 4 • Tuyệt Đỉnh';
-          p2Emoji = '👑';
-          break;
+      if (questions.isEmpty || !mounted) {
+        if (mounted) state = state.copyWith(isLoading: false);
+        return;
       }
-    } else {
-      final pick = _onlineChallengers[rng.nextInt(_onlineChallengers.length)];
-      p2Name = pick.$1;
-      p2Title = '${pick.$2} • ${state.rankInfo.tierName}';
-      p2Emoji = pick.$3;
-    }
 
-    state = state.copyWith(
-      isLoading: false,
-      phase: state.mode == BattleMode.smartMatchmaking
-          ? BattlePhase.matchmaking
-          : BattlePhase.vsIntro,
-      player1Name: p1Name,
-      player1Title: p1Title,
-      player2Name: p2Name,
-      player2Title: p2Title,
-      player2AvatarEmoji: p2Emoji,
-      questions: questions,
-      currentRoundIndex: 0,
-      player1Hp: BattleState.maxHp,
-      player2Hp: BattleState.maxHp,
-      player1Combo: 0,
-      player2Combo: 0,
-      player1MaxCombo: 0,
-      player2MaxCombo: 0,
-      player1CorrectCount: 0,
-      player2CorrectCount: 0,
-      isRoundResolved: false,
-      clearRoundWinner: true,
-      clearP1Selection: true,
-      clearP2Selection: true,
-      p1LockedOut: false,
-      p2LockedOut: false,
-      lastDamageDealt: 0,
-      lastHitWasCrit: false,
-      clearCombatBanner: true,
-      roundRemainingDeciseconds: 80,
-      starsDeltaLastMatch: 0,
-    );
+      // Resolve fighter names & avatars based on mode
+      String p1Name = 'Bạn';
+      String p1Title = 'Hạng ${state.rankInfo.tierName}';
+      String p2Name = 'Đối thủ';
+      String p2Title = 'Cao thủ Cảm âm';
+      IconData p2Icon = Icons.piano_rounded;
 
-    if (_audioService.isTestMode) {
-      // In automated test mode, allow immediate progression or explicit enterArenaNow()
-      return;
-    }
+      if (state.mode == BattleMode.localSplitScreen) {
+        p1Name = 'Người chơi 1';
+        p1Title = 'Góc Xanh Indigo';
+        p2Name = 'Người chơi 2';
+        p2Title = 'Góc Đỏ Crimson';
+        p2Icon = Icons.local_fire_department_rounded;
+      } else if (state.mode == BattleMode.botAi) {
+        switch (state.botDifficulty) {
+          case BotDifficulty.rookie:
+            p2Name = 'Bot Tập Sự';
+            p2Title = 'AI Cấp 1 • Tốc độ Chậm';
+            p2Icon = Icons.smart_toy_rounded;
+            break;
+          case BotDifficulty.academy:
+            p2Name = 'Bot Học Viện';
+            p2Title = 'AI Cấp 2 • Cân bằng';
+            p2Icon = Icons.school_rounded;
+            break;
+          case BotDifficulty.maestro:
+            p2Name = 'Bot Nhạc Trưởng';
+            p2Title = 'AI Cấp 3 • Phản xạ Nhanh';
+            p2Icon = Icons.auto_awesome_rounded;
+            break;
+          case BotDifficulty.legend:
+            p2Name = 'Bot Huyền Thoại';
+            p2Title = 'AI Cấp 4 • Tuyệt Đỉnh';
+            p2Icon = Icons.workspace_premium_rounded;
+            break;
+        }
+      } else {
+        final pick = _onlineChallengers[rng.nextInt(_onlineChallengers.length)];
+        p2Name = pick.$1;
+        p2Title = '${pick.$2} • ${state.rankInfo.tierName}';
+        p2Icon = pick.$3;
+      }
 
-    if (state.phase == BattlePhase.matchmaking) {
-      _phaseTimer = Timer(const Duration(milliseconds: 1100), () {
-        if (!mounted || state.phase != BattlePhase.matchmaking) return;
-        state = state.copyWith(phase: BattlePhase.vsIntro);
-        _phaseTimer = Timer(const Duration(milliseconds: 1200), () {
+      state = state.copyWith(
+        isLoading: false,
+        phase: state.mode == BattleMode.smartMatchmaking
+            ? BattlePhase.matchmaking
+            : BattlePhase.vsIntro,
+        player1Name: p1Name,
+        player1Title: p1Title,
+        player2Name: p2Name,
+        player2Title: p2Title,
+        player2AvatarIcon: p2Icon,
+        questions: questions,
+        currentRoundIndex: 0,
+        player1Hp: BattleState.maxHp,
+        player2Hp: BattleState.maxHp,
+        player1Combo: 0,
+        player2Combo: 0,
+        player1MaxCombo: 0,
+        player2MaxCombo: 0,
+        player1CorrectCount: 0,
+        player2CorrectCount: 0,
+        isRoundResolved: false,
+        clearRoundWinner: true,
+        clearP1Selection: true,
+        clearP2Selection: true,
+        p1LockedOut: false,
+        p2LockedOut: false,
+        lastDamageDealt: 0,
+        lastHitWasCrit: false,
+        clearCombatBanner: true,
+        roundRemainingDeciseconds: 80,
+        starsDeltaLastMatch: 0,
+      );
+
+      if (_audioService.isTestMode) {
+        return;
+      }
+
+      if (state.phase == BattlePhase.matchmaking) {
+        _phaseTimer = Timer(const Duration(milliseconds: 1100), () {
+          if (!mounted || state.phase != BattlePhase.matchmaking) return;
+          state = state.copyWith(phase: BattlePhase.vsIntro);
+          _phaseTimer = Timer(const Duration(milliseconds: 1200), () {
+            if (!mounted || state.phase != BattlePhase.vsIntro) return;
+            enterArenaNow();
+          });
+        });
+      } else if (state.phase == BattlePhase.vsIntro) {
+        _phaseTimer = Timer(const Duration(milliseconds: 1100), () {
           if (!mounted || state.phase != BattlePhase.vsIntro) return;
           enterArenaNow();
         });
-      });
-    } else if (state.phase == BattlePhase.vsIntro) {
-      _phaseTimer = Timer(const Duration(milliseconds: 1100), () {
-        if (!mounted || state.phase != BattlePhase.vsIntro) return;
-        enterArenaNow();
-      });
+      }
+    } finally {
+      _isBusy = false;
     }
   }
 
   /// Transitions immediately from matchmaking/vsIntro into active Round 1 fighting.
   Future<void> enterArenaNow() async {
     _phaseTimer?.cancel();
-    if (state.questions.isEmpty) return;
+    if (state.questions.isEmpty || state.phase == BattlePhase.fighting) return;
     state = state.copyWith(
       phase: BattlePhase.fighting,
       currentRoundIndex: 0,
@@ -659,10 +668,10 @@ class BattleNotifier extends StateNotifier<BattleState> {
       final nextP2Hp = (state.player2Hp - dmg).clamp(0, BattleState.maxHp);
 
       final banner = isCrit
-          ? '💥 BẠO KÍCH COMBO x$nextCombo! -$dmg HP'
+          ? 'BẠO KÍCH COMBO x$nextCombo! -$dmg HP'
           : (elapsedMs <= 1800
-              ? '⚡ TỐC KÍCH! -$dmg HP'
-              : '⚔️ ĐÒN CHUẨN XÁC! -$dmg HP');
+              ? 'TỐC KÍCH! -$dmg HP'
+              : 'ĐÒN CHUẨN XÁC! -$dmg HP');
 
       state = state.copyWith(
         isRoundResolved: true,
@@ -696,7 +705,7 @@ class BattleNotifier extends StateNotifier<BattleState> {
           lastDamageDealt: 12,
           lastHitWasCrit: false,
           combatBannerText:
-              '⚠️ ${state.player1Name} bấm sai! Tự mất -12 HP',
+              '${state.player1Name} bấm sai! Tự mất -12 HP',
         );
         _triggerImpactFeedback(isCorrect: false, isCrit: false, curQ: curQ);
         if (bothLocked) {
@@ -729,7 +738,7 @@ class BattleNotifier extends StateNotifier<BattleState> {
           lastDamageDealt: counterDmg,
           lastHitWasCrit: isCrit,
           combatBannerText:
-              '🛡️ ${state.player2Name} PHẢN ĐÒN! -$counterDmg HP',
+              '${state.player2Name} PHẢN ĐÒN! -$counterDmg HP',
         );
         _triggerImpactFeedback(isCorrect: false, isCrit: isCrit, curQ: curQ);
         _scheduleAutoAdvanceRound();
@@ -765,8 +774,8 @@ class BattleNotifier extends StateNotifier<BattleState> {
       final nextP1Hp = (state.player1Hp - dmg).clamp(0, BattleState.maxHp);
 
       final banner = isCrit
-          ? '💥 ${state.player2Name} BẠO KÍCH x$nextCombo! -$dmg HP'
-          : '⚔️ ${state.player2Name} TẤN CÔNG! -$dmg HP';
+          ? '${state.player2Name} BẠO KÍCH x$nextCombo! -$dmg HP'
+          : '${state.player2Name} TẤN CÔNG! -$dmg HP';
 
       state = state.copyWith(
         isRoundResolved: true,
@@ -797,7 +806,7 @@ class BattleNotifier extends StateNotifier<BattleState> {
         lastDamageDealt: 12,
         lastHitWasCrit: false,
         combatBannerText:
-            '⚠️ ${state.player2Name} bấm sai! Tự mất -12 HP',
+            '${state.player2Name} bấm sai! Tự mất -12 HP',
       );
       _triggerImpactFeedback(isCorrect: false, isCrit: false, curQ: curQ);
       if (bothLocked) {
@@ -837,7 +846,7 @@ class BattleNotifier extends StateNotifier<BattleState> {
         lastDamageDealt: dmg,
         lastHitWasCrit: isCrit,
         combatBannerText:
-            '⚡ ${state.player2Name} ra đòn trước! -$dmg HP',
+            '${state.player2Name} ra đòn trước! -$dmg HP',
       );
       _triggerImpactFeedback(isCorrect: false, isCrit: isCrit, curQ: curQ);
       _scheduleAutoAdvanceRound();
@@ -848,7 +857,7 @@ class BattleNotifier extends StateNotifier<BattleState> {
         p2SelectedOptionId: wrongOpt.id,
         player2Combo: 0,
         combatBannerText:
-            '🎯 ${state.player2Name} trả lời trượt! Cơ hội tấn công của bạn!',
+            '${state.player2Name} trả lời trượt! Cơ hội tấn công của bạn!',
       );
     }
   }
@@ -871,7 +880,7 @@ class BattleNotifier extends StateNotifier<BattleState> {
       player1Combo: 0,
       lastDamageDealt: 15,
       lastHitWasCrit: false,
-      combatBannerText: '⌛ Hết giờ! Mất -15 HP',
+      combatBannerText: 'Hết giờ! Mất -15 HP',
     );
     _triggerImpactFeedback(isCorrect: false, isCrit: false, curQ: curQ);
     _scheduleAutoAdvanceRound();
@@ -913,29 +922,35 @@ class BattleNotifier extends StateNotifier<BattleState> {
 
   /// Advances to the next round or finishes the match if K.O. or all rounds completed.
   Future<void> nextRound() async {
-    _autoNextRoundTimer?.cancel();
-    if (state.phase != BattlePhase.fighting) return;
+    if (_isBusy) return;
+    _isBusy = true;
+    try {
+      _autoNextRoundTimer?.cancel();
+      if (state.phase != BattlePhase.fighting) return;
 
-    final nextIdx = state.currentRoundIndex + 1;
-    if (state.isKnockOut || nextIdx >= state.questions.length) {
-      await _finishMatch();
-      return;
+      final nextIdx = state.currentRoundIndex + 1;
+      if (state.isKnockOut || nextIdx >= state.questions.length) {
+        await _finishMatch();
+        return;
+      }
+
+      state = state.copyWith(
+        currentRoundIndex: nextIdx,
+        isRoundResolved: false,
+        clearRoundWinner: true,
+        clearP1Selection: true,
+        clearP2Selection: true,
+        p1LockedOut: false,
+        p2LockedOut: false,
+        lastDamageDealt: 0,
+        lastHitWasCrit: false,
+        clearCombatBanner: true,
+        roundRemainingDeciseconds: 80,
+      );
+      await _beginCurrentRound();
+    } finally {
+      _isBusy = false;
     }
-
-    state = state.copyWith(
-      currentRoundIndex: nextIdx,
-      isRoundResolved: false,
-      clearRoundWinner: true,
-      clearP1Selection: true,
-      clearP2Selection: true,
-      p1LockedOut: false,
-      p2LockedOut: false,
-      lastDamageDealt: 0,
-      lastHitWasCrit: false,
-      clearCombatBanner: true,
-      roundRemainingDeciseconds: 80,
-    );
-    await _beginCurrentRound();
   }
 
   Future<void> _finishMatch() async {

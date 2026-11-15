@@ -1200,11 +1200,32 @@ void main() {
           expect(container.read(battleProvider).isRoundResolved, isFalse);
 
           await battleNotifier.submitPlayer2Answer(q1.correctOption);
+          final hpAfterFirstHit = container.read(battleProvider).player1Hp;
+          // Rapid double-tap on already resolved round must be ignored safely
+          await battleNotifier.submitPlayer2Answer(q1.correctOption);
+          await battleNotifier.submitPlayer1Answer(q1.correctOption);
+          expect(container.read(battleProvider).player1Hp, equals(hpAfterFirstHit));
           expect(container.read(battleProvider).isRoundResolved, isTrue);
           expect(container.read(battleProvider).roundWinner, equals('p2'));
           expect(container.read(battleProvider).player1Hp, lessThan(88));
         });
         await pumpFrames(200);
+        expect(tester.takeException(), isNull);
+
+        // 4. Kiểm tra chuyển Dark Mode ngay trong Đấu Trường trên màn hình nhỏ 360x680 (không lỗi tràn khung)
+        await tester.runAsync(() async {
+          await container
+              .read(appSettingsProvider.notifier)
+              .setThemeMode(ThemeMode.dark);
+        });
+        await pumpFrames(250);
+        expect(tester.takeException(), isNull);
+
+        await tester.runAsync(() async {
+          await battleNotifier.backToLobby();
+        });
+        await pumpFrames(250);
+        expect(find.byKey(const Key('battle_lobby_view')), findsOneWidget);
         expect(tester.takeException(), isNull);
       },
     );

@@ -767,14 +767,27 @@ class _NoteMasteryHeatmapCard extends ConsumerWidget {
               },
             ),
             const SizedBox(height: 8),
-            Text(
-              '💡 Chạm vào ô nốt bất kỳ để nghe lại âm chuẩn của nốt đó',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).textTheme.bodySmall?.color,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.lightbulb_outline_rounded,
+                  size: 13,
+                  color: Theme.of(context).textTheme.bodySmall?.color,
+                ),
+                const SizedBox(width: 4),
+                Flexible(
+                  child: Text(
+                    'Chạm vào ô nốt bất kỳ để nghe lại âm chuẩn của nốt đó',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).textTheme.bodySmall?.color,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),

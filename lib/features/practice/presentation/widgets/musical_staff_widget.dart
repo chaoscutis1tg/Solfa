@@ -36,8 +36,8 @@ class MusicalStaffWidget extends StatelessWidget {
     final useBassClef = targetParsed != null && targetParsed.octave <= 3;
 
     final String headerTitle = useBassClef
-        ? '🎼 Khuông nhạc Khóa Fa (𝄢)'
-        : '🎼 Khuông nhạc Khóa Sol (𝄞)';
+        ? 'Khuông nhạc Khóa Fa (𝄢)'
+        : 'Khuông nhạc Khóa Sol (𝄞)';
 
     final String statusBadgeText;
     if (showNote) {
@@ -45,8 +45,8 @@ class MusicalStaffWidget extends StatelessWidget {
           'Vị trí: ${NoteFormatter.toVietnameseLabel(targetNoteKey ?? '')}';
     } else if (isSightReading) {
       statusBadgeText = useBassClef
-          ? '👁️ Đọc Khóa Fa (Dòng 4 = Fa3)'
-          : '👁️ Đọc Khóa Sol (Dòng 2 = Sol4)';
+          ? 'Đọc Khóa Fa (Dòng 4 = Fa3)'
+          : 'Đọc Khóa Sol (Dòng 2 = Sol4)';
     } else {
       statusBadgeText = 'Hiện vị trí nốt sau khi chọn đáp án';
     }

@@ -690,15 +690,26 @@ class SettingsScreen extends ConsumerWidget {
                             color: kHeartRedColor.withOpacity(0.45),
                           ),
                         ),
-                        child: Text(
-                          adState.supportedCount > 0
-                              ? '❤️ ${adState.supportedCount} lần • +${adState.prestigePoints}đ'
-                              : '❤️ Ủng hộ 15s',
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w800,
-                            color: kHeartRedColor,
-                          ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.favorite_rounded,
+                              size: 12,
+                              color: kHeartRedColor,
+                            ),
+                            const SizedBox(width: 3),
+                            Text(
+                              adState.supportedCount > 0
+                                  ? '${adState.supportedCount} lần • +${adState.prestigePoints}đ'
+                                  : 'Ủng hộ 15s',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                color: kHeartRedColor,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -707,7 +718,7 @@ class SettingsScreen extends ConsumerWidget {
                     padding: const EdgeInsets.only(top: 4),
                     child: Text(
                       adState.supportedCount > 0
-                          ? 'Danh hiệu: ${adState.supporterBadgeTitle} • Bấm để trao thêm ❤️'
+                          ? 'Danh hiệu: ${adState.supporterBadgeTitle} • Bấm để trao thêm tim'
                           : 'Xem video ngắn 15s tự nguyện để nhận Huy hiệu Tri Ân & Điểm Uy Tín',
                       style: const TextStyle(
                         fontSize: 12,

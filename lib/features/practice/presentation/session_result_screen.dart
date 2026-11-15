@@ -248,15 +248,27 @@ class _SessionResultScreenState extends ConsumerState<SessionResultScreen> {
                                             0) >
                                         0) ...[
                                   const SizedBox(height: 6),
-                                  Text(
-                                    '🔥 Combo phiên: x${state.maxComboInSession} • 🏆 Kỷ lục: ${progressAsync.valueOrNull?.bestScore ?? state.scorePoints} điểm',
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      fontSize: 11.8,
-                                      fontWeight: FontWeight.w800,
-                                      color: AppColors.primary,
-                                    ),
+                                  Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.local_fire_department_rounded,
+                                        size: 14,
+                                        color: AppColors.primary,
+                                      ),
+                                      const SizedBox(width: 3),
+                                      Expanded(
+                                        child: Text(
+                                          'Combo phiên: x${state.maxComboInSession} • Kỷ lục: ${progressAsync.valueOrNull?.bestScore ?? state.scorePoints} điểm',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontSize: 11.8,
+                                            fontWeight: FontWeight.w800,
+                                            color: AppColors.primary,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                                 const SizedBox(height: 6),
@@ -555,8 +567,8 @@ class _SessionResultScreenState extends ConsumerState<SessionResultScreen> {
                                   Text(
                                     completedSessions > 0 &&
                                             completedSessions % 3 == 0
-                                        ? 'Cột mốc $completedSessions phiên học! Tặng Solfa 1 ❤️ nhé?'
-                                        : 'Tặng 1 ❤️ (15s) ủng hộ nhà phát triển',
+                                        ? 'Cột mốc $completedSessions phiên học! Tặng Solfa 1 tim nhé?'
+                                        : 'Tặng 1 tim (15s) ủng hộ nhà phát triển',
                                     style: const TextStyle(
                                       fontWeight: FontWeight.w800,
                                       fontSize: 13.2,
@@ -593,7 +605,7 @@ class _SessionResultScreenState extends ConsumerState<SessionResultScreen> {
                     onPressed: () => context.push('/support-developer'),
                     icon: const PulsingRedHeart(size: 16),
                     label: Text(
-                      'Tặng thêm ❤️ ủng hộ (${adState.supporterBadgeTitle})',
+                      'Tặng thêm tim ủng hộ (${adState.supporterBadgeTitle})',
                       style: const TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w800,

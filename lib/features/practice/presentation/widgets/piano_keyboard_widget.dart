@@ -262,20 +262,39 @@ class _PianoKeyboardWidgetState extends State<PianoKeyboardWidget> {
         ),
         Padding(
           padding: const EdgeInsets.only(top: 4),
-          child: Text(
-            widget.showHighlight
-                ? '💡 Chạm phím đàn để nghe đối chiếu cao độ'
-                : '🎹 Chạm phím đàn hoặc chọn đáp án bên dưới',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.color
-                  ?.withOpacity(0.82),
-            ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                widget.showHighlight
+                    ? Icons.lightbulb_outline_rounded
+                    : Icons.piano_rounded,
+                size: 13,
+                color: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.color
+                    ?.withOpacity(0.82),
+              ),
+              const SizedBox(width: 4),
+              Flexible(
+                child: Text(
+                  widget.showHighlight
+                      ? 'Chạm phím đàn để nghe đối chiếu cao độ'
+                      : 'Chạm phím đàn hoặc chọn đáp án bên dưới',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.color
+                        ?.withOpacity(0.82),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ],

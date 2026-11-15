@@ -86,7 +86,7 @@ class _SupportDeveloperScreenState
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  '🎉 Cảm ơn bạn! +100 Điểm Uy Tín (Lượt ủng hộ #$count • ${updatedState.supporterBadgeTitle}).',
+                  'Cảm ơn bạn! +100 Điểm Uy Tín (Lượt ủng hộ #$count • ${updatedState.supporterBadgeTitle}).',
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
               ),
