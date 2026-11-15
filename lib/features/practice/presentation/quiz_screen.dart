@@ -668,6 +668,8 @@ class _PracticeRoomScoreboardHeader extends ConsumerWidget {
           correctCount: s.correctCount,
           wrongCount: s.wrongCount,
           scorePoints: s.scorePoints,
+          currentCombo: s.currentCombo,
+          maxComboInSession: s.maxComboInSession,
           isContinuous: s.isContinuousScoringMode,
           currentIndex: s.currentIndex,
           questionsLength: s.questions.length,
@@ -923,10 +925,14 @@ class _PracticeRoomScoreboardHeader extends ConsumerWidget {
                 const SizedBox(width: 6),
                 Expanded(
                   child: _ScoreBadgeBox(
-                    label: 'Điểm số',
+                    label: scoreState.currentCombo >= 2
+                        ? '🔥 Combo x${scoreState.currentCombo}'
+                        : 'Điểm số',
                     value: '${scoreState.scorePoints}',
                     color: AppColors.accentAmber,
-                    icon: Icons.stars_rounded,
+                    icon: scoreState.currentCombo >= 2
+                        ? Icons.local_fire_department_rounded
+                        : Icons.stars_rounded,
                   ),
                 ),
               ],

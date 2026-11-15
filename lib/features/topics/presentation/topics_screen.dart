@@ -586,8 +586,17 @@ class TopicsScreen extends ConsumerWidget {
       case 'intervals':
         return Icons.swap_vert_circle_outlined;
       case 'key_recognition':
-      case 'chords':
+      case 'keys':
         return Icons.library_music_rounded;
+      case 'chord_recognition':
+      case 'chords':
+        return Icons.piano_rounded;
+      case 'melody_recognition':
+      case 'melody':
+        return Icons.queue_music_rounded;
+      case 'rhythm_recognition':
+      case 'rhythm':
+        return Icons.graphic_eq_rounded;
       default:
         return Icons.queue_music_rounded;
     }

@@ -296,20 +296,26 @@ class ProgressScreen extends ConsumerWidget {
                                             .topicStats[idx].topicName;
                                         final shortName = rawName ==
                                                 'Nhận biết nốt'
-                                            ? 'Nghe nốt'
+                                            ? 'Nghe'
                                             : rawName == 'Đọc nốt nhạc'
-                                                ? 'Đọc nốt'
-                                                : rawName.replaceAll(
-                                                    'Nhận biết ',
-                                                    '',
-                                                  );
+                                                ? 'Đọc'
+                                                : rawName ==
+                                                        'Nhận biết nhịp điệu'
+                                                    ? 'Nhịp'
+                                                    : rawName ==
+                                                            'Nhận biết giai điệu'
+                                                        ? 'G.điệu'
+                                                        : rawName.replaceAll(
+                                                            'Nhận biết ',
+                                                            '',
+                                                          );
                                         return Padding(
                                           padding:
                                               const EdgeInsets.only(top: 6),
                                           child: Text(
                                             shortName,
                                             style: const TextStyle(
-                                              fontSize: 12,
+                                              fontSize: 10,
                                               fontWeight: FontWeight.w700,
                                             ),
                                           ),
@@ -330,7 +336,7 @@ class ProgressScreen extends ConsumerWidget {
                                               ? stats.topicStats[i]
                                                   .accuracyPercent
                                               : 0,
-                                          width: 28,
+                                          width: 18,
                                           gradient:
                                               stats.topicStats[i].hasEnoughData
                                                   ? const LinearGradient(

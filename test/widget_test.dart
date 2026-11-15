@@ -551,8 +551,25 @@ void main() {
         );
         await pumpFrames();
 
-        // 1. Trang chủ (HomeScreen)
+        // 1. Trang chủ (HomeScreen) + Mở Đàn Piano & Tra cứu Khuông nhạc tự do (C3–C5)
         expect(find.byKey(const Key('btn_quick_practice')), findsOneWidget);
+        await tester.scrollUntilVisible(
+          find.byKey(const Key('btn_open_free_piano_explorer')),
+          180,
+          scrollable: find.byType(Scrollable).first,
+        );
+        await pumpFrames(200);
+        expect(find.byKey(const Key('btn_open_free_piano_explorer')), findsOneWidget);
+        await tester.tap(find.byKey(const Key('btn_open_free_piano_explorer')));
+        await pumpFrames(300);
+        expect(find.byKey(const Key('free_piano_explorer_sheet')), findsOneWidget);
+        await tester.tap(find.byKey(const Key('explorer_octave_3')));
+        await pumpFrames(200);
+        expect(find.textContaining('Khóa Fa'), findsWidgets);
+        await tester.tap(find.byKey(const Key('explorer_octave_5')));
+        await pumpFrames(200);
+        await tester.tap(find.byKey(const Key('btn_close_free_piano_explorer')));
+        await pumpFrames(250);
         expect(tester.takeException(), isNull);
 
         // 2. Phòng luyện tập (TopicsScreen) -> Chọn Mức 1..4
@@ -767,6 +784,78 @@ void main() {
         expect(container.read(metronomeProvider).volume, equals(1.0));
         metroNotifier.cycleBeatState(-1); // Out-of-bounds index -> safe no-op
         metroNotifier.cycleBeatState(99); // Out-of-bounds index -> safe no-op
+      },
+    );
+
+    test(
+      'TC-19: Mở khóa 3 chủ đề mới (Hợp âm, Giai điệu, Nhịp điệu), Combo liên tiếp, Kỷ lục điểm cao & Mục tiêu hàng ngày',
+      () async {
+        await db.seedContent();
+        await container.read(appSettingsProvider.notifier).loadSettings();
+        final sessionNotifier = container.read(practiceSessionProvider.notifier);
+
+        // 1. Kiểm tra cả 7 chủ đề đều đã được mở khóa (isEnabled == true)
+        final allTopics = await db.getTopics();
+        expect(allTopics.length, equals(7));
+        expect(allTopics.every((t) => t.isEnabled), isTrue);
+
+        // 2. Kiểm tra sinh câu hỏi cho 3 chủ đề mới (topic_chords, topic_melody, topic_rhythm)
+        for (final tId in ['topic_chords', 'topic_melody', 'topic_rhythm']) {
+          final levels = await db.getLevelsByTopic(tId);
+          expect(levels.length, equals(3));
+          for (final lvl in levels) {
+            final ok = await sessionNotifier.startSession(
+              mode: 'topic',
+              topicId: tId,
+              levelId: lvl.id,
+              targetCount: 6,
+              seed: 123,
+            );
+            expect(ok, isTrue, reason: 'Chủ đề $tId cấp ${lvl.id} phải sinh câu hỏi thành công');
+            final qs = container.read(practiceSessionProvider).questions;
+            expect(qs.length, equals(6));
+            await sessionNotifier.abandonSessionIfIncomplete();
+          }
+        }
+
+        // 3. Kiểm tra đếm chuỗi Combo liên tiếp, Kỷ lục điểm cao (High Score) & Mục tiêu hôm nay (Daily Goal)
+        await sessionNotifier.startSession(
+          mode: 'topic',
+          topicId: 'topic_chords',
+          levelId: 'lvl_chords_basic',
+          targetCount: 4,
+          seed: 55,
+        );
+
+        // Trả lời đúng 3 câu liên tiếp -> currentCombo = 3, maxComboInSession = 3
+        for (int i = 0; i < 3; i++) {
+          final q = container.read(practiceSessionProvider).currentQuestion!;
+          await sessionNotifier.submitAnswer(q.correctOption);
+          expect(container.read(practiceSessionProvider).currentCombo, equals(i + 1));
+          expect(container.read(practiceSessionProvider).maxComboInSession, equals(i + 1));
+          await sessionNotifier.nextQuestion();
+        }
+
+        // Câu thứ 4 trả lời sai -> currentCombo reset về 0, nhưng maxComboInSession vẫn giữ = 3
+        final q4 = container.read(practiceSessionProvider).currentQuestion!;
+        final wrongOpt = q4.options.firstWhere((o) => !o.isCorrect);
+        await sessionNotifier.submitAnswer(wrongOpt);
+        expect(container.read(practiceSessionProvider).currentCombo, equals(0));
+        expect(container.read(practiceSessionProvider).maxComboInSession, equals(3));
+
+        final finished = await sessionNotifier.nextQuestion();
+        expect(finished, isTrue);
+
+        final finalState = container.read(practiceSessionProvider);
+        expect(finalState.isCompleted, isTrue);
+        expect(finalState.isNewHighScore, isTrue);
+        expect(finalState.scorePoints, equals(30));
+
+        final stats = await db.getOverallProgressStats();
+        expect(stats.bestScore, equals(30));
+        expect(stats.bestComboStreak, equals(3));
+        expect(stats.todayAnsweredCount, equals(4));
+        expect(stats.dailyGoalTarget, equals(20));
       },
     );
   });

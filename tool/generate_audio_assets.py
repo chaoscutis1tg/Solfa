@@ -261,6 +261,140 @@ def generate_keys() -> None:
         seq = concat_samples([chord_i, chord_iv, chord_v, chord_i_end], gap_sec=0.05)
         write_wav(os.path.join(keys_dir, f"{name}.wav"), seq)
 
+    # 3a. Chords for topic_chords (Arpeggio + Full harmonic chord)
+    chord_defs = {
+        "chord_c_maj": [60, 64, 67],
+        "chord_a_min": [57, 60, 64],
+        "chord_c_min": [60, 63, 67],
+        "chord_f_maj": [53, 57, 60],
+        "chord_d_min": [62, 65, 69],
+        "chord_g_maj": [55, 59, 62],
+        "chord_c_dim": [60, 63, 66],
+        "chord_c_aug": [60, 64, 68],
+        "chord_c_sus4": [60, 65, 67],
+        "chord_c_maj7": [60, 64, 67, 71],
+        "chord_a_min7": [57, 60, 64, 67],
+        "chord_g_dom7": [55, 59, 62, 65],
+    }
+    for cname, midis in chord_defs.items():
+        arp_notes = [synthesize_piano_note(midi_to_freq(m), 0.24) for m in midis]
+        arp = concat_samples(arp_notes, gap_sec=0.02)
+        block = make_chord(midis, 1.05)
+        write_wav(os.path.join(keys_dir, f"{cname}.wav"), concat_samples([arp, block], gap_sec=0.08))
+
+    # 3b. Short Melodies for topic_melody (3-note and 4-note motifs)
+    melody_defs = {
+        "mel_c_d_e": [60, 62, 64],
+        "mel_e_d_c": [64, 62, 60],
+        "mel_c_e_g": [60, 64, 67],
+        "mel_g_e_c": [67, 64, 60],
+        "mel_c_f_g": [60, 65, 67],
+        "mel_g_a_g": [67, 69, 67],
+        "mel_c_d_e_g": [60, 62, 64, 67],
+        "mel_g_f_e_d": [67, 65, 64, 62],
+        "mel_c_e_g_c5": [60, 64, 67, 72],
+        "mel_a3_c4_e4_a4": [57, 60, 64, 69],
+        "mel_d_f_a_g": [62, 65, 69, 67],
+        "mel_e_g_a_g": [64, 67, 69, 67],
+    }
+    for mname, midis in melody_defs.items():
+        segs = []
+        for idx, m in enumerate(midis):
+            dur = 0.65 if idx == len(midis) - 1 else 0.36
+            segs.append(synthesize_piano_note(midi_to_freq(m), dur))
+        write_wav(os.path.join(keys_dir, f"{mname}.wav"), concat_samples(segs, gap_sec=0.04))
+
+    # 3c. Rhythm patterns for topic_rhythm (Percussive woodblock + piano C5/G4 rhythm hits at 100 BPM, beat = 0.6s)
+    beat = 0.56
+    rhy_accent = mix_samples([
+        synthesize_piano_note(midi_to_freq(72), 0.18),
+        synthesize_soft_marimba(880.0, 0.10, 0.85),
+    ])
+    rhy_norm = mix_samples([
+        synthesize_piano_note(midi_to_freq(67), 0.15),
+        synthesize_soft_marimba(587.33, 0.09, 0.72),
+    ])
+    rhy_sub = mix_samples([
+        synthesize_piano_note(midi_to_freq(64), 0.11),
+        synthesize_soft_marimba(440.0, 0.07, 0.58),
+    ])
+    rhythm_defs = {
+        "rhy_quarter_4_4": [
+            (0.0 * beat, rhy_accent),
+            (1.0 * beat, rhy_norm),
+            (2.0 * beat, rhy_norm),
+            (3.0 * beat, rhy_norm),
+        ],
+        "rhy_half_notes": [
+            (0.0 * beat, synthesize_piano_note(midi_to_freq(72), 0.95)),
+            (2.0 * beat, synthesize_piano_note(midi_to_freq(67), 0.95)),
+        ],
+        "rhy_eighth_pair": [
+            (0.0 * beat, rhy_accent), (0.5 * beat, rhy_sub),
+            (1.0 * beat, rhy_norm), (1.5 * beat, rhy_sub),
+            (2.0 * beat, rhy_norm), (2.5 * beat, rhy_sub),
+            (3.0 * beat, rhy_norm), (3.5 * beat, rhy_sub),
+        ],
+        "rhy_quarter_eighth": [
+            (0.0 * beat, rhy_accent),
+            (1.0 * beat, rhy_norm), (1.5 * beat, rhy_sub),
+            (2.0 * beat, rhy_norm),
+            (3.0 * beat, rhy_norm), (3.5 * beat, rhy_sub),
+        ],
+        "rhy_triplet": [
+            (0.0 * beat, rhy_accent), (0.333 * beat, rhy_sub), (0.666 * beat, rhy_sub),
+            (1.0 * beat, rhy_norm), (1.333 * beat, rhy_sub), (1.666 * beat, rhy_sub),
+            (2.0 * beat, rhy_norm), (2.333 * beat, rhy_sub), (2.666 * beat, rhy_sub),
+            (3.0 * beat, rhy_norm),
+        ],
+        "rhy_sixteenth": [
+            (0.0 * beat, rhy_accent), (0.25 * beat, rhy_sub), (0.50 * beat, rhy_sub), (0.75 * beat, rhy_sub),
+            (1.0 * beat, rhy_norm), (1.25 * beat, rhy_sub), (1.50 * beat, rhy_sub), (1.75 * beat, rhy_sub),
+            (2.0 * beat, rhy_norm),
+            (3.0 * beat, rhy_norm),
+        ],
+        "rhy_dotted_eighth": [
+            (0.0 * beat, rhy_accent), (0.75 * beat, rhy_sub),
+            (1.0 * beat, rhy_norm), (1.75 * beat, rhy_sub),
+            (2.0 * beat, rhy_norm), (2.75 * beat, rhy_sub),
+            (3.0 * beat, rhy_norm),
+        ],
+        "rhy_syncopated": [
+            (0.0 * beat, rhy_accent),
+            (0.5 * beat, rhy_accent),
+            (1.5 * beat, rhy_norm),
+            (2.0 * beat, rhy_accent),
+            (2.5 * beat, rhy_accent),
+            (3.5 * beat, rhy_norm),
+        ],
+        "rhy_gallop": [
+            (0.0 * beat, rhy_accent), (0.5 * beat, rhy_sub), (0.75 * beat, rhy_sub),
+            (1.0 * beat, rhy_norm), (1.5 * beat, rhy_sub), (1.75 * beat, rhy_sub),
+            (2.0 * beat, rhy_norm), (2.5 * beat, rhy_sub), (2.75 * beat, rhy_sub),
+            (3.0 * beat, rhy_norm),
+        ],
+        "rhy_waltz_3_4": [
+            (0.0 * beat, rhy_accent),
+            (1.0 * beat, rhy_norm),
+            (2.0 * beat, rhy_norm),
+            (3.0 * beat, rhy_accent),
+            (4.0 * beat, rhy_norm),
+            (5.0 * beat, rhy_norm),
+        ],
+        "rhy_march_2_4": [
+            (0.0 * beat, rhy_accent),
+            (1.0 * beat, rhy_norm),
+            (2.0 * beat, rhy_accent),
+            (3.0 * beat, rhy_norm),
+        ],
+        "rhy_compound_6_8": [
+            (0.0 * beat, rhy_accent), (0.38 * beat, rhy_sub), (0.76 * beat, rhy_sub),
+            (1.14 * beat, rhy_norm), (1.52 * beat, rhy_sub), (1.90 * beat, rhy_sub),
+        ],
+    }
+    for rname, events in rhythm_defs.items():
+        write_wav(os.path.join(keys_dir, f"{rname}.wav"), mix_at_offsets(events, max_peak=0.92))
+
 
 def synthesize_chime_bell(freq: float, duration: float, amp: float = 0.8) -> list[float]:
     """Synthesizes a sparkling, warm celesta/glockenspiel chime tone for UI reward feedback."""
@@ -729,11 +863,19 @@ def generate_seed_json() -> None:
             "is_enabled": True,
         },
         {
+            "id": "topic_staff_reading",
+            "code": "staff_reading",
+            "name": "Đọc nốt nhạc",
+            "description": "Nhìn vị trí nốt trên khuông nhạc 5 dòng kẻ (Khóa Sol 𝄞 & Khóa Fa 𝄢) và chọn đúng tên nốt (không phát tiếng trước).",
+            "sort_order": 2,
+            "is_enabled": True,
+        },
+        {
             "id": "topic_intervals",
             "code": "interval_recognition",
             "name": "Nhận biết quãng",
             "description": "Phân biệt khoảng cách cao độ từ quãng 2 đến quãng 8 (giai điệu & hòa thanh).",
-            "sort_order": 2,
+            "sort_order": 3,
             "is_enabled": True,
         },
         {
@@ -741,32 +883,32 @@ def generate_seed_json() -> None:
             "code": "key_recognition",
             "name": "Nhận biết giọng",
             "description": "Cảm nhận màu sắc Trưởng – Thứ và nhận diện hóa biểu các giọng cơ bản.",
-            "sort_order": 3,
+            "sort_order": 4,
             "is_enabled": True,
         },
         {
             "id": "topic_chords",
             "code": "chord_recognition",
             "name": "Nhận biết hợp âm",
-            "description": "Phân biệt hợp âm Trưởng, Thứ, Tăng, Giảm và hợp âm 7.",
-            "sort_order": 4,
-            "is_enabled": False,
+            "description": "Phân biệt hợp âm Trưởng, Thứ, Tăng, Giảm, Sus4 và hợp âm 7 (Maj7, m7, Dom7).",
+            "sort_order": 5,
+            "is_enabled": True,
         },
         {
             "id": "topic_melody",
             "code": "melody_recognition",
             "name": "Nhận biết giai điệu",
-            "description": "Ghi nhớ và xác định chuỗi nốt giai điệu ngắn.",
-            "sort_order": 5,
-            "is_enabled": False,
+            "description": "Nghe và xác định chuỗi 3–4 nốt giai điệu ngắn đi lên, đi xuống hoặc rải hợp âm.",
+            "sort_order": 6,
+            "is_enabled": True,
         },
         {
             "id": "topic_rhythm",
             "code": "rhythm_recognition",
             "name": "Nhận biết nhịp điệu",
-            "description": "Nhận diện mẫu tiết tấu và các loại nhịp 2/4, 3/4, 4/4, 6/8.",
-            "sort_order": 6,
-            "is_enabled": False,
+            "description": "Nhận diện mẫu tiết tấu (Đen, Móc đơn, Liên 3, Đảo phách) và các loại nhịp 2/4, 3/4, 4/4, 6/8.",
+            "sort_order": 7,
+            "is_enabled": True,
         },
     ]
 
@@ -775,12 +917,25 @@ def generate_seed_json() -> None:
         {"id": "lvl_notes_inter", "topic_id": "topic_notes", "code": "level_2_c4_chromatic", "name": "Mức 2: Trung bình (C4 có #/b)", "difficulty": 2, "unlock_rule": "always_unlocked"},
         {"id": "lvl_notes_adv", "topic_id": "topic_notes", "code": "level_3_multi_natural", "name": "Mức 3: Khá (C3–C5 Tự nhiên)", "difficulty": 3, "unlock_rule": "always_unlocked"},
         {"id": "lvl_notes_master", "topic_id": "topic_notes", "code": "level_4_multi_chromatic", "name": "Mức 4: Nâng cao (C3–C5 Đầy đủ #/b)", "difficulty": 4, "unlock_rule": "always_unlocked"},
+        {"id": "lvl_staff_basic", "topic_id": "topic_staff_reading", "code": "staff_level_1_treble_natural", "name": "Mức 1: Dễ (Khóa Sol C4–B4)", "difficulty": 1, "unlock_rule": "always_unlocked"},
+        {"id": "lvl_staff_inter", "topic_id": "topic_staff_reading", "code": "staff_level_2_treble_chromatic", "name": "Mức 2: Trung bình (Khóa Sol có #/b)", "difficulty": 2, "unlock_rule": "always_unlocked"},
+        {"id": "lvl_staff_adv", "topic_id": "topic_staff_reading", "code": "staff_level_3_treble_bass_natural", "name": "Mức 3: Khá (Khóa Sol & Fa C3–C5)", "difficulty": 3, "unlock_rule": "always_unlocked"},
+        {"id": "lvl_staff_master", "topic_id": "topic_staff_reading", "code": "staff_level_4_treble_bass_chromatic", "name": "Mức 4: Nâng cao (Khóa Sol & Fa đầy đủ #/b)", "difficulty": 4, "unlock_rule": "always_unlocked"},
         {"id": "lvl_intervals_basic", "topic_id": "topic_intervals", "code": "basic", "name": "Cơ bản", "difficulty": 1, "unlock_rule": "always_unlocked"},
         {"id": "lvl_intervals_inter", "topic_id": "topic_intervals", "code": "intermediate", "name": "Trung bình", "difficulty": 2, "unlock_rule": "always_unlocked"},
         {"id": "lvl_intervals_adv", "topic_id": "topic_intervals", "code": "advanced", "name": "Nâng cao", "difficulty": 3, "unlock_rule": "always_unlocked"},
         {"id": "lvl_keys_basic", "topic_id": "topic_keys", "code": "basic", "name": "Cơ bản", "difficulty": 1, "unlock_rule": "always_unlocked"},
         {"id": "lvl_keys_inter", "topic_id": "topic_keys", "code": "intermediate", "name": "Trung bình", "difficulty": 2, "unlock_rule": "always_unlocked"},
         {"id": "lvl_keys_adv", "topic_id": "topic_keys", "code": "advanced", "name": "Nâng cao", "difficulty": 3, "unlock_rule": "always_unlocked"},
+        {"id": "lvl_chords_basic", "topic_id": "topic_chords", "code": "basic", "name": "Cơ bản (Hợp âm Trưởng & Thứ)", "difficulty": 1, "unlock_rule": "always_unlocked"},
+        {"id": "lvl_chords_inter", "topic_id": "topic_chords", "code": "intermediate", "name": "Trung bình (Trưởng, Thứ, Tăng, Giảm)", "difficulty": 2, "unlock_rule": "always_unlocked"},
+        {"id": "lvl_chords_adv", "topic_id": "topic_chords", "code": "advanced", "name": "Nâng cao (Hợp âm 7 & Sus4)", "difficulty": 3, "unlock_rule": "always_unlocked"},
+        {"id": "lvl_melody_basic", "topic_id": "topic_melody", "code": "basic", "name": "Cơ bản (Giai điệu 3 nốt)", "difficulty": 1, "unlock_rule": "always_unlocked"},
+        {"id": "lvl_melody_inter", "topic_id": "topic_melody", "code": "intermediate", "name": "Trung bình (Giai điệu 4 nốt liền bậc)", "difficulty": 2, "unlock_rule": "always_unlocked"},
+        {"id": "lvl_melody_adv", "topic_id": "topic_melody", "code": "advanced", "name": "Nâng cao (Giai điệu nhảy quãng & Rải hợp âm)", "difficulty": 3, "unlock_rule": "always_unlocked"},
+        {"id": "lvl_rhythm_basic", "topic_id": "topic_rhythm", "code": "basic", "name": "Cơ bản (Trắng, Đen, Móc đơn)", "difficulty": 1, "unlock_rule": "always_unlocked"},
+        {"id": "lvl_rhythm_inter", "topic_id": "topic_rhythm", "code": "intermediate", "name": "Trung bình (Liên 3, Móc kép, Chấm dôi)", "difficulty": 2, "unlock_rule": "always_unlocked"},
+        {"id": "lvl_rhythm_adv", "topic_id": "topic_rhythm", "code": "advanced", "name": "Nâng cao (Đảo phách & Nhịp 2/4, 3/4, 6/8)", "difficulty": 3, "unlock_rule": "always_unlocked"},
     ]
 
     questions = [
@@ -1348,7 +1503,7 @@ def generate_seed_json() -> None:
     ]
 
     seed_data = {
-        "content_version": 5,
+        "content_version": 7,
         "topics": topics,
         "levels": levels,
         "questions": questions,

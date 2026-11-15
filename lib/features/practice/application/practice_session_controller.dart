@@ -104,6 +104,9 @@ class PracticeSessionState {
   final int? timeLimitSeconds; // 60, 900, 3600, or null
   final bool isUnlimitedMode; // true when 'Không giới hạn'
   final int elapsedSeconds;
+  final int currentCombo;
+  final int maxComboInSession;
+  final bool isNewHighScore;
   final String? errorMessage;
 
   const PracticeSessionState({
@@ -121,6 +124,9 @@ class PracticeSessionState {
     this.timeLimitSeconds,
     this.isUnlimitedMode = false,
     this.elapsedSeconds = 0,
+    this.currentCombo = 0,
+    this.maxComboInSession = 0,
+    this.isNewHighScore = false,
     this.errorMessage,
   });
 
@@ -201,6 +207,9 @@ class PracticeSessionState {
     bool clearTimeLimit = false,
     bool? isUnlimitedMode,
     int? elapsedSeconds,
+    int? currentCombo,
+    int? maxComboInSession,
+    bool? isNewHighScore,
     String? errorMessage,
   }) {
     return PracticeSessionState(
@@ -222,6 +231,9 @@ class PracticeSessionState {
           : (timeLimitSeconds ?? this.timeLimitSeconds),
       isUnlimitedMode: isUnlimitedMode ?? this.isUnlimitedMode,
       elapsedSeconds: elapsedSeconds ?? this.elapsedSeconds,
+      currentCombo: currentCombo ?? this.currentCombo,
+      maxComboInSession: maxComboInSession ?? this.maxComboInSession,
+      isNewHighScore: isNewHighScore ?? this.isNewHighScore,
       errorMessage: errorMessage,
     );
   }
@@ -612,9 +624,15 @@ class PracticeSessionNotifier extends StateNotifier<PracticeSessionState> {
       responseMs: responseMs,
     );
 
+    final nextCombo = option.isCorrect ? state.currentCombo + 1 : 0;
+    final nextMaxCombo =
+        nextCombo > state.maxComboInSession ? nextCombo : state.maxComboInSession;
+
     state = state.copyWith(
       selectedOption: option,
       recordedAnswers: [...state.recordedAnswers, answer],
+      currentCombo: nextCombo,
+      maxComboInSession: nextMaxCombo,
     );
 
     final settings = _ref.read(appSettingsProvider);
@@ -709,6 +727,7 @@ class PracticeSessionNotifier extends StateNotifier<PracticeSessionState> {
         ? state.elapsedSeconds
         : (_accumulatedActiveMs / 1000).round().clamp(1, 7200);
 
+    bool newHighScore = false;
     try {
       if (state.sessionId != null && state.recordedAnswers.isNotEmpty) {
         await _db.completeSessionTransaction(
@@ -720,6 +739,19 @@ class PracticeSessionNotifier extends StateNotifier<PracticeSessionState> {
           activeDurationSeconds: durationSec,
           completedAt: now,
         );
+        final prevBestScore =
+            int.tryParse(await _db.getSetting('best_score') ?? '0') ?? 0;
+        if (state.scorePoints > prevBestScore && state.scorePoints > 0) {
+          newHighScore = true;
+          await _db.setSetting('best_score', state.scorePoints.toString());
+        }
+        final prevBestCombo =
+            int.tryParse(await _db.getSetting('best_combo_streak') ?? '0') ?? 0;
+        if (state.maxComboInSession > prevBestCombo &&
+            state.maxComboInSession > 0) {
+          await _db.setSetting(
+              'best_combo_streak', state.maxComboInSession.toString());
+        }
       } else if (state.sessionId != null) {
         await _db.abandonSession(state.sessionId!);
       }
@@ -728,6 +760,7 @@ class PracticeSessionNotifier extends StateNotifier<PracticeSessionState> {
     state = state.copyWith(
       isCompleted: true,
       activeDurationSeconds: durationSec,
+      isNewHighScore: newHighScore,
     );
 
     // Refresh progress & review providers

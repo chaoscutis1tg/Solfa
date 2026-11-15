@@ -791,6 +791,441 @@ class HybridQuestionGenerator {
           ),
         );
       }
+    } else if (topicId == 'topic_chords') {
+      final isAdvanced = levelId.contains('adv');
+      final isInter = levelId.contains('inter');
+      final diff = isAdvanced ? 3 : (isInter ? 2 : 1);
+
+      final basicChords = [
+        (
+          'chord_c_maj',
+          'C_maj',
+          'Đô Trưởng (C Major)',
+          'Hợp âm 3 Trưởng (C – E – G): Quãng 3 trưởng ở dưới + quãng 3 thứ ở trên, âm hưởng tươi sáng vững chãi.'
+        ),
+        (
+          'chord_a_min',
+          'A_min',
+          'La Thứ (A Minor)',
+          'Hợp âm 3 Thứ (A – C – E): Quãng 3 thứ ở dưới + quãng 3 trưởng ở trên, âm hưởng mềm mại trầm lắng.'
+        ),
+        (
+          'chord_c_min',
+          'C_min',
+          'Đô Thứ (C Minor)',
+          'Hợp âm Đô Thứ (C – Eb – G): Hạ bậc III nửa cung từ Mi xuống Mi giáng tạo màu sắc Thứ rõ rệt.'
+        ),
+        (
+          'chord_f_maj',
+          'F_maj',
+          'Fa Trưởng (F Major)',
+          'Hợp âm Fa Trưởng (F – A – C): Bậc IV ấm áp và mở rộng trong giọng Đô Trưởng.'
+        ),
+        (
+          'chord_d_min',
+          'D_min',
+          'Rê Thứ (D Minor)',
+          'Hợp âm Rê Thứ (D – F – A): Hợp âm 3 Thứ bậc II mang màu sắc sâu lắng.'
+        ),
+        (
+          'chord_g_maj',
+          'G_maj',
+          'Sol Trưởng (G Major)',
+          'Hợp âm Sol Trưởng (G – B – D): Bậc V sáng rõ và giàu năng lượng.'
+        ),
+      ];
+
+      final interChords = [
+        ...basicChords,
+        (
+          'chord_c_dim',
+          'C_dim',
+          'Hợp âm Giảm (Cdim – C°)',
+          'Hợp âm 3 Giảm (C – Eb – Gb): Chồng 2 quãng 3 thứ liên tiếp (có quãng 5 giảm), tạo cảm giác kịch tính cần giải quyết.'
+        ),
+        (
+          'chord_c_aug',
+          'C_aug',
+          'Hợp âm Tăng (Caug – C+)',
+          'Hợp âm 3 Tăng (C – E – G#): Chồng 2 quãng 3 trưởng liên tiếp (quãng 5 tăng), mang màu sắc lơ lửng huyền ảo.'
+        ),
+      ];
+
+      final advChords = [
+        ...interChords,
+        (
+          'chord_c_sus4',
+          'C_sus4',
+          'Hợp âm Treo (Csus4)',
+          'Hợp âm Treo bậc 4 (C – F – G): Thay bậc 3 bằng bậc 4 đúng tạo cảm giác chờ đợi hút về hợp âm Trưởng.'
+        ),
+        (
+          'chord_c_maj7',
+          'C_maj7',
+          'Hợp âm Bảy Trưởng (Cmaj7)',
+          'Hợp âm Bảy Trưởng (C – E – G – B): Hợp âm 3 Trưởng cộng thêm quãng 7 trưởng, màu sắc Jazz/Ballad sang trọng.'
+        ),
+        (
+          'chord_a_min7',
+          'A_min7',
+          'Hợp âm Bảy Thứ (Am7)',
+          'Hợp âm Bảy Thứ (A – C – E – G): Hợp âm 3 Thứ cộng quãng 7 thứ êm dịu, rất phổ biến trong nhạc Pop & R&B.'
+        ),
+        (
+          'chord_g_dom7',
+          'G_dom7',
+          'Hợp âm Bảy Át (G7 – Dominant 7)',
+          'Hợp âm Bảy Át (G – B – D – F): Hợp âm 3 Trưởng cộng quãng 7 thứ (chứa quãng Tritone B–F), hút mạnh về chủ âm Đô.'
+        ),
+      ];
+
+      final chordPool =
+          isAdvanced ? advChords : (isInter ? interChords : basicChords);
+      final passes = chordPool.length < 10 ? 2 : 1;
+
+      for (int pass = 0; pass < passes; pass++) {
+        for (int i = 0; i < chordPool.length; i++) {
+          final (fileKey, optKey, label, desc) = chordPool[i];
+          final suffix = pass == 0 ? fileKey : '${fileKey}_v2';
+          final qId = 'dyn_chd_${levelId}_$suffix';
+          final step1 = pass == 0 ? 1 : 2;
+          final step2 = pass == 0 ? 2 : 3;
+          final step3 = pass == 0 ? 3 : 4;
+          final distractors = <int>{
+            (i + step1) % chordPool.length,
+            (i + step2) % chordPool.length,
+            (i + step3) % chordPool.length,
+          };
+          int fb = 1;
+          while (distractors.length < 3) {
+            final cand = (i + fb) % chordPool.length;
+            if (cand != i) distractors.add(cand);
+            fb++;
+          }
+          final allIdx = [i, ...distractors]..sort();
+
+          final options = <QuestionOptionModel>[
+            for (int idx = 0; idx < allIdx.length; idx++)
+              QuestionOptionModel(
+                id: '${qId}_o${idx + 1}',
+                questionId: qId,
+                optionKey: chordPool[allIdx[idx]].$2,
+                label: chordPool[allIdx[idx]].$3,
+                isCorrect: allIdx[idx] == i,
+                sortOrder: idx + 1,
+              ),
+          ];
+
+          generated.add(
+            QuestionModel(
+              id: qId,
+              topicId: topicId,
+              levelId: levelId,
+              type: 'chord_quality',
+              prompt: isAdvanced
+                  ? '[Hợp âm Nâng cao] Nghe các nốt rải & hợp âm vang lên để nhận diện Hợp âm 7 / Sus4:'
+                  : (isInter
+                      ? '[Hợp âm Trung bình] Nghe màu sắc hòa thanh và phân biệt Trưởng, Thứ, Tăng, Giảm:'
+                      : '[Hợp âm Cơ bản] Nghe hợp âm rải + hòa âm và chọn đúng tên hợp âm Trưởng / Thứ:'),
+              explanation: desc,
+              audioAsset: 'assets/audio/keys/$fileKey.wav',
+              difficulty: diff,
+              version: 1,
+              options: options,
+            ),
+          );
+        }
+      }
+    } else if (topicId == 'topic_melody') {
+      final isAdvanced = levelId.contains('adv');
+      final isInter = levelId.contains('inter');
+      final diff = isAdvanced ? 3 : (isInter ? 2 : 1);
+
+      final basicMelodies = [
+        (
+          'mel_c_d_e',
+          'C_D_E',
+          'Đô – Rê – Mi (C4 → D4 → E4)',
+          'Ba nốt đi lên liền bậc khởi đầu từ Đô chuẩn (C4 – D4 – E4).'
+        ),
+        (
+          'mel_e_d_c',
+          'E_D_C',
+          'Mi – Rê – Đô (E4 → D4 → C4)',
+          'Ba nốt đi xuống liền bậc kết thúc vững chãi về chủ âm Đô (E4 – D4 – C4).'
+        ),
+        (
+          'mel_c_e_g',
+          'C_E_G',
+          'Đô – Mi – Sol (C4 → E4 → G4)',
+          'Ba nốt đi lên rải theo hợp âm Đô Trưởng (Bậc I – III – V).'
+        ),
+        (
+          'mel_g_e_c',
+          'G_E_C',
+          'Sol – Mi – Đô (G4 → E4 → C4)',
+          'Ba nốt đi xuống rải hợp âm Đô Trưởng từ bậc V về bậc I (G4 – E4 – C4).'
+        ),
+        (
+          'mel_c_f_g',
+          'C_F_G',
+          'Đô – Fa – Sol (C4 → F4 → G4)',
+          'Bước nhảy quãng 4 đúng từ Đô lên Fa rồi tiến lên Sol (Bậc I – IV – V).'
+        ),
+        (
+          'mel_g_a_g',
+          'G_A_G',
+          'Sol – La – Sol (G4 → A4 → G4)',
+          'Nốt thêu lượn lên 1 cung từ Sol lên La rồi quay về Sol (G4 – A4 – G4).'
+        ),
+      ];
+
+      final interMelodies = [
+        ...basicMelodies,
+        (
+          'mel_c_d_e_g',
+          'C_D_E_G',
+          'Đô – Rê – Mi – Sol (C4→D4→E4→G4)',
+          'Giai điệu Ngũ cung 4 nốt đi lên tươi sáng (Đô – Rê – Mi – Sol).'
+        ),
+        (
+          'mel_g_f_e_d',
+          'G_F_E_D',
+          'Sol – Fa – Mi – Rê (G4→F4→E4→D4)',
+          'Bốn nốt đi xuống liền bậc đều đặn từ Sol về Rê.'
+        ),
+        (
+          'mel_e_g_a_g',
+          'E_G_A_G',
+          'Mi – Sol – La – Sol (E4→G4→A4→G4)',
+          'Mẫu giai điệu 4 nốt mang âm hưởng dân ca mềm mại.'
+        ),
+      ];
+
+      final advMelodies = [
+        ...interMelodies,
+        (
+          'mel_c_e_g_c5',
+          'C_E_G_C5',
+          'Đô – Mi – Sol – Đô cao (C4→E4→G4→C5)',
+          'Rải hợp âm Đô Trưởng trọn vẹn 1 quãng tám từ C4 lên C5.'
+        ),
+        (
+          'mel_a3_c4_e4_a4',
+          'A3_C4_E4_A4',
+          'La trầm – Đô – Mi – La (A3→C4→E4→A4)',
+          'Rải hợp âm La Thứ trọn 1 quãng tám từ La trầm (A3) lên La chuẩn (A4).'
+        ),
+        (
+          'mel_d_f_a_g',
+          'D_F_A_G',
+          'Rê – Fa – La – Sol (D4→F4→A4→G4)',
+          'Giai điệu rải hợp âm Rê Thứ (D–F–A) rồi giải quyết về Sol (G4).'
+        ),
+      ];
+
+      final melPool =
+          isAdvanced ? advMelodies : (isInter ? interMelodies : basicMelodies);
+      final passes = melPool.length < 10 ? 2 : 1;
+
+      for (int pass = 0; pass < passes; pass++) {
+        for (int i = 0; i < melPool.length; i++) {
+          final (fileKey, optKey, label, desc) = melPool[i];
+          final suffix = pass == 0 ? fileKey : '${fileKey}_v2';
+          final qId = 'dyn_mel_${levelId}_$suffix';
+          final step1 = pass == 0 ? 1 : 2;
+          final step2 = pass == 0 ? 2 : 3;
+          final step3 = pass == 0 ? 3 : 4;
+          final distractors = <int>{
+            (i + step1) % melPool.length,
+            (i + step2) % melPool.length,
+            (i + step3) % melPool.length,
+          };
+          int fb = 1;
+          while (distractors.length < 3) {
+            final cand = (i + fb) % melPool.length;
+            if (cand != i) distractors.add(cand);
+            fb++;
+          }
+          final allIdx = [i, ...distractors]..sort();
+
+          final options = <QuestionOptionModel>[
+            for (int idx = 0; idx < allIdx.length; idx++)
+              QuestionOptionModel(
+                id: '${qId}_o${idx + 1}',
+                questionId: qId,
+                optionKey: melPool[allIdx[idx]].$2,
+                label: melPool[allIdx[idx]].$3,
+                isCorrect: allIdx[idx] == i,
+                sortOrder: idx + 1,
+              ),
+          ];
+
+          generated.add(
+            QuestionModel(
+              id: qId,
+              topicId: topicId,
+              levelId: levelId,
+              type: 'melody_dictation',
+              prompt: isAdvanced
+                  ? '[Giai điệu Nâng cao] Nghe nét nhạc 4 nốt (nhảy quãng / rải hợp âm) và chọn chuỗi nốt đúng:'
+                  : (isInter
+                      ? '[Giai điệu Trung bình] Nghe chuỗi 3–4 nốt nhạc và chọn đúng thứ tự cao độ:'
+                      : '[Giai điệu Cơ bản] Nghe nét giai điệu 3 nốt ngắn và chọn đúng thứ tự các nốt:'),
+              explanation: desc,
+              audioAsset: 'assets/audio/keys/$fileKey.wav',
+              difficulty: diff,
+              version: 1,
+              options: options,
+            ),
+          );
+        }
+      }
+    } else if (topicId == 'topic_rhythm') {
+      final isAdvanced = levelId.contains('adv');
+      final isInter = levelId.contains('inter');
+      final diff = isAdvanced ? 3 : (isInter ? 2 : 1);
+
+      final basicRhythms = [
+        (
+          'rhy_quarter_4_4',
+          'Q4',
+          '4 nốt Đen đều (♩ ♩ ♩ ♩)',
+          'Bốn phách nốt Đen đều đặn trong ô nhịp 4/4, phách 1 có trọng âm mạnh.'
+        ),
+        (
+          'rhy_half_notes',
+          'H2',
+          '2 nốt Trắng ngân dài (𝅗𝅥  𝅗𝅥)',
+          'Hai nốt Trắng, mỗi nốt ngân dài đúng 2 phách (vang lên ở phách 1 và phách 3).'
+        ),
+        (
+          'rhy_eighth_pair',
+          'E8',
+          'Chùm Móc đơn đôi đều (♪♪ ♪♪ ♪♪ ♪♪)',
+          'Mỗi phách chia đôi đều thành 2 nốt Móc đơn (tổng cộng 8 tiếng trong 1 ô nhịp 4/4).'
+        ),
+        (
+          'rhy_quarter_eighth',
+          'QE',
+          'Đen – Đôi móc đơn (♩  ♪♪  ♩  ♪♪)',
+          'Phách 1 & 3 là nốt Đen; phách 2 & 4 chia đôi thành cặp nốt Móc đơn.'
+        ),
+        (
+          'rhy_march_2_4',
+          'M24',
+          'Nhịp 2/4 Hành khúc (Mạnh – Nhẹ)',
+          'Chu kỳ 2 phách (Mạnh – Nhẹ | Mạnh – Nhẹ) dứt khoát đặc trưng của nhịp 2/4.'
+        ),
+        (
+          'rhy_waltz_3_4',
+          'W34',
+          'Nhịp 3/4 Waltz (Mạnh – Nhẹ – Nhẹ)',
+          'Chu kỳ 3 phách nhịp nhàng (Bùm – Chát – Chát) đặc trưng của điệu Valse 3/4.'
+        ),
+      ];
+
+      final interRhythms = [
+        ...basicRhythms,
+        (
+          'rhy_triplet',
+          'TRIP',
+          'Chùm ba Liên 3 (♪♪♪  ♪♪♪)',
+          'Mỗi phách được chia đều thành 3 nốt (Liên ba - Triplet) tạo cảm giác xoay tròn mềm mại.'
+        ),
+        (
+          'rhy_sixteenth',
+          'SIX16',
+          'Chùm bốn Móc kép nhanh (♬ ♬ ♩ ♩)',
+          'Hai phách đầu chia nhỏ thành 4 nốt Móc kép nhanh gấp đôi móc đơn, hai phách sau là nốt Đen.'
+        ),
+        (
+          'rhy_dotted_eighth',
+          'DOT8',
+          'Móc đơn chấm dôi + Móc kép (♪.  sixteenth)',
+          'Nốt đầu ngân 3/4 phách kèm nốt móc kép bật nhanh cuối phách, tạo độ nảy khỏe khoắn.'
+        ),
+      ];
+
+      final advRhythms = [
+        ...interRhythms,
+        (
+          'rhy_syncopated',
+          'SYNC',
+          'Tiết tấu Đảo phách (Syncopation ♪ ♩ ♪)',
+          'Trọng âm rơi vào nửa sau của phách 1 và ngân qua đầu phách 2 (Đảo phách - Syncopation).'
+        ),
+        (
+          'rhy_gallop',
+          'GAL',
+          'Tiết tấu Phi ngựa (♪ ♬ – Móc đơn + 2 Móc kép)',
+          'Nửa đầu phách là 1 nốt móc đơn, nửa sau là 2 nốt móc kép liên tiếp gợi nhịp vó ngựa.'
+        ),
+        (
+          'rhy_compound_6_8',
+          'C68',
+          'Nhịp Kép 6/8 (2 trọng âm chùm 3)',
+          'Ô nhịp gồm 6 móc đơn chia thành 2 cụm 3 (nhấn mạnh ở nốt 1 và nốt 4).'
+        ),
+      ];
+
+      final rhyPool =
+          isAdvanced ? advRhythms : (isInter ? interRhythms : basicRhythms);
+      final passes = rhyPool.length < 10 ? 2 : 1;
+
+      for (int pass = 0; pass < passes; pass++) {
+        for (int i = 0; i < rhyPool.length; i++) {
+          final (fileKey, optKey, label, desc) = rhyPool[i];
+          final suffix = pass == 0 ? fileKey : '${fileKey}_v2';
+          final qId = 'dyn_rhy_${levelId}_$suffix';
+          final step1 = pass == 0 ? 1 : 2;
+          final step2 = pass == 0 ? 2 : 3;
+          final step3 = pass == 0 ? 3 : 4;
+          final distractors = <int>{
+            (i + step1) % rhyPool.length,
+            (i + step2) % rhyPool.length,
+            (i + step3) % rhyPool.length,
+          };
+          int fb = 1;
+          while (distractors.length < 3) {
+            final cand = (i + fb) % rhyPool.length;
+            if (cand != i) distractors.add(cand);
+            fb++;
+          }
+          final allIdx = [i, ...distractors]..sort();
+
+          final options = <QuestionOptionModel>[
+            for (int idx = 0; idx < allIdx.length; idx++)
+              QuestionOptionModel(
+                id: '${qId}_o${idx + 1}',
+                questionId: qId,
+                optionKey: rhyPool[allIdx[idx]].$2,
+                label: rhyPool[allIdx[idx]].$3,
+                isCorrect: allIdx[idx] == i,
+                sortOrder: idx + 1,
+              ),
+          ];
+
+          generated.add(
+            QuestionModel(
+              id: qId,
+              topicId: topicId,
+              levelId: levelId,
+              type: 'rhythm_pattern',
+              prompt: isAdvanced
+                  ? '[Nhịp điệu Nâng cao] Nghe mẫu tiết tấu và nhận diện Đảo phách / Phi ngựa / Nhịp 6/8:'
+                  : (isInter
+                      ? '[Nhịp điệu Trung bình] Nghe tiết tấu và phân biệt Liên 3, Móc kép, Móc đơn chấm dôi:'
+                      : '[Nhịp điệu Cơ bản] Nghe mẫu gõ tiết tấu và chọn đúng hình nốt / loại nhịp:'),
+              explanation: desc,
+              audioAsset: 'assets/audio/keys/$fileKey.wav',
+              difficulty: diff,
+              version: 1,
+              options: options,
+            ),
+          );
+        }
+      }
     }
 
     for (final q in generated) {

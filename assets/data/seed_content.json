@@ -1,5 +1,5 @@
 {
-  "content_version": 6,
+  "content_version": 7,
   "topics": [
     {
       "id": "topic_notes",
@@ -13,7 +13,7 @@
       "id": "topic_staff_reading",
       "code": "staff_reading",
       "name": "Đọc nốt nhạc",
-      "description": "Nhìn vị trí nốt trên khuông nhạc 5 dòng (Khóa Sol & Khóa Fa), đọc tên nốt hoặc bấm phím đàn Piano.",
+      "description": "Nhìn vị trí nốt trên khuông nhạc 5 dòng kẻ (Khóa Sol 𝄞 & Khóa Fa 𝄢) và chọn đúng tên nốt (không phát tiếng trước).",
       "sort_order": 2,
       "is_enabled": true
     },
@@ -37,25 +37,25 @@
       "id": "topic_chords",
       "code": "chord_recognition",
       "name": "Nhận biết hợp âm",
-      "description": "Phân biệt hợp âm Trưởng, Thứ, Tăng, Giảm và hợp âm 7.",
+      "description": "Phân biệt hợp âm Trưởng, Thứ, Tăng, Giảm, Sus4 và hợp âm 7 (Maj7, m7, Dom7).",
       "sort_order": 5,
-      "is_enabled": false
+      "is_enabled": true
     },
     {
       "id": "topic_melody",
       "code": "melody_recognition",
       "name": "Nhận biết giai điệu",
-      "description": "Ghi nhớ và xác định chuỗi nốt giai điệu ngắn.",
+      "description": "Nghe và xác định chuỗi 3–4 nốt giai điệu ngắn đi lên, đi xuống hoặc rải hợp âm.",
       "sort_order": 6,
-      "is_enabled": false
+      "is_enabled": true
     },
     {
       "id": "topic_rhythm",
       "code": "rhythm_recognition",
       "name": "Nhận biết nhịp điệu",
-      "description": "Nhận diện mẫu tiết tấu và các loại nhịp 2/4, 3/4, 4/4, 6/8.",
+      "description": "Nhận diện mẫu tiết tấu (Đen, Móc đơn, Liên 3, Đảo phách) và các loại nhịp 2/4, 3/4, 4/4, 6/8.",
       "sort_order": 7,
-      "is_enabled": false
+      "is_enabled": true
     }
   ],
   "levels": [
@@ -168,6 +168,78 @@
       "topic_id": "topic_keys",
       "code": "advanced",
       "name": "Nâng cao",
+      "difficulty": 3,
+      "unlock_rule": "always_unlocked"
+    },
+    {
+      "id": "lvl_chords_basic",
+      "topic_id": "topic_chords",
+      "code": "basic",
+      "name": "Cơ bản (Hợp âm Trưởng & Thứ)",
+      "difficulty": 1,
+      "unlock_rule": "always_unlocked"
+    },
+    {
+      "id": "lvl_chords_inter",
+      "topic_id": "topic_chords",
+      "code": "intermediate",
+      "name": "Trung bình (Trưởng, Thứ, Tăng, Giảm)",
+      "difficulty": 2,
+      "unlock_rule": "always_unlocked"
+    },
+    {
+      "id": "lvl_chords_adv",
+      "topic_id": "topic_chords",
+      "code": "advanced",
+      "name": "Nâng cao (Hợp âm 7 & Sus4)",
+      "difficulty": 3,
+      "unlock_rule": "always_unlocked"
+    },
+    {
+      "id": "lvl_melody_basic",
+      "topic_id": "topic_melody",
+      "code": "basic",
+      "name": "Cơ bản (Giai điệu 3 nốt)",
+      "difficulty": 1,
+      "unlock_rule": "always_unlocked"
+    },
+    {
+      "id": "lvl_melody_inter",
+      "topic_id": "topic_melody",
+      "code": "intermediate",
+      "name": "Trung bình (Giai điệu 4 nốt liền bậc)",
+      "difficulty": 2,
+      "unlock_rule": "always_unlocked"
+    },
+    {
+      "id": "lvl_melody_adv",
+      "topic_id": "topic_melody",
+      "code": "advanced",
+      "name": "Nâng cao (Giai điệu nhảy quãng & Rải hợp âm)",
+      "difficulty": 3,
+      "unlock_rule": "always_unlocked"
+    },
+    {
+      "id": "lvl_rhythm_basic",
+      "topic_id": "topic_rhythm",
+      "code": "basic",
+      "name": "Cơ bản (Trắng, Đen, Móc đơn)",
+      "difficulty": 1,
+      "unlock_rule": "always_unlocked"
+    },
+    {
+      "id": "lvl_rhythm_inter",
+      "topic_id": "topic_rhythm",
+      "code": "intermediate",
+      "name": "Trung bình (Liên 3, Móc kép, Chấm dôi)",
+      "difficulty": 2,
+      "unlock_rule": "always_unlocked"
+    },
+    {
+      "id": "lvl_rhythm_adv",
+      "topic_id": "topic_rhythm",
+      "code": "advanced",
+      "name": "Nâng cao (Đảo phách & Nhịp 2/4, 3/4, 6/8)",
       "difficulty": 3,
       "unlock_rule": "always_unlocked"
     }
@@ -596,8 +668,8 @@
       "options": [
         {
           "id": "q_note_a01_o1",
-          "option_key": "F4",
-          "label": "Fa 4 (F4)",
+          "option_key": "C4",
+          "label": "Đô 4 (C4)",
           "is_correct": false,
           "sort_order": 1
         },

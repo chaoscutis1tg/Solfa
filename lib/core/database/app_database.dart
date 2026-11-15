@@ -808,6 +808,26 @@ class AppDatabase {
       );
     }).toList();
 
+    final todayKey = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    final todayActivity =
+        dailyList.where((d) => d.activityDate == todayKey).firstOrNull;
+    final todayAnsweredCount = todayActivity?.answeredCount ?? 0;
+
+    final goalStr = await getSetting('daily_goal_target');
+    final dailyGoalTarget =
+        (int.tryParse(goalStr ?? '20') ?? 20).clamp(5, 500);
+
+    final savedBestScore =
+        int.tryParse(await getSetting('best_score') ?? '0') ?? 0;
+    final maxFromSessions = recentSessions.fold<int>(
+      0,
+      (prev, s) => (s.correctCount * 10) > prev ? (s.correctCount * 10) : prev,
+    );
+    final bestScore =
+        savedBestScore > maxFromSessions ? savedBestScore : maxFromSessions;
+    final bestComboStreak =
+        int.tryParse(await getSetting('best_combo_streak') ?? '0') ?? 0;
+
     return OverallProgressStats(
       totalAnswered: totalAnswered,
       totalCorrect: totalCorrect,
@@ -818,6 +838,10 @@ class AppDatabase {
       recentSessions: recentSessions,
       dailyActivities: dailyList,
       noteMasteryStats: noteMasteryStats,
+      todayAnsweredCount: todayAnsweredCount,
+      dailyGoalTarget: dailyGoalTarget,
+      bestScore: bestScore,
+      bestComboStreak: bestComboStreak,
     );
   }
 
@@ -914,6 +938,10 @@ class AppDatabase {
       await txn.delete('practice_sessions');
       await txn.delete('review_items');
       await txn.delete('daily_activity');
+      await txn.delete(
+        'app_settings',
+        where: "key IN ('best_score', 'best_combo_streak')",
+      );
     });
   }
 

@@ -9,6 +9,7 @@ import '../../../core/models/domain_models.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/utils/note_formatter.dart';
 import '../../practice/application/practice_session_controller.dart';
+import '../../practice/presentation/widgets/free_piano_explorer_sheet.dart';
 import '../../support_developer/application/rewarded_ad_controller.dart';
 import '../../topics/presentation/topics_screen.dart';
 
@@ -276,7 +277,67 @@ class HomeScreen extends ConsumerWidget {
             data: (stats) => _buildProgressSection(context, ref, stats),
           ),
 
-          const SizedBox(height: 18),
+          const SizedBox(height: 12),
+
+          // 3b. Free Piano & Staff Explorer Card (C3–C5)
+          Card(
+            child: InkWell(
+              key: const Key('btn_open_free_piano_explorer'),
+              borderRadius: BorderRadius.circular(20),
+              onTap: () => showFreePianoExplorerSheet(context),
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF635BFF).withOpacity(0.14),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.piano_rounded,
+                        color: Color(0xFF635BFF),
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Đàn Piano & Tra cứu Khuông nhạc (C3–C5)',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 14,
+                            ),
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            'Bấm phím nghe tự do • Xem vị trí Khóa Sol 𝄞, Khóa Fa 𝄢 & tần số Hz',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(fontSize: 11.5),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(
+                      Icons.chevron_right_rounded,
+                      color: Color(0xFF635BFF),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 16),
 
           // 4. Core Topics Section Header
           Row(
@@ -806,6 +867,78 @@ class HomeScreen extends ConsumerWidget {
             ),
           ],
         ),
+        const SizedBox(height: 10),
+        Card(
+          key: const Key('daily_goal_progress_card'),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      stats.isDailyGoalReached
+                          ? Icons.verified_rounded
+                          : Icons.flag_circle_rounded,
+                      color: stats.isDailyGoalReached
+                          ? AppColors.correct
+                          : AppColors.primary,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        stats.isDailyGoalReached
+                            ? '🎯 Hoàn thành mục tiêu hôm nay (${stats.todayAnsweredCount}/${stats.dailyGoalTarget} nốt)!'
+                            : '🎯 Mục tiêu hôm nay: ${stats.todayAnsweredCount}/${stats.dailyGoalTarget} nốt',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    if (stats.bestScore > 0 || stats.bestComboStreak > 0)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.accentAmber.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(99),
+                        ),
+                        child: Text(
+                          '🏆 ${stats.bestScore}đ • 🔥x${stats.bestComboStreak}',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.accentAmber,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(99),
+                  child: LinearProgressIndicator(
+                    value: stats.dailyGoalProgress,
+                    minHeight: 6,
+                    backgroundColor: AppColors.primary.withOpacity(0.14),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      stats.isDailyGoalReached
+                          ? AppColors.correct
+                          : AppColors.primary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
         if (latestSession != null) ...[
           const SizedBox(height: 10),
           Card(
@@ -887,8 +1020,17 @@ class HomeScreen extends ConsumerWidget {
       case 'intervals':
         return Icons.swap_vert_circle_outlined;
       case 'key_recognition':
-      case 'chords':
+      case 'keys':
         return Icons.library_music_rounded;
+      case 'chord_recognition':
+      case 'chords':
+        return Icons.piano_rounded;
+      case 'melody_recognition':
+      case 'melody':
+        return Icons.queue_music_rounded;
+      case 'rhythm_recognition':
+      case 'rhythm':
+        return Icons.graphic_eq_rounded;
       default:
         return Icons.queue_music_rounded;
     }

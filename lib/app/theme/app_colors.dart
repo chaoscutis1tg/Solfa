@@ -47,8 +47,17 @@ class AppColors {
       case 'intervals':
         return const Color(0xFF0FA97A);
       case 'key_recognition':
-      case 'chords':
+      case 'keys':
         return const Color(0xFFF58216);
+      case 'chord_recognition':
+      case 'chords':
+        return const Color(0xFFE03E6D);
+      case 'melody_recognition':
+      case 'melody':
+        return const Color(0xFF0097B2);
+      case 'rhythm_recognition':
+      case 'rhythm':
+        return const Color(0xFF8B5CF6);
       default:
         return primary;
     }

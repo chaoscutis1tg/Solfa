@@ -230,9 +230,11 @@ class _SessionResultScreenState extends ConsumerState<SessionResultScreen> {
                                       const SizedBox(width: 5),
                                       Flexible(
                                         child: Text(
-                                          '${state.scorePoints} ĐIỂM',
+                                          state.isNewHighScore
+                                              ? '${state.scorePoints} ĐIỂM (KỶ LỤC MỚI!)'
+                                              : '${state.scorePoints} ĐIỂM',
                                           style: const TextStyle(
-                                            fontSize: 14.5,
+                                            fontSize: 13.5,
                                             fontWeight: FontWeight.w900,
                                             color: AppColors.accentAmber,
                                           ),
@@ -241,7 +243,23 @@ class _SessionResultScreenState extends ConsumerState<SessionResultScreen> {
                                     ],
                                   ),
                                 ),
-                                const SizedBox(height: 8),
+                                if (state.maxComboInSession > 0 ||
+                                    (progressAsync.valueOrNull?.bestScore ??
+                                            0) >
+                                        0) ...[
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    '🔥 Combo phiên: x${state.maxComboInSession} • 🏆 Kỷ lục: ${progressAsync.valueOrNull?.bestScore ?? state.scorePoints} điểm',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontSize: 11.8,
+                                      fontWeight: FontWeight.w800,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                ],
+                                const SizedBox(height: 6),
                                 Text(
                                   state.encouragingFeedback,
                                   style: const TextStyle(

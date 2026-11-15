@@ -447,6 +447,10 @@ class OverallProgressStats {
   final List<PracticeSessionModel> recentSessions;
   final List<DailyActivityModel> dailyActivities;
   final List<NoteMasteryStat> noteMasteryStats;
+  final int todayAnsweredCount;
+  final int dailyGoalTarget;
+  final int bestScore;
+  final int bestComboStreak;
 
   const OverallProgressStats({
     required this.totalAnswered,
@@ -458,9 +462,18 @@ class OverallProgressStats {
     required this.recentSessions,
     required this.dailyActivities,
     this.noteMasteryStats = const [],
+    this.todayAnsweredCount = 0,
+    this.dailyGoalTarget = 20,
+    this.bestScore = 0,
+    this.bestComboStreak = 0,
   });
 
   bool get hasAnyHistory => totalAnswered > 0 || recentSessions.isNotEmpty;
+
+  double get dailyGoalProgress =>
+      dailyGoalTarget <= 0 ? 1.0 : (todayAnsweredCount / dailyGoalTarget).clamp(0.0, 1.0);
+
+  bool get isDailyGoalReached => todayAnsweredCount >= dailyGoalTarget;
 
   int get completedSessionsCount {
     final fromTopics =

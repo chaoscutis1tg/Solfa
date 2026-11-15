@@ -97,6 +97,30 @@ class _TopicDetailScreenState extends ConsumerState<TopicDetailScreen> {
       } else {
         return 'Nghe hai nốt phát đồng thời (quãng hòa thanh), quãng 7 và quãng 4 tăng / 5 giảm.';
       }
+    } else if (topicId == 'topic_chords') {
+      if (difficulty == 1) {
+        return 'Cơ bản: Nghe hợp âm rải kèm hòa âm để phân biệt rõ Hợp âm 3 Trưởng (tươi sáng) và Hợp âm 3 Thứ (trầm lắng).';
+      } else if (difficulty == 2) {
+        return 'Trung bình: Phân biệt 4 sắc thái hòa thanh cốt lõi: Hợp âm Trưởng, Hợp âm Thứ, Hợp âm Giảm (dim) và Hợp âm Tăng (aug).';
+      } else {
+        return 'Nâng cao: Nhận diện các hợp âm màu sắc hiện đại: Hợp âm Bảy Trưởng (Maj7), Bảy Thứ (m7), Bảy Át (Dom7) và Hợp âm Treo (Sus4).';
+      }
+    } else if (topicId == 'topic_melody') {
+      if (difficulty == 1) {
+        return 'Cơ bản: Nghe và xác định thứ tự cao độ của các nét giai điệu ngắn 3 nốt đi lên, đi xuống hoặc rải hợp âm.';
+      } else if (difficulty == 2) {
+        return 'Trung bình: Ghi nhớ và nhận diện chuỗi 4 nốt nhạc liền bậc hoặc ngũ cung trong quãng C4.';
+      } else {
+        return 'Nâng cao: Nhận diện nét giai điệu 4 nốt có bước nhảy quãng rộng và rải hợp âm trọn quãng tám.';
+      }
+    } else if (topicId == 'topic_rhythm') {
+      if (difficulty == 1) {
+        return 'Cơ bản: Nhận biết hình nốt Trắng, nốt Đen đều, chùm Móc đơn đôi và phân biệt nhịp 2/4 Hành khúc với nhịp 3/4 Waltz.';
+      } else if (difficulty == 2) {
+        return 'Trung bình: Phân biệt chùm ba Liên 3 (Triplet), chùm bốn Móc kép nhanh và tiết tấu Móc đơn chấm dôi.';
+      } else {
+        return 'Nâng cao: Nhận diện tiết tấu Đảo phách (Syncopation), tiết tấu Phi ngựa (Gallop) và nhịp kép 6/8.';
+      }
     } else {
       if (difficulty == 1) {
         return 'Nghe chuỗi hòa âm I–IV–V–I để phân biệt Giọng Trưởng (tươi sáng) và Giọng Thứ (trầm lắng).';
