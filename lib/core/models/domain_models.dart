@@ -405,6 +405,25 @@ class TopicAccuracyStat {
       totalAnswered <= 0 ? 0.0 : (correctCount / totalAnswered) * 100.0;
 }
 
+class NoteMasteryStat {
+  final String pitchClass; // 'C', 'C#', 'D', ..., 'B'
+  final String solfegeLabel; // 'Đô', 'Đô#', 'Rê', ..., 'Si'
+  final bool isSharp;
+  final int totalAnswered;
+  final int correctCount;
+
+  const NoteMasteryStat({
+    required this.pitchClass,
+    required this.solfegeLabel,
+    required this.isSharp,
+    required this.totalAnswered,
+    required this.correctCount,
+  });
+
+  double get accuracyPercent =>
+      totalAnswered <= 0 ? 0.0 : (correctCount / totalAnswered) * 100.0;
+}
+
 class OverallProgressStats {
   final int totalAnswered;
   final int totalCorrect;
@@ -414,6 +433,7 @@ class OverallProgressStats {
   final List<TopicAccuracyStat> topicStats;
   final List<PracticeSessionModel> recentSessions;
   final List<DailyActivityModel> dailyActivities;
+  final List<NoteMasteryStat> noteMasteryStats;
 
   const OverallProgressStats({
     required this.totalAnswered,
@@ -424,6 +444,7 @@ class OverallProgressStats {
     required this.topicStats,
     required this.recentSessions,
     required this.dailyActivities,
+    this.noteMasteryStats = const [],
   });
 
   bool get hasAnyHistory => totalAnswered > 0 || recentSessions.isNotEmpty;

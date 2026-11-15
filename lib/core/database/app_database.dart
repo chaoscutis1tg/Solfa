@@ -703,6 +703,56 @@ class AppDatabase {
     final dailyList = dailyRows.map(DailyActivityModel.fromMap).toList();
     final streak = _calculateStreakDays(dailyList);
 
+    // Note Mastery Heatmap per pitch class (C, C#, D, D#, E, F, F#, G, G#, A, A#, B)
+    final noteRows = await db.rawQuery('''
+      SELECT
+        qo.option_key AS correct_key,
+        COUNT(a.id) AS total_cnt,
+        COALESCE(SUM(CASE WHEN a.is_correct = 1 THEN 1 ELSE 0 END), 0) AS correct_cnt
+      FROM answers a
+      INNER JOIN practice_sessions ps ON ps.id = a.session_id AND ps.status = 'completed'
+      INNER JOIN questions q ON q.id = a.question_id AND q.topic_id = 'topic_notes'
+      INNER JOIN question_options qo ON qo.question_id = q.id AND qo.is_correct = 1
+      GROUP BY qo.option_key
+    ''');
+
+    final Map<String, (int total, int correct)> pitchClassAgg = {};
+    for (final row in noteRows) {
+      final rawKey = (row['correct_key'] as String? ?? '').toUpperCase();
+      final pc = rawKey.replaceAll(RegExp(r'[0-9]'), '');
+      if (pc.isEmpty) continue;
+      final t = (row['total_cnt'] as num?)?.toInt() ?? 0;
+      final c = (row['correct_cnt'] as num?)?.toInt() ?? 0;
+      final prev = pitchClassAgg[pc] ?? (0, 0);
+      pitchClassAgg[pc] = (prev.$1 + t, prev.$2 + c);
+    }
+
+    const canonicalNotes = [
+      ('C', 'Đô', false),
+      ('D', 'Rê', false),
+      ('E', 'Mi', false),
+      ('F', 'Fa', false),
+      ('G', 'Sol', false),
+      ('A', 'La', false),
+      ('B', 'Si', false),
+      ('C#', 'Đô#', true),
+      ('D#', 'Rê#', true),
+      ('F#', 'Fa#', true),
+      ('G#', 'Sol#', true),
+      ('A#', 'La#', true),
+    ];
+
+    final noteMasteryStats = canonicalNotes.map((entry) {
+      final counts = pitchClassAgg[entry.$1] ?? (0, 0);
+      return NoteMasteryStat(
+        pitchClass: entry.$1,
+        solfegeLabel: entry.$2,
+        isSharp: entry.$3,
+        totalAnswered: counts.$1,
+        correctCount: counts.$2,
+      );
+    }).toList();
+
     return OverallProgressStats(
       totalAnswered: totalAnswered,
       totalCorrect: totalCorrect,
@@ -712,6 +762,7 @@ class AppDatabase {
       topicStats: topicStats,
       recentSessions: recentSessions,
       dailyActivities: dailyList,
+      noteMasteryStats: noteMasteryStats,
     );
   }
 

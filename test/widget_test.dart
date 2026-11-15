@@ -5,6 +5,7 @@ import 'package:solfa/app/app.dart';
 import 'package:solfa/app/router.dart';
 import 'package:solfa/core/audio/audio_service.dart';
 import 'package:solfa/core/database/app_database.dart';
+import 'package:solfa/core/models/domain_models.dart';
 import 'package:solfa/core/providers/app_providers.dart';
 import 'package:solfa/features/metronome/application/metronome_controller.dart';
 import 'package:solfa/features/practice/application/practice_session_controller.dart';
@@ -422,6 +423,47 @@ void main() {
         expect(container.read(metronomeProvider).beatStateAt(1), equals(0));
         metroNotifier.cycleBeatState(0);
         expect(container.read(metronomeProvider).beatStateAt(1), equals(2));
+
+        // 6. Metronome Speed Trainer (Automator) & Custom Presets
+        metroNotifier.setSubdivision(1);
+        metroNotifier.setBpm(100);
+        metroNotifier.setAutoSpeedUp(
+          enabled: true,
+          everyBars: 2,
+          incrementBpm: 5,
+          targetMaxBpm: 120,
+        );
+        await metroNotifier.start();
+        metroNotifier.advanceFullBarForTest(); // 1 bar completed -> still 100 BPM
+        expect(container.read(metronomeProvider).bpm, equals(100));
+        metroNotifier.advanceFullBarForTest(); // 2 bars completed -> +5 BPM = 105 BPM
+        expect(container.read(metronomeProvider).bpm, equals(105));
+        await metroNotifier.stop();
+
+        await db.saveMetronomePreset(
+          const MetronomePresetModel(
+            id: 'custom_test_1',
+            name: 'Mẫu cá nhân 95 BPM',
+            bpm: 95,
+            numerator: 4,
+            denominator: 4,
+            soundType: 'tempo',
+          ),
+        );
+        var allPresets = await db.getMetronomePresets();
+        expect(allPresets.any((p) => p.id == 'custom_test_1'), isTrue);
+        await db.deleteMetronomePreset('custom_test_1');
+        allPresets = await db.getMetronomePresets();
+        expect(allPresets.any((p) => p.id == 'custom_test_1'), isFalse);
+
+        // 7. Note Mastery Heatmap in OverallProgressStats
+        await sessionNotifier.finishSessionNow();
+        final statsWithHeatmap = await db.getOverallProgressStats();
+        expect(statsWithHeatmap.noteMasteryStats.length, equals(12));
+        expect(
+          statsWithHeatmap.noteMasteryStats.any((n) => n.totalAnswered > 0),
+          isTrue,
+        );
       },
     );
   });

@@ -104,6 +104,65 @@ class _MetronomeScreenState extends ConsumerState<MetronomeScreen>
     }
   }
 
+  Future<void> _showSaveCustomPresetDialog() async {
+    final s = ref.read(metronomeProvider);
+    final controller = TextEditingController(
+      text: 'Nhịp ${s.bpm} BPM (${s.timeSignature})',
+    );
+    final name = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Lưu Preset cá nhân'),
+        content: TextField(
+          key: const Key('input_custom_preset_name'),
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(
+            labelText: 'Tên mẫu nhịp của bạn',
+            hintText: 'Ví dụ: Luyện ngón Guitar 95 BPM',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            key: const Key('btn_confirm_save_preset'),
+            style: ElevatedButton.styleFrom(minimumSize: const Size(96, 42)),
+            onPressed: () {
+              final text = controller.text.trim();
+              if (text.isNotEmpty) {
+                Navigator.of(ctx).pop(text);
+              }
+            },
+            child: const Text('Lưu mẫu'),
+          ),
+        ],
+      ),
+    );
+
+    if (name != null && name.isNotEmpty) {
+      final db = ref.read(appDatabaseProvider);
+      final preset = MetronomePresetModel(
+        id: 'custom_${DateTime.now().millisecondsSinceEpoch}',
+        name: name,
+        bpm: s.bpm,
+        numerator: s.numerator,
+        denominator: s.denominator,
+        soundType: s.soundType,
+      );
+      await db.saveMetronomePreset(preset);
+      ref.invalidate(metronomePresetsProvider);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Đã lưu mẫu "$name" (${s.bpm} BPM)')),
+        );
+      }
+    }
+  }
+
   void _showPresetsSheet(List<MetronomePresetModel> presets) {
     final notifier = ref.read(metronomeProvider.notifier);
     showModalBottomSheet<void>(
@@ -119,17 +178,45 @@ class _MetronomeScreenState extends ConsumerState<MetronomeScreen>
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Mẫu tốc độ chuẩn (Presets)',
-                  style: TextStyle(fontSize: 16.5, fontWeight: FontWeight.w800),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'Mẫu tốc độ (Presets & Cá nhân)',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    TextButton.icon(
+                      key: const Key('btn_save_preset_in_sheet'),
+                      onPressed: () {
+                        Navigator.of(ctx).pop();
+                        _showSaveCustomPresetDialog();
+                      },
+                      icon: const Icon(Icons.bookmark_add_outlined, size: 17),
+                      label: const Text('Lưu nhịp hiện tại'),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
                   children: presets.map((p) {
-                    return ActionChip(
-                      avatar: const Icon(Icons.speed_rounded, size: 16),
+                    final isCustom = p.id.startsWith('custom_');
+                    return InputChip(
+                      avatar: Icon(
+                        isCustom
+                            ? Icons.bookmark_rounded
+                            : Icons.speed_rounded,
+                        size: 16,
+                        color: isCustom
+                            ? AppColors.accentAmber
+                            : AppColors.primary,
+                      ),
                       label: Text(
                         '${p.name} (${p.bpm} BPM • ${p.timeSignatureLabel})',
                         style: const TextStyle(fontSize: 12.5),
@@ -140,6 +227,17 @@ class _MetronomeScreenState extends ConsumerState<MetronomeScreen>
                         notifier.setSoundType(p.soundType);
                         Navigator.of(ctx).pop();
                       },
+                      onDeleted: isCustom
+                          ? () async {
+                              await ref
+                                  .read(appDatabaseProvider)
+                                  .deleteMetronomePreset(p.id);
+                              ref.invalidate(metronomePresetsProvider);
+                              if (ctx.mounted) {
+                                Navigator.of(ctx).pop();
+                              }
+                            }
+                          : null,
                     );
                   }).toList(),
                 ),
@@ -173,6 +271,11 @@ class _MetronomeScreenState extends ConsumerState<MetronomeScreen>
           subdivision: s.subdivision,
           accentFirstBeat: s.accentFirstBeat,
           countInBars: s.countInBars,
+          autoSpeedUpEnabled: s.autoSpeedUpEnabled,
+          speedUpEveryBars: s.speedUpEveryBars,
+          speedUpIncrementBpm: s.speedUpIncrementBpm,
+          targetMaxBpm: s.targetMaxBpm,
+          completedBarsCount: s.completedBarsCount,
           volume: s.volume,
           isRunning: s.isRunning,
           intervalMs: s.intervalMs,
@@ -411,39 +514,76 @@ class _MetronomeScreenState extends ConsumerState<MetronomeScreen>
                         fontWeight: FontWeight.w800,
                       ),
                     ),
-                    presetsAsync.maybeWhen(
-                      data: (presets) => presets.isNotEmpty
-                          ? InkWell(
-                              borderRadius: BorderRadius.circular(8),
-                              onTap: () => _showPresetsSheet(presets),
-                              child: const Padding(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 2,
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        InkWell(
+                          key: const Key('btn_save_custom_preset'),
+                          borderRadius: BorderRadius.circular(8),
+                          onTap: _showSaveCustomPresetDialog,
+                          child: const Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.bookmark_add_outlined,
+                                  size: 15,
+                                  color: AppColors.accentAmber,
                                 ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      Icons.tune_rounded,
-                                      size: 15,
-                                      color: AppColors.primary,
-                                    ),
-                                    SizedBox(width: 4),
-                                    Text(
-                                      'Mẫu tốc độ',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w800,
-                                        color: AppColors.primary,
-                                      ),
-                                    ),
-                                  ],
+                                SizedBox(width: 3),
+                                Text(
+                                  '+ Lưu nhịp',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.accentAmber,
+                                  ),
                                 ),
-                              ),
-                            )
-                          : const SizedBox.shrink(),
-                      orElse: () => const SizedBox.shrink(),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        presetsAsync.maybeWhen(
+                          data: (presets) => presets.isNotEmpty
+                              ? InkWell(
+                                  key: const Key('btn_open_presets_sheet'),
+                                  borderRadius: BorderRadius.circular(8),
+                                  onTap: () => _showPresetsSheet(presets),
+                                  child: const Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.tune_rounded,
+                                          size: 15,
+                                          color: AppColors.primary,
+                                        ),
+                                        SizedBox(width: 4),
+                                        Text(
+                                          'Mẫu tốc độ',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w800,
+                                            color: AppColors.primary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                )
+                              : const SizedBox.shrink(),
+                          orElse: () => const SizedBox.shrink(),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -628,6 +768,92 @@ class _MetronomeScreenState extends ConsumerState<MetronomeScreen>
                       ),
                     ),
                   ],
+                ),
+
+                const SizedBox(height: 10),
+                // Speed Trainer / Automator (Tempo Lite Pro style)
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: cfg.autoSpeedUpEnabled
+                        ? AppColors.correct.withOpacity(0.10)
+                        : AppColors.primary.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: cfg.autoSpeedUpEnabled
+                          ? AppColors.correct.withOpacity(0.45)
+                          : AppColors.primary.withOpacity(0.16),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.trending_up_rounded,
+                            size: 17,
+                            color: cfg.autoSpeedUpEnabled
+                                ? AppColors.correct
+                                : AppColors.primary,
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              cfg.autoSpeedUpEnabled
+                                  ? 'Tự động tăng tốc: +${cfg.speedUpIncrementBpm} BPM / ${cfg.speedUpEveryBars} ô nhịp (Đã chạy: ${cfg.completedBarsCount} ô)'
+                                  : 'Tự động tăng tốc (Speed Trainer • Luyện ngón)',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            height: 28,
+                            child: Switch(
+                              key: const Key('switch_speed_trainer'),
+                              value: cfg.autoSpeedUpEnabled,
+                              onChanged: (v) =>
+                                  notifier.setAutoSpeedUp(enabled: v),
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (cfg.autoSpeedUpEnabled) ...[
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            for (final preset in const [
+                              (2, 4, '+2 BPM / 4 nhịp'),
+                              (5, 4, '+5 BPM / 4 nhịp'),
+                              (5, 8, '+5 BPM / 8 nhịp'),
+                            ]) ...[
+                              if (preset.$1 != 2 || preset.$2 != 4)
+                                const SizedBox(width: 6),
+                              Expanded(
+                                child: _CompactSelectButton(
+                                  key: Key(
+                                    'speed_step_${preset.$1}_${preset.$2}',
+                                  ),
+                                  label: preset.$3,
+                                  isSelected: cfg.speedUpIncrementBpm ==
+                                          preset.$1 &&
+                                      cfg.speedUpEveryBars == preset.$2,
+                                  isDark: isDark,
+                                  onTap: () => notifier.setAutoSpeedUp(
+                                    enabled: true,
+                                    incrementBpm: preset.$1,
+                                    everyBars: preset.$2,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
               ],
             ),

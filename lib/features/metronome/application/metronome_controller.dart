@@ -91,6 +91,11 @@ class MetronomeState {
   final int subdivision; // 1 (Quarter), 2 (Eighth), 3 (Triplet), 4 (Sixteenth)
   final List<int> beatStates; // Per-beat: 2 = Accent, 1 = Normal, 0 = Muted
   final int countInBars; // 0, 1, or 2
+  final bool autoSpeedUpEnabled; // Speed Trainer (Automator)
+  final int speedUpEveryBars; // Increase BPM every N bars (e.g. 2, 4, 8)
+  final int speedUpIncrementBpm; // +BPM per step (e.g. 2, 5, 10)
+  final int targetMaxBpm; // Ceiling BPM for Speed Trainer
+  final int completedBarsCount; // Bars completed in current run
   final double volume;
   final MetronomeStatus status;
   final int currentBeat; // 1..numerator (or 0 when stopped)
@@ -107,6 +112,11 @@ class MetronomeState {
     this.subdivision = 1,
     this.beatStates = const [2, 1, 1, 1],
     this.countInBars = 0,
+    this.autoSpeedUpEnabled = false,
+    this.speedUpEveryBars = 4,
+    this.speedUpIncrementBpm = 5,
+    this.targetMaxBpm = 160,
+    this.completedBarsCount = 0,
     this.volume = 0.9,
     this.status = MetronomeStatus.stopped,
     this.currentBeat = 0,
@@ -139,6 +149,11 @@ class MetronomeState {
     int? subdivision,
     List<int>? beatStates,
     int? countInBars,
+    bool? autoSpeedUpEnabled,
+    int? speedUpEveryBars,
+    int? speedUpIncrementBpm,
+    int? targetMaxBpm,
+    int? completedBarsCount,
     double? volume,
     MetronomeStatus? status,
     int? currentBeat,
@@ -155,6 +170,13 @@ class MetronomeState {
       subdivision: subdivision ?? this.subdivision,
       beatStates: beatStates ?? this.beatStates,
       countInBars: countInBars ?? this.countInBars,
+      autoSpeedUpEnabled: autoSpeedUpEnabled ?? this.autoSpeedUpEnabled,
+      speedUpEveryBars: speedUpEveryBars ?? this.speedUpEveryBars,
+      speedUpIncrementBpm: speedUpIncrementBpm ?? this.speedUpIncrementBpm,
+      targetMaxBpm: targetMaxBpm != null
+          ? TapTempoCalculator.clampBpm(targetMaxBpm)
+          : this.targetMaxBpm,
+      completedBarsCount: completedBarsCount ?? this.completedBarsCount,
       volume: volume ?? this.volume,
       status: status ?? this.status,
       currentBeat: currentBeat ?? this.currentBeat,
@@ -278,6 +300,20 @@ class MetronomeNotifier extends StateNotifier<MetronomeState> {
     state = state.copyWith(countInBars: bars.clamp(0, 2));
   }
 
+  void setAutoSpeedUp({
+    bool? enabled,
+    int? everyBars,
+    int? incrementBpm,
+    int? targetMaxBpm,
+  }) {
+    state = state.copyWith(
+      autoSpeedUpEnabled: enabled,
+      speedUpEveryBars: everyBars?.clamp(1, 32),
+      speedUpIncrementBpm: incrementBpm?.clamp(1, 30),
+      targetMaxBpm: targetMaxBpm,
+    );
+  }
+
   void setVolume(double volume) {
     final v = volume.clamp(0.0, 1.0);
     state = state.copyWith(volume: v);
@@ -327,6 +363,7 @@ class MetronomeNotifier extends StateNotifier<MetronomeState> {
       status: initialStatus,
       currentBeat: 1,
       currentSubTick: 0,
+      completedBarsCount: 0,
       remainingCountInBeats: totalCountIn > 0 ? totalCountIn - 1 : 0,
       errorMessage: null,
     );
@@ -402,8 +439,33 @@ class MetronomeNotifier extends StateNotifier<MetronomeState> {
     }
 
     final nextBeat = (state.currentBeat % state.numerator) + 1;
-    state = state.copyWith(currentBeat: nextBeat, currentSubTick: 0);
+    int nextBars = state.completedBarsCount;
+    int nextBpm = state.bpm;
+
+    if (nextBeat == 1) {
+      nextBars += 1;
+      if (state.autoSpeedUpEnabled &&
+          state.bpm < state.targetMaxBpm &&
+          nextBars % state.speedUpEveryBars == 0) {
+        nextBpm =
+            (state.bpm + state.speedUpIncrementBpm).clamp(30, state.targetMaxBpm);
+      }
+    }
+
+    state = state.copyWith(
+      bpm: nextBpm,
+      currentBeat: nextBeat,
+      currentSubTick: 0,
+      completedBarsCount: nextBars,
+    );
     unawaited(_playBeatClick(beatNumber: nextBeat, isSubTick: false));
+  }
+
+  /// Advances one full bar for deterministic unit testing of Speed Trainer.
+  void advanceFullBarForTest() {
+    for (int b = 0; b < state.numerator * state.subdivision; b++) {
+      _onBeatTick();
+    }
   }
 
   Future<void> _playBeatClick({

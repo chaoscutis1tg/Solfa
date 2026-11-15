@@ -10,6 +10,7 @@ import '../../../core/models/domain_models.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/utils/note_formatter.dart';
 import '../application/practice_session_controller.dart';
+import 'widgets/musical_staff_widget.dart';
 import 'widgets/piano_keyboard_widget.dart';
 
 /// UI-05 (Màn hình câu hỏi Phòng luyện tập) & UI-06 (Phản hồi câu trả lời)
@@ -425,9 +426,16 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
                           },
                         ),
 
-                        // Visual & Interactive Piano Helper (UC-05)
+                        // Visual & Interactive Musical Staff + Piano Helper (UC-05)
                         if (question.showPianoHelper) ...[
                           const SizedBox(height: 10),
+                          MusicalStaffWidget(
+                            targetNoteKey: question.correctOption.optionKey,
+                            selectedNoteKey:
+                                viewState.selectedOption?.optionKey,
+                            showNote: isCurrentAnswered,
+                          ),
+                          const SizedBox(height: 8),
                           PianoKeyboardWidget(
                             highlightedNoteKey:
                                 question.correctOption.optionKey,

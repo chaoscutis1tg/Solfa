@@ -21,6 +21,15 @@ class NoteFormatter {
     'B': 'Si',
   };
 
+  /// Returns e.g. "Đô (C4)" from raw note key "C4" or "F#4".
+  static String toVietnameseLabel(String rawNoteKey) {
+    final cleaned = rawNoteKey.trim().toUpperCase();
+    if (cleaned.isEmpty) return '';
+    final pitchClass = cleaned.replaceAll(RegExp(r'[0-9]'), '');
+    final vi = solfegeMap[pitchClass] ?? pitchClass;
+    return '$vi ($cleaned)';
+  }
+
   /// Returns e.g. "Đô (C)" or "Đô 4 (C4)" if includeOctave is true.
   static String formatBilingual(String pitchClass, {int? octave, bool includeOctave = false}) {
     final vi = solfegeMap[pitchClass] ?? pitchClass;
