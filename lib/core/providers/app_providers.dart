@@ -120,45 +120,61 @@ class AppSettingsNotifier extends StateNotifier<AppSettingsState> {
         : mode == ThemeMode.system
             ? 'system'
             : 'light';
-    await _db.setSetting('theme_mode', str);
+    try {
+      await _db.setSetting('theme_mode', str);
+    } catch (_) {}
   }
 
   Future<void> setAutoPlayAudio(bool value) async {
     state = state.copyWith(autoPlayQuestionAudio: value);
-    await _db.setSetting('auto_play_audio', value.toString());
+    try {
+      await _db.setSetting('auto_play_audio', value.toString());
+    } catch (_) {}
   }
 
   Future<void> setLessonVolume(double value) async {
     final clamped = value.clamp(0.0, 1.0);
     state = state.copyWith(lessonVolume: clamped);
     _audioService.updateConfig(lessonVolume: clamped);
-    await _db.setSetting('lesson_volume', clamped.toStringAsFixed(2));
+    try {
+      await _db.setSetting('lesson_volume', clamped.toStringAsFixed(2));
+    } catch (_) {}
   }
 
   Future<void> setFeedbackSound(bool value) async {
     state = state.copyWith(feedbackSoundEnabled: value);
     _audioService.updateConfig(sfxEnabled: value);
-    await _db.setSetting('feedback_sound', value.toString());
+    try {
+      await _db.setSetting('feedback_sound', value.toString());
+    } catch (_) {}
   }
 
   Future<void> setHapticFeedback(bool value) async {
     state = state.copyWith(hapticFeedbackEnabled: value);
-    await _db.setSetting('haptic_feedback', value.toString());
+    try {
+      await _db.setSetting('haptic_feedback', value.toString());
+    } catch (_) {}
   }
 
   Future<void> setDefaultMetronomeSound(String sound) async {
     state = state.copyWith(defaultMetronomeSound: sound);
-    await _db.setSetting('default_metronome_sound', sound);
+    try {
+      await _db.setSetting('default_metronome_sound', sound);
+    } catch (_) {}
   }
 
   Future<void> setKeepScreenAwake(bool value) async {
     state = state.copyWith(keepScreenAwakeOnMetronome: value);
-    await _db.setSetting('keep_screen_awake', value.toString());
+    try {
+      await _db.setSetting('keep_screen_awake', value.toString());
+    } catch (_) {}
   }
 
   Future<void> setUnlockAllLevels(bool value) async {
     state = state.copyWith(unlockAllLevels: value);
-    await _db.setSetting('unlock_all_levels', value.toString());
+    try {
+      await _db.setSetting('unlock_all_levels', value.toString());
+    } catch (_) {}
   }
 }
 

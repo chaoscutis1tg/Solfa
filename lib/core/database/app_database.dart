@@ -12,6 +12,7 @@ import '../models/domain_models.dart';
 class AppDatabase {
   static const int schemaVersion = 2;
   Database? _db;
+  Future<Database>? _dbInitFuture;
   final String? _customPath;
 
   AppDatabase({String? customPath}) : _customPath = customPath;
@@ -23,8 +24,14 @@ class AppDatabase {
 
   Future<Database> get database async {
     if (_db != null && _db!.isOpen) return _db!;
-    _db = await _initDatabase();
-    return _db!;
+    if (_dbInitFuture != null) return _dbInitFuture!;
+    _dbInitFuture = _initDatabase();
+    try {
+      _db = await _dbInitFuture!;
+      return _db!;
+    } finally {
+      _dbInitFuture = null;
+    }
   }
 
   Future<Database> _initDatabase() async {
@@ -462,24 +469,48 @@ class AppDatabase {
     );
   }
 
+  /// Updates topic_id and level_id of an active in_progress session when the user toggles mode/level mid-session.
+  Future<void> updateSessionTopicAndLevel({
+    required String sessionId,
+    required String topicId,
+    String? levelId,
+  }) async {
+    try {
+      final db = await database;
+      await db.update(
+        'practice_sessions',
+        {
+          'topic_id': topicId,
+          'level_id': levelId,
+        },
+        where: 'id = ?',
+        whereArgs: [sessionId],
+      );
+    } catch (_) {}
+  }
+
   /// Marks an unfinished session as abandoned if the user exits early (BR-07).
   Future<void> abandonSession(String sessionId) async {
-    final db = await database;
-    await db.update(
-      'practice_sessions',
-      {
-        'status': 'abandoned',
-        'ended_at': DateTime.now().toIso8601String(),
-      },
-      where: "id = ? AND status = 'in_progress'",
-      whereArgs: [sessionId],
-    );
+    try {
+      final db = await database;
+      await db.update(
+        'practice_sessions',
+        {
+          'status': 'abandoned',
+          'ended_at': DateTime.now().toIso8601String(),
+        },
+        where: "id = ? AND status = 'in_progress'",
+        whereArgs: [sessionId],
+      );
+    } catch (_) {}
   }
 
   /// Completes a practice or review session atomically inside a SQLite transaction (NFR-03, BR-05, Decision #4).
   Future<void> completeSessionTransaction({
     required String sessionId,
     required String mode, // 'quick', 'topic', 'review'
+    String? topicId,
+    String? levelId,
     required List<AnswerModel> answers,
     required int activeDurationSeconds,
     DateTime? completedAt,
@@ -490,19 +521,43 @@ class AppDatabase {
     final correctCount = answers.where((a) => a.isCorrect).length;
 
     await db.transaction((txn) async {
-      // 1. Update practice_sessions
-      await txn.update(
+      // 1. Update practice_sessions (including topic_id / level_id if switched mid-session)
+      final updateMap = <String, Object?>{
+        'ended_at': now.toIso8601String(),
+        'status': 'completed',
+        'total_questions': answers.length,
+        'correct_count': correctCount,
+        'duration_seconds': activeDurationSeconds,
+      };
+      if (topicId != null) {
+        updateMap['topic_id'] = topicId;
+        updateMap['level_id'] = levelId;
+      }
+      final updatedRows = await txn.update(
         'practice_sessions',
-        {
-          'ended_at': now.toIso8601String(),
-          'status': 'completed',
-          'total_questions': answers.length,
-          'correct_count': correctCount,
-          'duration_seconds': activeDurationSeconds,
-        },
+        updateMap,
         where: 'id = ?',
         whereArgs: [sessionId],
       );
+      if (updatedRows == 0) {
+        // Fallback if session record was cleared or missing
+        await txn.insert(
+          'practice_sessions',
+          {
+            'id': sessionId,
+            'topic_id': topicId ?? 'topic_notes',
+            'level_id': levelId,
+            'mode': mode,
+            'started_at': now.toIso8601String(),
+            'ended_at': now.toIso8601String(),
+            'status': 'completed',
+            'total_questions': answers.length,
+            'correct_count': correctCount,
+            'duration_seconds': activeDurationSeconds,
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
 
       // 2. Insert each answer & update review_items
       for (final ans in answers) {

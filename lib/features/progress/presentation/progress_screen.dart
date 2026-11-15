@@ -292,9 +292,17 @@ class ProgressScreen extends ConsumerWidget {
                                             idx >= stats.topicStats.length) {
                                           return const SizedBox.shrink();
                                         }
-                                        final shortName = stats
-                                            .topicStats[idx].topicName
-                                            .replaceAll('Nhận biết ', '');
+                                        final rawName = stats
+                                            .topicStats[idx].topicName;
+                                        final shortName = rawName ==
+                                                'Nhận biết nốt'
+                                            ? 'Nghe nốt'
+                                            : rawName == 'Đọc nốt nhạc'
+                                                ? 'Đọc nốt'
+                                                : rawName.replaceAll(
+                                                    'Nhận biết ',
+                                                    '',
+                                                  );
                                         return Padding(
                                           padding:
                                               const EdgeInsets.only(top: 6),

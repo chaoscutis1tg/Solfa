@@ -29,6 +29,13 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
     );
     if (ok && mounted) {
       context.push('/quiz');
+    } else if (!ok && mounted) {
+      final err = ref.read(practiceSessionProvider).errorMessage;
+      if (err != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(err)),
+        );
+      }
     }
   }
 

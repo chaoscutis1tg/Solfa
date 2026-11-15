@@ -41,6 +41,13 @@ class HomeScreen extends ConsumerWidget {
     );
     if (ok && context.mounted) {
       context.push('/quiz');
+    } else if (!ok && context.mounted) {
+      final err = ref.read(practiceSessionProvider).errorMessage;
+      if (err != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(err)),
+        );
+      }
     }
   }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/theme/app_colors.dart';
@@ -77,11 +78,20 @@ class _MetronomeScreenState extends ConsumerState<MetronomeScreen>
         content: TextField(
           controller: controller,
           keyboardType: TextInputType.number,
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+            LengthLimitingTextInputFormatter(3),
+          ],
           autofocus: true,
           decoration: const InputDecoration(
             hintText: 'Ví dụ: 120',
+            helperText: 'Giới hạn hợp lệ: 30 đến 300 BPM',
             suffixText: 'BPM',
           ),
+          onSubmitted: (value) {
+            final val = int.tryParse(value.trim());
+            Navigator.of(ctx).pop(val);
+          },
         ),
         actions: [
           TextButton(
@@ -99,6 +109,7 @@ class _MetronomeScreenState extends ConsumerState<MetronomeScreen>
         ],
       ),
     );
+    controller.dispose();
     if (entered != null) {
       ref.read(metronomeProvider.notifier).setBpm(entered);
     }
@@ -106,9 +117,8 @@ class _MetronomeScreenState extends ConsumerState<MetronomeScreen>
 
   Future<void> _showSaveCustomPresetDialog() async {
     final s = ref.read(metronomeProvider);
-    final controller = TextEditingController(
-      text: 'Nhịp ${s.bpm} BPM (${s.timeSignature})',
-    );
+    final defaultName = 'Nhịp ${s.bpm} BPM (${s.timeSignature})';
+    final controller = TextEditingController(text: defaultName);
     final name = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -117,6 +127,9 @@ class _MetronomeScreenState extends ConsumerState<MetronomeScreen>
         content: TextField(
           key: const Key('input_custom_preset_name'),
           controller: controller,
+          inputFormatters: [
+            LengthLimitingTextInputFormatter(36),
+          ],
           autofocus: true,
           decoration: const InputDecoration(
             labelText: 'Tên mẫu nhịp của bạn',
@@ -133,15 +146,14 @@ class _MetronomeScreenState extends ConsumerState<MetronomeScreen>
             style: ElevatedButton.styleFrom(minimumSize: const Size(96, 42)),
             onPressed: () {
               final text = controller.text.trim();
-              if (text.isNotEmpty) {
-                Navigator.of(ctx).pop(text);
-              }
+              Navigator.of(ctx).pop(text.isNotEmpty ? text : defaultName);
             },
             child: const Text('Lưu mẫu'),
           ),
         ],
       ),
     );
+    controller.dispose();
 
     if (name != null && name.isNotEmpty) {
       final db = ref.read(appDatabaseProvider);

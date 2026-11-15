@@ -51,6 +51,16 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
     context.pushReplacement('/session-result');
   }
 
+  void _safeLeaveQuiz() {
+    _autoAdvanceTimer?.cancel();
+    if (!mounted) return;
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go('/home');
+    }
+  }
+
   Future<void> _handleSelectOption(QuestionOptionModel option) async {
     final notifier = ref.read(practiceSessionProvider.notifier);
     await notifier.submitAnswer(option);
@@ -204,6 +214,16 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
       },
     );
 
+    // Cancel any pending auto-advance timer whenever a new question/level/mode resets selectedOption
+    ref.listen<QuestionOptionModel?>(
+      practiceSessionProvider.select((s) => s.selectedOption),
+      (prev, next) {
+        if (next == null) {
+          _autoAdvanceTimer?.cancel();
+        }
+      },
+    );
+
     // Watch ONLY question-level state so 1-second timer ticks never rebuild the quiz body!
     final viewState = ref.watch(
       practiceSessionProvider.select(
@@ -249,7 +269,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
-                    onPressed: () => context.pop(),
+                    onPressed: _safeLeaveQuiz,
                     child: const Text('Quay lại'),
                   ),
                 ],
@@ -271,7 +291,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
         if (didPop) return;
         final canLeave = await _confirmExitSession();
         if (canLeave && context.mounted) {
-          context.pop();
+          _safeLeaveQuiz();
         }
       },
       child: SolfaBackground(
@@ -284,7 +304,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
               onPressed: () async {
                 final canLeave = await _confirmExitSession();
                 if (canLeave && context.mounted) {
-                  context.pop();
+                  _safeLeaveQuiz();
                 }
               },
             ),
@@ -638,6 +658,7 @@ class _PracticeRoomScoreboardHeader extends ConsumerWidget {
     final scoreState = ref.watch(
       practiceSessionProvider.select(
         (s) => (
+          mode: s.mode,
           topicId: s.topicId,
           levelId: s.levelId,
           timeLimitSeconds: s.timeLimitSeconds,
@@ -749,8 +770,9 @@ class _PracticeRoomScoreboardHeader extends ConsumerWidget {
                 ),
               ],
             ),
-            if (scoreState.topicId == 'topic_notes' ||
-                scoreState.topicId == 'topic_staff_reading') ...[
+            if (scoreState.mode != 'review' &&
+                (scoreState.topicId == 'topic_notes' ||
+                    scoreState.topicId == 'topic_staff_reading')) ...[
               const SizedBox(height: 6),
               Row(
                 children: [

@@ -10,6 +10,8 @@ class AudioService {
   final ValueNotifier<bool> isPlayingNotifier = ValueNotifier<bool>(false);
   double _lessonVolume = 0.9;
   bool _sfxEnabled = true;
+  bool _isDisposed = false;
+  int _playSerial = 0;
 
   AudioService({this.isTestMode = false});
 
@@ -30,14 +32,18 @@ class AudioService {
   }
 
   Future<void> _ensurePlayers() async {
-    if (isTestMode) return;
+    if (isTestMode || _isDisposed) return;
     if (_lessonPlayer == null) {
       _lessonPlayer = AudioPlayer();
       _lessonPlayer!.onPlayerStateChanged.listen((state) {
-        isPlayingNotifier.value = (state == PlayerState.playing);
+        if (!_isDisposed) {
+          isPlayingNotifier.value = (state == PlayerState.playing);
+        }
       });
       _lessonPlayer!.onPlayerComplete.listen((_) {
-        isPlayingNotifier.value = false;
+        if (!_isDisposed) {
+          isPlayingNotifier.value = false;
+        }
       });
     }
     _sfxPlayer ??= AudioPlayer()..setPlayerMode(PlayerMode.lowLatency);
@@ -45,24 +51,31 @@ class AudioService {
 
   /// Plays the specified lesson audio asset, stopping any currently playing lesson sound first.
   Future<bool> playAsset(String assetPath) async {
-    if (assetPath.trim().isEmpty) return false;
+    if (_isDisposed || assetPath.trim().isEmpty) return false;
+    final currentOp = ++_playSerial;
     if (isTestMode) {
       isPlayingNotifier.value = true;
       Future.delayed(const Duration(milliseconds: 50), () {
-        isPlayingNotifier.value = false;
+        if (!_isDisposed && currentOp == _playSerial) {
+          isPlayingNotifier.value = false;
+        }
       });
       return true;
     }
     try {
       await _ensurePlayers();
+      if (_isDisposed || currentOp != _playSerial) return false;
       await _lessonPlayer!.stop();
+      if (_isDisposed || currentOp != _playSerial) return false;
       await _lessonPlayer!.setVolume(_lessonVolume);
       final normalized = _normalizeAssetSourcePath(assetPath);
       isPlayingNotifier.value = true;
       await _lessonPlayer!.play(AssetSource(normalized));
       return true;
     } catch (_) {
-      isPlayingNotifier.value = false;
+      if (!_isDisposed && currentOp == _playSerial) {
+        isPlayingNotifier.value = false;
+      }
       return false;
     }
   }
@@ -103,14 +116,19 @@ class AudioService {
   }
 
   Future<void> stop() async {
-    isPlayingNotifier.value = false;
-    if (isTestMode) return;
+    _playSerial++;
+    if (!_isDisposed) {
+      isPlayingNotifier.value = false;
+    }
+    if (isTestMode || _isDisposed) return;
     try {
       await _lessonPlayer?.stop();
     } catch (_) {}
   }
 
   Future<void> dispose() async {
+    _isDisposed = true;
+    _playSerial++;
     isPlayingNotifier.value = false;
     if (isTestMode) return;
     try {

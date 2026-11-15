@@ -56,14 +56,24 @@ class _SessionResultScreenState extends ConsumerState<SessionResultScreen> {
         ? AppColors.surfaceDark.withOpacity(0.92)
         : Colors.white.withOpacity(0.95);
 
-    return SolfaBackground(
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        appBar: AppBar(
-          automaticallyImplyLeading: false,
-          centerTitle: true,
-          title: const Text('Bảng điểm phiên luyện tập'),
-        ),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go('/home');
+        }
+      },
+      child: SolfaBackground(
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          appBar: AppBar(
+            automaticallyImplyLeading: false,
+            centerTitle: true,
+            title: const Text('Bảng điểm phiên luyện tập'),
+          ),
         body: SafeArea(
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(
@@ -578,6 +588,7 @@ class _SessionResultScreenState extends ConsumerState<SessionResultScreen> {
           ),
         ),
       ),
+    ),
     );
   }
 }

@@ -671,5 +671,103 @@ void main() {
         expect(tester.takeException(), isNull);
       },
     );
+
+    test(
+      'TC-18: Xử lý ngoại lệ & tình huống biên của người dùng (bấm liên tục, đổi chế độ giữa phiên, ôn tập rỗng, giới hạn BPM)',
+      () async {
+        // 1. Khởi tạo cơ sở dữ liệu song song (kiểm tra khóa chống race condition _dbInitFuture)
+        await Future.wait([
+          db.seedContent(),
+          container.read(appSettingsProvider.notifier).loadSettings(),
+        ]);
+
+        final sessionNotifier = container.read(practiceSessionProvider.notifier);
+
+        // 2. Khi chưa có câu sai nào mà người dùng bấm vào chế độ Ôn tập -> Trả về false kèm thông báo thân thiện, không văng lỗi
+        final emptyReviewOk = await sessionNotifier.startSession(
+          mode: 'review',
+          targetCount: 5,
+        );
+        expect(emptyReviewOk, isFalse);
+        expect(
+          container.read(practiceSessionProvider).errorMessage,
+          contains('không có câu hỏi nào cần ôn tập'),
+        );
+
+        // 3. Bắt đầu phiên ở Nghe nốt, sau đó đổi sang Đọc nốt nhạc + đổi mức độ liên tục và trả lời sai bằng phím Piano
+        final startOk = await sessionNotifier.startSession(
+          mode: 'topic',
+          topicId: 'topic_notes',
+          levelId: 'lvl_notes_basic',
+          targetCount: 4,
+          seed: 101,
+        );
+        expect(startOk, isTrue);
+
+        // Bấm chuyển chế độ & mức độ liên tiếp
+        await sessionNotifier.switchNotePracticeModeInSession(
+          'topic_staff_reading',
+        );
+        await sessionNotifier.switchNoteLevelInSession('lvl_staff_adv');
+
+        final q = container.read(practiceSessionProvider).currentQuestion!;
+        expect(q.topicId, equals('topic_staff_reading'));
+        expect(q.isSightReading, isTrue);
+
+        // Bấm một phím đàn không trùng với đáp án đúng + cố tình gọi submitAnswer lặp lại nhiều lần
+        final wrongOpt = q.options.firstWhere((o) => !o.isCorrect);
+        await Future.wait([
+          sessionNotifier.submitPianoKeyAnswer(wrongOpt.optionKey),
+          sessionNotifier.submitAnswer(q.correctOption),
+          sessionNotifier.submitAnswer(wrongOpt),
+        ]);
+
+        // Chỉ ghi nhận đúng 1 câu trả lời duy nhất
+        expect(
+          container.read(practiceSessionProvider).recordedAnswers.length,
+          equals(1),
+        );
+        expect(
+          container.read(practiceSessionProvider).wrongCount,
+          equals(1),
+        );
+
+        // Kết thúc phiên -> kiểm tra SQLite đã cập nhật đúng topic_id = 'topic_staff_reading' và thêm câu sai vào review_items
+        await sessionNotifier.finishSessionNow();
+        final stats = await db.getOverallProgressStats();
+        expect(stats.recentSessions.first.topicId, equals('topic_staff_reading'));
+        expect(stats.pendingReviewCount, equals(1));
+
+        // 4. Vào phiên Ôn tập câu sai (mode == 'review'): không cho phép switchNotePracticeModeInSession ghi đè phiên ôn tập
+        final reviewOk = await sessionNotifier.startSession(
+          mode: 'review',
+          targetCount: 5,
+        );
+        expect(reviewOk, isTrue);
+        await sessionNotifier.switchNotePracticeModeInSession('topic_notes');
+        expect(
+          container.read(practiceSessionProvider).mode,
+          equals('review'),
+        );
+        await sessionNotifier.abandonSessionIfIncomplete();
+
+        // 5. Kiểm tra giới hạn ngoại lệ của Metronome BPM, Subdivision, Volume & Tap Tempo
+        final metroNotifier = container.read(metronomeProvider.notifier);
+        metroNotifier.setBpm(-999);
+        expect(container.read(metronomeProvider).bpm, equals(30));
+        metroNotifier.setBpm(99999);
+        expect(container.read(metronomeProvider).bpm, equals(300));
+        metroNotifier.setSubdivision(0);
+        expect(container.read(metronomeProvider).subdivision, equals(1));
+        metroNotifier.setSubdivision(99);
+        expect(container.read(metronomeProvider).subdivision, equals(4));
+        metroNotifier.setVolume(-5.0);
+        expect(container.read(metronomeProvider).volume, equals(0.0));
+        metroNotifier.setVolume(10.0);
+        expect(container.read(metronomeProvider).volume, equals(1.0));
+        metroNotifier.cycleBeatState(-1); // Out-of-bounds index -> safe no-op
+        metroNotifier.cycleBeatState(99); // Out-of-bounds index -> safe no-op
+      },
+    );
   });
 }

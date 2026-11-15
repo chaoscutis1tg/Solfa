@@ -238,6 +238,7 @@ class PracticeSessionNotifier extends StateNotifier<PracticeSessionState> {
   DateTime? _activeSegmentStartedAt;
   int _accumulatedActiveMs = 0;
   Timer? _sessionTimer;
+  bool _isBusy = false;
 
   PracticeSessionNotifier(
     this._db,
@@ -300,82 +301,94 @@ class PracticeSessionNotifier extends StateNotifier<PracticeSessionState> {
     bool isUnlimitedMode = false,
     int? seed,
   }) async {
-    _stopTimer();
-    await _audioService.stop();
-    state = state.copyWith(
-      isLoading: true,
-      isCompleted: false,
-      clearSelectedOption: true,
-      recordedAnswers: const [],
-      currentIndex: 0,
-      elapsedSeconds: 0,
-      errorMessage: null,
-    );
+    if (_isBusy) return false;
+    _isBusy = true;
+    try {
+      _stopTimer();
+      await _audioService.stop();
+      state = state.copyWith(
+        isLoading: true,
+        isCompleted: false,
+        clearSelectedOption: true,
+        recordedAnswers: const [],
+        currentIndex: 0,
+        elapsedSeconds: 0,
+        errorMessage: null,
+      );
 
-    final initialBatchSize =
-        (timeLimitSeconds != null || isUnlimitedMode) ? 20 : targetCount;
+      final initialBatchSize =
+          (timeLimitSeconds != null || isUnlimitedMode) ? 20 : targetCount;
 
-    final generated = await _generator.generateSessionQuestions(
-      mode: mode,
-      topicId: topicId,
-      levelId: levelId,
-      targetCount: initialBatchSize,
-      seed: seed,
-    );
+      final generated = await _generator.generateSessionQuestions(
+        mode: mode,
+        topicId: topicId,
+        levelId: levelId,
+        targetCount: initialBatchSize,
+        seed: seed,
+      );
 
-    if (generated.questions.isEmpty) {
+      if (generated.questions.isEmpty) {
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage: mode == 'review'
+              ? 'Hiện không có câu hỏi nào cần ôn tập ở mục này.'
+              : 'Không tìm thấy bộ câu hỏi hợp lệ cho cấp độ này.',
+        );
+        return false;
+      }
+
+      final sessionId = 'ses_${_uuid.v4()}';
+      final now = DateTime.now();
+      _accumulatedActiveMs = 0;
+      _activeSegmentStartedAt = now;
+      _questionShownAt = now;
+
+      await _db.createPracticeSession(
+        sessionId: sessionId,
+        topicId: generated.topicId,
+        levelId: generated.levelId,
+        mode: mode,
+        totalQuestions: generated.questions.length,
+        startedAt: now,
+      );
+
+      state = PracticeSessionState(
+        sessionId: sessionId,
+        mode: mode,
+        topicId: generated.topicId,
+        levelId: generated.levelId,
+        questions: generated.questions,
+        currentIndex: 0,
+        selectedOption: null,
+        recordedAnswers: const [],
+        isLoading: false,
+        isCompleted: false,
+        activeDurationSeconds: 0,
+        timeLimitSeconds: timeLimitSeconds,
+        isUnlimitedMode: isUnlimitedMode,
+        elapsedSeconds: 0,
+      );
+
+      _startTimerIfNeeded();
+
+      // Auto-play first question if user enabled autoPlayQuestionAudio in Settings (never auto-play for Sight-Reading!)
+      final settings = _ref.read(appSettingsProvider);
+      if (settings.autoPlayQuestionAudio &&
+          state.currentQuestion != null &&
+          !state.currentQuestion!.isSightReading) {
+        await _audioService.playAsset(state.currentQuestion!.audioAsset);
+      }
+
+      return true;
+    } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        errorMessage: mode == 'review'
-            ? 'Hiện không có câu hỏi nào cần ôn tập ở mục này.'
-            : 'Không tìm thấy bộ câu hỏi hợp lệ cho cấp độ này.',
+        errorMessage: 'Không thể khởi tạo phiên luyện tập. Vui lòng thử lại.',
       );
       return false;
+    } finally {
+      _isBusy = false;
     }
-
-    final sessionId = 'ses_${_uuid.v4()}';
-    final now = DateTime.now();
-    _accumulatedActiveMs = 0;
-    _activeSegmentStartedAt = now;
-    _questionShownAt = now;
-
-    await _db.createPracticeSession(
-      sessionId: sessionId,
-      topicId: generated.topicId,
-      levelId: generated.levelId,
-      mode: mode,
-      totalQuestions: generated.questions.length,
-      startedAt: now,
-    );
-
-    state = PracticeSessionState(
-      sessionId: sessionId,
-      mode: mode,
-      topicId: generated.topicId,
-      levelId: generated.levelId,
-      questions: generated.questions,
-      currentIndex: 0,
-      selectedOption: null,
-      recordedAnswers: const [],
-      isLoading: false,
-      isCompleted: false,
-      activeDurationSeconds: 0,
-      timeLimitSeconds: timeLimitSeconds,
-      isUnlimitedMode: isUnlimitedMode,
-      elapsedSeconds: 0,
-    );
-
-    _startTimerIfNeeded();
-
-    // Auto-play first question if user enabled autoPlayQuestionAudio in Settings (never auto-play for Sight-Reading!)
-    final settings = _ref.read(appSettingsProvider);
-    if (settings.autoPlayQuestionAudio &&
-        state.currentQuestion != null &&
-        !state.currentQuestion!.isSightReading) {
-      await _audioService.playAsset(state.currentQuestion!.audioAsset);
-    }
-
-    return true;
   }
 
   /// Called when app goes to background so paused time is excluded (Section 6.11).
@@ -399,102 +412,134 @@ class PracticeSessionNotifier extends StateNotifier<PracticeSessionState> {
 
   /// Allows switching Note Recognition or Staff Reading level (Mức 1..4) dynamically inside the Practice Room.
   Future<void> switchNoteLevelInSession(String newLevelId) async {
-    if ((state.topicId != 'topic_notes' &&
+    if (_isBusy ||
+        state.mode == 'review' ||
+        (state.topicId != 'topic_notes' &&
             state.topicId != 'topic_staff_reading') ||
         state.levelId == newLevelId) {
       return;
     }
-    if (state.topicId == 'topic_staff_reading') {
-      _ref.read(selectedStaffLevelIdProvider.notifier).state = newLevelId;
-    } else {
-      _ref.read(selectedNoteLevelIdProvider.notifier).state = newLevelId;
-    }
-    await _audioService.stop();
+    _isBusy = true;
+    try {
+      if (state.topicId == 'topic_staff_reading') {
+        _ref.read(selectedStaffLevelIdProvider.notifier).state = newLevelId;
+      } else {
+        _ref.read(selectedNoteLevelIdProvider.notifier).state = newLevelId;
+      }
+      await _audioService.stop();
 
-    final batchSize = state.isContinuousScoringMode ? 20 : 10;
-    final generated = await _generator.generateSessionQuestions(
-      mode: 'topic',
-      topicId: state.topicId,
-      levelId: newLevelId,
-      targetCount: batchSize,
-    );
-    if (generated.questions.isEmpty) return;
+      final batchSize = state.isContinuousScoringMode ? 20 : 10;
+      final generated = await _generator.generateSessionQuestions(
+        mode: 'topic',
+        topicId: state.topicId,
+        levelId: newLevelId,
+        targetCount: batchSize,
+      );
+      if (generated.questions.isEmpty) return;
 
-    _questionShownAt = DateTime.now();
-    state = state.copyWith(
-      levelId: newLevelId,
-      questions: generated.questions,
-      currentIndex: 0,
-      clearSelectedOption: true,
-    );
+      if (state.sessionId != null) {
+        await _db.updateSessionTopicAndLevel(
+          sessionId: state.sessionId!,
+          topicId: state.topicId,
+          levelId: newLevelId,
+        );
+      }
 
-    final settings = _ref.read(appSettingsProvider);
-    if (settings.autoPlayQuestionAudio &&
-        state.currentQuestion != null &&
-        !state.currentQuestion!.isSightReading) {
-      await _audioService.playAsset(state.currentQuestion!.audioAsset);
+      _questionShownAt = DateTime.now();
+      state = state.copyWith(
+        levelId: newLevelId,
+        questions: generated.questions,
+        currentIndex: 0,
+        clearSelectedOption: true,
+      );
+
+      final settings = _ref.read(appSettingsProvider);
+      if (settings.autoPlayQuestionAudio &&
+          state.currentQuestion != null &&
+          !state.currentQuestion!.isSightReading) {
+        await _audioService.playAsset(state.currentQuestion!.audioAsset);
+      }
+    } catch (_) {
+    } finally {
+      _isBusy = false;
     }
   }
 
   /// Allows toggling directly between "🎧 Nghe nốt" ('topic_notes') and "🎼 Đọc nốt" ('topic_staff_reading')
   /// inside the Practice Room while preserving the difficulty tier (Mức 1..4).
   Future<void> switchNotePracticeModeInSession(String targetTopicId) async {
-    if (state.topicId == targetTopicId) return;
+    if (_isBusy || state.mode == 'review' || state.topicId == targetTopicId) {
+      return;
+    }
     if (targetTopicId != 'topic_notes' &&
         targetTopicId != 'topic_staff_reading') {
       return;
     }
-    await _audioService.stop();
+    _isBusy = true;
+    try {
+      await _audioService.stop();
 
-    final curLvl = state.levelId ?? '';
-    final String mappedLevelId;
-    if (targetTopicId == 'topic_staff_reading') {
-      if (curLvl.contains('master')) {
-        mappedLevelId = 'lvl_staff_master';
-      } else if (curLvl.contains('adv')) {
-        mappedLevelId = 'lvl_staff_adv';
-      } else if (curLvl.contains('inter')) {
-        mappedLevelId = 'lvl_staff_inter';
+      final curLvl = state.levelId ?? '';
+      final String mappedLevelId;
+      if (targetTopicId == 'topic_staff_reading') {
+        if (curLvl.contains('master')) {
+          mappedLevelId = 'lvl_staff_master';
+        } else if (curLvl.contains('adv')) {
+          mappedLevelId = 'lvl_staff_adv';
+        } else if (curLvl.contains('inter')) {
+          mappedLevelId = 'lvl_staff_inter';
+        } else {
+          mappedLevelId = 'lvl_staff_basic';
+        }
+        _ref.read(selectedStaffLevelIdProvider.notifier).state = mappedLevelId;
       } else {
-        mappedLevelId = 'lvl_staff_basic';
+        if (curLvl.contains('master')) {
+          mappedLevelId = 'lvl_notes_master';
+        } else if (curLvl.contains('adv')) {
+          mappedLevelId = 'lvl_notes_adv';
+        } else if (curLvl.contains('inter')) {
+          mappedLevelId = 'lvl_notes_inter';
+        } else {
+          mappedLevelId = 'lvl_notes_basic';
+        }
+        _ref.read(selectedNoteLevelIdProvider.notifier).state = mappedLevelId;
       }
-      _ref.read(selectedStaffLevelIdProvider.notifier).state = mappedLevelId;
-    } else {
-      if (curLvl.contains('master')) {
-        mappedLevelId = 'lvl_notes_master';
-      } else if (curLvl.contains('adv')) {
-        mappedLevelId = 'lvl_notes_adv';
-      } else if (curLvl.contains('inter')) {
-        mappedLevelId = 'lvl_notes_inter';
-      } else {
-        mappedLevelId = 'lvl_notes_basic';
+
+      final batchSize = state.isContinuousScoringMode ? 20 : 10;
+      final generated = await _generator.generateSessionQuestions(
+        mode: 'topic',
+        topicId: targetTopicId,
+        levelId: mappedLevelId,
+        targetCount: batchSize,
+      );
+      if (generated.questions.isEmpty) return;
+
+      if (state.sessionId != null) {
+        await _db.updateSessionTopicAndLevel(
+          sessionId: state.sessionId!,
+          topicId: targetTopicId,
+          levelId: mappedLevelId,
+        );
       }
-      _ref.read(selectedNoteLevelIdProvider.notifier).state = mappedLevelId;
-    }
 
-    final batchSize = state.isContinuousScoringMode ? 20 : 10;
-    final generated = await _generator.generateSessionQuestions(
-      mode: 'topic',
-      topicId: targetTopicId,
-      levelId: mappedLevelId,
-      targetCount: batchSize,
-    );
-    if (generated.questions.isEmpty) return;
+      _questionShownAt = DateTime.now();
+      state = state.copyWith(
+        topicId: targetTopicId,
+        levelId: mappedLevelId,
+        questions: generated.questions,
+        currentIndex: 0,
+        clearSelectedOption: true,
+      );
 
-    _questionShownAt = DateTime.now();
-    state = state.copyWith(
-      topicId: targetTopicId,
-      levelId: mappedLevelId,
-      questions: generated.questions,
-      currentIndex: 0,
-      clearSelectedOption: true,
-    );
-
-    final settings = _ref.read(appSettingsProvider);
-    if (settings.autoPlayQuestionAudio &&
-        state.currentQuestion != null &&
-        !state.currentQuestion!.isSightReading) {
-      await _audioService.playAsset(state.currentQuestion!.audioAsset);
+      final settings = _ref.read(appSettingsProvider);
+      if (settings.autoPlayQuestionAudio &&
+          state.currentQuestion != null &&
+          !state.currentQuestion!.isSightReading) {
+        await _audioService.playAsset(state.currentQuestion!.audioAsset);
+      }
+    } catch (_) {
+    } finally {
+      _isBusy = false;
     }
   }
 
@@ -523,13 +568,17 @@ class PracticeSessionNotifier extends StateNotifier<PracticeSessionState> {
                       o.optionKey.toUpperCase() == tappedNoteKey.toUpperCase())
                   .firstOrNull ??
               pitchClassMatches.first;
-      unawaited(_audioService.playPianoKey(chosenOption.optionKey));
+      if (!currentQ.isSightReading) {
+        unawaited(_audioService.playPianoKey(chosenOption.optionKey));
+      }
       await submitAnswer(chosenOption);
       return;
     }
 
     // 2. User tapped a piano key that is not among the 4 options -> definitely wrong
-    unawaited(_audioService.playPianoKey(tappedNoteKey));
+    if (!currentQ.isSightReading) {
+      unawaited(_audioService.playPianoKey(tappedNoteKey));
+    }
     final wrongSyntheticOption = QuestionOptionModel(
       id: '${currentQ.id}_piano_$tappedNoteKey',
       questionId: currentQ.id,
@@ -584,25 +633,43 @@ class PracticeSessionNotifier extends StateNotifier<PracticeSessionState> {
   /// Advances to the next question or completes the session.
   /// In Timed / Unlimited mode, automatically replenishes questions so practice never stops early!
   Future<bool> nextQuestion() async {
-    if (!state.isCurrentAnswered) return false;
-    await _audioService.stop();
+    if (_isBusy || !state.isCurrentAnswered || state.isCompleted) return false;
+    _isBusy = true;
+    try {
+      await _audioService.stop();
 
-    final nextIdx = state.currentIndex + 1;
+      final nextIdx = state.currentIndex + 1;
 
-    // If in Continuous Scoring Mode (60s, 15m, 1h, Unlimited) and running low on questions,
-    // generate more questions seamlessly!
-    if (state.isContinuousScoringMode && nextIdx >= state.questions.length) {
-      final more = await _generator.generateSessionQuestions(
-        mode: state.mode == 'review' ? 'topic' : state.mode,
-        topicId: state.topicId,
-        levelId: state.levelId,
-        targetCount: 15,
-      );
-      if (more.questions.isNotEmpty) {
-        final updatedQuestions = [...state.questions, ...more.questions];
+      // If in Continuous Scoring Mode (60s, 15m, 1h, Unlimited) and running low on questions,
+      // generate more questions seamlessly!
+      if (state.isContinuousScoringMode && nextIdx >= state.questions.length) {
+        final more = await _generator.generateSessionQuestions(
+          mode: state.mode == 'review' ? 'topic' : state.mode,
+          topicId: state.topicId,
+          levelId: state.levelId,
+          targetCount: 15,
+        );
+        if (more.questions.isNotEmpty) {
+          final updatedQuestions = [...state.questions, ...more.questions];
+          _questionShownAt = DateTime.now();
+          state = state.copyWith(
+            questions: updatedQuestions,
+            currentIndex: nextIdx,
+            clearSelectedOption: true,
+          );
+          final settings = _ref.read(appSettingsProvider);
+          if (settings.autoPlayQuestionAudio &&
+              state.currentQuestion != null &&
+              !state.currentQuestion!.isSightReading) {
+            await _audioService.playAsset(state.currentQuestion!.audioAsset);
+          }
+          return false;
+        }
+      }
+
+      if (nextIdx < state.questions.length) {
         _questionShownAt = DateTime.now();
         state = state.copyWith(
-          questions: updatedQuestions,
           currentIndex: nextIdx,
           clearSelectedOption: true,
         );
@@ -612,26 +679,13 @@ class PracticeSessionNotifier extends StateNotifier<PracticeSessionState> {
             !state.currentQuestion!.isSightReading) {
           await _audioService.playAsset(state.currentQuestion!.audioAsset);
         }
-        return false;
+        return false; // Not finished yet
+      } else {
+        await _completeSession();
+        return true; // Session completed!
       }
-    }
-
-    if (nextIdx < state.questions.length) {
-      _questionShownAt = DateTime.now();
-      state = state.copyWith(
-        currentIndex: nextIdx,
-        clearSelectedOption: true,
-      );
-      final settings = _ref.read(appSettingsProvider);
-      if (settings.autoPlayQuestionAudio &&
-          state.currentQuestion != null &&
-          !state.currentQuestion!.isSightReading) {
-        await _audioService.playAsset(state.currentQuestion!.audioAsset);
-      }
-      return false; // Not finished yet
-    } else {
-      await _completeSession();
-      return true; // Session completed!
+    } finally {
+      _isBusy = false;
     }
   }
 
@@ -642,6 +696,7 @@ class PracticeSessionNotifier extends StateNotifier<PracticeSessionState> {
   }
 
   Future<void> _completeSession() async {
+    if (state.isCompleted) return;
     _stopTimer();
     await _audioService.stop();
     final now = DateTime.now();
@@ -654,17 +709,21 @@ class PracticeSessionNotifier extends StateNotifier<PracticeSessionState> {
         ? state.elapsedSeconds
         : (_accumulatedActiveMs / 1000).round().clamp(1, 7200);
 
-    if (state.sessionId != null && state.recordedAnswers.isNotEmpty) {
-      await _db.completeSessionTransaction(
-        sessionId: state.sessionId!,
-        mode: state.mode,
-        answers: state.recordedAnswers,
-        activeDurationSeconds: durationSec,
-        completedAt: now,
-      );
-    } else if (state.sessionId != null) {
-      await _db.abandonSession(state.sessionId!);
-    }
+    try {
+      if (state.sessionId != null && state.recordedAnswers.isNotEmpty) {
+        await _db.completeSessionTransaction(
+          sessionId: state.sessionId!,
+          mode: state.mode,
+          topicId: state.topicId,
+          levelId: state.levelId,
+          answers: state.recordedAnswers,
+          activeDurationSeconds: durationSec,
+          completedAt: now,
+        );
+      } else if (state.sessionId != null) {
+        await _db.abandonSession(state.sessionId!);
+      }
+    } catch (_) {}
 
     state = state.copyWith(
       isCompleted: true,
