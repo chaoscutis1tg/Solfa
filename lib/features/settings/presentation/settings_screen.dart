@@ -165,7 +165,7 @@ class SettingsScreen extends ConsumerWidget {
                             children: [
                               const Expanded(
                                 child: Text(
-                                  'Solfa Studio v1.1',
+                                  'Solfa Studio v1.2',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
@@ -398,13 +398,18 @@ class SettingsScreen extends ConsumerWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text(
-                              'Âm lượng bài học & Phản hồi',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 14,
+                            const Expanded(
+                              child: Text(
+                                'Âm lượng bài học & Phản hồi',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 14,
+                                ),
                               ),
                             ),
+                            const SizedBox(width: 8),
                             Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 9,
@@ -741,7 +746,7 @@ class SettingsScreen extends ConsumerWidget {
                     onTap: () => showLicensePage(
                       context: context,
                       applicationName: 'Solfa Studio',
-                      applicationVersion: '1.1.0 (Offline-First)',
+                      applicationVersion: '1.2.0 (Offline-First)',
                       applicationIcon: const Padding(
                         padding: EdgeInsets.all(8.0),
                         child: SolfaLogo(size: 56),
@@ -805,11 +810,15 @@ class _SectionHeader extends StatelessWidget {
       children: [
         Icon(icon, size: 19, color: AppColors.primary),
         const SizedBox(width: 7),
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 15.5,
-            fontWeight: FontWeight.w800,
+        Expanded(
+          child: Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 15.5,
+              fontWeight: FontWeight.w800,
+            ),
           ),
         ),
       ],

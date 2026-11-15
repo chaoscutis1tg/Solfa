@@ -64,8 +64,8 @@ class _PianoKeyboardWidgetState extends State<PianoKeyboardWidget> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Container(
-          height: 114,
-          padding: const EdgeInsets.fromLTRB(8, 8, 8, 6),
+          height: 100,
+          padding: const EdgeInsets.fromLTRB(8, 7, 8, 5),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
               colors: [Color(0xFF1F2138), Color(0xFF2D3052)],
@@ -198,7 +198,7 @@ class _PianoKeyboardWidgetState extends State<PianoKeyboardWidget> {
                       left: leftOffset,
                       top: 0,
                       width: blackKeyWidth,
-                      height: 60,
+                      height: 54,
                       child: GestureDetector(
                         key: Key('piano_key_$noteCode'),
                         onTap: (widget.onKeyTap != null &&
@@ -249,13 +249,13 @@ class _PianoKeyboardWidgetState extends State<PianoKeyboardWidget> {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.only(top: 6),
+          padding: const EdgeInsets.only(top: 5),
           child: Text(
             widget.showHighlight
                 ? '💡 Chạm vào các phím đàn để nghe và so sánh cao độ trực tiếp'
                 : (widget.enableBlackKeys
                     ? '🎹 Chạm trực tiếp phím trắng/đen (#/b) để chọn đáp án hoặc chọn A/B/C/D bên dưới'
-                    : '🎹 Mức 1 (C4 tự nhiên): Chạm trực tiếp phím trắng (Đô–Si) hoặc chọn A/B/C/D bên dưới'),
+                    : '🎹 Chạm trực tiếp phím trắng (Đô–Si) để chọn đáp án hoặc chọn A/B/C/D bên dưới'),
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 11.2,

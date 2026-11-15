@@ -90,36 +90,42 @@ class HomeScreen extends ConsumerWidget {
               children: [
                 Row(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.18),
-                        borderRadius: BorderRadius.circular(99),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.bolt_rounded,
-                            color: Color(0xFFFFD166),
-                            size: 15,
-                          ),
-                          SizedBox(width: 4),
-                          Text(
-                            'Tính điểm nốt Đúng / Sai • Offline',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
+                    Flexible(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.18),
+                          borderRadius: BorderRadius.circular(99),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.bolt_rounded,
+                              color: Color(0xFFFFD166),
+                              size: 15,
                             ),
-                          ),
-                        ],
+                            SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                'Tính điểm nốt Đúng / Sai • Offline',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                    const Spacer(),
+                    const SizedBox(width: 8),
                     const SolfaLogo(size: 44, showShadow: false),
                   ],
                 ),
@@ -198,6 +204,8 @@ class HomeScreen extends ConsumerWidget {
                     ),
                     label: Text(
                       'Luyện tập ngay (${TopicsScreen.durationLabel(selectedDuration)})',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ),
@@ -236,22 +244,29 @@ class HomeScreen extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Row(
-                children: [
-                  Icon(
-                    Icons.headphones_rounded,
-                    size: 20,
-                    color: AppColors.primary,
-                  ),
-                  SizedBox(width: 8),
-                  Text(
-                    'Chủ đề cốt lõi',
-                    style: TextStyle(
-                      fontSize: 17.5,
-                      fontWeight: FontWeight.w800,
+              const Flexible(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.headphones_rounded,
+                      size: 20,
+                      color: AppColors.primary,
                     ),
-                  ),
-                ],
+                    SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        'Chủ đề cốt lõi',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 17.5,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
               TextButton(
                 style: TextButton.styleFrom(
@@ -694,7 +709,11 @@ class HomeScreen extends ConsumerWidget {
                   levelId: 'lvl_notes_basic',
                 ),
                 icon: const Icon(Icons.music_note_rounded, size: 20),
-                label: const Text('Học ngay: Nhận biết nốt (Cơ bản)'),
+                label: const Text(
+                  'Học ngay: Nhận biết nốt (Cơ bản)',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),

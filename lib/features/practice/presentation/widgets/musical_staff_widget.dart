@@ -30,8 +30,8 @@ class MusicalStaffWidget extends StatelessWidget {
 
     return Container(
       key: const Key('musical_staff_widget'),
-      height: 88,
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      height: 82,
+      padding: const EdgeInsets.fromLTRB(10, 4, 10, 4),
       decoration: BoxDecoration(
         color: isDark
             ? const Color(0xFF1A1E36).withOpacity(0.92)
@@ -46,39 +46,67 @@ class MusicalStaffWidget extends StatelessWidget {
           width: 1.2,
         ),
       ),
-      child: Stack(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Positioned.fill(
+          // Dedicated Header Row (never overlaps high notes on the staff!)
+          SizedBox(
+            height: 18,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Flexible(
+                  child: Text(
+                    '🎼 Khuông nhạc Khóa Sol',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w800,
+                      color: isDark ? AppColors.secondary : AppColors.primary,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 7,
+                      vertical: 1,
+                    ),
+                    decoration: BoxDecoration(
+                      color: showNote
+                          ? AppColors.correct.withOpacity(0.15)
+                          : AppColors.primary.withOpacity(0.10),
+                      borderRadius: BorderRadius.circular(99),
+                    ),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        showNote
+                            ? 'Vị trí: ${NoteFormatter.toVietnameseLabel(targetNoteKey ?? '')}'
+                            : 'Hiện vị trí nốt sau khi chọn đáp án',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          color:
+                              showNote ? AppColors.correct : AppColors.primary,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // 5-Line Staff Canvas
+          Expanded(
             child: CustomPaint(
               painter: _TrebleStaffPainter(
                 targetNoteKey: targetNoteKey,
                 selectedNoteKey: hasWrongComparison ? selectedNoteKey : null,
                 showNote: showNote,
                 isDark: isDark,
-              ),
-            ),
-          ),
-          // Top-right badge showing state or note position explanation
-          Positioned(
-            right: 4,
-            top: 0,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: showNote
-                    ? AppColors.correct.withOpacity(0.15)
-                    : AppColors.primary.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(99),
-              ),
-              child: Text(
-                showNote
-                    ? 'Khuông nhạc: ${NoteFormatter.toVietnameseLabel(targetNoteKey ?? '')}'
-                    : 'Khuông nhạc Khóa Sol (Ẩn khi đang nghe)',
-                style: TextStyle(
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w800,
-                  color: showNote ? AppColors.correct : AppColors.primary,
-                ),
               ),
             ),
           ),
@@ -126,10 +154,9 @@ class _ParsedStaffNote {
         octaveMatch != null ? (int.tryParse(octaveMatch.group(0)!) ?? 4) : 4;
 
     final diatonicIdx = _letterIndex[letter]!;
-    // If octave is 3, display in octave 4 position with '8vb' tag so it fits cleanly inside the 5-line staff
     final effectiveOctave = octave < 4 ? 4 : (octave > 5 ? 5 : octave);
     final stepFromC4 = (effectiveOctave - 4) * 7 + diatonicIdx;
-    final tag = octave < 4 ? '8vb (Quãng 3)' : '';
+    final tag = octave < 4 ? '8vb' : '';
 
     return _ParsedStaffNote(
       rawKey: cleaned,
@@ -162,17 +189,16 @@ class _TrebleStaffPainter extends CustomPainter {
         : const Color(0xFF334155).withOpacity(0.42);
     final staffPaint = Paint()
       ..color = lineColor
-      ..strokeWidth = 1.25
+      ..strokeWidth = 1.2
       ..style = PaintingStyle.stroke;
 
     // 5 staff lines: Line 1 (bottom, E4 = step 2) to Line 5 (top, F5 = step 10)
-    // Distance between adjacent lines = 2 diatonic steps = lineSpacing
-    const double lineSpacing = 9.0;
-    const double stepHeight = lineSpacing / 2.0; // 4.5px per diatonic step
-    const double topLineY = 24.0; // F5 (step 10)
-    const double bottomLineY = topLineY + 4 * lineSpacing; // E4 (step 2) = 60.0
-    const double leftX = 8.0;
-    final double rightX = size.width - 8.0;
+    const double lineSpacing = 7.6;
+    const double stepHeight = lineSpacing / 2.0; // 3.8px per diatonic step
+    const double topLineY = 11.0; // F5 (step 10)
+    const double bottomLineY = topLineY + 4 * lineSpacing; // E4 (step 2) = 41.4
+    const double leftX = 6.0;
+    final double rightX = size.width - 6.0;
 
     for (int line = 0; line < 5; line++) {
       final y = topLineY + line * lineSpacing;
@@ -190,7 +216,7 @@ class _TrebleStaffPainter extends CustomPainter {
       Offset(rightX, bottomLineY),
       Paint()
         ..color = lineColor
-        ..strokeWidth = 2.6,
+        ..strokeWidth = 2.4,
     );
 
     // Draw Treble Clef symbol (𝄞) on the left
@@ -198,7 +224,7 @@ class _TrebleStaffPainter extends CustomPainter {
       text: TextSpan(
         text: '𝄞',
         style: TextStyle(
-          fontSize: 42,
+          fontSize: 36,
           height: 1.0,
           color: isDark ? AppColors.secondary : AppColors.primary,
           fontWeight: FontWeight.w600,
@@ -206,28 +232,28 @@ class _TrebleStaffPainter extends CustomPainter {
       ),
       textDirection: TextDirection.ltr,
     )..layout();
-    clefPainter.paint(canvas, const Offset(leftX + 4, topLineY - 4));
+    clefPainter.paint(canvas, const Offset(leftX + 3, topLineY - 3));
 
     if (!showNote) {
       // Draw Mystery '?' Badge in center of staff
-      final centerX = size.width * 0.54;
+      final centerX = size.width * 0.52;
       const centerY = (topLineY + bottomLineY) / 2;
       final circlePaint = Paint()
         ..color = AppColors.primary.withOpacity(isDark ? 0.25 : 0.14)
         ..style = PaintingStyle.fill;
-      canvas.drawCircle(Offset(centerX, centerY), 14, circlePaint);
+      canvas.drawCircle(Offset(centerX, centerY), 12, circlePaint);
 
       final borderPaint = Paint()
         ..color = AppColors.primary.withOpacity(0.55)
-        ..strokeWidth = 1.4
+        ..strokeWidth = 1.3
         ..style = PaintingStyle.stroke;
-      canvas.drawCircle(Offset(centerX, centerY), 14, borderPaint);
+      canvas.drawCircle(Offset(centerX, centerY), 12, borderPaint);
 
       final qPainter = TextPainter(
         text: const TextSpan(
           text: '?',
           style: TextStyle(
-            fontSize: 16,
+            fontSize: 14,
             fontWeight: FontWeight.w900,
             color: AppColors.primary,
           ),
@@ -245,16 +271,14 @@ class _TrebleStaffPainter extends CustomPainter {
     final selectedParsed = _ParsedStaffNote.tryParse(selectedNoteKey);
 
     double yForStep(int stepFromC4) {
-      // E4 is step 2 at bottomLineY
       return bottomLineY - (stepFromC4 - 2) * stepHeight;
     }
 
     if (selectedParsed != null && targetParsed != null) {
-      // Draw user's wrong note on the left, and correct target note on the right
       _drawSingleNote(
         canvas: canvas,
         note: selectedParsed,
-        centerX: size.width * 0.40,
+        centerX: size.width * 0.36,
         y: yForStep(selectedParsed.displayStepFromC4),
         yForStep: yForStep,
         color: AppColors.wrong,
@@ -263,7 +287,7 @@ class _TrebleStaffPainter extends CustomPainter {
       _drawSingleNote(
         canvas: canvas,
         note: targetParsed,
-        centerX: size.width * 0.72,
+        centerX: size.width * 0.68,
         y: yForStep(targetParsed.displayStepFromC4),
         yForStep: yForStep,
         color: AppColors.correct,
@@ -273,7 +297,7 @@ class _TrebleStaffPainter extends CustomPainter {
       _drawSingleNote(
         canvas: canvas,
         note: targetParsed,
-        centerX: size.width * 0.56,
+        centerX: size.width * 0.50,
         y: yForStep(targetParsed.displayStepFromC4),
         yForStep: yForStep,
         color: AppColors.correct,
@@ -294,14 +318,14 @@ class _TrebleStaffPainter extends CustomPainter {
   }) {
     final ledgerPaint = Paint()
       ..color = color.withOpacity(0.85)
-      ..strokeWidth = 1.6;
+      ..strokeWidth = 1.5;
 
     // Ledger line for C4 (step 0)
     if (note.displayStepFromC4 <= 0) {
       final c4Y = yForStep(0);
       canvas.drawLine(
-        Offset(centerX - 11, c4Y),
-        Offset(centerX + 11, c4Y),
+        Offset(centerX - 10, c4Y),
+        Offset(centerX + 10, c4Y),
         ledgerPaint,
       );
     }
@@ -309,8 +333,8 @@ class _TrebleStaffPainter extends CustomPainter {
     if (note.displayStepFromC4 >= 12) {
       final a5Y = yForStep(12);
       canvas.drawLine(
-        Offset(centerX - 11, a5Y),
-        Offset(centerX + 11, a5Y),
+        Offset(centerX - 10, a5Y),
+        Offset(centerX + 10, a5Y),
         ledgerPaint,
       );
     }
@@ -321,7 +345,7 @@ class _TrebleStaffPainter extends CustomPainter {
         text: TextSpan(
           text: '♯',
           style: TextStyle(
-            fontSize: 16,
+            fontSize: 14,
             fontWeight: FontWeight.w900,
             color: color,
           ),
@@ -330,7 +354,7 @@ class _TrebleStaffPainter extends CustomPainter {
       )..layout();
       sharpPainter.paint(
         canvas,
-        Offset(centerX - 18, y - sharpPainter.height / 2),
+        Offset(centerX - 16, y - sharpPainter.height / 2),
       );
     }
 
@@ -342,7 +366,7 @@ class _TrebleStaffPainter extends CustomPainter {
       ..color = color
       ..style = PaintingStyle.fill;
     canvas.drawOval(
-      Rect.fromCenter(center: Offset.zero, width: 11.5, height: 8.2),
+      Rect.fromCenter(center: Offset.zero, width: 10.5, height: 7.4),
       noteHeadPaint,
     );
     canvas.restore();
@@ -350,18 +374,18 @@ class _TrebleStaffPainter extends CustomPainter {
     // Draw Note Stem (up if below B4 [step 6], down if B4 or above)
     final stemPaint = Paint()
       ..color = color
-      ..strokeWidth = 1.8;
+      ..strokeWidth = 1.7;
     final stemUp = note.displayStepFromC4 < 6;
     if (stemUp) {
       canvas.drawLine(
-        Offset(centerX + 4.8, y),
-        Offset(centerX + 4.8, y - 24),
+        Offset(centerX + 4.4, y),
+        Offset(centerX + 4.4, y - 20),
         stemPaint,
       );
     } else {
       canvas.drawLine(
-        Offset(centerX - 4.8, y),
-        Offset(centerX - 4.8, y + 24),
+        Offset(centerX - 4.4, y),
+        Offset(centerX - 4.4, y + 20),
         stemPaint,
       );
     }
@@ -371,7 +395,7 @@ class _TrebleStaffPainter extends CustomPainter {
       text: TextSpan(
         text: prefixLabel,
         style: TextStyle(
-          fontSize: 11,
+          fontSize: 10.5,
           fontWeight: FontWeight.w900,
           color: color,
         ),
@@ -380,7 +404,7 @@ class _TrebleStaffPainter extends CustomPainter {
     )..layout();
     labelPainter.paint(
       canvas,
-      Offset(centerX + 10, (y - labelPainter.height / 2).clamp(16.0, 62.0)),
+      Offset(centerX + 9, (y - labelPainter.height / 2).clamp(2.0, 38.0)),
     );
   }
 

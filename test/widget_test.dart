@@ -466,5 +466,137 @@ void main() {
         );
       },
     );
+
+    testWidgets(
+      'TC-17: Kiểm thử độ ổn định giao diện & trải nghiệm người dùng trên màn hình nhỏ (360x680, Light/Dark, không tràn khung)',
+      (tester) async {
+        // Giả lập màn hình điện thoại nhỏ gọn 360x680 logical pixels
+        tester.view.physicalSize = const Size(360 * 3.0, 680 * 3.0);
+        tester.view.devicePixelRatio = 3.0;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+
+        await tester.runAsync(() async {
+          await db.seedContent();
+          await container.read(appSettingsProvider.notifier).loadSettings();
+          await container.read(overallProgressProvider.future);
+          await container.read(topicsListProvider.future);
+        });
+
+        Future<void> pumpFrames([int ms = 350]) async {
+          await tester.pump();
+          await tester.pump(Duration(milliseconds: ms));
+        }
+
+        final router = createSolfaRouter(initialLocation: '/home');
+
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: SolfaApp(customRouter: router),
+          ),
+        );
+        await pumpFrames();
+
+        // 1. Trang chủ (HomeScreen)
+        expect(find.byKey(const Key('btn_quick_practice')), findsOneWidget);
+        expect(tester.takeException(), isNull);
+
+        // 2. Phòng luyện tập (TopicsScreen) -> Chọn Mức 1..4
+        router.go('/topics');
+        await pumpFrames();
+        expect(
+          find.byKey(const Key('topic_note_lvl_lvl_notes_basic')),
+          findsOneWidget,
+        );
+        await tester.tap(find.byKey(const Key('topic_note_lvl_lvl_notes_inter')));
+        await pumpFrames(200);
+        expect(tester.takeException(), isNull);
+
+        // 3. Màn hình làm bài (QuizScreen) với Khuông nhạc Khóa Sol + Đàn Piano + 4 Mức độ
+        final sessionNotifier = container.read(practiceSessionProvider.notifier);
+        await tester.runAsync(() async {
+          await sessionNotifier.startSession(
+            mode: 'topic',
+            topicId: 'topic_notes',
+            levelId: 'lvl_notes_basic',
+            targetCount: 4,
+            seed: 7,
+          );
+        });
+        router.push('/quiz');
+        await pumpFrames();
+        expect(find.byKey(const Key('musical_staff_widget')), findsOneWidget);
+        expect(find.byKey(const Key('piano_key_C4')), findsOneWidget);
+        expect(tester.takeException(), isNull);
+
+        // Trả lời câu hỏi và kiểm tra hiển thị Khuông nhạc Khóa Sol + Feedback không tràn khung
+        await tester.runAsync(() async {
+          final currentQ = container.read(practiceSessionProvider).currentQuestion!;
+          await sessionNotifier.submitAnswer(currentQ.options.first);
+        });
+        await pumpFrames();
+        expect(tester.takeException(), isNull);
+
+        // Đổi sang Mức 3, Mức 4 ngay trên thanh công cụ
+        await tester.runAsync(() async {
+          await sessionNotifier.switchNoteLevelInSession('lvl_notes_adv');
+        });
+        await pumpFrames(250);
+        expect(tester.takeException(), isNull);
+
+        await tester.runAsync(() async {
+          await sessionNotifier.switchNoteLevelInSession('lvl_notes_master');
+        });
+        await pumpFrames(250);
+        expect(tester.takeException(), isNull);
+
+        // Hoàn thành phiên -> Màn hình kết quả (SessionResultScreen)
+        await tester.runAsync(() async {
+          await sessionNotifier.finishSessionNow();
+          await container.read(overallProgressProvider.future);
+        });
+        router.go('/session-result');
+        await pumpFrames();
+        expect(find.byKey(const Key('result_accuracy_text')), findsOneWidget);
+        expect(tester.takeException(), isNull);
+
+        // 4. Màn hình Máy đếm nhịp (MetronomeScreen) với Tempo Lite, Subdivision, Speed Trainer & 6/8
+        router.go('/metronome');
+        await pumpFrames();
+        expect(find.byKey(const Key('metronome_bpm_text')), findsOneWidget);
+        await tester.tap(find.byKey(const Key('chip_sig_6_8')));
+        await pumpFrames(200);
+        await tester.drag(find.byType(ListView).last, const Offset(0, -260));
+        await pumpFrames(200);
+        await tester.tap(find.byKey(const Key('switch_speed_trainer')));
+        await pumpFrames(200);
+        expect(tester.takeException(), isNull);
+
+        // 5. Màn hình Tiến trình (ProgressScreen) với Bản đồ độ nhạy từng nốt (Note Heatmap)
+        router.go('/progress');
+        await pumpFrames(300);
+        await tester.drag(find.byType(ListView).last, const Offset(0, -320));
+        await pumpFrames(250);
+        expect(
+          find.byKey(const Key('note_mastery_heatmap_card')),
+          findsOneWidget,
+        );
+        expect(tester.takeException(), isNull);
+
+        // 6. Màn hình Cài đặt (SettingsScreen) & Chuyển sang Dark Mode
+        router.go('/settings');
+        await pumpFrames();
+        await tester.runAsync(() async {
+          await container
+              .read(appSettingsProvider.notifier)
+              .setThemeMode(ThemeMode.dark);
+        });
+        await pumpFrames();
+        expect(tester.takeException(), isNull);
+      },
+    );
   });
 }

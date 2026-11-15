@@ -311,11 +311,15 @@ class TopicsScreen extends ConsumerWidget {
                                         color: AppColors.primary,
                                       ),
                                       SizedBox(width: 5),
-                                      Text(
-                                        'Chọn mức độ Nhận biết nốt:',
-                                        style: TextStyle(
-                                          fontSize: 12.5,
-                                          fontWeight: FontWeight.w800,
+                                      Expanded(
+                                        child: Text(
+                                          'Chọn mức độ Nhận biết nốt:',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontSize: 12.5,
+                                            fontWeight: FontWeight.w800,
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -456,11 +460,15 @@ class TopicsScreen extends ConsumerWidget {
                     color: AppColors.primary,
                   ),
                   SizedBox(width: 8),
-                  Text(
-                    'Chủ đề mở rộng (Sắp ra mắt)',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
+                  Expanded(
+                    child: Text(
+                      'Chủ đề mở rộng (Sắp ra mắt)',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
                 ],

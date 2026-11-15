@@ -811,11 +811,14 @@ class _MetronomeScreenState extends ConsumerState<MetronomeScreen>
                           ),
                           SizedBox(
                             height: 28,
-                            child: Switch(
-                              key: const Key('switch_speed_trainer'),
-                              value: cfg.autoSpeedUpEnabled,
-                              onChanged: (v) =>
-                                  notifier.setAutoSpeedUp(enabled: v),
+                            child: Transform.scale(
+                              scale: 0.82,
+                              child: Switch(
+                                key: const Key('switch_speed_trainer'),
+                                value: cfg.autoSpeedUpEnabled,
+                                onChanged: (v) =>
+                                    notifier.setAutoSpeedUp(enabled: v),
+                              ),
                             ),
                           ),
                         ],
@@ -958,16 +961,18 @@ class _BeatIndicatorHeader extends ConsumerWidget {
                       fontSize: 11.5,
                     ),
                   )
-                : Text(
-                    beatData.isRunning
-                        ? 'Phách hiện tại: ${beatData.currentBeat} / ${beatData.numerator} (Chạm số phách để đổi Nhấn/Thường/Tắt)'
-                        : 'Chạm số phách bên dưới để đổi: Nhấn (Cam) • Thường (Xanh) • Tắt',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 11,
-                      color: Theme.of(context).textTheme.bodySmall?.color,
+                : FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      beatData.isRunning
+                          ? 'Phách hiện tại: ${beatData.currentBeat} / ${beatData.numerator} (Chạm số phách để đổi Nhấn/Thường/Tắt)'
+                          : 'Chạm số phách bên dưới để đổi: Nhấn (Cam) • Thường (Xanh) • Tắt',
+                      maxLines: 1,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 11,
+                        color: Theme.of(context).textTheme.bodySmall?.color,
+                      ),
                     ),
                   ),
           ),

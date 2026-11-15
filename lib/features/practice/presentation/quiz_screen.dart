@@ -442,7 +442,8 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
                             selectedNoteKey:
                                 viewState.selectedOption?.optionKey,
                             showHighlight: isCurrentAnswered,
-                            enableBlackKeys: question.difficulty >= 2,
+                            enableBlackKeys: question.difficulty == 2 ||
+                                question.difficulty == 4,
                             onKeyTap: _handlePianoKeyTap,
                           ),
                         ],
@@ -463,13 +464,18 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
                           fontWeight: FontWeight.w800,
                         ),
                       ),
-                      const Spacer(),
-                      Text(
-                        'Đúng: tự chuyển sau 0.8s • Sai: dừng giải thích',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: Theme.of(context).textTheme.bodySmall?.color,
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Đúng: tự chuyển sau 0.8s • Sai: dừng giải thích',
+                          textAlign: TextAlign.right,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: Theme.of(context).textTheme.bodySmall?.color,
+                          ),
                         ),
                       ),
                     ],
