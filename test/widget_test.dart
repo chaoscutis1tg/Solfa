@@ -1333,6 +1333,33 @@ void main() {
         expect(find.byKey(const Key('btn_redeem_250_points')), findsOneWidget);
         expect(find.byKey(const Key('btn_redeem_400_points')), findsOneWidget);
         expect(tester.takeException(), isNull);
+
+        // Tích lũy thêm 3 lượt ủng hộ (+300đ) và bấm trực tiếp nút Đổi gói 250đ -> +3 Lượt Đấu Trường
+        await tester.runAsync(() async {
+          for (int i = 0; i < 3; i++) {
+            await container
+                .read(rewardedAdProvider.notifier)
+                .completeWatchingAd(watchedToEnd: true);
+          }
+        });
+        await pumpFrames(250);
+        expect(container.read(rewardedAdProvider).prestigePoints, equals(300));
+        expect(container.read(rewardedAdProvider).supportedCount, equals(4));
+
+        await tester.ensureVisible(
+          find.byKey(const Key('btn_redeem_250_points')),
+        );
+        await pumpFrames(250);
+        await tester.tap(find.byKey(const Key('btn_redeem_250_points')));
+        await tester.runAsync(() async {
+          await Future.delayed(const Duration(milliseconds: 50));
+        });
+        await pumpFrames(300);
+        expect(container.read(rewardedAdProvider).prestigePoints, equals(50));
+        expect(container.read(rewardedAdProvider).spentPrestigePoints, equals(350));
+        expect(container.read(rewardedAdProvider).supportedCount, equals(4));
+        expect(container.read(battleProvider).remainingBattlesToday, equals(4));
+        expect(tester.takeException(), isNull);
       },
     );
   });

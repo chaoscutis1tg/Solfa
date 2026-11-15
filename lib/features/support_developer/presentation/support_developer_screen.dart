@@ -117,16 +117,19 @@ Future<bool> redeemPrestigePointsForBattleTurns(
     return false;
   }
 
-  final ok = await adNotifier.spendPrestigePointsForTurns(
-    pointsCost: pointsCost,
-    turnsGranted: turnsToGrant,
-  );
+  final battleNotifier = ref.read(battleProvider.notifier);
+  final audioService = ref.read(audioServiceProvider);
+
+  final results = await Future.wait([
+    adNotifier.spendPrestigePointsForTurns(
+      pointsCost: pointsCost,
+      turnsGranted: turnsToGrant,
+    ),
+    battleNotifier.restoreTurnFromRewardedAd(turns: turnsToGrant),
+  ]);
+  final ok = results.first as bool;
   if (!ok) return false;
 
-  await ref
-      .read(battleProvider.notifier)
-      .restoreTurnFromRewardedAd(turns: turnsToGrant);
-  final audioService = ref.read(audioServiceProvider);
   await audioService.playSessionCompleteFanfare();
 
   if (context.mounted) {
@@ -1185,7 +1188,7 @@ class _RewardedVideoAdPlayerDialogState
                 Expanded(
                   child: Text(
                     isRewardUnlocked
-                        ? '✓ Đã hoàn tất video!'
+                        ? 'Đã hoàn tất video!'
                         : 'Nhận thưởng sau ${remaining}s',
                     style: TextStyle(
                       fontSize: 12.5,

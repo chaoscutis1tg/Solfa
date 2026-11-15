@@ -104,6 +104,7 @@ class RewardedAdNotifier extends StateNotifier<RewardedAdState> {
     );
 
     final online = !simulateOffline && await _hasInternetConnection();
+    if (!mounted) return false;
     if (!online) {
       state = state.copyWith(
         status: RewardedAdStatus.offline,
@@ -114,6 +115,7 @@ class RewardedAdNotifier extends StateNotifier<RewardedAdState> {
     }
 
     await Future.delayed(const Duration(milliseconds: 350));
+    if (!mounted) return false;
     state = state.copyWith(
       status: RewardedAdStatus.ready,
       statusMessage:
@@ -124,6 +126,7 @@ class RewardedAdNotifier extends StateNotifier<RewardedAdState> {
 
   /// Records completing or dismissing the voluntary rewarded video ad (UC-16).
   Future<void> completeWatchingAd({required bool watchedToEnd}) async {
+    if (!mounted) return;
     if (!watchedToEnd) {
       state = state.copyWith(
         status: RewardedAdStatus.dismissedEarly,
@@ -134,13 +137,15 @@ class RewardedAdNotifier extends StateNotifier<RewardedAdState> {
     }
 
     final nextCount = state.supportedCount + 1;
-    await _db.setSetting('developer_support_count', nextCount.toString());
     state = state.copyWith(
       status: RewardedAdStatus.completed,
       supportedCount: nextCount,
       statusMessage:
           'Cảm ơn bạn rất nhiều! Lượt xem video ủng hộ thứ #$nextCount của bạn đã được ghi nhận (+100 Điểm Uy Tín).',
     );
+    try {
+      await _db.setSetting('developer_support_count', nextCount.toString());
+    } catch (_) {}
   }
 
   /// Quy đổi Điểm Uy Tín khả dụng (`prestigePoints`) sang Lượt Đấu Trường.
@@ -149,19 +154,22 @@ class RewardedAdNotifier extends StateNotifier<RewardedAdState> {
     required int pointsCost,
     required int turnsGranted,
   }) async {
+    if (!mounted) return false;
     if (pointsCost <= 0 || turnsGranted <= 0) return false;
     if (state.prestigePoints < pointsCost) return false;
 
     final nextSpent = state.spentPrestigePoints + pointsCost;
-    await _db.setSetting(
-      'developer_support_points_spent',
-      nextSpent.toString(),
-    );
     state = state.copyWith(
       spentPrestigePoints: nextSpent,
       statusMessage:
           'Đã quy đổi $pointsCost Điểm Uy Tín sang +$turnsGranted Lượt Đấu Trường thành công!',
     );
+    try {
+      await _db.setSetting(
+        'developer_support_points_spent',
+        nextSpent.toString(),
+      );
+    } catch (_) {}
     return true;
   }
 }

@@ -476,7 +476,7 @@ class PracticeSessionNotifier extends StateNotifier<PracticeSessionState> {
     }
   }
 
-  /// Allows toggling directly between "🎧 Nghe nốt" ('topic_notes') and "🎼 Đọc nốt" ('topic_staff_reading')
+  /// Allows toggling directly between "Nghe nốt" ('topic_notes') and "Đọc nốt" ('topic_staff_reading')
   /// inside the Practice Room while preserving the difficulty tier (Mức 1..4).
   Future<void> switchNotePracticeModeInSession(String targetTopicId) async {
     if (_isBusy || state.mode == 'review' || state.topicId == targetTopicId) {

@@ -202,9 +202,23 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
               ),
             ),
             const SizedBox(height: 6),
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop('cancel'),
-              child: const Text('Để sau'),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                TextButton.icon(
+                  key: const Key('btn_dialog_open_exchange_station'),
+                  onPressed: () => Navigator.of(ctx).pop('open_station'),
+                  icon: const Icon(Icons.storefront_rounded, size: 16),
+                  label: const Text(
+                    'Gói 3–5 lượt (Ưu đãi)',
+                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12.5),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop('cancel'),
+                  child: const Text('Để sau'),
+                ),
+              ],
             ),
           ],
         ),
@@ -221,6 +235,8 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
         pointsCost: 100,
         turnsToGrant: 1,
       );
+    } else if (action == 'open_station') {
+      context.push('/support-developer');
     }
   }
 
@@ -683,7 +699,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
             label: Text(
               state.canStartBattle
                   ? 'VÀO ĐẤU TRƯỜNG NGAY (CÒN ${state.remainingBattlesToday}/${BattleState.maxDailyFreeBattles} LƯỢT)'
-                  : 'HẾT LƯỢT HÔM NAY • XEM QC HỒI +1 LƯỢT',
+                  : 'HẾT LƯỢT • XEM QC HOẶC ĐỔI ĐIỂM HỒI LƯỢT',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
@@ -2009,7 +2025,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
             label: Text(
               state.canStartBattle
                   ? 'TÁI ĐẤU NGAY (CÒN ${state.remainingBattlesToday}/${BattleState.maxDailyFreeBattles} LƯỢT)'
-                  : 'HẾT LƯỢT • XEM QC HỒI +1 LƯỢT ĐẤU',
+                  : 'HẾT LƯỢT • XEM QC HOẶC ĐỔI ĐIỂM HỒI LƯỢT',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontWeight: FontWeight.w900),
