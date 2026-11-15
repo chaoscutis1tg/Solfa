@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -6,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../core/providers/app_providers.dart';
 import '../../../../core/utils/note_formatter.dart';
+import '../../../support_developer/application/rewarded_ad_controller.dart';
 import 'musical_staff_widget.dart';
 import 'piano_keyboard_widget.dart';
 
@@ -36,6 +38,48 @@ class _FreePianoExplorerSheetState
   String? _activeHarmonyFormula;
   String? _activeHarmonyAsset;
   List<String>? _activeHarmonyKeys;
+
+  // Melodic Dictation (Chép nhạc giai điệu 3–4 nốt) state
+  bool _isDictationMode = false;
+  int _dictationIndex = 0;
+  List<String> _userTappedNotes = [];
+  bool _dictationCompleted = false;
+  String? _dictationFeedback;
+  bool _dictationFeedbackIsError = false;
+
+  static const List<(String title, String hint, List<String> notes)>
+      _dictationMelodies = [
+    (
+      'Giai điệu #1: Hợp âm Đô Trưởng rải lên',
+      'Bắt đầu từ Đô (C4), đi lên theo quãng 3 Trưởng và quãng 5 Đúng',
+      ['C4', 'E4', 'G4'],
+    ),
+    (
+      'Giai điệu #2: Bước đi liền bậc Đô – Rê – Mi',
+      'Bắt đầu từ Đô (C4), đi lên liền bậc từng cung',
+      ['C4', 'D4', 'E4'],
+    ),
+    (
+      'Giai điệu #3: Giai điệu kết về chủ âm',
+      'Bắt đầu từ Sol (G4), đi xuống Mi (E4) rồi về Đô (C4)',
+      ['G4', 'E4', 'C4'],
+    ),
+    (
+      'Giai điệu #4: Âm hưởng La Thứ trữ tình',
+      'Bắt đầu từ La (A4), xuống Mi (E4) và quay lại La (A4)',
+      ['A4', 'E4', 'A4'],
+    ),
+    (
+      'Giai điệu #5: Khúc ca 4 nốt tươi sáng',
+      'Bắt đầu từ Đô (C4): Đô – Rê – Mi – Đô',
+      ['C4', 'D4', 'E4', 'C4'],
+    ),
+    (
+      'Giai điệu #6: Hợp âm Fa Trưởng ấm áp',
+      'Bắt đầu từ Fa (F4), đi lên La (A4) và Sol (G4)',
+      ['F4', 'A4', 'G4'],
+    ),
+  ];
 
   String get _activeNoteKey => '$_selectedPitchClass$_selectedOctave';
 
@@ -194,7 +238,8 @@ class _FreePianoExplorerSheetState
     return 'Khuông nhạc 5 dòng kẻ';
   }
 
-  void _selectAndPlay(String pitchClass, int octave) {
+  void _selectAndPlay(String pitchClass, int octave, {bool fromPianoTap = false}) {
+    final tappedNoteKey = '$pitchClass$octave';
     setState(() {
       _selectedPitchClass = pitchClass;
       _selectedOctave = octave;
@@ -204,7 +249,90 @@ class _FreePianoExplorerSheetState
       _activeHarmonyAsset = null;
       _activeHarmonyKeys = null;
     });
-    ref.read(audioServiceProvider).playPianoKey('$pitchClass$octave');
+    ref.read(audioServiceProvider).playPianoKey(tappedNoteKey);
+
+    if (fromPianoTap && _isDictationMode && !_dictationCompleted) {
+      final melody = _dictationMelodies[_dictationIndex];
+      final targetNotes = melody.$3;
+      final nextSlot = _userTappedNotes.length;
+      if (nextSlot < targetNotes.length) {
+        final expectedNote = targetNotes[nextSlot];
+        if (tappedNoteKey == expectedNote) {
+          final updated = [..._userTappedNotes, tappedNoteKey];
+          final isDone = updated.length >= targetNotes.length;
+          setState(() {
+            _userTappedNotes = updated;
+            _dictationCompleted = isDone;
+            _dictationFeedbackIsError = false;
+            _dictationFeedback = isDone
+                ? 'Xuất sắc! Bạn đã chép chính xác toàn bộ giai điệu. Đã ghi nhận hoàn thành Nhiệm Vụ Chép Nhạc hôm nay!'
+                : 'Chính xác nốt thứ ${updated.length}! Hãy bấm tiếp nốt thứ ${updated.length + 1}...';
+          });
+          if (isDone) {
+            unawaited(
+              ref.read(audioServiceProvider).playSessionCompleteFanfare(),
+            );
+            unawaited(
+              ref
+                  .read(rewardedAdProvider.notifier)
+                  .recordMelodicDictationCompleted(),
+            );
+          }
+        } else {
+          setState(() {
+            _dictationFeedbackIsError = true;
+            _dictationFeedback =
+                'Chưa đúng cao độ nốt thứ ${nextSlot + 1}! Hãy bấm "Nghe giai điệu" để cảm nhận lại hướng đi của nốt.';
+          });
+        }
+      }
+    }
+  }
+
+  Future<void> _playCurrentDictationMelody() async {
+    final melody = _dictationMelodies[_dictationIndex];
+    final audio = ref.read(audioServiceProvider);
+    if (audio.isTestMode) {
+      await audio.playPianoKey(melody.$3.first);
+      return;
+    }
+    for (int i = 0; i < melody.$3.length; i++) {
+      if (!mounted || !_isDictationMode) return;
+      await audio.playPianoKey(melody.$3[i]);
+      if (i < melody.$3.length - 1) {
+        await Future.delayed(const Duration(milliseconds: 380));
+      }
+    }
+  }
+
+  void _toggleMelodicDictation() {
+    final nextMode = !_isDictationMode;
+    setState(() {
+      _isDictationMode = nextMode;
+      _selectedOctave = 4;
+      _userTappedNotes = [];
+      _dictationCompleted = false;
+      _dictationFeedbackIsError = false;
+      _dictationFeedback = nextMode
+          ? 'Nghe giai điệu và chạm lần lượt các phím trên đàn Piano theo đúng thứ tự.'
+          : null;
+    });
+    if (nextMode) {
+      unawaited(_playCurrentDictationMelody());
+    }
+  }
+
+  void _nextDictationMelody() {
+    setState(() {
+      _dictationIndex = (_dictationIndex + 1) % _dictationMelodies.length;
+      _selectedOctave = 4;
+      _userTappedNotes = [];
+      _dictationCompleted = false;
+      _dictationFeedbackIsError = false;
+      _dictationFeedback =
+          'Đã chuyển sang câu giai điệu mới! Hãy nghe và bấm lại từng nốt trên đàn.';
+    });
+    unawaited(_playCurrentDictationMelody());
   }
 
   void _selectHarmonySample((
@@ -517,6 +645,10 @@ class _FreePianoExplorerSheetState
               ),
               const SizedBox(height: 8),
 
+              // Melodic Dictation Mini-Game (Chép nhạc giai điệu 3–4 nốt)
+              _buildMelodicDictationSection(isDark),
+              const SizedBox(height: 8),
+
               // Interactive Piano Keyboard
               PianoKeyboardWidget(
                 highlightedNoteKey: _activeNoteKey,
@@ -527,12 +659,225 @@ class _FreePianoExplorerSheetState
                 onKeyTap: (rawKey) {
                   final pc =
                       rawKey.replaceAll(RegExp(r'[0-9]'), '').toUpperCase();
-                  _selectAndPlay(pc, _selectedOctave);
+                  _selectAndPlay(pc, _selectedOctave, fromPianoTap: true);
                 },
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildMelodicDictationSection(bool isDark) {
+    final melody = _dictationMelodies[_dictationIndex];
+    final targetNotes = melody.$3;
+    final firstNoteLabel = NoteFormatter.toVietnameseLabel(targetNotes.first);
+
+    return Container(
+      key: const Key('card_melodic_dictation'),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: _isDictationMode
+            ? AppColors.accentAmber.withOpacity(isDark ? 0.14 : 0.09)
+            : (isDark
+                ? Colors.white.withOpacity(0.04)
+                : AppColors.primary.withOpacity(0.04)),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: _isDictationMode
+              ? AppColors.accentAmber.withOpacity(0.55)
+              : AppColors.primary.withOpacity(0.22),
+          width: _isDictationMode ? 1.4 : 1.0,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.hearing_rounded,
+                size: 18,
+                color: AppColors.accentAmber,
+              ),
+              const SizedBox(width: 6),
+              const Expanded(
+                child: Text(
+                  'Thử thách Chép Nhạc Giai Điệu (3–4 nốt)',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12.8,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              TextButton.icon(
+                key: const Key('btn_toggle_melodic_dictation'),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  minimumSize: const Size(0, 30),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  backgroundColor: _isDictationMode
+                      ? AppColors.accentAmber
+                      : AppColors.primary,
+                  foregroundColor:
+                      _isDictationMode ? Colors.black87 : Colors.white,
+                ),
+                onPressed: _toggleMelodicDictation,
+                icon: Icon(
+                  _isDictationMode
+                      ? Icons.close_rounded
+                      : Icons.play_arrow_rounded,
+                  size: 15,
+                ),
+                label: Text(
+                  _isDictationMode ? 'Đóng thử thách' : 'Bắt đầu chép nhạc',
+                  style: const TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (_isDictationMode) ...[
+            const SizedBox(height: 8),
+            Text(
+              '${melody.$1} • Nốt mở đầu gợi ý: $firstNoteLabel',
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              melody.$2,
+              style: const TextStyle(fontSize: 11.5),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: List.generate(targetNotes.length, (idx) {
+                final isSolved = idx < _userTappedNotes.length;
+                final isCurrent = idx == _userTappedNotes.length;
+                final slotLabel = isSolved
+                    ? NoteFormatter.toVietnameseLabel(_userTappedNotes[idx])
+                    : (idx == 0
+                        ? '1. $firstNoteLabel'
+                        : 'Nốt #${idx + 1}: ?');
+                return Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isSolved
+                        ? AppColors.correct.withOpacity(0.18)
+                        : (isCurrent
+                            ? AppColors.accentAmber.withOpacity(0.20)
+                            : Colors.grey.withOpacity(0.12)),
+                    borderRadius: BorderRadius.circular(99),
+                    border: Border.all(
+                      color: isSolved
+                          ? AppColors.correct
+                          : (isCurrent
+                              ? AppColors.accentAmber
+                              : Colors.grey.withOpacity(0.35)),
+                      width: isCurrent ? 1.4 : 1.0,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isSolved
+                            ? Icons.check_circle_rounded
+                            : (isCurrent
+                                ? Icons.touch_app_rounded
+                                : Icons.music_note_rounded),
+                        size: 13,
+                        color: isSolved
+                            ? AppColors.correct
+                            : (isCurrent ? AppColors.accentAmber : Colors.grey),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        slotLabel,
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w800,
+                          color: isSolved ? AppColors.correct : null,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ),
+            if (_dictationFeedback != null) ...[
+              const SizedBox(height: 7),
+              Text(
+                _dictationFeedback!,
+                style: TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w700,
+                  color: _dictationCompleted
+                      ? AppColors.correct
+                      : (_dictationFeedbackIsError
+                          ? AppColors.wrong
+                          : AppColors.primary),
+                ),
+              ),
+            ],
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                OutlinedButton.icon(
+                  key: const Key('btn_replay_melodic_dictation'),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(0, 32),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  onPressed: _playCurrentDictationMelody,
+                  icon: const Icon(Icons.volume_up_rounded, size: 15),
+                  label: const Text(
+                    'Nghe giai điệu',
+                    style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                OutlinedButton.icon(
+                  key: const Key('btn_next_melodic_dictation'),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(0, 32),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  onPressed: _nextDictationMelody,
+                  icon: const Icon(Icons.skip_next_rounded, size: 15),
+                  label: const Text(
+                    'Câu giai điệu khác',
+                    style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
       ),
     );
   }

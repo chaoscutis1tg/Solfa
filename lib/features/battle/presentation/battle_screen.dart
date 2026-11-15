@@ -710,7 +710,109 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
             ),
           ),
         ),
+        if (state.matchHistory.isNotEmpty) ...[
+          const SizedBox(height: 18),
+          _buildRecentMatchesSection(state, isDark),
+        ],
       ],
+    );
+  }
+
+  Widget _buildRecentMatchesSection(BattleState state, bool isDark) {
+    return Container(
+      key: const Key('card_battle_match_history'),
+      padding: const EdgeInsets.all(13),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.surfaceDark : Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withOpacity(0.12)
+              : const Color(0xFFD8E4F8),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(
+                Icons.history_rounded,
+                size: 17,
+                color: Color(0xFF4F46E5),
+              ),
+              SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  'NHẬT KÝ ĐẤU TRƯỜNG GẦN ĐÂY',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11.8,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.4,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          for (int i = 0; i < state.matchHistory.take(5).length; i++) ...[
+            if (i > 0) const Divider(height: 10),
+            Builder(
+              builder: (context) {
+                final rec = state.matchHistory[i];
+                final badgeColor = rec.isDraw
+                    ? AppColors.accentAmber
+                    : (rec.didWin ? AppColors.correct : AppColors.wrong);
+                final badgeText =
+                    rec.isDraw ? 'HÒA' : (rec.didWin ? 'THẮNG' : 'THUA');
+                return Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: badgeColor.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        badgeText,
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w900,
+                          color: badgeColor,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'vs ${rec.opponentName} (${rec.modeLabel})',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12.2,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      '${rec.player1Hp}-${rec.player2Hp} HP • x${rec.maxCombo}',
+                      style: const TextStyle(
+                        fontSize: 11.2,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ],
+        ],
+      ),
     );
   }
 
@@ -1971,6 +2073,40 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
                     ],
                   ),
                 ),
+              if (state.lastRankUpBonusPoints > 0) ...[
+                const SizedBox(height: 8),
+                Container(
+                  key: const Key('badge_rank_up_bonus'),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppColors.correct.withOpacity(0.16),
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.workspace_premium_rounded,
+                        size: 16,
+                        color: AppColors.correct,
+                      ),
+                      const SizedBox(width: 5),
+                      Flexible(
+                        child: Text(
+                          'Thưởng Thăng Hạng ${state.rankInfo.tierName}: +${state.lastRankUpBonusPoints} Điểm Uy Tín!',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w900,
+                            color: AppColors.correct,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: 18),
               Row(
                 children: [

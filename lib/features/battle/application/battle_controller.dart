@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -11,6 +12,7 @@ import '../../../core/models/domain_models.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../practice/application/practice_session_controller.dart';
 import '../../practice/domain/hybrid_question_generator.dart';
+import '../../support_developer/application/rewarded_ad_controller.dart';
 
 enum BattleMode {
   smartMatchmaking,
@@ -102,6 +104,52 @@ class BattleRankInfo {
   }
 }
 
+class BattleMatchRecord {
+  final String opponentName;
+  final String modeLabel;
+  final bool didWin;
+  final bool isDraw;
+  final int player1Hp;
+  final int player2Hp;
+  final int maxCombo;
+  final int starsDelta;
+
+  const BattleMatchRecord({
+    required this.opponentName,
+    required this.modeLabel,
+    required this.didWin,
+    required this.isDraw,
+    required this.player1Hp,
+    required this.player2Hp,
+    required this.maxCombo,
+    required this.starsDelta,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'opponentName': opponentName,
+        'modeLabel': modeLabel,
+        'didWin': didWin,
+        'isDraw': isDraw,
+        'player1Hp': player1Hp,
+        'player2Hp': player2Hp,
+        'maxCombo': maxCombo,
+        'starsDelta': starsDelta,
+      };
+
+  factory BattleMatchRecord.fromJson(Map<String, dynamic> map) {
+    return BattleMatchRecord(
+      opponentName: (map['opponentName'] as String?) ?? 'Đối thủ',
+      modeLabel: (map['modeLabel'] as String?) ?? 'Đấu Trường',
+      didWin: (map['didWin'] as bool?) ?? false,
+      isDraw: (map['isDraw'] as bool?) ?? false,
+      player1Hp: (map['player1Hp'] as int?) ?? 0,
+      player2Hp: (map['player2Hp'] as int?) ?? 0,
+      maxCombo: (map['maxCombo'] as int?) ?? 0,
+      starsDelta: (map['starsDelta'] as int?) ?? 0,
+    );
+  }
+}
+
 class BattleState {
   static const int maxHp = 100;
   static const int maxDailyFreeBattles = 5;
@@ -117,6 +165,9 @@ class BattleState {
   final int totalMatches;
   final int remainingBattlesToday;
   final int adRestoredTurnsToday;
+  final int dailyBattlesPlayed;
+  final List<BattleMatchRecord> matchHistory;
+  final int lastRankUpBonusPoints;
 
   // Match Fighters
   final String player1Name;
@@ -161,6 +212,9 @@ class BattleState {
     this.totalMatches = 0,
     this.remainingBattlesToday = maxDailyFreeBattles,
     this.adRestoredTurnsToday = 0,
+    this.dailyBattlesPlayed = 0,
+    this.matchHistory = const [],
+    this.lastRankUpBonusPoints = 0,
     this.player1Name = 'Bạn',
     this.player1Title = 'Chiến binh Solfa',
     this.player2Name = 'Đối thủ',
@@ -226,6 +280,9 @@ class BattleState {
     int? totalMatches,
     int? remainingBattlesToday,
     int? adRestoredTurnsToday,
+    int? dailyBattlesPlayed,
+    List<BattleMatchRecord>? matchHistory,
+    int? lastRankUpBonusPoints,
     String? player1Name,
     String? player1Title,
     String? player2Name,
@@ -270,6 +327,10 @@ class BattleState {
           remainingBattlesToday ?? this.remainingBattlesToday,
       adRestoredTurnsToday:
           adRestoredTurnsToday ?? this.adRestoredTurnsToday,
+      dailyBattlesPlayed: dailyBattlesPlayed ?? this.dailyBattlesPlayed,
+      matchHistory: matchHistory ?? this.matchHistory,
+      lastRankUpBonusPoints:
+          lastRankUpBonusPoints ?? this.lastRankUpBonusPoints,
       player1Name: player1Name ?? this.player1Name,
       player1Title: player1Title ?? this.player1Title,
       player2Name: player2Name ?? this.player2Name,
@@ -374,6 +435,7 @@ class BattleNotifier extends StateNotifier<BattleState> {
       final savedDate = await _db.getSetting('battle_energy_date');
       int remainingTurns = BattleState.maxDailyFreeBattles;
       int adRestoredToday = 0;
+      int dailyPlayed = 0;
 
       if (savedDate == today) {
         remainingTurns = int.tryParse(
@@ -385,6 +447,10 @@ class BattleNotifier extends StateNotifier<BattleState> {
               await _db.getSetting('battle_ad_restored_today') ?? '0',
             ) ??
             0;
+        dailyPlayed = int.tryParse(
+              await _db.getSetting('battle_daily_played') ?? '0',
+            ) ??
+            0;
       } else {
         await _db.setSetting('battle_energy_date', today);
         await _db.setSetting(
@@ -392,15 +458,34 @@ class BattleNotifier extends StateNotifier<BattleState> {
           BattleState.maxDailyFreeBattles.toString(),
         );
         await _db.setSetting('battle_ad_restored_today', '0');
+        await _db.setSetting('battle_daily_played', '0');
+      }
+
+      List<BattleMatchRecord> history = [];
+      final rawHistory = await _db.getSetting('battle_match_history_json');
+      if (rawHistory != null && rawHistory.isNotEmpty) {
+        try {
+          final decoded = jsonDecode(rawHistory) as List<dynamic>;
+          history = decoded
+              .whereType<Map>()
+              .map((m) => BattleMatchRecord.fromJson(Map<String, dynamic>.from(m)))
+              .toList();
+        } catch (_) {}
       }
 
       if (!mounted) return;
+      // Avoid overwriting in-memory state if a battle has already started or turns were already modified
+      if (state.dailyBattlesPlayed > 0 || state.phase != BattlePhase.lobby) {
+        return;
+      }
       state = state.copyWith(
         totalStars: stars,
         totalWins: wins,
         totalMatches: matches,
         remainingBattlesToday: remainingTurns.clamp(0, 99),
         adRestoredTurnsToday: adRestoredToday.clamp(0, 999),
+        dailyBattlesPlayed: dailyPlayed.clamp(0, 999),
+        matchHistory: history,
       );
     } catch (_) {}
   }
@@ -465,9 +550,17 @@ class BattleNotifier extends StateNotifier<BattleState> {
 
       // Deduct 1 daily battle turn and persist to SQLite
       final nextTurns = (state.remainingBattlesToday - 1).clamp(0, 99);
+      final nextDailyPlayed = (state.dailyBattlesPlayed + 1).clamp(0, 999);
+      try {
+        _ref.read(rewardedAdProvider.notifier).recordDailyBattlePlayed();
+      } catch (_) {}
       try {
         await _db.setSetting('battle_energy_date', _todayDateKey());
         await _db.setSetting('battle_remaining_turns', nextTurns.toString());
+        await _db.setSetting(
+          'battle_daily_played',
+          nextDailyPlayed.toString(),
+        );
       } catch (_) {}
 
       // Resolve fighter names & avatars based on mode
@@ -516,6 +609,8 @@ class BattleNotifier extends StateNotifier<BattleState> {
       state = state.copyWith(
         isLoading: false,
         remainingBattlesToday: nextTurns,
+        dailyBattlesPlayed: nextDailyPlayed,
+        lastRankUpBonusPoints: 0,
         phase: state.mode == BattleMode.smartMatchmaking
             ? BattlePhase.matchmaking
             : BattlePhase.vsIntro,
@@ -1108,10 +1203,66 @@ class BattleNotifier extends StateNotifier<BattleState> {
     final nextWins = won ? state.totalWins + 1 : state.totalWins;
     final nextMatches = state.totalMatches + 1;
 
+    // Check first-time Rank-Up Milestone Bonus Prestige Points
+    final prevTierName = BattleRankInfo.fromStars(state.totalStars).tierName;
+    final nextTierName = BattleRankInfo.fromStars(nextStars).tierName;
+    int rankUpBonus = 0;
+    if (nextStars > state.totalStars && prevTierName != nextTierName) {
+      final highestRewarded = int.tryParse(
+            await _db.getSetting('battle_highest_rewarded_stars') ?? '0',
+          ) ??
+          0;
+      if (nextStars >= 35 && highestRewarded < 35) {
+        rankUpBonus = 250;
+      } else if (nextStars >= 22 && highestRewarded < 22) {
+        rankUpBonus = 150;
+      } else if (nextStars >= 12 && highestRewarded < 12) {
+        rankUpBonus = 100;
+      } else if (nextStars >= 5 && highestRewarded < 5) {
+        rankUpBonus = 50;
+      }
+      if (rankUpBonus > 0) {
+        try {
+          await _db.setSetting(
+            'battle_highest_rewarded_stars',
+            nextStars.toString(),
+          );
+          await _ref
+              .read(rewardedAdProvider.notifier)
+              .grantBonusPrestigePoints(
+                rankUpBonus,
+                customMessage:
+                    'Thăng hạng $nextTierName! Tặng thưởng +$rankUpBonus Điểm Uy Tín!',
+              );
+        } catch (_) {}
+      }
+    }
+
+    final modeLabel = switch (state.mode) {
+      BattleMode.smartMatchmaking => 'Ghép Trận',
+      BattleMode.botAi => 'Đấu Bot AI',
+      BattleMode.localSplitScreen => '2 Người 1 Máy',
+    };
+    final newRecord = BattleMatchRecord(
+      opponentName: state.player2Name,
+      modeLabel: modeLabel,
+      didWin: won,
+      isDraw: state.isDraw,
+      player1Hp: state.player1Hp,
+      player2Hp: state.player2Hp,
+      maxCombo: state.player1MaxCombo,
+      starsDelta: starsDelta,
+    );
+    final updatedHistory = [newRecord, ...state.matchHistory].take(10).toList();
+
     try {
       await _db.setSetting('battle_stars', nextStars.toString());
       await _db.setSetting('battle_wins', nextWins.toString());
       await _db.setSetting('battle_matches', nextMatches.toString());
+      await _db.setSetting(
+        'battle_match_history_json',
+        jsonEncode(updatedHistory.map((r) => r.toJson()).toList()),
+      );
     } catch (_) {}
 
     if (won) {
@@ -1124,6 +1275,8 @@ class BattleNotifier extends StateNotifier<BattleState> {
       totalWins: nextWins,
       totalMatches: nextMatches,
       starsDeltaLastMatch: starsDelta,
+      lastRankUpBonusPoints: rankUpBonus,
+      matchHistory: updatedHistory,
     );
   }
 

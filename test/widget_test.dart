@@ -1359,6 +1359,30 @@ void main() {
         expect(container.read(rewardedAdProvider).spentPrestigePoints, equals(350));
         expect(container.read(rewardedAdProvider).supportedCount, equals(4));
         expect(container.read(battleProvider).remainingBattlesToday, equals(4));
+        expect(container.read(battleProvider).matchHistory.isNotEmpty, isTrue);
+
+        // 8. Kiểm tra Nhiệm Vụ Hàng Ngày (+100 Điểm Uy Tín) & Chép Nhạc Giai Điệu
+        await tester.runAsync(() async {
+          await container
+              .read(rewardedAdProvider.notifier)
+              .recordMelodicDictationCompleted();
+          final p1 = await container
+              .read(rewardedAdProvider.notifier)
+              .claimDailyQuest('practice');
+          final p2 = await container
+              .read(rewardedAdProvider.notifier)
+              .claimDailyQuest('battle');
+          final p3 = await container
+              .read(rewardedAdProvider.notifier)
+              .claimDailyQuest('dictation');
+          expect(p1 + p2 + p3, equals(100));
+        });
+        await pumpFrames(200);
+        expect(
+          container.read(rewardedAdProvider).claimedQuestsCountToday,
+          equals(3),
+        );
+        expect(container.read(rewardedAdProvider).prestigePoints, equals(150));
         expect(tester.takeException(), isNull);
       },
     );

@@ -258,6 +258,17 @@ class HomeScreen extends ConsumerWidget {
 
           const SizedBox(height: 14),
 
+          // 3b. Daily Quests Card (Nhận tối đa +100 Điểm Uy Tín / Ngày)
+          _buildDailyQuestsCard(
+            context,
+            ref,
+            progressAsync.valueOrNull,
+            adState,
+            isDark,
+          ),
+
+          const SizedBox(height: 14),
+
           // 4. Core Topics Section Header
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -548,6 +559,218 @@ class HomeScreen extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildDailyQuestsCard(
+    BuildContext context,
+    WidgetRef ref,
+    OverallProgressStats? stats,
+    RewardedAdState adState,
+    bool isDark,
+  ) {
+    final todayAnswered = stats?.todayAnsweredCount ?? 0;
+    final practiceReady = todayAnswered >= 10;
+    final battleReady = adState.dailyBattlesPlayed >= 1;
+    final dictationReady = adState.dailyDictationCompletedCount >= 1;
+
+    return Card(
+      key: const Key('card_daily_quests'),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: AppColors.accentAmber.withOpacity(0.16),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  alignment: Alignment.center,
+                  child: const Icon(
+                    Icons.task_alt_rounded,
+                    color: AppColors.accentAmber,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Nhiệm vụ Hàng ngày (+100 Điểm Uy Tín)',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        'Hoàn thành 3 nhiệm vụ ngày để đổi miễn phí +1 Lượt Đấu Trường',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: 11.3),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.14),
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                  child: Text(
+                    '${adState.claimedQuestsCountToday}/3',
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w900,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            _buildQuestRow(
+              context: context,
+              ref: ref,
+              buttonKey: const Key('btn_claim_quest_practice'),
+              icon: Icons.headphones_rounded,
+              title: 'Khởi động Cảm Âm (${todayAnswered.clamp(0, 10)}/10 câu)',
+              rewardPoints: 30,
+              isReadyToClaim: practiceReady,
+              isClaimed: adState.questPracticeClaimedToday,
+              questCode: 'practice',
+              onGoAction: () => _startQuickPractice(context, ref),
+            ),
+            const Divider(height: 12),
+            _buildQuestRow(
+              context: context,
+              ref: ref,
+              buttonKey: const Key('btn_claim_quest_battle'),
+              icon: Icons.bolt_rounded,
+              title:
+                  'Chiến binh Đấu Trường (${adState.dailyBattlesPlayed.clamp(0, 1)}/1 trận)',
+              rewardPoints: 40,
+              isReadyToClaim: battleReady,
+              isClaimed: adState.questBattleClaimedToday,
+              questCode: 'battle',
+              onGoAction: () => context.go('/battle'),
+            ),
+            const Divider(height: 12),
+            _buildQuestRow(
+              context: context,
+              ref: ref,
+              buttonKey: const Key('btn_claim_quest_dictation'),
+              icon: Icons.piano_rounded,
+              title:
+                  'Chép Nhạc Giai Điệu (${adState.dailyDictationCompletedCount.clamp(0, 1)}/1 câu)',
+              rewardPoints: 30,
+              isReadyToClaim: dictationReady,
+              isClaimed: adState.questDictationClaimedToday,
+              questCode: 'dictation',
+              onGoAction: () => showFreePianoExplorerSheet(context),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuestRow({
+    required BuildContext context,
+    required WidgetRef ref,
+    required Key buttonKey,
+    required IconData icon,
+    required String title,
+    required int rewardPoints,
+    required bool isReadyToClaim,
+    required bool isClaimed,
+    required String questCode,
+    required VoidCallback onGoAction,
+  }) {
+    return Row(
+      children: [
+        Icon(
+          isClaimed ? Icons.check_circle_rounded : icon,
+          size: 18,
+          color: isClaimed
+              ? AppColors.correct
+              : (isReadyToClaim ? AppColors.accentAmber : AppColors.primary),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w700,
+              decoration: isClaimed ? TextDecoration.lineThrough : null,
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        TextButton(
+          key: buttonKey,
+          style: TextButton.styleFrom(
+            minimumSize: const Size(0, 30),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            backgroundColor: isClaimed
+                ? AppColors.correct.withOpacity(0.12)
+                : (isReadyToClaim
+                    ? AppColors.correct
+                    : AppColors.primary.withOpacity(0.12)),
+            foregroundColor: isClaimed
+                ? AppColors.correct
+                : (isReadyToClaim ? Colors.white : AppColors.primary),
+          ),
+          onPressed: isClaimed
+              ? null
+              : () async {
+                  if (isReadyToClaim) {
+                    final pts = await ref
+                        .read(rewardedAdProvider.notifier)
+                        .claimDailyQuest(questCode);
+                    if (pts > 0 && context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          backgroundColor: AppColors.correct,
+                          content: Text(
+                            'Đã nhận +$pts Điểm Uy Tín! Có thể dùng đổi Lượt Đấu Trường.',
+                          ),
+                        ),
+                      );
+                    }
+                  } else {
+                    onGoAction();
+                  }
+                },
+          child: Text(
+            isClaimed
+                ? 'Đã nhận +$rewardPointsđ'
+                : (isReadyToClaim ? 'Nhận +$rewardPointsđ' : '+$rewardPointsđ • Làm ngay'),
+            style: const TextStyle(
+              fontSize: 11.2,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
