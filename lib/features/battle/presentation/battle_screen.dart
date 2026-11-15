@@ -8,6 +8,7 @@ import '../../../app/widgets/solfa_background.dart';
 import '../../../core/models/domain_models.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../practice/presentation/widgets/musical_staff_widget.dart';
+import '../../support_developer/application/rewarded_ad_controller.dart';
 import '../../support_developer/presentation/support_developer_screen.dart';
 import '../application/battle_controller.dart';
 
@@ -100,7 +101,11 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
     BuildContext context,
     WidgetRef ref,
   ) async {
-    final shouldWatch = await showDialog<bool>(
+    final adState = ref.read(rewardedAdProvider);
+    final availablePoints = adState.prestigePoints;
+    final canRedeem = availablePoints >= 100;
+
+    final action = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
         key: const Key('dialog_out_of_battle_turns'),
@@ -135,10 +140,10 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Mỗi ngày Đấu Trường tặng 5 lượt miễn phí. Hãy xem 1 video quảng cáo ngắn (15 giây) để hồi ngay +1 lượt thi đấu và nhận +100 Điểm Uy Tín ủng hộ nhà phát triển nhé!',
+            Text(
+              'Mỗi ngày Đấu Trường tặng 5 lượt miễn phí. Bạn có thể xem 1 video (15 giây) để hồi ngay +1 lượt & nhận +100 Điểm Uy Tín, hoặc dùng Điểm Uy Tín tích lũy (hiện có: $availablePointsđ) để đổi sang lượt chơi!',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13, height: 1.38),
+              style: const TextStyle(fontSize: 13, height: 1.38),
             ),
             const SizedBox(height: 16),
             SizedBox(
@@ -153,17 +158,52 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
                     borderRadius: BorderRadius.circular(14),
                   ),
                 ),
-                onPressed: () => Navigator.of(ctx).pop(true),
+                onPressed: () => Navigator.of(ctx).pop('watch_ad'),
                 icon: const Icon(Icons.smart_display_rounded, size: 20),
                 label: const Text(
-                  'Xem Video 15s (+1 Lượt Đấu)',
+                  'Xem Video 15s (+1 Lượt & +100đ)',
                   style: TextStyle(fontWeight: FontWeight.w800),
                 ),
               ),
             ),
             const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              height: 44,
+              child: OutlinedButton.icon(
+                key: const Key('btn_dialog_redeem_points_turn'),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(0, 44),
+                  side: BorderSide(
+                    color: canRedeem ? AppColors.correct : AppColors.accentAmber,
+                    width: 1.4,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                onPressed: () => Navigator.of(ctx).pop('redeem_points'),
+                icon: Icon(
+                  Icons.swap_horiz_rounded,
+                  size: 19,
+                  color: canRedeem ? AppColors.correct : AppColors.accentAmber,
+                ),
+                label: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    'Đổi 100 Điểm Uy Tín → +1 Lượt ($availablePointsđ)',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      color:
+                          canRedeem ? AppColors.correct : AppColors.accentAmber,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 6),
             TextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
+              onPressed: () => Navigator.of(ctx).pop('cancel'),
               child: const Text('Để sau'),
             ),
           ],
@@ -171,8 +211,16 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
       ),
     );
 
-    if (shouldWatch == true && context.mounted) {
+    if (!context.mounted) return;
+    if (action == 'watch_ad') {
       await _handleWatchAdForTurn(context, ref);
+    } else if (action == 'redeem_points') {
+      await redeemPrestigePointsForBattleTurns(
+        context,
+        ref,
+        pointsCost: 100,
+        turnsToGrant: 1,
+      );
     }
   }
 
@@ -656,6 +704,9 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
     BattleState state,
     bool isDark,
   ) {
+    final adState = ref.watch(rewardedAdProvider);
+    final availablePoints = adState.prestigePoints;
+    final canRedeem = availablePoints >= 100;
     final remaining = state.remainingBattlesToday;
     const maxFree = BattleState.maxDailyFreeBattles;
     final hasTurns = remaining > 0;
@@ -707,9 +758,9 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
                       ),
                     ),
                     const SizedBox(height: 2),
-                    const Text(
-                      'Mỗi ngày có 5 lượt miễn phí • Xem 1 QC (15s) = Hồi +1 lượt & ủng hộ nhà phát triển',
-                      style: TextStyle(fontSize: 11.2, height: 1.28),
+                    Text(
+                      'Mỗi ngày 5 lượt miễn phí • Xem QC (15s) hoặc đổi Điểm Uy Tín (hiện có: $availablePointsđ) để hồi lượt',
+                      style: const TextStyle(fontSize: 11.2, height: 1.28),
                     ),
                   ],
                 ),
@@ -717,66 +768,117 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
             ],
           ),
           const SizedBox(height: 10),
+          // 5 Energy Bolt Segment Capsules
           Row(
             children: [
-              // 5 Energy Bolt Segment Capsules
+              for (int i = 0; i < maxFree; i++) ...[
+                if (i > 0) const SizedBox(width: 5),
+                Expanded(
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 260),
+                    height: 9,
+                    decoration: BoxDecoration(
+                      gradient: i < remaining
+                          ? const LinearGradient(
+                              colors: [
+                                Color(0xFFF59E0B),
+                                Color(0xFF4F46E5),
+                              ],
+                            )
+                          : null,
+                      color: i < remaining
+                          ? null
+                          : (isDark
+                              ? Colors.white.withOpacity(0.12)
+                              : const Color(0xFFE2E8F0)),
+                      borderRadius: BorderRadius.circular(99),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 10),
+          // Action Row: Watch Ad (+1 Turn) OR Redeem Prestige Points (+1 Turn)
+          Row(
+            children: [
               Expanded(
-                child: Row(
-                  children: [
-                    for (int i = 0; i < maxFree; i++) ...[
-                      if (i > 0) const SizedBox(width: 5),
-                      Expanded(
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 260),
-                          height: 10,
-                          decoration: BoxDecoration(
-                            gradient: i < remaining
-                                ? const LinearGradient(
-                                    colors: [
-                                      Color(0xFFF59E0B),
-                                      Color(0xFF4F46E5),
-                                    ],
-                                  )
-                                : null,
-                            color: i < remaining
-                                ? null
-                                : (isDark
-                                    ? Colors.white.withOpacity(0.12)
-                                    : const Color(0xFFE2E8F0)),
-                            borderRadius: BorderRadius.circular(99),
-                          ),
-                        ),
+                child: OutlinedButton.icon(
+                  key: const Key('btn_battle_watch_ad_turn'),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(0, 34),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 6,
+                    ),
+                    side: const BorderSide(
+                      color: kHeartRedColor,
+                      width: 1.3,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  onPressed: () => _handleWatchAdForTurn(context, ref),
+                  icon: const PulsingRedHeart(size: 13),
+                  label: const FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      '+1 Lượt (Xem QC)',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w800,
+                        color: kHeartRedColor,
                       ),
-                    ],
-                  ],
+                    ),
+                  ),
                 ),
               ),
-              const SizedBox(width: 10),
-              OutlinedButton.icon(
-                key: const Key('btn_battle_watch_ad_turn'),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(0, 34),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
+              const SizedBox(width: 8),
+              Expanded(
+                child: OutlinedButton.icon(
+                  key: const Key('btn_battle_redeem_points_turn'),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(0, 34),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 6,
+                    ),
+                    side: BorderSide(
+                      color:
+                          canRedeem ? AppColors.correct : AppColors.accentAmber,
+                      width: 1.3,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
-                  side: const BorderSide(
-                    color: kHeartRedColor,
-                    width: 1.3,
+                  onPressed: () => redeemPrestigePointsForBattleTurns(
+                    context,
+                    ref,
+                    pointsCost: 100,
+                    turnsToGrant: 1,
                   ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+                  icon: Icon(
+                    Icons.swap_horiz_rounded,
+                    size: 15,
+                    color:
+                        canRedeem ? AppColors.correct : AppColors.accentAmber,
                   ),
-                ),
-                onPressed: () => _handleWatchAdForTurn(context, ref),
-                icon: const PulsingRedHeart(size: 13),
-                label: const Text(
-                  '+1 Lượt (Xem QC)',
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w800,
-                    color: kHeartRedColor,
+                  label: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      'Đổi 100đ → +1 Lượt ($availablePointsđ)',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w800,
+                        color: canRedeem
+                            ? AppColors.correct
+                            : AppColors.accentAmber,
+                      ),
+                    ),
                   ),
                 ),
               ),

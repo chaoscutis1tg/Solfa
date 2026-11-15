@@ -15,9 +15,8 @@ import '../features/topics/presentation/topic_detail_screen.dart';
 import '../features/topics/presentation/topics_screen.dart';
 import 'main_shell.dart';
 
-final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
-
 GoRouter createSolfaRouter({String initialLocation = '/'}) {
+  final rootNavigatorKey = GlobalKey<NavigatorState>();
   return GoRouter(
     navigatorKey: rootNavigatorKey,
     initialLocation: initialLocation,

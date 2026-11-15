@@ -1104,9 +1104,11 @@ void main() {
           await container.read(topicsListProvider.future);
         });
 
-        Future<void> pumpFrames([int ms = 300]) async {
+        Future<void> pumpFrames([int ms = 350]) async {
           await tester.pump();
+          await tester.pump(const Duration(milliseconds: 100));
           await tester.pump(Duration(milliseconds: ms));
+          await tester.pump();
         }
 
         final router = createSolfaRouter(initialLocation: '/home');
@@ -1295,6 +1297,41 @@ void main() {
           await battleNotifier.backToLobby();
         });
         await pumpFrames(250);
+        expect(tester.takeException(), isNull);
+
+        // 7. Kiểm tra Đổi Điểm Uy Tín (100đ -> +1 Lượt Đấu) ngay tại Đấu Trường & tại Trạm Đổi Điểm (/support-developer)
+        expect(container.read(rewardedAdProvider).prestigePoints, equals(100));
+        expect(container.read(rewardedAdProvider).supportedCount, equals(1));
+        expect(find.byKey(const Key('btn_battle_redeem_points_turn')), findsOneWidget);
+
+        await tester.runAsync(() async {
+          final redeemed = await container
+              .read(rewardedAdProvider.notifier)
+              .spendPrestigePointsForTurns(pointsCost: 100, turnsGranted: 1);
+          expect(redeemed, isTrue);
+          await battleNotifier.restoreTurnFromRewardedAd(turns: 1);
+        });
+        await pumpFrames(250);
+        expect(container.read(rewardedAdProvider).prestigePoints, equals(0));
+        expect(container.read(rewardedAdProvider).totalPrestigePoints, equals(100));
+        expect(container.read(rewardedAdProvider).spentPrestigePoints, equals(100));
+        // Danh hiệu vinh danh vĩnh viễn vẫn giữ nguyên dù đã đổi hết điểm khả dụng!
+        expect(container.read(rewardedAdProvider).supportedCount, equals(1));
+        expect(
+          container.read(rewardedAdProvider).supporterBadgeTitle,
+          equals('Người đồng hành Âm nhạc'),
+        );
+        expect(container.read(battleProvider).remainingBattlesToday, equals(1));
+
+        // Kiểm tra giao diện Trạm Đổi Điểm Uy Tín trên màn hình Hỗ trợ nhà phát triển (/support-developer)
+        await tester.tap(find.byKey(const Key('btn_close_battle_screen')));
+        await pumpFrames(300);
+        await tester.tap(find.byKey(const Key('btn_header_support_heart')));
+        await pumpFrames(350);
+        expect(find.byKey(const Key('card_redeem_prestige_points')), findsOneWidget);
+        expect(find.byKey(const Key('btn_redeem_100_points')), findsOneWidget);
+        expect(find.byKey(const Key('btn_redeem_250_points')), findsOneWidget);
+        expect(find.byKey(const Key('btn_redeem_400_points')), findsOneWidget);
         expect(tester.takeException(), isNull);
       },
     );

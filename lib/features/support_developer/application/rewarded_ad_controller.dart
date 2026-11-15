@@ -17,16 +17,25 @@ enum RewardedAdStatus {
 class RewardedAdState {
   final RewardedAdStatus status;
   final int supportedCount;
+  final int spentPrestigePoints;
   final String statusMessage;
 
   const RewardedAdState({
     this.status = RewardedAdStatus.notLoaded,
     this.supportedCount = 0,
+    this.spentPrestigePoints = 0,
     this.statusMessage =
         'Quảng cáo video có thưởng hoàn toàn tự nguyện, cần kết nối Internet và không khóa bất kỳ bài học nào.',
   });
 
-  int get prestigePoints => supportedCount * 100;
+  /// Tổng Điểm Uy Tín tích lũy trọn đời (dùng để giữ nguyên danh hiệu vinh danh).
+  int get totalPrestigePoints => supportedCount * 100;
+
+  /// Số dư Điểm Uy Tín khả dụng hiện tại (có thể dùng để quy đổi sang Lượt Đấu Trường).
+  int get prestigePoints =>
+      (totalPrestigePoints - spentPrestigePoints).clamp(0, 999999);
+
+  bool get canRedeemSingleTurn => prestigePoints >= 100;
 
   String get supporterBadgeTitle {
     if (supportedCount >= 10) return 'Đại sứ Vàng Solfa';
@@ -38,11 +47,13 @@ class RewardedAdState {
   RewardedAdState copyWith({
     RewardedAdStatus? status,
     int? supportedCount,
+    int? spentPrestigePoints,
     String? statusMessage,
   }) {
     return RewardedAdState(
       status: status ?? this.status,
       supportedCount: supportedCount ?? this.supportedCount,
+      spentPrestigePoints: spentPrestigePoints ?? this.spentPrestigePoints,
       statusMessage: statusMessage ?? this.statusMessage,
     );
   }
@@ -60,9 +71,14 @@ class RewardedAdNotifier extends StateNotifier<RewardedAdState> {
 
   Future<void> _loadSupportCount() async {
     final val = await _db.getSetting('developer_support_count');
+    final spentVal = await _db.getSetting('developer_support_points_spent');
     if (!mounted) return;
     final count = int.tryParse(val ?? '0') ?? 0;
-    state = state.copyWith(supportedCount: count);
+    final spent = int.tryParse(spentVal ?? '0') ?? 0;
+    state = state.copyWith(
+      supportedCount: count,
+      spentPrestigePoints: spent.clamp(0, count * 100),
+    );
   }
 
   Future<bool> _hasInternetConnection() async {
@@ -123,8 +139,30 @@ class RewardedAdNotifier extends StateNotifier<RewardedAdState> {
       status: RewardedAdStatus.completed,
       supportedCount: nextCount,
       statusMessage:
-          'Cảm ơn bạn rất nhiều! Lượt xem video ủng hộ thứ #$nextCount của bạn đã được ghi nhận.',
+          'Cảm ơn bạn rất nhiều! Lượt xem video ủng hộ thứ #$nextCount của bạn đã được ghi nhận (+100 Điểm Uy Tín).',
     );
+  }
+
+  /// Quy đổi Điểm Uy Tín khả dụng (`prestigePoints`) sang Lượt Đấu Trường.
+  /// Danh hiệu ủng hộ (`supportedCount`) vẫn được bảo toàn vĩnh viễn!
+  Future<bool> spendPrestigePointsForTurns({
+    required int pointsCost,
+    required int turnsGranted,
+  }) async {
+    if (pointsCost <= 0 || turnsGranted <= 0) return false;
+    if (state.prestigePoints < pointsCost) return false;
+
+    final nextSpent = state.spentPrestigePoints + pointsCost;
+    await _db.setSetting(
+      'developer_support_points_spent',
+      nextSpent.toString(),
+    );
+    state = state.copyWith(
+      spentPrestigePoints: nextSpent,
+      statusMessage:
+          'Đã quy đổi $pointsCost Điểm Uy Tín sang +$turnsGranted Lượt Đấu Trường thành công!',
+    );
+    return true;
   }
 }
 

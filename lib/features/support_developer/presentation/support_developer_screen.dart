@@ -78,6 +78,85 @@ Future<bool> showSolfaRewardedVideoAdModal(
   return false;
 }
 
+/// Exchanges accumulated Developer Supporter Prestige Points (`prestigePoints`)
+/// into Battle Arena Turns (`remainingBattlesToday`). Works 100% offline!
+Future<bool> redeemPrestigePointsForBattleTurns(
+  BuildContext context,
+  WidgetRef ref, {
+  required int pointsCost,
+  required int turnsToGrant,
+}) async {
+  final adNotifier = ref.read(rewardedAdProvider.notifier);
+  final currentPoints = ref.read(rewardedAdProvider).prestigePoints;
+
+  if (currentPoints < pointsCost) {
+    final missing = pointsCost - currentPoints;
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: AppColors.warning,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          content: Row(
+            children: [
+              const Icon(Icons.info_outline_rounded, color: Colors.white),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Bạn cần thêm $missing Điểm Uy Tín nữa để đổi gói +$turnsToGrant Lượt Đấu. Hãy xem 1 video ủng hộ (15s) để nhận ngay +100 điểm nhé!',
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    return false;
+  }
+
+  final ok = await adNotifier.spendPrestigePointsForTurns(
+    pointsCost: pointsCost,
+    turnsGranted: turnsToGrant,
+  );
+  if (!ok) return false;
+
+  await ref
+      .read(battleProvider.notifier)
+      .restoreTurnFromRewardedAd(turns: turnsToGrant);
+  final audioService = ref.read(audioServiceProvider);
+  await audioService.playSessionCompleteFanfare();
+
+  if (context.mounted) {
+    final remainingPoints = ref.read(rewardedAdProvider).prestigePoints;
+    final remainingTurns = ref.read(battleProvider).remainingBattlesToday;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: AppColors.correct,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+        ),
+        content: Row(
+          children: [
+            const Icon(Icons.bolt_rounded, color: Colors.white),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Đổi thành công $pointsCost Điểm Uy Tín → +$turnsToGrant Lượt Đấu Trường! (Hiện có: $remainingTurns lượt • Còn $remainingPoints điểm)',
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  return true;
+}
+
 /// UI-12: Hỗ trợ nhà phát triển – Xem Video Quảng Cáo Có Thưởng (UC-16 & Section 13)
 class SupportDeveloperScreen extends ConsumerStatefulWidget {
   const SupportDeveloperScreen({super.key});
@@ -240,6 +319,7 @@ class _SupportDeveloperScreenState
   @override
   Widget build(BuildContext context) {
     final adState = ref.watch(rewardedAdProvider);
+    final battleState = ref.watch(battleProvider);
     final notifier = ref.read(rewardedAdProvider.notifier);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -261,6 +341,7 @@ class _SupportDeveloperScreenState
           title: const Text('Ủng hộ nhà phát triển'),
         ),
         body: ListView(
+          cacheExtent: 1200,
           physics: const AlwaysScrollableScrollPhysics(
             parent: BouncingScrollPhysics(),
           ),
@@ -418,7 +499,17 @@ class _SupportDeveloperScreenState
 
             const SizedBox(height: 14),
 
-            // 2. Video Ad Control & Status Card (Section 13.3)
+            // 2. Prestige Points -> Battle Arena Turns Exchange Station Card
+            _buildPrestigePointsRedeemCard(
+              context,
+              adState,
+              battleState,
+              isDark,
+            ),
+
+            const SizedBox(height: 14),
+
+            // 3. Video Ad Control & Status Card (Section 13.3)
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
@@ -560,6 +651,350 @@ class _SupportDeveloperScreenState
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildPrestigePointsRedeemCard(
+    BuildContext context,
+    RewardedAdState adState,
+    BattleState battleState,
+    bool isDark,
+  ) {
+    final availablePoints = adState.prestigePoints;
+    final remainingTurns = battleState.remainingBattlesToday;
+    const maxFree = BattleState.maxDailyFreeBattles;
+
+    return Card(
+      key: const Key('card_redeem_prestige_points'),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(9),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFFF9500), Color(0xFFFF5E3A)],
+                    ),
+                    borderRadius: BorderRadius.circular(11),
+                  ),
+                  child: const Icon(
+                    Icons.swap_horiz_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 11),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Đổi Điểm Uy Tín → Lượt Đấu Trường',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 15,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Đổi bất cứ lúc nào (kể cả khi Offline) • Giữ nguyên danh hiệu vinh danh',
+                        style: TextStyle(
+                          fontSize: 11.3,
+                          color: isDark ? Colors.white70 : Colors.black54,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // Wallet & Energy Bar Summary Box
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? Colors.white.withOpacity(0.05)
+                    : AppColors.accentAmber.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: AppColors.accentAmber.withOpacity(0.3),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.generating_tokens_rounded,
+                              size: 16,
+                              color: AppColors.accentAmber,
+                            ),
+                            const SizedBox(width: 5),
+                            Flexible(
+                              child: Text(
+                                'Khả dụng: $availablePoints điểm',
+                                key: const Key('text_available_prestige_points'),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 12.8,
+                                  color: AppColors.accentAmber,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withOpacity(0.14),
+                          borderRadius: BorderRadius.circular(99),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.bolt_rounded,
+                              size: 14,
+                              color: AppColors.primary,
+                            ),
+                            const SizedBox(width: 3),
+                            Text(
+                              'Thanh lượt: $remainingTurns/$maxFree',
+                              key: const Key('text_redeem_current_turns'),
+                              style: const TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  // 5-Segment Visual Energy Bar
+                  Row(
+                    children: List.generate(maxFree, (i) {
+                      final active = i < remainingTurns;
+                      return Expanded(
+                        child: Container(
+                          height: 7,
+                          margin: EdgeInsets.only(
+                            right: i < maxFree - 1 ? 5 : 0,
+                          ),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(99),
+                            gradient: active
+                                ? const LinearGradient(
+                                    colors: [
+                                      Color(0xFF00D287),
+                                      Color(0xFF0D6EFD),
+                                    ],
+                                  )
+                                : null,
+                            color: active
+                                ? null
+                                : (isDark
+                                    ? Colors.white.withOpacity(0.12)
+                                    : Colors.black.withOpacity(0.10)),
+                          ),
+                        ),
+                      );
+                    }),
+                  ),
+                  if (adState.spentPrestigePoints > 0) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      'Tổng tích lũy trọn đời: ${adState.totalPrestigePoints}đ • Đã quy đổi: ${adState.spentPrestigePoints}đ',
+                      style: TextStyle(
+                        fontSize: 10.8,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? Colors.white60 : Colors.black54,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            // Package 1: 100 Points -> +1 Turn
+            _buildRedeemPackageTile(
+              buttonKey: const Key('btn_redeem_100_points'),
+              title: 'Gói Nạp Nhanh: +1 Lượt Đấu Trường',
+              subtitle: 'Tỷ lệ chuẩn 1:1 • Đổi ngay cả khi không có mạng',
+              pointsCost: 100,
+              turnsToGrant: 1,
+              availablePoints: availablePoints,
+              badgeText: null,
+              accentColor: AppColors.primary,
+              isDark: isDark,
+            ),
+            const SizedBox(height: 8),
+
+            // Package 2: 250 Points -> +3 Turns (Save 50 pts)
+            _buildRedeemPackageTile(
+              buttonKey: const Key('btn_redeem_250_points'),
+              title: 'Gói Tăng Tốc: +3 Lượt Đấu Trường',
+              subtitle: 'Tiết kiệm 50 Điểm Uy Tín (+20% giá trị lượt chơi)',
+              pointsCost: 250,
+              turnsToGrant: 3,
+              availablePoints: availablePoints,
+              badgeText: 'TIẾT KIỆM 50Đ',
+              accentColor: AppColors.correct,
+              isDark: isDark,
+            ),
+            const SizedBox(height: 8),
+
+            // Package 3: 400 Points -> +5 Turns (Save 100 pts)
+            _buildRedeemPackageTile(
+              buttonKey: const Key('btn_redeem_400_points'),
+              title: 'Gói Cao Thủ: +5 Lượt Đấu Trường',
+              subtitle: 'Tiết kiệm 100 Điểm (Tặng 1 lượt miễn phí • Đầy 5/5 thanh)',
+              pointsCost: 400,
+              turnsToGrant: 5,
+              availablePoints: availablePoints,
+              badgeText: 'HOT • TẶNG +1 LƯỢT',
+              accentColor: kHeartRedColor,
+              isDark: isDark,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRedeemPackageTile({
+    required Key buttonKey,
+    required String title,
+    required String subtitle,
+    required int pointsCost,
+    required int turnsToGrant,
+    required int availablePoints,
+    required String? badgeText,
+    required Color accentColor,
+    required bool isDark,
+  }) {
+    final canAfford = availablePoints >= pointsCost;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: isDark
+            ? Colors.white.withOpacity(0.04)
+            : accentColor.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(13),
+        border: Border.all(
+          color: canAfford
+              ? accentColor.withOpacity(0.45)
+              : (isDark ? Colors.white12 : Colors.black12),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: accentColor.withOpacity(0.14),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              Icons.bolt_rounded,
+              color: accentColor,
+              size: 19,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (badgeText != null) ...[
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 1.5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: accentColor.withOpacity(0.16),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      badgeText,
+                      style: TextStyle(
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w900,
+                        color: accentColor,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                ],
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(height: 1),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: isDark ? Colors.white70 : Colors.black54,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          ElevatedButton(
+            key: buttonKey,
+            style: ElevatedButton.styleFrom(
+              backgroundColor:
+                  canAfford ? accentColor : Colors.grey.withOpacity(0.35),
+              foregroundColor: Colors.white,
+              minimumSize: const Size(0, 36),
+              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            onPressed: () => redeemPrestigePointsForBattleTurns(
+              context,
+              ref,
+              pointsCost: pointsCost,
+              turnsToGrant: turnsToGrant,
+            ),
+            child: Text(
+              'Đổi $pointsCostđ',
+              style: const TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
