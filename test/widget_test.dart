@@ -1212,7 +1212,28 @@ void main() {
         await pumpFrames(200);
         expect(tester.takeException(), isNull);
 
-        // 4. Kiểm tra chuyển Dark Mode ngay trong Đấu Trường trên màn hình nhỏ 360x680 (không lỗi tràn khung)
+        // 4. Kiểm tra Bot AI Huyền Thoại (phân tầng câu hỏi Cơ bản/Trung bình/Nâng cao) & tạm dừng khi khóa màn hình (onAppPaused/onAppResumed)
+        await tester.runAsync(() async {
+          await battleNotifier.backToLobby();
+          battleNotifier.setBattleMode(BattleMode.botAi);
+          battleNotifier.setBotDifficulty(BotDifficulty.legend);
+          battleNotifier.setSelectedTopicId('topic_chords');
+          await battleNotifier.startBattle(seed: 77, roundCount: 8);
+          await battleNotifier.enterArenaNow();
+          battleNotifier.onAppPaused();
+          battleNotifier.onAppResumed();
+        });
+        await pumpFrames(200);
+        final legendQuestions = container.read(battleProvider).questions;
+        expect(legendQuestions.length, equals(8));
+        expect(
+          legendQuestions.map((q) => q.levelId).toSet().length,
+          greaterThanOrEqualTo(2),
+          reason: 'Bot Huyền Thoại phải trộn câu hỏi từ nhiều cấp độ (Cơ bản/Trung bình/Nâng cao)',
+        );
+        expect(tester.takeException(), isNull);
+
+        // 5. Kiểm tra chuyển Dark Mode ngay trong Đấu Trường trên màn hình nhỏ 360x680 (không lỗi tràn khung)
         await tester.runAsync(() async {
           await container
               .read(appSettingsProvider.notifier)

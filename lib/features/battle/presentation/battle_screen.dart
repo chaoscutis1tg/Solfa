@@ -9,8 +9,16 @@ import '../../../core/providers/app_providers.dart';
 import '../../practice/presentation/widgets/musical_staff_widget.dart';
 import '../application/battle_controller.dart';
 
-class BattleScreen extends ConsumerWidget {
+class BattleScreen extends ConsumerStatefulWidget {
   const BattleScreen({super.key});
+
+  @override
+  ConsumerState<BattleScreen> createState() => _BattleScreenState();
+}
+
+class _BattleScreenState extends ConsumerState<BattleScreen>
+    with WidgetsBindingObserver {
+  BattleNotifier? _battleNotifier;
 
   static const List<(String id, String label, IconData icon)> _battleTopics = [
     ('all', 'Tổng hợp (7 Chủ đề)', Icons.auto_awesome_rounded),
@@ -24,7 +32,38 @@ class BattleScreen extends ConsumerWidget {
   ];
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _battleNotifier = ref.read(battleProvider.notifier);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _battleNotifier?.onScreenDisposed();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.hidden ||
+        state == AppLifecycleState.detached) {
+      ref.read(battleProvider.notifier).onAppPaused();
+    } else if (state == AppLifecycleState.resumed) {
+      ref.read(battleProvider.notifier).onAppResumed();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(battleProvider);
     final notifier = ref.read(battleProvider.notifier);
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -960,6 +999,43 @@ class BattleScreen extends ConsumerWidget {
           _buildSingleFighterControls(context, notifier, state, curQ, isDark),
 
         if (state.isRoundResolved) ...[
+          if (curQ.explanation.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+              decoration: BoxDecoration(
+                color: const Color(0xFF4F46E5).withOpacity(0.08),
+                borderRadius: BorderRadius.circular(11),
+                border: Border.all(
+                  color: const Color(0xFF4F46E5).withOpacity(0.25),
+                ),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.only(top: 1),
+                    child: Icon(
+                      Icons.lightbulb_outline_rounded,
+                      size: 14,
+                      color: Color(0xFF4F46E5),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      curQ.explanation,
+                      style: const TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600,
+                        height: 1.32,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 10),
           SizedBox(
             width: double.infinity,

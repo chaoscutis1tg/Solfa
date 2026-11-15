@@ -321,6 +321,7 @@ class BattleNotifier extends StateNotifier<BattleState> {
   Timer? _autoNextRoundTimer;
   DateTime? _roundStartedAt;
   bool _isBusy = false;
+  bool _isAppPaused = false;
 
   BattleNotifier(
     this._db,
@@ -512,67 +513,104 @@ class BattleNotifier extends StateNotifier<BattleState> {
     await _beginCurrentRound();
   }
 
+  int _resolveBattleDifficultyTier() {
+    if (state.mode == BattleMode.botAi) {
+      return switch (state.botDifficulty) {
+        BotDifficulty.rookie => 1,
+        BotDifficulty.academy => 2,
+        BotDifficulty.maestro || BotDifficulty.legend => 3,
+      };
+    }
+    if (state.mode == BattleMode.smartMatchmaking) {
+      if (state.totalStars >= 12) return 3;
+      if (state.totalStars >= 5) return 2;
+    }
+    return 1;
+  }
+
+  String _levelIdForTopic(String topicId, String tierSuffix) {
+    final short = topicId == 'topic_staff_reading'
+        ? 'staff'
+        : topicId.replaceFirst('topic_', '');
+    return 'lvl_${short}_$tierSuffix';
+  }
+
   Future<List<QuestionModel>> _buildBattleQuestionSet({
     required String topicId,
     required int targetCount,
     int? seed,
   }) async {
+    final rng = seed != null ? Random(seed) : _rng;
+    final tier = _resolveBattleDifficultyTier();
+    final suffixes = switch (tier) {
+      3 => const ['basic', 'inter', 'adv'],
+      2 => const ['basic', 'inter'],
+      _ => const ['basic'],
+    };
+
     if (topicId != 'all') {
-      final res = await _generator.generateSessionQuestions(
-        mode: 'topic',
-        topicId: topicId,
-        targetCount: targetCount,
-        seed: seed,
-      );
-      return res.questions;
+      if (suffixes.length == 1) {
+        final res = await _generator.generateSessionQuestions(
+          mode: 'topic',
+          topicId: topicId,
+          levelId: _levelIdForTopic(topicId, suffixes.first),
+          targetCount: targetCount,
+          seed: seed,
+        );
+        return res.questions;
+      }
+      final List<QuestionModel> topicPool = [];
+      final perLevelCount = (targetCount / suffixes.length).ceil() + 1;
+      for (int i = 0; i < suffixes.length; i++) {
+        final res = await _generator.generateSessionQuestions(
+          mode: 'topic',
+          topicId: topicId,
+          levelId: _levelIdForTopic(topicId, suffixes[i]),
+          targetCount: perLevelCount,
+          seed: seed != null ? seed + i * 29 : null,
+        );
+        topicPool.addAll(res.questions);
+      }
+      topicPool.shuffle(rng);
+      return topicPool.take(targetCount).toList();
     }
 
     // All-in-One mixed arena: sample across all 7 topics and shuffle!
-    const allTopics = [
-      ('topic_notes', 'lvl_notes_basic'),
-      ('topic_staff_reading', 'lvl_staff_basic'),
-      ('topic_intervals', 'lvl_intervals_basic'),
-      ('topic_chords', 'lvl_chords_basic'),
-      ('topic_melody', 'lvl_melody_basic'),
-      ('topic_rhythm', 'lvl_rhythm_basic'),
-      ('topic_keys', 'lvl_keys_basic'),
+    const allTopicIds = [
+      'topic_notes',
+      'topic_staff_reading',
+      'topic_intervals',
+      'topic_chords',
+      'topic_melody',
+      'topic_rhythm',
+      'topic_keys',
     ];
     final List<QuestionModel> mixed = [];
-    for (int i = 0; i < allTopics.length; i++) {
-      final (tId, lId) = allTopics[i];
+    for (int i = 0; i < allTopicIds.length; i++) {
+      final tId = allTopicIds[i];
+      final chosenSuffix = suffixes[i % suffixes.length];
       final res = await _generator.generateSessionQuestions(
         mode: 'topic',
         topicId: tId,
-        levelId: lId,
+        levelId: _levelIdForTopic(tId, chosenSuffix),
         targetCount: 2,
         seed: seed != null ? seed + i * 31 : null,
       );
       mixed.addAll(res.questions);
     }
-    final rng = seed != null ? Random(seed) : _rng;
     mixed.shuffle(rng);
     return mixed.take(targetCount).toList();
   }
 
-  Future<void> _beginCurrentRound() async {
+  void _startRoundCountdownAndBotTimers() {
     _roundTimer?.cancel();
     _botActionTimer?.cancel();
-    _autoNextRoundTimer?.cancel();
-    _roundStartedAt = DateTime.now();
-
-    final curQ = state.currentQuestion;
-    if (curQ == null) return;
-
-    final settings = _ref.read(appSettingsProvider);
-    if (settings.autoPlayQuestionAudio && !curQ.isSightReading) {
-      await _audioService.playAsset(curQ.audioAsset);
-    }
-
-    if (_audioService.isTestMode) return;
+    if (_audioService.isTestMode || _isAppPaused) return;
 
     // 100ms decisecond countdown (8.0s per round)
     _roundTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
       if (!mounted ||
+          _isAppPaused ||
           state.phase != BattlePhase.fighting ||
           state.isRoundResolved) {
         timer.cancel();
@@ -593,6 +631,7 @@ class BattleNotifier extends StateNotifier<BattleState> {
       final delayMs = minMs + _rng.nextInt(max(100, maxMs - minMs));
       _botActionTimer = Timer(Duration(milliseconds: delayMs), () {
         if (!mounted ||
+            _isAppPaused ||
             state.phase != BattlePhase.fighting ||
             state.isRoundResolved) {
           return;
@@ -600,6 +639,25 @@ class BattleNotifier extends StateNotifier<BattleState> {
         _triggerOpponentAiStrike();
       });
     }
+  }
+
+  Future<void> _beginCurrentRound() async {
+    _roundTimer?.cancel();
+    _botActionTimer?.cancel();
+    _autoNextRoundTimer?.cancel();
+    _roundStartedAt = DateTime.now();
+
+    final curQ = state.currentQuestion;
+    if (curQ == null) return;
+
+    final settings = _ref.read(appSettingsProvider);
+    if (settings.autoPlayQuestionAudio && !curQ.isSightReading) {
+      try {
+        await _audioService.playAsset(curQ.audioAsset);
+      } catch (_) {}
+    }
+
+    _startRoundCountdownAndBotTimers();
   }
 
   (int minMs, int maxMs, double accuracy) _opponentProfileParams() {
@@ -991,10 +1049,46 @@ class BattleNotifier extends StateNotifier<BattleState> {
     );
   }
 
+  /// Pauses all active timers and audio when the app goes to background or screen locks.
+  void onAppPaused() {
+    _isAppPaused = true;
+    _cancelAllTimers();
+    unawaited(_audioService.stop());
+  }
+
+  /// Resumes timers cleanly when the app returns to foreground.
+  void onAppResumed() {
+    if (!_isAppPaused) return;
+    _isAppPaused = false;
+    if (_audioService.isTestMode || !mounted) return;
+
+    if (state.phase == BattlePhase.matchmaking ||
+        state.phase == BattlePhase.vsIntro) {
+      _phaseTimer = Timer(const Duration(milliseconds: 800), () {
+        if (!mounted || _isAppPaused) return;
+        enterArenaNow();
+      });
+    } else if (state.phase == BattlePhase.fighting) {
+      if (state.isRoundResolved) {
+        _scheduleAutoAdvanceRound();
+      } else {
+        _startRoundCountdownAndBotTimers();
+      }
+    }
+  }
+
+  /// Stops all active battle timers and audio if the BattleScreen is disposed.
+  void onScreenDisposed() {
+    _cancelAllTimers();
+    unawaited(_audioService.stop());
+  }
+
   /// Returns to the Battle Arena Lobby.
   Future<void> backToLobby() async {
     _cancelAllTimers();
-    await _audioService.stop();
+    try {
+      await _audioService.stop();
+    } catch (_) {}
     state = state.copyWith(
       phase: BattlePhase.lobby,
       isRoundResolved: false,
