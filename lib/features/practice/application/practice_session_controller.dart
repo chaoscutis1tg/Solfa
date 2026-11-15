@@ -561,10 +561,21 @@ class PracticeSessionNotifier extends StateNotifier<PracticeSessionState> {
       return;
     }
 
+    // 1. Check exact optionKey match first (e.g. 'C3', 'G4'), then pitch-class match on 1-octave keyboard
+    final exactMatch = currentQ.options
+        .where((o) => o.optionKey.toUpperCase() == tappedNoteKey.toUpperCase())
+        .firstOrNull;
+    if (exactMatch != null) {
+      if (!currentQ.isSightReading) {
+        unawaited(_audioService.playPianoKey(exactMatch.optionKey));
+      }
+      await submitAnswer(exactMatch);
+      return;
+    }
+
     final tappedPitchClass =
         tappedNoteKey.replaceAll(RegExp(r'[0-9]'), '').toUpperCase();
 
-    // 1. Check pitch-class matches among the 4 options (prioritizing the correct option if same pitch class exists across octaves)
     final pitchClassMatches = currentQ.options
         .where((o) =>
             o.optionKey.replaceAll(RegExp(r'[0-9]'), '').toUpperCase() ==
@@ -658,13 +669,17 @@ class PracticeSessionNotifier extends StateNotifier<PracticeSessionState> {
       final nextIdx = state.currentIndex + 1;
 
       // If in Continuous Scoring Mode (60s, 15m, 1h, Unlimited) and running low on questions,
-      // generate more questions seamlessly!
+      // generate more questions seamlessly without repeating the last question at the seam!
       if (state.isContinuousScoringMode && nextIdx >= state.questions.length) {
+        final lastQ =
+            state.questions.isNotEmpty ? state.questions.last : null;
         final more = await _generator.generateSessionQuestions(
           mode: state.mode == 'review' ? 'topic' : state.mode,
           topicId: state.topicId,
           levelId: state.levelId,
           targetCount: 15,
+          excludeAudioAsset: lastQ?.audioAsset,
+          excludeOptionKey: lastQ?.correctOption.optionKey,
         );
         if (more.questions.isNotEmpty) {
           final updatedQuestions = [...state.questions, ...more.questions];

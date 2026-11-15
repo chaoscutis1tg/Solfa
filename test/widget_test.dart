@@ -909,5 +909,181 @@ void main() {
         await sessionNotifier.abandonSessionIfIncomplete();
       },
     );
+
+    test(
+      'TC-20: Kiểm định thuật toán Random câu hỏi & đáp án (Phân phối đồng đều, Không lặp liên tiếp, Đảo vị trí A/B/C/D & Đáp án nhiễu ngẫu nhiên trên cả 7 chủ đề / 23 cấp độ)',
+      () async {
+        await db.seedContent();
+        await container.read(appSettingsProvider.notifier).loadSettings();
+        final generator = container.read(hybridQuestionGeneratorProvider);
+        final sessionNotifier = container.read(practiceSessionProvider.notifier);
+
+        // 1. Kiểm tra phân phối đồng đều tuyệt đối (Stratified Bag) ở Mức 1 (7 nốt C4..B4):
+        // Trong 14 câu hỏi, 7 câu đầu phải chứa đủ cả 7 nốt C4..B4 và 7 câu sau cũng chứa đủ cả 7 nốt C4..B4!
+        final stratifiedBatch = await generator.generateSessionQuestions(
+          mode: 'topic',
+          topicId: 'topic_notes',
+          levelId: 'lvl_notes_basic',
+          targetCount: 14,
+          seed: 2026,
+        );
+        expect(stratifiedBatch.questions.length, equals(14));
+        final round1Notes = stratifiedBatch.questions
+            .sublist(0, 7)
+            .map((q) => q.correctOption.optionKey)
+            .toSet();
+        final round2Notes = stratifiedBatch.questions
+            .sublist(7, 14)
+            .map((q) => q.correctOption.optionKey)
+            .toSet();
+        expect(
+          round1Notes,
+          equals({'C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4'}),
+          reason: 'Mỗi chu kỳ 7 câu Mức 1 phải xuất hiện đủ cả 7 nốt tự nhiên không thiên vị',
+        );
+        expect(
+          round2Notes,
+          equals({'C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4'}),
+        );
+
+        // 2. Kiểm tra đảo ngẫu nhiên vị trí A/B/C/D và đáp án nhiễu (distractors):
+        // Nốt Đô (C4) và Si (B4) không bao giờ bị cố định ở vị trí A (index 0) hay D (index 3)
+        final largeBatch = await generator.generateSessionQuestions(
+          mode: 'topic',
+          topicId: 'topic_notes',
+          levelId: 'lvl_notes_basic',
+          targetCount: 56,
+          seed: 909,
+        );
+        final Set<int> allCorrectIndices = {};
+        final Set<int> c4Positions = {};
+        final Set<int> b4Positions = {};
+        final Set<String> c4DistractorSets = {};
+
+        for (final q in largeBatch.questions) {
+          final correctIdx = q.options.indexWhere((o) => o.isCorrect);
+          allCorrectIndices.add(correctIdx);
+          if (q.correctOption.optionKey == 'C4') {
+            c4Positions.add(correctIdx);
+            final distractorSig = q.options
+                .where((o) => !o.isCorrect)
+                .map((o) => o.optionKey)
+                .toList()
+              ..sort();
+            c4DistractorSets.add(distractorSig.join(','));
+          }
+          if (q.correctOption.optionKey == 'B4') {
+            b4Positions.add(correctIdx);
+          }
+        }
+        expect(
+          allCorrectIndices,
+          equals({0, 1, 2, 3}),
+          reason: 'Đáp án đúng phải phân bổ đủ ở cả 4 vị trí A, B, C, D',
+        );
+        expect(
+          c4Positions.length,
+          greaterThan(1),
+          reason: 'Nốt Đô (C4) không được cố định ở đáp án A',
+        );
+        expect(
+          b4Positions.length,
+          greaterThan(1),
+          reason: 'Nốt Si (B4) không được cố định ở đáp án D',
+        );
+        expect(
+          c4DistractorSets.length,
+          greaterThan(1),
+          reason: 'Các phương án nhiễu (distractors) cho cùng 1 nốt phải được lấy mẫu ngẫu nhiên đa dạng',
+        );
+
+        // 3. Duyệt toàn bộ 7 chủ đề & 23 cấp độ: Không có 2 câu liên tiếp trùng âm thanh hoặc trùng đáp án đúng
+        final allTopics = await db.getTopics();
+        expect(allTopics.length, equals(7));
+
+        for (final topic in allTopics) {
+          final levels = await db.getLevelsByTopic(topic.id);
+          expect(levels, isNotEmpty);
+
+          for (final level in levels) {
+            final res = await generator.generateSessionQuestions(
+              mode: 'topic',
+              topicId: topic.id,
+              levelId: level.id,
+              targetCount: 20,
+            );
+            expect(
+              res.questions.length,
+              equals(20),
+              reason: 'Topic ${topic.id} / Level ${level.id} phải tạo đủ 20 câu',
+            );
+
+            for (int i = 0; i < res.questions.length; i++) {
+              final q = res.questions[i];
+              expect(q.options.where((o) => o.isCorrect).length, equals(1));
+              final optLabels = q.options.map((o) => o.label).toSet();
+              final optKeys =
+                  q.options.map((o) => o.optionKey.toUpperCase()).toSet();
+              expect(
+                optLabels.length,
+                equals(q.options.length),
+                reason: 'Không được có 2 phương án trùng nhãn hiển thị',
+              );
+              expect(
+                optKeys.length,
+                equals(q.options.length),
+                reason: 'Không được có 2 phương án trùng mã optionKey',
+              );
+
+              if (i > 0) {
+                final prev = res.questions[i - 1];
+                expect(
+                  q.audioAsset == prev.audioAsset && q.type == prev.type,
+                  isFalse,
+                  reason:
+                      'Không được lặp lại cùng file âm thanh & loại câu hỏi ở 2 câu liên tiếp (${topic.id}/${level.id} tại câu $i)',
+                );
+                if (q.options.length >= 4 && prev.options.length >= 4) {
+                  expect(
+                    q.correctOption.optionKey.toUpperCase() ==
+                            prev.correctOption.optionKey.toUpperCase() &&
+                        q.type == prev.type,
+                    isFalse,
+                    reason:
+                        'Không được lặp lại cùng đáp án đúng ở 2 câu liên tiếp (${topic.id}/${level.id} tại câu $i)',
+                  );
+                }
+              }
+            }
+          }
+        }
+
+        // 4. Kiểm tra nạp thêm câu hỏi (refill) ở chế độ tính giờ (60s) qua ranh giới câu 20 -> 21 không bị lặp
+        await sessionNotifier.startSession(
+          mode: 'topic',
+          topicId: 'topic_intervals',
+          levelId: 'lvl_intervals_basic',
+          timeLimitSeconds: 60,
+          seed: 303,
+        );
+        for (int i = 0; i < 22; i++) {
+          final curQ = container.read(practiceSessionProvider).currentQuestion!;
+          await sessionNotifier.submitAnswer(curQ.correctOption);
+          await sessionNotifier.nextQuestion();
+        }
+        final fullQuestions = container.read(practiceSessionProvider).questions;
+        expect(fullQuestions.length, greaterThanOrEqualTo(35));
+        expect(
+          fullQuestions[19].audioAsset,
+          isNot(equals(fullQuestions[20].audioAsset)),
+          reason: 'Câu nối tiếp giữa 2 đợt sinh câu hỏi (câu 20 -> 21) không được trùng nhau',
+        );
+        expect(
+          fullQuestions[19].correctOption.optionKey,
+          isNot(equals(fullQuestions[20].correctOption.optionKey)),
+        );
+        await sessionNotifier.abandonSessionIfIncomplete();
+      },
+    );
   });
 }

@@ -205,21 +205,53 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
   static List<String> _harmonyKeysForOptionKey(String optionKey) {
     switch (optionKey) {
       case 'C_maj':
+      case 'C':
+      case 'c_major':
+      case 'major':
         return const ['C4', 'E4', 'G4'];
       case 'A_min':
+      case 'Am':
+      case 'a_minor':
+      case 'minor':
         return const ['A4', 'C4', 'E4'];
+      case 'C_min':
+        return const ['C4', 'D#4', 'G4'];
       case 'F_maj':
+      case 'F':
+      case 'f_major':
         return const ['F4', 'A4', 'C4'];
       case 'G_maj':
+      case 'G':
+      case 'g_major':
         return const ['G4', 'B4', 'D4'];
       case 'D_min':
+      case 'Dm':
+      case 'd_minor':
         return const ['D4', 'F4', 'A4'];
       case 'E_min':
+      case 'Em':
+      case 'e_minor':
         return const ['E4', 'G4', 'B4'];
+      case 'D':
+      case 'd_major':
+        return const ['D4', 'F#4', 'A4'];
+      case 'Bm':
+      case 'b_minor':
+        return const ['B4', 'D4', 'F#4'];
+      case 'Bb':
+      case 'bb_major':
+        return const ['A#4', 'D4', 'F4'];
+      case 'Gm':
+      case 'g_minor':
+        return const ['G4', 'A#4', 'D4'];
       case 'C_aug':
         return const ['C4', 'E4', 'G#4'];
+      case 'C_dim':
+        return const ['C4', 'D#4', 'F#4'];
       case 'B_dim':
         return const ['B4', 'D4', 'F4'];
+      case 'C_sus4':
+        return const ['C4', 'F4', 'G4'];
       case 'G_dom7':
         return const ['G4', 'B4', 'D4', 'F4'];
       case 'C_maj7':
@@ -229,45 +261,71 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
       case 'D_min7':
         return const ['D4', 'F4', 'A4', 'C4'];
       case 'm2':
+      case 'min2':
         return const ['C4', 'C#4'];
       case 'M2':
+      case 'maj2':
         return const ['C4', 'D4'];
       case 'm3':
+      case 'min3':
         return const ['C4', 'D#4'];
       case 'M3':
+      case 'maj3':
         return const ['C4', 'E4'];
       case 'P4':
+      case 'p4':
         return const ['C4', 'F4'];
+      case 'tritone':
+        return const ['C4', 'F#4'];
       case 'P5':
+      case 'p5':
         return const ['C4', 'G4'];
+      case 'm6':
+      case 'min6':
+        return const ['C4', 'G#4'];
       case 'M6':
+      case 'maj6':
         return const ['C4', 'A4'];
+      case 'm7':
+      case 'min7':
+        return const ['C4', 'A#4'];
       case 'M7':
+      case 'maj7':
         return const ['C4', 'B4'];
       case 'P8':
+      case 'p8':
         return const ['C4'];
+      case 'C_D_E':
       case 'mel_c_d_e_c':
         return const ['C4', 'D4', 'E4'];
+      case 'E_D_C':
+      case 'mel_e_d_c_d':
+        return const ['E4', 'D4', 'C4'];
+      case 'C_E_G':
+      case 'G_E_C':
+      case 'C_E_G_C5':
       case 'mel_c_e_g_c5':
       case 'mel_g_e_c_g':
       case 'mel_c_g_e_c':
         return const ['C4', 'E4', 'G4'];
-      case 'mel_g_f_e_d':
-        return const ['G4', 'F4', 'E4', 'D4'];
-      case 'mel_e_d_c_d':
-        return const ['E4', 'D4', 'C4'];
+      case 'C_F_G':
       case 'mel_c_f_g_c':
         return const ['C4', 'F4', 'G4'];
-      case 'mel_d_f_a_d':
-        return const ['D4', 'F4', 'A4'];
-      case 'mel_a_c_e_a':
-        return const ['A4', 'C4', 'E4'];
-      case 'mel_c_d_f_e':
-        return const ['C4', 'D4', 'F4', 'E4'];
+      case 'G_A_G':
+        return const ['G4', 'A4'];
+      case 'C_D_E_G':
+        return const ['C4', 'D4', 'E4', 'G4'];
+      case 'G_F_E_D':
+      case 'mel_g_f_e_d':
+        return const ['G4', 'F4', 'E4', 'D4'];
+      case 'E_G_A_G':
       case 'mel_e_g_a_g':
         return const ['E4', 'G4', 'A4'];
-      case 'mel_g_a_b_c5':
-        return const ['G4', 'A4', 'B4', 'C4'];
+      case 'A3_C4_E4_A4':
+      case 'mel_a_c_e_a':
+        return const ['A4', 'C4', 'E4'];
+      case 'D_F_A_G':
+        return const ['D4', 'F4', 'A4', 'G4'];
       default:
         return const [];
     }

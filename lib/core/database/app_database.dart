@@ -322,19 +322,27 @@ class AppDatabase {
 
   /// Inserts or updates a dynamically generated question so that it has a valid FK for answers & review_items.
   Future<void> upsertQuestion(QuestionModel question) async {
+    await upsertQuestionsBatch([question]);
+  }
+
+  /// Inserts or updates a batch of dynamically generated questions inside a single transaction.
+  Future<void> upsertQuestionsBatch(List<QuestionModel> questions) async {
+    if (questions.isEmpty) return;
     final db = await database;
     await db.transaction((txn) async {
-      await txn.insert(
-        'questions',
-        question.toMap(),
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
-      for (final opt in question.options) {
+      for (final question in questions) {
         await txn.insert(
-          'question_options',
-          opt.toMap(),
+          'questions',
+          question.toMap(),
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
+        for (final opt in question.options) {
+          await txn.insert(
+            'question_options',
+            opt.toMap(),
+            conflictAlgorithm: ConflictAlgorithm.replace,
+          );
+        }
       }
     });
   }

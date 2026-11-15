@@ -5,13 +5,17 @@ import '../../../core/database/app_database.dart';
 import '../../../core/models/domain_models.dart';
 
 class HybridQuestionGenerator {
+  static const int _currentGeneratorVersion = 3;
+  static final Random _entropySource = Random();
+
   final AppDatabase _db;
   final AssetValidator _assetValidator;
 
   HybridQuestionGenerator(this._db, this._assetValidator);
 
   /// Generates a session question set for 'quick', 'topic', or 'review' mode.
-  /// Supports deterministic [seed] for reproducible unit testing (Section 11.3).
+  /// Supports deterministic [seed] for reproducible unit testing (Section 11.3),
+  /// and high-entropy Concept-Stratified Bag Sampling + Dynamic Option Shuffling in live play.
   Future<({String topicId, String? levelId, List<QuestionModel> questions})>
       generateSessionQuestions({
     required String mode, // 'quick', 'topic', 'review'
@@ -19,8 +23,15 @@ class HybridQuestionGenerator {
     String? levelId,
     int targetCount = 10,
     int? seed,
+    String? excludeAudioAsset,
+    String? excludeOptionKey,
   }) async {
-    final rng = Random(seed);
+    final rng = seed != null
+        ? Random(seed)
+        : Random(
+            DateTime.now().microsecondsSinceEpoch ^
+                _entropySource.nextInt(0x7FFFFFFF),
+          );
 
     if (mode == 'review') {
       final pending = await _db.getPendingReviewItems(topicId: topicId);
@@ -28,7 +39,7 @@ class HybridQuestionGenerator {
       for (final item in pending) {
         final q = item.question;
         if (q != null && await _assetValidator.exists(q.audioAsset)) {
-          validReviewQuestions.add(q);
+          validReviewQuestions.add(_shuffleExistingOptions(q, rng));
         }
         if (validReviewQuestions.length >= targetCount) break;
       }
@@ -73,7 +84,7 @@ class HybridQuestionGenerator {
       resolvedLevelId = levels.isNotEmpty ? levels.first.id : 'lvl_notes_basic';
     }
 
-    // 1. Ensure dynamic hybrid pool is populated for this topic & level
+    // 1. Ensure dynamic hybrid pool is populated & up-to-date for this topic & level
     await _ensureDynamicQuestionsPersisted(
       topicId: resolvedTopicId,
       levelId: resolvedLevelId,
@@ -85,11 +96,14 @@ class HybridQuestionGenerator {
       levelId: resolvedLevelId,
     );
 
-    // Filter out any legacy compare_pitch questions if topic_notes
-    if (resolvedTopicId == 'topic_notes') {
-      candidates =
-          candidates.where((q) => q.type != 'compare_pitch').toList();
-    }
+    // Filter out any legacy compare_pitch questions and enforce strict level-scope rules
+    candidates = candidates
+        .where((q) => _isQuestionValidForLevelScope(
+              q,
+              topicId: resolvedTopicId,
+              levelId: resolvedLevelId,
+            ))
+        .toList();
 
     // Fallback to all levels in the topic ONLY if this level has 0 questions
     if (candidates.isEmpty) {
@@ -102,7 +116,7 @@ class HybridQuestionGenerator {
     }
 
     // 3. Validate audio assets (BR-08) and ensure non-duplicate option labels
-    final List<QuestionModel> validCandidates = [];
+    final List<QuestionModel> rawValidCandidates = [];
     for (final q in candidates) {
       final hasAudio = await _assetValidator.exists(q.audioAsset);
       final labels = q.options.map((o) => o.label).toSet();
@@ -111,11 +125,11 @@ class HybridQuestionGenerator {
           q.options.length >= 2 &&
           labels.length == q.options.length &&
           correctCount == 1) {
-        validCandidates.add(q);
+        rawValidCandidates.add(q);
       }
     }
 
-    if (validCandidates.isEmpty) {
+    if (rawValidCandidates.isEmpty) {
       return (
         topicId: resolvedTopicId,
         levelId: resolvedLevelId,
@@ -123,25 +137,307 @@ class HybridQuestionGenerator {
       );
     }
 
-    validCandidates.shuffle(rng);
-    final List<QuestionModel> selected = [];
-    while (selected.length < targetCount) {
-      final pool = [...validCandidates]..shuffle(rng);
-      // Avoid immediate back-to-back identical audio asset at boundary
-      if (selected.isNotEmpty &&
-          pool.length > 1 &&
-          pool.first.audioAsset == selected.last.audioAsset) {
-        final first = pool.removeAt(0);
-        pool.add(first);
+    // 4. Prefer canonical dynamic ('dyn_') questions when static seed questions duplicate
+    // the exact same (type, audioAsset) so no note/interval/key gets double-weighted.
+    final Set<String> dynamicTypeAudioKeys = rawValidCandidates
+        .where((q) => q.id.startsWith('dyn_'))
+        .map((q) => '${q.type}::${q.audioAsset}')
+        .toSet();
+
+    final List<QuestionModel> validCandidates = rawValidCandidates.where((q) {
+      if (q.id.startsWith('dyn_')) return true;
+      return !dynamicTypeAudioKeys.contains('${q.type}::${q.audioAsset}');
+    }).toList();
+
+    // 5. Build canonical option pools per question type in this level for fresh distractor sampling
+    final Map<String, List<(String optionKey, String label)>> optionPoolByType =
+        {};
+    for (final q in validCandidates) {
+      final list = optionPoolByType.putIfAbsent(q.type, () => []);
+      for (final opt in q.options) {
+        final normKey = opt.optionKey.toUpperCase();
+        if (!list.any((e) => e.$1.toUpperCase() == normKey || e.$2 == opt.label)) {
+          list.add((opt.optionKey, opt.label));
+        }
       }
-      final needed = targetCount - selected.length;
-      selected.addAll(pool.take(needed));
+    }
+
+    // 6. Group validCandidates by target concept so every note/interval/key/chord/melody/rhythm
+    // in the level has 100% uniform probability and never repeats back-to-back.
+    final Map<String, List<QuestionModel>> variantsByConcept = {};
+    for (final q in validCandidates) {
+      final cKey = _conceptGroupKey(q);
+      variantsByConcept.putIfAbsent(cKey, () => []).add(q);
+    }
+
+    final List<String> conceptKeys = variantsByConcept.keys.toList();
+    for (final list in variantsByConcept.values) {
+      list.shuffle(rng);
+    }
+    final Map<String, int> variantCursor = {
+      for (final k in conceptKeys) k: 0,
+    };
+
+    final List<QuestionModel> selected = [];
+    final int windowSize = min(3, max(1, conceptKeys.length - 1));
+
+    while (selected.length < targetCount) {
+      final List<String> bag = [...conceptKeys]..shuffle(rng);
+
+      while (bag.isNotEmpty && selected.length < targetCount) {
+        final String? prevAudio = selected.isNotEmpty
+            ? selected.last.audioAsset
+            : excludeAudioAsset;
+        final String? prevOptKey = selected.isNotEmpty
+            ? selected.last.correctOption.optionKey.toUpperCase()
+            : excludeOptionKey?.toUpperCase();
+
+        // Recent concept keys in sliding window
+        final Set<String> recentConceptKeys = {};
+        for (int w = 1; w <= windowSize && selected.length - w >= 0; w++) {
+          recentConceptKeys.add(_conceptGroupKey(selected[selected.length - w]));
+        }
+
+        // Check if last 2 binary questions had the same optionKey (e.g. 'major', 'major')
+        String? forbiddenBinaryStreakKey;
+        if (selected.length >= 2) {
+          final k1 =
+              selected[selected.length - 1].correctOption.optionKey.toUpperCase();
+          final k2 =
+              selected[selected.length - 2].correctOption.optionKey.toUpperCase();
+          if (k1 == k2) {
+            forbiddenBinaryStreakKey = k1;
+          }
+        }
+
+        int chosenBagIdx = -1;
+
+        // Pass 1: Strict sliding-window anti-repeat (no repeat in last windowSize questions,
+        // no same audioAsset, no same optionKey as immediate predecessor, no 3-in-a-row binary key)
+        for (int i = 0; i < bag.length; i++) {
+          final cKey = bag[i];
+          if (recentConceptKeys.contains(cKey)) continue;
+          final variants = variantsByConcept[cKey]!;
+          final cand = variants[variantCursor[cKey]! % variants.length];
+          final candOptKey = cand.correctOption.optionKey.toUpperCase();
+
+          if (prevAudio != null &&
+              conceptKeys.length > 1 &&
+              cand.audioAsset == prevAudio) {
+            continue;
+          }
+          if (prevOptKey != null &&
+              cand.options.length >= 4 &&
+              conceptKeys.length > 2 &&
+              candOptKey == prevOptKey) {
+            continue;
+          }
+          if (forbiddenBinaryStreakKey != null &&
+              cand.options.length == 2 &&
+              candOptKey == forbiddenBinaryStreakKey) {
+            continue;
+          }
+          chosenBagIdx = i;
+          break;
+        }
+
+        // Pass 2: Immediate predecessor anti-repeat fallback
+        if (chosenBagIdx == -1) {
+          for (int i = 0; i < bag.length; i++) {
+            final cKey = bag[i];
+            final variants = variantsByConcept[cKey]!;
+            final cand = variants[variantCursor[cKey]! % variants.length];
+            final candOptKey = cand.correctOption.optionKey.toUpperCase();
+            if (prevAudio != null &&
+                conceptKeys.length > 1 &&
+                cand.audioAsset == prevAudio) {
+              continue;
+            }
+            if (prevOptKey != null &&
+                cand.options.length >= 4 &&
+                conceptKeys.length > 1 &&
+                candOptKey == prevOptKey) {
+              continue;
+            }
+            chosenBagIdx = i;
+            break;
+          }
+        }
+
+        if (chosenBagIdx == -1) {
+          chosenBagIdx = 0;
+        }
+
+        final chosenConceptKey = bag.removeAt(chosenBagIdx);
+        final variants = variantsByConcept[chosenConceptKey]!;
+        final int curIdx = variantCursor[chosenConceptKey]!;
+        final QuestionModel rawQuestion = variants[curIdx % variants.length];
+        variantCursor[chosenConceptKey] = curIdx + 1;
+
+        final QuestionModel randomizedQuestion = _randomizeQuestionOptions(
+          rawQuestion,
+          optionPoolByType[rawQuestion.type] ?? const [],
+          rng,
+        );
+        selected.add(randomizedQuestion);
+      }
     }
 
     return (
       topicId: resolvedTopicId,
       levelId: resolvedLevelId,
       questions: selected,
+    );
+  }
+
+  /// Enforces level-specific musical constraints so out-of-scope legacy questions cannot leak in.
+  bool _isQuestionValidForLevelScope(
+    QuestionModel q, {
+    required String topicId,
+    required String levelId,
+  }) {
+    if (topicId == 'topic_notes' && q.type == 'compare_pitch') {
+      return false;
+    }
+    if (topicId == 'topic_notes' || topicId == 'topic_staff_reading') {
+      final isMaster = levelId.contains('master') || levelId.contains('4');
+      final isAdvanced = levelId.contains('adv') || levelId.contains('3');
+      final isInter = levelId.contains('inter') || levelId.contains('2');
+
+      if (!isMaster && !isAdvanced && !isInter) {
+        // Mức 1 (Basic): Chỉ 7 nốt tự nhiên trong quãng C4 (C4..B4), không dấu #/b
+        return q.options.every(
+          (o) => o.optionKey.endsWith('4') && !o.optionKey.contains('#'),
+        );
+      } else if (isInter) {
+        // Mức 2 (Inter): Chỉ trong quãng C4 (C4..B4), có cả tự nhiên và dấu #/b
+        return q.options.every((o) => o.optionKey.endsWith('4'));
+      } else if (isAdvanced) {
+        // Mức 3 (Adv): Đa quãng C3–C5 nhưng chỉ các nốt tự nhiên (không dấu #/b)
+        return q.options.every((o) => !o.optionKey.contains('#'));
+      }
+    }
+    return true;
+  }
+
+  /// Computes the concept key used to stratify questions evenly across the level.
+  String _conceptGroupKey(QuestionModel q) {
+    if (q.options.length <= 2) {
+      // Binary questions (e.g. Major vs Minor key_quality): stratify by audio file
+      return '${q.type}::${q.audioAsset}';
+    }
+    return '${q.type}::${q.correctOption.optionKey.toUpperCase()}';
+  }
+
+  /// Shuffles only the option order (preserving original options) and updates sortOrder 1..N.
+  QuestionModel _shuffleExistingOptions(QuestionModel q, Random rng) {
+    final shuffled = [...q.options]..shuffle(rng);
+    final updatedOptions = <QuestionOptionModel>[
+      for (int i = 0; i < shuffled.length; i++)
+        QuestionOptionModel(
+          id: shuffled[i].id,
+          questionId: shuffled[i].questionId,
+          optionKey: shuffled[i].optionKey,
+          label: shuffled[i].label,
+          isCorrect: shuffled[i].isCorrect,
+          sortOrder: i + 1,
+        ),
+    ];
+    return QuestionModel(
+      id: q.id,
+      topicId: q.topicId,
+      levelId: q.levelId,
+      type: q.type,
+      prompt: q.prompt,
+      explanation: q.explanation,
+      audioAsset: q.audioAsset,
+      difficulty: q.difficulty,
+      version: q.version,
+      options: updatedOptions,
+    );
+  }
+
+  /// Freshly samples random wrong distractors from the level's valid option pool (for 4-option questions)
+  /// AND shuffles all option positions (A/B/C/D) using Fisher-Yates so neither distractors nor
+  /// the correct answer's slot can ever be memorized or predicted.
+  QuestionModel _randomizeQuestionOptions(
+    QuestionModel q,
+    List<(String optionKey, String label)> typeOptionPool,
+    Random rng,
+  ) {
+    final correctOpt = q.correctOption;
+    final wrongSlotOpts = q.options.where((o) => !o.isCorrect).toList();
+
+    List<QuestionOptionModel> assembledOptions;
+    if (q.options.length >= 4 && wrongSlotOpts.isNotEmpty) {
+      final isNoteQuestion =
+          q.type == 'listen_note' || q.type == 'read_staff_note';
+      final correctPitchClass =
+          correctOpt.optionKey.replaceAll(RegExp(r'[0-9]'), '').toUpperCase();
+
+      final shuffledPool = [...typeOptionPool]..shuffle(rng);
+      final List<(String optionKey, String label)> selectedWrong = [];
+      final Set<String> usedPitchClasses = {correctPitchClass};
+
+      for (final cand in shuffledPool) {
+        if (cand.$1.toUpperCase() == correctOpt.optionKey.toUpperCase() ||
+            cand.$2 == correctOpt.label) {
+          continue;
+        }
+        if (isNoteQuestion) {
+          final candPc =
+              cand.$1.replaceAll(RegExp(r'[0-9]'), '').toUpperCase();
+          if (usedPitchClasses.contains(candPc)) continue;
+          usedPitchClasses.add(candPc);
+        }
+        selectedWrong.add(cand);
+        if (selectedWrong.length >= wrongSlotOpts.length) break;
+      }
+
+      if (selectedWrong.length >= wrongSlotOpts.length) {
+        assembledOptions = [
+          correctOpt,
+          for (int i = 0; i < wrongSlotOpts.length; i++)
+            QuestionOptionModel(
+              id: wrongSlotOpts[i].id,
+              questionId: q.id,
+              optionKey: selectedWrong[i].$1,
+              label: selectedWrong[i].$2,
+              isCorrect: false,
+              sortOrder: i + 2,
+            ),
+        ];
+      } else {
+        assembledOptions = [...q.options];
+      }
+    } else {
+      assembledOptions = [...q.options];
+    }
+
+    assembledOptions.shuffle(rng);
+    final finalOptions = <QuestionOptionModel>[
+      for (int idx = 0; idx < assembledOptions.length; idx++)
+        QuestionOptionModel(
+          id: assembledOptions[idx].id,
+          questionId: q.id,
+          optionKey: assembledOptions[idx].optionKey,
+          label: assembledOptions[idx].label,
+          isCorrect: assembledOptions[idx].isCorrect,
+          sortOrder: idx + 1,
+        ),
+    ];
+
+    return QuestionModel(
+      id: q.id,
+      topicId: q.topicId,
+      levelId: q.levelId,
+      type: q.type,
+      prompt: q.prompt,
+      explanation: q.explanation,
+      audioAsset: q.audioAsset,
+      difficulty: q.difficulty,
+      version: q.version,
+      options: finalOptions,
     );
   }
 
@@ -152,10 +448,11 @@ class HybridQuestionGenerator {
     required String levelId,
   }) async {
     final existing = await _db.getQuestions(topicId: topicId, levelId: levelId);
-    final nonCompareExisting = existing
-        .where((q) => topicId != 'topic_notes' || q.type != 'compare_pitch')
-        .toList();
-    if (nonCompareExisting.length >= 14) return;
+    final currentDynamicCount = existing
+        .where(
+            (q) => q.id.startsWith('dyn_') && q.version >= _currentGeneratorVersion)
+        .length;
+    if (currentDynamicCount >= 12) return;
 
     final List<QuestionModel> generated = [];
 
@@ -542,8 +839,7 @@ class HybridQuestionGenerator {
                     : '[Mức 1 • C4 Tự nhiên] Nghe nốt nhạc trong quãng C4 và chọn đáp án đúng (hoặc bấm phím đàn):'));
       }
 
-      // Generate 2 distractor sets for Level 1 so it has 14 rich questions, and 1 set for Levels 2..4
-      final passes = diff == 1 ? 2 : 1;
+      final passes = noteDefs.length < 10 ? 2 : 1;
       final idPrefix = isStaffReading ? 'dyn_staff' : 'dyn_note';
       final questionType = isStaffReading ? 'read_staff_note' : 'listen_note';
 
@@ -566,7 +862,7 @@ class HybridQuestionGenerator {
             if (cand != i) distractors.add(cand);
             fallbackOffset++;
           }
-          final allIndices = [i, ...distractors]..sort();
+          final allIndices = [i, ...distractors];
 
           final options = <QuestionOptionModel>[];
           for (int idx = 0; idx < allIndices.length; idx++) {
@@ -593,7 +889,7 @@ class HybridQuestionGenerator {
               explanation: desc,
               audioAsset: 'assets/audio/notes/$fileKey.wav',
               difficulty: diff,
-              version: 2,
+              version: _currentGeneratorVersion,
               options: options,
             ),
           );
@@ -605,133 +901,247 @@ class HybridQuestionGenerator {
       final diff = isAdvanced ? 3 : (isInter ? 2 : 1);
       final modeSuffix = isAdvanced ? 'harm' : (isInter ? 'desc' : 'asc');
 
+      // Canonical (fileCode, optionKey, label, description)
       final intervalDefs = [
-        ('maj2', 'Quãng 2 trưởng', 'Cách nhau 1 cung nguyên (2 nửa cung).'),
-        ('min3', 'Quãng 3 thứ', 'Cách nhau 1,5 cung (3 nửa cung), âm hưởng mềm mại/trầm.'),
-        ('maj3', 'Quãng 3 trưởng', 'Cách nhau 2 cung (4 nửa cung), âm hưởng sáng rõ.'),
-        ('p4', 'Quãng 4 đúng', 'Cách nhau 2,5 cung (5 nửa cung), âm hưởng mở đầu vững vàng.'),
-        ('p5', 'Quãng 5 đúng', 'Cách nhau 3,5 cung (7 nửa cung), độ hòa hợp rất vững.'),
-        ('maj6', 'Quãng 6 trưởng', 'Cách nhau 4,5 cung (9 nửa cung), âm hưởng ấm áp.'),
-        ('p8', 'Quãng 8 đúng (Octave)', 'Cách nhau 6 cung (12 nửa cung), lặp lại tên nốt ở quãng tám mới.'),
+        (
+          'maj2',
+          'M2',
+          'Quãng 2 trưởng',
+          'Cách nhau 1 cung nguyên (2 nửa cung).'
+        ),
+        (
+          'min3',
+          'm3',
+          'Quãng 3 thứ',
+          'Cách nhau 1,5 cung (3 nửa cung), âm hưởng mềm mại trầm lắng.'
+        ),
+        (
+          'maj3',
+          'M3',
+          'Quãng 3 trưởng',
+          'Cách nhau 2 cung (4 nửa cung), âm hưởng tươi sáng rõ ràng.'
+        ),
+        (
+          'p4',
+          'P4',
+          'Quãng 4 đúng',
+          'Cách nhau 2,5 cung (5 nửa cung), âm hưởng mở đầu vững vàng.'
+        ),
+        (
+          'p5',
+          'P5',
+          'Quãng 5 đúng',
+          'Cách nhau 3,5 cung (7 nửa cung), độ hòa hợp rất vững chãi.'
+        ),
+        (
+          'maj6',
+          'M6',
+          'Quãng 6 trưởng',
+          'Cách nhau 4,5 cung (9 nửa cung), âm hưởng rộng mở ấm áp.'
+        ),
+        (
+          'p8',
+          'P8',
+          'Quãng 8 đúng (Octave)',
+          'Cách nhau 6 cung (12 nửa cung), lặp lại tên nốt ở quãng tám mới.'
+        ),
         if (isInter || isAdvanced)
-          ('min2', 'Quãng 2 thứ', 'Cách nhau nửa cung (1 bán âm), tạo cảm giác sát gần kịch tính.'),
+          (
+            'min2',
+            'm2',
+            'Quãng 2 thứ',
+            'Cách nhau nửa cung (1 bán âm), tạo cảm giác sát gần kịch tính.'
+          ),
+        if (isInter || isAdvanced)
+          (
+            'min6',
+            'm6',
+            'Quãng 6 thứ',
+            'Cách nhau 4 cung (8 nửa cung), mang màu sắc trữ tình sâu lắng.'
+          ),
         if (isAdvanced)
-          ('tritone', 'Quãng 4 tăng / 5 giảm (Tritone)', 'Cách nhau 3 cung nguyên (6 nửa cung), có độ căng hòa thanh mạnh.'),
+          (
+            'tritone',
+            'tritone',
+            'Quãng 4 tăng / 5 giảm (Tritone)',
+            'Cách nhau 3 cung nguyên (6 nửa cung), có độ căng hòa thanh mạnh.'
+          ),
         if (isAdvanced)
-          ('maj7', 'Quãng 7 trưởng', 'Cách nhau 5,5 cung (11 nửa cung), âm hưởng sắc nét hiện đại.'),
+          (
+            'min7',
+            'm7',
+            'Quãng 7 thứ',
+            'Cách nhau 5 cung (10 nửa cung), đặc trưng của hợp âm Bảy Át (Dominant 7).'
+          ),
+        if (isAdvanced)
+          (
+            'maj7',
+            'M7',
+            'Quãng 7 trưởng',
+            'Cách nhau 5,5 cung (11 nửa cung), âm hưởng sắc nét hiện đại.'
+          ),
       ];
 
-      for (int i = 0; i < intervalDefs.length; i++) {
-        final (code, label, desc) = intervalDefs[i];
-        final root = i.isEven ? 'c4' : 'f4';
-        final qId = 'dyn_int_${levelId}_${root}_${code}_$modeSuffix';
-        final distractors = <int>[
-          (i + 1) % intervalDefs.length,
-          (i + 2) % intervalDefs.length,
-          (i + 4) % intervalDefs.length,
-        ];
-        final allIndices = [i, ...distractors]..sort();
+      final roots = isAdvanced
+          ? const [('c4', 'Đô C4'), ('g4', 'Sol G4')]
+          : const [('c4', 'Đô C4'), ('f4', 'Fa F4'), ('g4', 'Sol G4')];
 
-        final options = <QuestionOptionModel>[];
-        for (int idx = 0; idx < allIndices.length; idx++) {
-          final d = intervalDefs[allIndices[idx]];
-          options.add(
-            QuestionOptionModel(
-              id: '${qId}_o${idx + 1}',
-              questionId: qId,
-              optionKey: d.$1,
-              label: d.$2,
-              isCorrect: allIndices[idx] == i,
-              sortOrder: idx + 1,
+      for (final (rootCode, rootLabel) in roots) {
+        for (int i = 0; i < intervalDefs.length; i++) {
+          final (fileCode, optKey, label, desc) = intervalDefs[i];
+          final qId = 'dyn_int_${levelId}_${rootCode}_${fileCode}_$modeSuffix';
+          final distractors = <int>{
+            (i + 1) % intervalDefs.length,
+            (i + 2) % intervalDefs.length,
+            (i + 4) % intervalDefs.length,
+          };
+          int fb = 1;
+          while (distractors.length < 3) {
+            final cand = (i + fb) % intervalDefs.length;
+            if (cand != i) distractors.add(cand);
+            fb++;
+          }
+          final allIndices = [i, ...distractors];
+
+          final options = <QuestionOptionModel>[];
+          for (int idx = 0; idx < allIndices.length; idx++) {
+            final d = intervalDefs[allIndices[idx]];
+            options.add(
+              QuestionOptionModel(
+                id: '${qId}_o${idx + 1}',
+                questionId: qId,
+                optionKey: d.$2,
+                label: d.$3,
+                isCorrect: allIndices[idx] == i,
+                sortOrder: idx + 1,
+              ),
+            );
+          }
+
+          generated.add(
+            QuestionModel(
+              id: qId,
+              topicId: topicId,
+              levelId: levelId,
+              type: isAdvanced ? 'interval_harmonic' : 'interval_melodic',
+              prompt: isAdvanced
+                  ? 'Nghe hai nốt phát đồng thời (khởi từ $rootLabel) và chọn tên quãng hòa thanh:'
+                  : (isInter
+                      ? 'Nghe hai nốt đi xuống liên tiếp (từ quãng trên về $rootLabel) và xác định tên quãng:'
+                      : 'Nghe hai nốt đi lên liên tiếp (khởi từ $rootLabel) và chọn tên quãng đúng:'),
+              explanation: '$label (gốc $rootLabel): $desc',
+              audioAsset:
+                  'assets/audio/intervals/${rootCode}_${fileCode}_$modeSuffix.wav',
+              difficulty: diff,
+              version: _currentGeneratorVersion,
+              options: options,
             ),
           );
         }
-
-        generated.add(
-          QuestionModel(
-            id: qId,
-            topicId: topicId,
-            levelId: levelId,
-            type: isAdvanced ? 'interval_harmonic' : 'interval_melodic',
-            prompt: isAdvanced
-                ? 'Nghe hai nốt phát đồng thời (quãng hòa thanh) và chọn tên quãng:'
-                : (isInter
-                    ? 'Nghe hai nốt đi xuống liên tiếp và xác định quãng giữa chúng:'
-                    : 'Nghe hai nốt đi lên liên tiếp và chọn tên quãng đúng:'),
-            explanation: '$label: $desc',
-            audioAsset: 'assets/audio/intervals/${root}_${code}_$modeSuffix.wav',
-            difficulty: diff,
-            version: 1,
-            options: options,
-          ),
-        );
       }
     } else if (topicId == 'topic_keys') {
       final isAdvanced = levelId.contains('adv');
       final isInter = levelId.contains('inter');
       final diff = isAdvanced ? 3 : (isInter ? 2 : 1);
 
-      final keyItems = [
+      // All 10 studio key cadences in assets/audio/keys/
+      final allKeyItems = [
         (
           'c_major',
+          'C',
           'Đô Trưởng (C Major)',
-          'Giọng Trưởng (Major)',
-          'Chuỗi hòa âm I-IV-V-I ở giọng Đô Trưởng (0 dấu hóa), màu sắc tươi sáng.',
-          true
+          'Chuỗi hòa âm I–IV–V–I ở giọng Đô Trưởng (0 dấu hóa), màu sắc tươi sáng vững chãi.',
+          true,
+          '0',
+          '0 dấu hóa (Không thăng, không giáng)'
         ),
         (
           'a_minor',
+          'Am',
           'La Thứ (A Minor)',
-          'Giọng Thứ (Minor)',
-          'Chuỗi hòa âm i-iv-V-i ở giọng La Thứ (0 dấu hóa), màu sắc trầm lắng.',
-          false
+          'Chuỗi hòa âm i–iv–V–i ở giọng La Thứ (0 dấu hóa), màu sắc trầm lắng mềm mại.',
+          false,
+          '0',
+          '0 dấu hóa (Không thăng, không giáng)'
         ),
         (
           'g_major',
+          'G',
           'Sol Trưởng (G Major)',
-          'Giọng Trưởng (Major)',
           'Chuỗi hòa âm giọng Sol Trưởng (1 dấu thăng Fa#), âm hưởng sáng rõ.',
-          true
+          true,
+          '1s',
+          '1 dấu thăng (Fa#)'
         ),
         (
           'e_minor',
+          'Em',
           'Mi Thứ (E Minor)',
-          'Giọng Thứ (Minor)',
-          'Chuỗi hòa âm giọng Mi Thứ (1 dấu thăng Fa#), song song với Sol Trưởng.',
-          false
+          'Chuỗi hòa âm giọng Mi Thứ (1 dấu thăng Fa#), giọng Thứ song song với Sol Trưởng.',
+          false,
+          '1s',
+          '1 dấu thăng (Fa#)'
         ),
         (
           'f_major',
+          'F',
           'Fa Trưởng (F Major)',
-          'Giọng Trưởng (Major)',
-          'Chuỗi hòa âm giọng Fa Trưởng (1 dấu giáng Sib), ấm áp và vững chãi.',
-          true
+          'Chuỗi hòa âm giọng Fa Trưởng (1 dấu giáng Sib), ấm áp và mở rộng.',
+          true,
+          '1b',
+          '1 dấu giáng (Sib)'
         ),
         (
           'd_minor',
+          'Dm',
           'Rê Thứ (D Minor)',
-          'Giọng Thứ (Minor)',
-          'Chuỗi hòa âm giọng Rê Thứ (1 dấu giáng Sib), song song với Fa Trưởng.',
-          false
+          'Chuỗi hòa âm giọng Rê Thứ (1 dấu giáng Sib), giọng Thứ song song với Fa Trưởng.',
+          false,
+          '1b',
+          '1 dấu giáng (Sib)'
         ),
         (
           'd_major',
+          'D',
           'Rê Trưởng (D Major)',
-          'Giọng Trưởng (Major)',
-          'Chuỗi hòa âm giọng Rê Trưởng (2 dấu thăng Fa#, Đô#).',
-          true
+          'Chuỗi hòa âm giọng Rê Trưởng (2 dấu thăng Fa#, Đô#), rực rỡ tươi sáng.',
+          true,
+          '2s',
+          '2 dấu thăng (Fa#, Đô#)'
         ),
         (
           'b_minor',
+          'Bm',
           'Si Thứ (B Minor)',
-          'Giọng Thứ (Minor)',
-          'Chuỗi hòa âm giọng Si Thứ (2 dấu thăng Fa#, Đô#).',
-          false
+          'Chuỗi hòa âm giọng Si Thứ (2 dấu thăng Fa#, Đô#), giọng Thứ song song với Rê Trưởng.',
+          false,
+          '2s',
+          '2 dấu thăng (Fa#, Đô#)'
         ),
+        if (isAdvanced || diff == 1)
+          (
+            'bb_major',
+            'Bb',
+            'Si giáng Trưởng (Bb Major)',
+            'Chuỗi hòa âm giọng Si giáng Trưởng (2 dấu giáng Sib, Mib), âm hưởng đầy đặn.',
+            true,
+            '2b',
+            '2 dấu giáng (Sib, Mib)'
+          ),
+        if (isAdvanced || diff == 1)
+          (
+            'g_minor',
+            'Gm',
+            'Sol Thứ (G Minor)',
+            'Chuỗi hòa âm giọng Sol Thứ (2 dấu giáng Sib, Mib), giọng Thứ song song với Si giáng Trưởng.',
+            false,
+            '2b',
+            '2 dấu giáng (Sib, Mib)'
+          ),
       ];
 
-      for (int i = 0; i < keyItems.length; i++) {
-        final (fileKey, keyLabel, qualityLabel, desc, isMaj) = keyItems[i];
+      for (int i = 0; i < allKeyItems.length; i++) {
+        final (fileKey, optKey, keyLabel, desc, isMaj, _, _) = allKeyItems[i];
         final qId = 'dyn_key_${levelId}_$fileKey';
 
         final List<QuestionOptionModel> options;
@@ -741,7 +1151,7 @@ class HybridQuestionGenerator {
               id: '${qId}_o1',
               questionId: qId,
               optionKey: 'major',
-              label: 'Giọng Trưởng (Major) – tươi sáng',
+              label: 'Giọng Trưởng (Major)',
               isCorrect: isMaj,
               sortOrder: 1,
             ),
@@ -749,25 +1159,25 @@ class HybridQuestionGenerator {
               id: '${qId}_o2',
               questionId: qId,
               optionKey: 'minor',
-              label: 'Giọng Thứ (Minor) – trầm lắng',
+              label: 'Giọng Thứ (Minor)',
               isCorrect: !isMaj,
               sortOrder: 2,
             ),
           ];
         } else {
-          final distractors = <int>[
-            (i + 1) % keyItems.length,
-            (i + 2) % keyItems.length,
-            (i + 3) % keyItems.length,
-          ];
-          final allIdx = [i, ...distractors]..sort();
+          final distractors = <int>{
+            (i + 1) % allKeyItems.length,
+            (i + 2) % allKeyItems.length,
+            (i + 3) % allKeyItems.length,
+          };
+          final allIdx = [i, ...distractors];
           options = [
             for (int idx = 0; idx < allIdx.length; idx++)
               QuestionOptionModel(
                 id: '${qId}_o${idx + 1}',
                 questionId: qId,
-                optionKey: keyItems[allIdx[idx]].$1,
-                label: keyItems[allIdx[idx]].$2,
+                optionKey: allKeyItems[allIdx[idx]].$2,
+                label: allKeyItems[allIdx[idx]].$3,
                 isCorrect: allIdx[idx] == i,
                 sortOrder: idx + 1,
               ),
@@ -781,13 +1191,63 @@ class HybridQuestionGenerator {
             levelId: levelId,
             type: diff == 1 ? 'key_quality' : 'key_center',
             prompt: diff == 1
-                ? 'Nghe chuỗi hòa âm và xác định màu sắc Trưởng hay Thứ:'
-                : 'Nghe chuỗi hòa âm (có thể đối chiếu C4) và chọn tên giọng đúng:',
+                ? 'Nghe chuỗi hòa âm I – IV – V – I và xác định màu sắc Trưởng hay Thứ:'
+                : 'Nghe chuỗi hòa âm (có thể đối chiếu C4) và chọn đúng tên giọng:',
             explanation: desc,
             audioAsset: 'assets/audio/keys/$fileKey.wav',
             difficulty: diff,
-            version: 1,
+            version: _currentGeneratorVersion,
             options: options,
+          ),
+        );
+      }
+
+      // Also generate key_signature questions across all levels of topic_keys
+      const sigPool = [
+        ('0', '0 dấu hóa (Không thăng, không giáng)'),
+        ('1s', '1 dấu thăng (Fa#)'),
+        ('1b', '1 dấu giáng (Sib)'),
+        ('2s', '2 dấu thăng (Fa#, Đô#)'),
+        ('2b', '2 dấu giáng (Sib, Mib)'),
+      ];
+      final sigItemCount = diff == 1 ? 6 : allKeyItems.length;
+      for (int i = 0; i < sigItemCount; i++) {
+        final (fileKey, _, keyLabel, desc, _, sigKey, sigLabel) =
+            allKeyItems[i];
+        final qId = 'dyn_keysig_${levelId}_$fileKey';
+        final wrongSigs = sigPool.where((s) => s.$1 != sigKey).take(3).toList();
+        final sigOptions = <QuestionOptionModel>[
+          QuestionOptionModel(
+            id: '${qId}_o1',
+            questionId: qId,
+            optionKey: sigKey,
+            label: sigLabel,
+            isCorrect: true,
+            sortOrder: 1,
+          ),
+          for (int w = 0; w < wrongSigs.length; w++)
+            QuestionOptionModel(
+              id: '${qId}_o${w + 2}',
+              questionId: qId,
+              optionKey: wrongSigs[w].$1,
+              label: wrongSigs[w].$2,
+              isCorrect: false,
+              sortOrder: w + 2,
+            ),
+        ];
+        generated.add(
+          QuestionModel(
+            id: qId,
+            topicId: topicId,
+            levelId: levelId,
+            type: 'key_signature',
+            prompt:
+                'Nghe chuỗi hòa âm giọng $keyLabel. Hóa biểu của giọng này có bao nhiêu dấu hóa?',
+            explanation: '$keyLabel có hóa biểu: $sigLabel. $desc',
+            audioAsset: 'assets/audio/keys/$fileKey.wav',
+            difficulty: diff,
+            version: _currentGeneratorVersion,
+            options: sigOptions,
           ),
         );
       }
@@ -902,7 +1362,7 @@ class HybridQuestionGenerator {
             if (cand != i) distractors.add(cand);
             fb++;
           }
-          final allIdx = [i, ...distractors]..sort();
+          final allIdx = [i, ...distractors];
 
           final options = <QuestionOptionModel>[
             for (int idx = 0; idx < allIdx.length; idx++)
@@ -930,7 +1390,7 @@ class HybridQuestionGenerator {
               explanation: desc,
               audioAsset: 'assets/audio/keys/$fileKey.wav',
               difficulty: diff,
-              version: 1,
+              version: _currentGeneratorVersion,
               options: options,
             ),
           );
@@ -1047,7 +1507,7 @@ class HybridQuestionGenerator {
             if (cand != i) distractors.add(cand);
             fb++;
           }
-          final allIdx = [i, ...distractors]..sort();
+          final allIdx = [i, ...distractors];
 
           final options = <QuestionOptionModel>[
             for (int idx = 0; idx < allIdx.length; idx++)
@@ -1075,7 +1535,7 @@ class HybridQuestionGenerator {
               explanation: desc,
               audioAsset: 'assets/audio/keys/$fileKey.wav',
               difficulty: diff,
-              version: 1,
+              version: _currentGeneratorVersion,
               options: options,
             ),
           );
@@ -1192,7 +1652,7 @@ class HybridQuestionGenerator {
             if (cand != i) distractors.add(cand);
             fb++;
           }
-          final allIdx = [i, ...distractors]..sort();
+          final allIdx = [i, ...distractors];
 
           final options = <QuestionOptionModel>[
             for (int idx = 0; idx < allIdx.length; idx++)
@@ -1220,7 +1680,7 @@ class HybridQuestionGenerator {
               explanation: desc,
               audioAsset: 'assets/audio/keys/$fileKey.wav',
               difficulty: diff,
-              version: 1,
+              version: _currentGeneratorVersion,
               options: options,
             ),
           );
@@ -1228,9 +1688,6 @@ class HybridQuestionGenerator {
       }
     }
 
-    for (final q in generated) {
-      await _db.upsertQuestion(q);
-    }
+    await _db.upsertQuestionsBatch(generated);
   }
 }
-

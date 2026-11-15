@@ -669,14 +669,14 @@
         {
           "id": "q_note_a01_o1",
           "option_key": "C4",
-          "label": "Đô 4 (C4)",
+          "label": "Đô (C4)",
           "is_correct": false,
           "sort_order": 1
         },
         {
           "id": "q_note_a01_o2",
           "option_key": "G4",
-          "label": "Sol 4 (G4)",
+          "label": "Sol (G4)",
           "is_correct": false,
           "sort_order": 2
         },
@@ -731,7 +731,7 @@
         {
           "id": "q_note_a02_o4",
           "option_key": "C4",
-          "label": "Đô 4 (C4)",
+          "label": "Đô (C4)",
           "is_correct": false,
           "sort_order": 4
         }
@@ -813,7 +813,7 @@
         {
           "id": "q_int_b01_o4",
           "option_key": "P8",
-          "label": "Quãng 8 đúng",
+          "label": "Quãng 8 đúng (Octave)",
           "is_correct": false,
           "sort_order": 4
         }
@@ -895,7 +895,7 @@
         {
           "id": "q_int_b03_o4",
           "option_key": "P8",
-          "label": "Quãng 8 đúng",
+          "label": "Quãng 8 đúng (Octave)",
           "is_correct": false,
           "sort_order": 4
         }
@@ -936,7 +936,7 @@
         {
           "id": "q_int_b04_o4",
           "option_key": "P8",
-          "label": "Quãng 8 đúng",
+          "label": "Quãng 8 đúng (Octave)",
           "is_correct": false,
           "sort_order": 4
         }
@@ -1038,28 +1038,28 @@
         {
           "id": "q_int_i02_o1",
           "option_key": "M3",
-          "label": "Quãng 3 trưởng đi xuống",
+          "label": "Quãng 3 trưởng",
           "is_correct": false,
           "sort_order": 1
         },
         {
           "id": "q_int_i02_o2",
           "option_key": "P4",
-          "label": "Quãng 4 đúng đi xuống",
+          "label": "Quãng 4 đúng",
           "is_correct": false,
           "sort_order": 2
         },
         {
           "id": "q_int_i02_o3",
           "option_key": "P5",
-          "label": "Quãng 5 đúng đi xuống",
+          "label": "Quãng 5 đúng",
           "is_correct": true,
           "sort_order": 3
         },
         {
           "id": "q_int_i02_o4",
           "option_key": "P8",
-          "label": "Quãng 8 đúng đi xuống",
+          "label": "Quãng 8 đúng (Octave)",
           "is_correct": false,
           "sort_order": 4
         }
@@ -1182,7 +1182,7 @@
         {
           "id": "q_int_a02_o4",
           "option_key": "P8",
-          "label": "Quãng 8 đúng",
+          "label": "Quãng 8 đúng (Octave)",
           "is_correct": false,
           "sort_order": 4
         }
@@ -1351,7 +1351,7 @@
         {
           "id": "q_key_i01_o1",
           "option_key": "0",
-          "label": "Không có dấu hóa",
+          "label": "0 dấu hóa (Không thăng, không giáng)",
           "is_correct": false,
           "sort_order": 1
         },
@@ -1413,7 +1413,7 @@
         {
           "id": "q_key_i02_o4",
           "option_key": "0",
-          "label": "Không có dấu hóa",
+          "label": "0 dấu hóa (Không thăng, không giáng)",
           "is_correct": false,
           "sort_order": 4
         }
