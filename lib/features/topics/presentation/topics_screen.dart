@@ -6,6 +6,7 @@ import '../../../app/theme/app_colors.dart';
 import '../../../core/models/domain_models.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../practice/application/practice_session_controller.dart';
+import '../../practice/presentation/widgets/free_piano_explorer_sheet.dart';
 
 /// UI-03: Phòng luyện tập – Danh sách chủ đề & Chọn thời gian luyện tập (UC-03)
 class TopicsScreen extends ConsumerWidget {
@@ -178,6 +179,24 @@ class TopicsScreen extends ConsumerWidget {
                               .state = 0,
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        key: const Key('btn_topics_open_free_piano'),
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size(double.infinity, 40),
+                        ),
+                        onPressed: () => showFreePianoExplorerSheet(context),
+                        icon: const Icon(Icons.piano_rounded, size: 18),
+                        label: const FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            'Mở Đàn Piano & Tra cứu Khuông nhạc tự do (C3–C5)',
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),

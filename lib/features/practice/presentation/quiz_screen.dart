@@ -590,6 +590,29 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
   }) {
     const badges = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
     final rows = <Widget>[];
+    final useSingleColumn =
+        options.length <= 4 && options.any((o) => o.label.length > 18);
+
+    if (useSingleColumn) {
+      for (int i = 0; i < options.length; i++) {
+        final opt = options[i];
+        final badge = i < badges.length ? badges[i] : '${i + 1}';
+        rows.add(
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: _OptionButton(
+              badge: badge,
+              option: opt,
+              isAnswered: isAnswered,
+              isSelected: selectedOptionId == opt.id,
+              isDark: isDark,
+              onTap: () => _handleSelectOption(opt),
+            ),
+          ),
+        );
+      }
+      return Column(children: rows);
+    }
 
     for (int i = 0; i < options.length; i += 2) {
       final first = options[i];
@@ -1145,11 +1168,12 @@ class _OptionButton extends StatelessWidget {
               Expanded(
                 child: Text(
                   option.label,
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 14,
+                  style: TextStyle(
+                    fontSize: option.label.length > 26 ? 13.0 : 14.0,
                     fontWeight: FontWeight.w700,
+                    height: 1.22,
                   ),
                 ),
               ),

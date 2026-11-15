@@ -299,23 +299,31 @@ class ProgressScreen extends ConsumerWidget {
                                             ? 'Nghe'
                                             : rawName == 'Đọc nốt nhạc'
                                                 ? 'Đọc'
-                                                : rawName ==
-                                                        'Nhận biết nhịp điệu'
-                                                    ? 'Nhịp'
-                                                    : rawName ==
-                                                            'Nhận biết giai điệu'
-                                                        ? 'G.điệu'
-                                                        : rawName.replaceAll(
-                                                            'Nhận biết ',
-                                                            '',
-                                                          );
+                                                : rawName == 'Nhận biết quãng'
+                                                    ? 'Quãng'
+                                                    : rawName == 'Nhận biết giọng'
+                                                        ? 'Giọng'
+                                                        : rawName ==
+                                                                'Nhận biết hợp âm'
+                                                            ? 'H.âm'
+                                                            : rawName.contains(
+                                                                    'giai điệu')
+                                                                ? 'G.điệu'
+                                                                : rawName.contains(
+                                                                        'nhịp')
+                                                                    ? 'Nhịp'
+                                                                    : rawName
+                                                                        .replaceAll(
+                                                                        'Nhận biết ',
+                                                                        '',
+                                                                      );
                                         return Padding(
                                           padding:
                                               const EdgeInsets.only(top: 6),
                                           child: Text(
                                             shortName,
                                             style: const TextStyle(
-                                              fontSize: 10,
+                                              fontSize: 9.8,
                                               fontWeight: FontWeight.w700,
                                             ),
                                           ),
@@ -336,7 +344,7 @@ class ProgressScreen extends ConsumerWidget {
                                               ? stats.topicStats[i]
                                                   .accuracyPercent
                                               : 0,
-                                          width: 18,
+                                          width: 14,
                                           gradient:
                                               stats.topicStats[i].hasEnoughData
                                                   ? const LinearGradient(

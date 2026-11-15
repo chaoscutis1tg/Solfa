@@ -142,6 +142,9 @@ class _TopicDetailScreenState extends ConsumerState<TopicDetailScreen> {
     final topic = topicsAsync.valueOrNull
         ?.where((t) => t.id == widget.topicId)
         .firstOrNull;
+    final topicAccent = topic != null
+        ? AppColors.topicAccent(topic.code)
+        : AppColors.primary;
 
     return SolfaBackground(
       child: Scaffold(
@@ -168,12 +171,12 @@ class _TopicDetailScreenState extends ConsumerState<TopicDetailScreen> {
                             width: 44,
                             height: 44,
                             decoration: BoxDecoration(
-                              color: AppColors.primaryLight,
+                              color: topicAccent.withOpacity(0.14),
                               borderRadius: BorderRadius.circular(13),
                             ),
-                            child: const Icon(
-                              Icons.music_note_rounded,
-                              color: AppColors.primary,
+                            child: Icon(
+                              _topicIcon(topic.code),
+                              color: topicAccent,
                               size: 24,
                             ),
                           ),
@@ -294,7 +297,7 @@ class _TopicDetailScreenState extends ConsumerState<TopicDetailScreen> {
                                     height: 42,
                                     decoration: BoxDecoration(
                                       color: unlocked
-                                          ? AppColors.primaryLight
+                                          ? topicAccent.withOpacity(0.14)
                                           : Colors.grey.withOpacity(0.15),
                                       borderRadius: BorderRadius.circular(13),
                                     ),
@@ -303,7 +306,7 @@ class _TopicDetailScreenState extends ConsumerState<TopicDetailScreen> {
                                           ? Icons.lock_open_rounded
                                           : Icons.lock_outline_rounded,
                                       color: unlocked
-                                          ? AppColors.primary
+                                          ? topicAccent
                                           : Colors.grey,
                                       size: 22,
                                     ),
@@ -381,6 +384,11 @@ class _TopicDetailScreenState extends ConsumerState<TopicDetailScreen> {
                               ),
                               const SizedBox(height: 12),
                               ElevatedButton.icon(
+                                style: unlocked
+                                    ? ElevatedButton.styleFrom(
+                                        backgroundColor: topicAccent,
+                                      )
+                                    : null,
                                 onPressed: unlocked
                                     ? () => _startLevelPractice(level)
                                     : null,
@@ -388,10 +396,13 @@ class _TopicDetailScreenState extends ConsumerState<TopicDetailScreen> {
                                   Icons.play_arrow_rounded,
                                   size: 20,
                                 ),
-                                label: Text(
-                                  unlocked
-                                      ? 'Bắt đầu cấp ${level.name} (${TopicsScreen.durationLabel(selectedDuration)})'
-                                      : 'Chưa mở khóa',
+                                label: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    unlocked
+                                        ? 'Bắt đầu cấp ${level.name.split(' (').first} (${TopicsScreen.durationLabel(selectedDuration)})'
+                                        : 'Chưa mở khóa',
+                                  ),
                                 ),
                               ),
                             ],
@@ -407,5 +418,32 @@ class _TopicDetailScreenState extends ConsumerState<TopicDetailScreen> {
         ),
       ),
     );
+  }
+
+  IconData _topicIcon(String code) {
+    switch (code) {
+      case 'note_recognition':
+      case 'notes':
+        return Icons.music_note_rounded;
+      case 'staff_reading':
+        return Icons.menu_book_rounded;
+      case 'interval_recognition':
+      case 'intervals':
+        return Icons.swap_vert_circle_outlined;
+      case 'key_recognition':
+      case 'keys':
+        return Icons.library_music_rounded;
+      case 'chord_recognition':
+      case 'chords':
+        return Icons.piano_rounded;
+      case 'melody_recognition':
+      case 'melody':
+        return Icons.queue_music_rounded;
+      case 'rhythm_recognition':
+      case 'rhythm':
+        return Icons.graphic_eq_rounded;
+      default:
+        return Icons.queue_music_rounded;
+    }
   }
 }

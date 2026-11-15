@@ -686,6 +686,35 @@ void main() {
         });
         await pumpFrames();
         expect(tester.takeException(), isNull);
+
+        // 7. Kiểm tra TopicDetailScreen & QuizScreen cho chủ đề mới có nhãn dài (Giai điệu & Nhịp điệu) trên 360x680
+        router.go('/topics/topic_rhythm');
+        await pumpFrames(300);
+        expect(tester.takeException(), isNull);
+
+        await tester.runAsync(() async {
+          await sessionNotifier.startSession(
+            mode: 'topic',
+            topicId: 'topic_melody',
+            levelId: 'lvl_melody_adv',
+            targetCount: 4,
+            seed: 99,
+          );
+        });
+        router.go('/quiz');
+        await pumpFrames(300);
+        expect(tester.takeException(), isNull);
+
+        await tester.runAsync(() async {
+          final currentQ =
+              container.read(practiceSessionProvider).currentQuestion!;
+          await sessionNotifier.submitAnswer(currentQ.options.first);
+        });
+        await pumpFrames(250);
+        expect(tester.takeException(), isNull);
+        await tester.runAsync(() async {
+          await sessionNotifier.abandonSessionIfIncomplete();
+        });
       },
     );
 

@@ -165,7 +165,7 @@ class SettingsScreen extends ConsumerWidget {
                             children: [
                               const Expanded(
                                 child: Text(
-                                  'Solfa Studio v1.3',
+                                  'Solfa Studio v1.4',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
@@ -196,7 +196,7 @@ class SettingsScreen extends ConsumerWidget {
                           ),
                           const SizedBox(height: 3),
                           Text(
-                            'Luyện cảm âm, tính điểm nốt nhạc & Máy đếm nhịp cơ',
+                            '7 chủ đề cảm âm & đọc khuông nhạc • Đàn C3–C5 • Metronome',
                             style: TextStyle(
                               fontSize: 12.5,
                               color:
@@ -746,7 +746,7 @@ class SettingsScreen extends ConsumerWidget {
                     onTap: () => showLicensePage(
                       context: context,
                       applicationName: 'Solfa Studio',
-                      applicationVersion: '1.3.0 (Offline-First)',
+                      applicationVersion: '1.4.0 (Offline-First)',
                       applicationIcon: const Padding(
                         padding: EdgeInsets.all(8.0),
                         child: SolfaLogo(size: 56),
