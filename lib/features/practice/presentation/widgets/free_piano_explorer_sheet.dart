@@ -836,6 +836,41 @@ class _FreePianoExplorerSheetState
                 ),
               ),
             ],
+            if (_dictationCompleted &&
+                !ref.watch(rewardedAdProvider).questDictationClaimedToday) ...[
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  key: const Key('btn_dictation_claim_quest'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.correct,
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(double.infinity, 34),
+                  ),
+                  onPressed: () async {
+                    final pts = await ref
+                        .read(rewardedAdProvider.notifier)
+                        .claimDailyQuest('dictation');
+                    if (pts > 0 && mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          backgroundColor: AppColors.correct,
+                          content: Text(
+                            'Đã nhận +$pts Điểm Uy Tín từ nhiệm vụ Chép Nhạc Giai Điệu!',
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                  icon: const Icon(Icons.workspace_premium_rounded, size: 16),
+                  label: const Text(
+                    'Nhận thưởng Nhiệm vụ Chép Nhạc (+30 Điểm Uy Tín)',
+                    style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w900),
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: 8),
             Row(
               children: [

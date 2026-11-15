@@ -343,6 +343,86 @@ class _SessionResultScreenState extends ConsumerState<SessionResultScreen> {
 
               const SizedBox(height: 12),
 
+              // 1b. Instant Daily Quest Reward Card (+30 Prestige Points if >= 10 questions answered today)
+              if ((progressAsync.valueOrNull?.todayAnsweredCount ?? 0) >= 10 &&
+                  !adState.questPracticeClaimedToday) ...[
+                Container(
+                  key: const Key('card_result_claim_quest_practice'),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.correct.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: AppColors.correct.withOpacity(0.5),
+                      width: 1.4,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.task_alt_rounded,
+                        color: AppColors.correct,
+                        size: 22,
+                      ),
+                      const SizedBox(width: 10),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Hoàn thành Nhiệm vụ Khởi động Cảm Âm!',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w900,
+                                color: AppColors.correct,
+                              ),
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              'Nhận ngay +30 Điểm Uy Tín để tích lũy đổi Lượt Đấu Trường',
+                              style: TextStyle(fontSize: 11.5),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      ElevatedButton(
+                        key: const Key('btn_result_claim_quest_practice'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.correct,
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size(0, 36),
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                        ),
+                        onPressed: () async {
+                          final pts = await ref
+                              .read(rewardedAdProvider.notifier)
+                              .claimDailyQuest('practice');
+                          if (pts > 0 && context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                backgroundColor: AppColors.correct,
+                                content: Text(
+                                  'Đã nhận +$pts Điểm Uy Tín từ nhiệm vụ Khởi động Cảm Âm!',
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                        child: const Text(
+                          'Nhận +30đ',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
+
               // 2. Primary Action: Retry Session
               ElevatedButton.icon(
                 key: const Key('btn_retry_session'),

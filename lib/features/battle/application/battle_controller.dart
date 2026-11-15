@@ -424,56 +424,44 @@ class BattleNotifier extends StateNotifier<BattleState> {
 
   Future<void> loadRankStats() async {
     try {
-      final stars =
-          int.tryParse(await _db.getSetting('battle_stars') ?? '0') ?? 0;
-      final wins =
-          int.tryParse(await _db.getSetting('battle_wins') ?? '0') ?? 0;
-      final matches =
-          int.tryParse(await _db.getSetting('battle_matches') ?? '0') ?? 0;
+      final map = await _db.getAllSettings();
+      if (!mounted) return;
+      final stars = int.tryParse(map['battle_stars'] ?? '0') ?? 0;
+      final wins = int.tryParse(map['battle_wins'] ?? '0') ?? 0;
+      final matches = int.tryParse(map['battle_matches'] ?? '0') ?? 0;
 
       final today = _todayDateKey();
-      final savedDate = await _db.getSetting('battle_energy_date');
+      final savedDate = map['battle_energy_date'];
       int remainingTurns = BattleState.maxDailyFreeBattles;
       int adRestoredToday = 0;
       int dailyPlayed = 0;
 
       if (savedDate == today) {
         remainingTurns = int.tryParse(
-              await _db.getSetting('battle_remaining_turns') ??
+              map['battle_remaining_turns'] ??
                   '${BattleState.maxDailyFreeBattles}',
             ) ??
             BattleState.maxDailyFreeBattles;
-        adRestoredToday = int.tryParse(
-              await _db.getSetting('battle_ad_restored_today') ?? '0',
-            ) ??
-            0;
-        dailyPlayed = int.tryParse(
-              await _db.getSetting('battle_daily_played') ?? '0',
-            ) ??
-            0;
-      } else {
-        await _db.setSetting('battle_energy_date', today);
-        await _db.setSetting(
-          'battle_remaining_turns',
-          BattleState.maxDailyFreeBattles.toString(),
-        );
-        await _db.setSetting('battle_ad_restored_today', '0');
-        await _db.setSetting('battle_daily_played', '0');
+        adRestoredToday =
+            int.tryParse(map['battle_ad_restored_today'] ?? '0') ?? 0;
+        dailyPlayed = int.tryParse(map['battle_daily_played'] ?? '0') ?? 0;
       }
 
       List<BattleMatchRecord> history = [];
-      final rawHistory = await _db.getSetting('battle_match_history_json');
+      final rawHistory = map['battle_match_history_json'];
       if (rawHistory != null && rawHistory.isNotEmpty) {
         try {
           final decoded = jsonDecode(rawHistory) as List<dynamic>;
           history = decoded
               .whereType<Map>()
-              .map((m) => BattleMatchRecord.fromJson(Map<String, dynamic>.from(m)))
+              .map(
+                (m) =>
+                    BattleMatchRecord.fromJson(Map<String, dynamic>.from(m)),
+              )
               .toList();
         } catch (_) {}
       }
 
-      if (!mounted) return;
       // Avoid overwriting in-memory state if a battle has already started or turns were already modified
       if (state.dailyBattlesPlayed > 0 || state.phase != BattlePhase.lobby) {
         return;

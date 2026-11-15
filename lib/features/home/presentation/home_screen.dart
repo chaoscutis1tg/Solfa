@@ -512,7 +512,8 @@ class HomeScreen extends ConsumerWidget {
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Icon(
-                                        adState.supportedCount > 0
+                                        adState.supportedCount > 0 ||
+                                                adState.prestigePoints > 0
                                             ? Icons.military_tech_rounded
                                             : Icons.favorite_rounded,
                                         size: 12,
@@ -520,7 +521,8 @@ class HomeScreen extends ConsumerWidget {
                                       ),
                                       const SizedBox(width: 3),
                                       Text(
-                                        adState.supportedCount > 0
+                                        adState.supportedCount > 0 ||
+                                                adState.prestigePoints > 0
                                             ? '${adState.prestigePoints} Uy tín'
                                             : '15s miễn phí',
                                         style: const TextStyle(

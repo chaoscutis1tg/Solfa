@@ -109,18 +109,44 @@ class RewardedAdNotifier extends StateNotifier<RewardedAdState> {
 
   Future<void> _loadSupportCount() async {
     try {
-      final val = await _db.getSetting('developer_support_count');
-      final spentVal = await _db.getSetting('developer_support_points_spent');
+      final map = await _db.getAllSettings();
       if (!mounted) return;
-      final count = int.tryParse(val ?? '0') ?? 0;
-      final spent = int.tryParse(spentVal ?? '0') ?? 0;
+      final count = int.tryParse(map['developer_support_count'] ?? '0') ?? 0;
+      final bonus =
+          int.tryParse(map['developer_support_bonus_points'] ?? '0') ?? 0;
+      final spent =
+          int.tryParse(map['developer_support_points_spent'] ?? '0') ?? 0;
+
+      final today = _todayDateKey();
+      final questDate = map['daily_quests_date'];
+      final isTodayQuest = questDate == today;
+      final qPractice =
+          isTodayQuest && map['daily_quest_practice_claimed'] == '1';
+      final qBattle = isTodayQuest && map['daily_quest_battle_claimed'] == '1';
+      final qDictation =
+          isTodayQuest && map['daily_quest_dictation_claimed'] == '1';
+      final dictationCount = isTodayQuest
+          ? (int.tryParse(map['daily_dictation_completed_count'] ?? '0') ?? 0)
+          : 0;
+      final battleDate = map['battle_energy_date'];
+      final battlesToday = battleDate == today
+          ? (int.tryParse(map['battle_daily_played'] ?? '0') ?? 0)
+          : 0;
+
       // Preserve in-memory state if already modified synchronously during tests
-      if (state.supportedCount > count || state.bonusPrestigePoints > 0) {
+      if (state.supportedCount > count || state.bonusPrestigePoints > bonus) {
         return;
       }
+      final totalPts = count * 100 + bonus;
       state = state.copyWith(
         supportedCount: count,
-        spentPrestigePoints: spent.clamp(0, count * 100 + state.bonusPrestigePoints),
+        bonusPrestigePoints: bonus.clamp(0, 999999),
+        spentPrestigePoints: spent.clamp(0, totalPts),
+        questPracticeClaimedToday: qPractice,
+        questBattleClaimedToday: qBattle,
+        questDictationClaimedToday: qDictation,
+        dailyBattlesPlayed: battlesToday.clamp(0, 999),
+        dailyDictationCompletedCount: dictationCount.clamp(0, 999),
       );
     } catch (_) {}
   }

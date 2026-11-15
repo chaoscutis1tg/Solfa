@@ -103,7 +103,7 @@ class MainShell extends ConsumerWidget {
                       const PulsingRedHeart(size: 15),
                       const SizedBox(width: 5),
                       Text(
-                        adState.supportedCount > 0
+                        adState.supportedCount > 0 || adState.prestigePoints > 0
                             ? '${adState.prestigePoints}đ'
                             : 'Ủng hộ',
                         style: const TextStyle(
