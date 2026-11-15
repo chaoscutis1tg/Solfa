@@ -41,6 +41,8 @@ class AppColors {
       case 'note_recognition':
       case 'notes':
         return const Color(0xFF0B68E3);
+      case 'staff_reading':
+        return const Color(0xFF635BFF);
       case 'interval_recognition':
       case 'intervals':
         return const Color(0xFF0FA97A);

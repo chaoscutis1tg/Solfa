@@ -20,11 +20,14 @@ class TopicsScreen extends ConsumerWidget {
     final isTest = ref.read(audioServiceProvider).isTestMode;
     final dur = ref.read(selectedPracticeDurationProvider);
     final noteLevelId = ref.read(selectedNoteLevelIdProvider);
+    final staffLevelId = ref.read(selectedStaffLevelIdProvider);
 
     final ok = await notifier.startSession(
       mode: 'topic',
       topicId: topic.id,
-      levelId: topic.id == 'topic_notes' ? noteLevelId : null,
+      levelId: topic.id == 'topic_notes'
+          ? noteLevelId
+          : (topic.id == 'topic_staff_reading' ? staffLevelId : null),
       targetCount: 10,
       timeLimitSeconds: isTest ? null : (dur == 0 ? null : dur),
       isUnlimitedMode: isTest ? false : (dur == 0),
@@ -55,6 +58,7 @@ class TopicsScreen extends ConsumerWidget {
     final progressAsync = ref.watch(overallProgressProvider);
     final selectedDuration = ref.watch(selectedPracticeDurationProvider);
     final selectedNoteLevelId = ref.watch(selectedNoteLevelIdProvider);
+    final selectedStaffLevelId = ref.watch(selectedStaffLevelIdProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return topicsAsync.when(
@@ -241,7 +245,9 @@ class TopicsScreen extends ConsumerWidget {
                                           child: Text(
                                             sessionsDone > 0
                                                 ? '$sessionsDone phiên • $answered nốt'
-                                                : (topic.id == 'topic_notes'
+                                                : ((topic.id == 'topic_notes' ||
+                                                        topic.id ==
+                                                            'topic_staff_reading')
                                                     ? '4 mức độ • Mở khóa sẵn'
                                                     : '3 cấp độ • Mở khóa sẵn'),
                                             style: TextStyle(
@@ -289,96 +295,123 @@ class TopicsScreen extends ConsumerWidget {
                             style:
                                 const TextStyle(fontSize: 13.5, height: 1.38),
                           ),
-                          if (topic.id == 'topic_notes') ...[
+                          if (topic.id == 'topic_notes' ||
+                              topic.id == 'topic_staff_reading') ...[
                             const SizedBox(height: 12),
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: accent.withOpacity(isDark ? 0.12 : 0.07),
-                                borderRadius: BorderRadius.circular(14),
-                                border: Border.all(
-                                  color: accent.withOpacity(0.25),
-                                ),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Row(
-                                    children: [
-                                      Icon(
-                                        Icons.workspace_premium_rounded,
-                                        size: 16,
-                                        color: AppColors.primary,
-                                      ),
-                                      SizedBox(width: 5),
-                                      Expanded(
-                                        child: Text(
-                                          'Chọn mức độ Nhận biết nốt:',
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
-                                            fontSize: 12.5,
-                                            fontWeight: FontWeight.w800,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Row(
-                                    children: [
-                                      for (int lvlIdx = 0;
-                                          lvlIdx < kNoteRecognitionLevels.length;
-                                          lvlIdx++) ...[
-                                        if (lvlIdx > 0)
-                                          const SizedBox(width: 6),
-                                        Expanded(
-                                          child: _NoteLevelQuickButton(
-                                            key: Key(
-                                              'topic_note_lvl_${kNoteRecognitionLevels[lvlIdx].$1}',
-                                            ),
-                                            title:
-                                                kNoteRecognitionLevels[lvlIdx]
-                                                    .$2,
-                                            subtitle:
-                                                kNoteRecognitionLevels[lvlIdx]
-                                                    .$3,
-                                            isSelected: selectedNoteLevelId ==
-                                                kNoteRecognitionLevels[lvlIdx]
-                                                    .$1,
-                                            isDark: isDark,
-                                            onTap: () => ref
-                                                .read(
-                                                    selectedNoteLevelIdProvider
-                                                        .notifier)
-                                                .state = kNoteRecognitionLevels[
-                                                    lvlIdx]
-                                                .$1,
-                                          ),
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                  const SizedBox(height: 7),
-                                  Text(
-                                    kNoteRecognitionLevels
-                                        .firstWhere(
-                                          (e) => e.$1 == selectedNoteLevelId,
-                                          orElse: () =>
-                                              kNoteRecognitionLevels.first,
-                                        )
-                                        .$4,
-                                    style: TextStyle(
-                                      fontSize: 11.5,
-                                      fontWeight: FontWeight.w600,
-                                      color: Theme.of(context)
-                                          .textTheme
-                                          .bodySmall
-                                          ?.color,
+                            Builder(
+                              builder: (context) {
+                                final isStaff =
+                                    topic.id == 'topic_staff_reading';
+                                final levelsList = isStaff
+                                    ? kStaffReadingLevels
+                                    : kNoteRecognitionLevels;
+                                final currentSelectedId = isStaff
+                                    ? selectedStaffLevelId
+                                    : selectedNoteLevelId;
+                                final keyPrefix = isStaff
+                                    ? 'topic_staff_lvl_'
+                                    : 'topic_note_lvl_';
+                                return Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color:
+                                        accent.withOpacity(isDark ? 0.12 : 0.07),
+                                    borderRadius: BorderRadius.circular(14),
+                                    border: Border.all(
+                                      color: accent.withOpacity(0.25),
                                     ),
                                   ),
-                                ],
-                              ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            isStaff
+                                                ? Icons.menu_book_rounded
+                                                : Icons
+                                                    .workspace_premium_rounded,
+                                            size: 16,
+                                            color: accent,
+                                          ),
+                                          const SizedBox(width: 5),
+                                          Expanded(
+                                            child: Text(
+                                              isStaff
+                                                  ? 'Chọn mức độ Đọc nốt nhạc:'
+                                                  : 'Chọn mức độ Nhận biết nốt:',
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                fontSize: 12.5,
+                                                fontWeight: FontWeight.w800,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Row(
+                                        children: [
+                                          for (int lvlIdx = 0;
+                                              lvlIdx < levelsList.length;
+                                              lvlIdx++) ...[
+                                            if (lvlIdx > 0)
+                                              const SizedBox(width: 6),
+                                            Expanded(
+                                              child: _NoteLevelQuickButton(
+                                                key: Key(
+                                                  '$keyPrefix${levelsList[lvlIdx].$1}',
+                                                ),
+                                                title: levelsList[lvlIdx].$2,
+                                                subtitle: levelsList[lvlIdx].$3,
+                                                isSelected: currentSelectedId ==
+                                                    levelsList[lvlIdx].$1,
+                                                isDark: isDark,
+                                                onTap: () {
+                                                  if (isStaff) {
+                                                    ref
+                                                        .read(
+                                                            selectedStaffLevelIdProvider
+                                                                .notifier)
+                                                        .state =
+                                                        levelsList[lvlIdx].$1;
+                                                  } else {
+                                                    ref
+                                                        .read(
+                                                            selectedNoteLevelIdProvider
+                                                                .notifier)
+                                                        .state =
+                                                        levelsList[lvlIdx].$1;
+                                                  }
+                                                },
+                                              ),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                      const SizedBox(height: 7),
+                                      Text(
+                                        levelsList
+                                            .firstWhere(
+                                              (e) => e.$1 == currentSelectedId,
+                                              orElse: () => levelsList.first,
+                                            )
+                                            .$4,
+                                        style: TextStyle(
+                                          fontSize: 11.5,
+                                          fontWeight: FontWeight.w600,
+                                          color: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall
+                                              ?.color,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
                             ),
                           ],
                           if (answered > 0) ...[
@@ -540,6 +573,8 @@ class TopicsScreen extends ConsumerWidget {
       case 'note_recognition':
       case 'notes':
         return Icons.music_note_rounded;
+      case 'staff_reading':
+        return Icons.menu_book_rounded;
       case 'interval_recognition':
       case 'intervals':
         return Icons.swap_vert_circle_outlined;

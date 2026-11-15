@@ -159,7 +159,8 @@ class HybridQuestionGenerator {
 
     final List<QuestionModel> generated = [];
 
-    if (topicId == 'topic_notes') {
+    if (topicId == 'topic_notes' || topicId == 'topic_staff_reading') {
+      final isStaffReading = topicId == 'topic_staff_reading';
       final isMaster = levelId.contains('master') || levelId.contains('4');
       final isAdvanced = levelId.contains('adv') || levelId.contains('3');
       final isInter = levelId.contains('inter') || levelId.contains('2');
@@ -171,62 +172,349 @@ class HybridQuestionGenerator {
 
       // Mức 1: Chỉ 7 nốt tự nhiên trong quãng C4 (C4..B4), không dấu #/b
       final level1C4Natural = [
-        ('c4', 'C4', 'Đô (C4)', 'Nốt Đô (C4) nằm ngay bên trái cụm 2 phím đen, tần số 261.6 Hz.'),
-        ('d4', 'D4', 'Rê (D4)', 'Nốt Rê (D4) nằm giữa 2 phím đen C# và D#, cao hơn Đô 1 cung.'),
-        ('e4', 'E4', 'Mi (E4)', 'Nốt Mi (E4) nằm bên phải cụm 2 phím đen, là bậc III của Đô Trưởng.'),
-        ('f4', 'F4', 'Fa (F4)', 'Nốt Fa (F4) nằm bên trái cụm 3 phím đen, cách Mi nửa cung.'),
-        ('g4', 'G4', 'Sol (G4)', 'Nốt Sol (G4) cách Đô (C4) một quãng 5 đúng vững chãi.'),
-        ('a4', 'A4', 'La (A4)', 'Nốt La (A4) có tần số chuẩn 440 Hz, bậc VI trong giọng Đô Trưởng.'),
-        ('b4', 'B4', 'Si (B4)', 'Nốt Si (B4) là nốt dẫn nằm ngay dưới Đô cao (C5) nửa cung.'),
+        (
+          'c4',
+          'C4',
+          'Đô (C4)',
+          isStaffReading
+              ? 'Khóa Sol (𝄞): Nốt Đô chuẩn (C4) nằm trên 1 dòng kẻ phụ ngay bên dưới dòng kẻ thứ 1.'
+              : 'Nốt Đô (C4) nằm ngay bên trái cụm 2 phím đen, tần số 261.6 Hz.'
+        ),
+        (
+          'd4',
+          'D4',
+          'Rê (D4)',
+          isStaffReading
+              ? 'Khóa Sol (𝄞): Nốt Rê (D4) nằm sát ngay bên dưới dòng kẻ thứ 1 (dưới cùng).'
+              : 'Nốt Rê (D4) nằm giữa 2 phím đen C# và D#, cao hơn Đô 1 cung.'
+        ),
+        (
+          'e4',
+          'E4',
+          'Mi (E4)',
+          isStaffReading
+              ? 'Khóa Sol (𝄞): Nốt Mi (E4) nằm chính giữa dòng kẻ thứ 1 (dưới cùng) của khuông nhạc.'
+              : 'Nốt Mi (E4) nằm bên phải cụm 2 phím đen, là bậc III của Đô Trưởng.'
+        ),
+        (
+          'f4',
+          'F4',
+          'Fa (F4)',
+          isStaffReading
+              ? 'Khóa Sol (𝄞): Nốt Fa (F4) nằm gọn trong khe thứ 1 (giữa dòng 1 và dòng 2).'
+              : 'Nốt Fa (F4) nằm bên trái cụm 3 phím đen, cách Mi nửa cung.'
+        ),
+        (
+          'g4',
+          'G4',
+          'Sol (G4)',
+          isStaffReading
+              ? 'Khóa Sol (𝄞): Nốt Sol (G4) nằm trên dòng kẻ thứ 2 (tâm vòng xoắn của ký hiệu Khóa Sol).'
+              : 'Nốt Sol (G4) cách Đô (C4) một quãng 5 đúng vững chãi.'
+        ),
+        (
+          'a4',
+          'A4',
+          'La (A4)',
+          isStaffReading
+              ? 'Khóa Sol (𝄞): Nốt La (A4) nằm trong khe thứ 2 (giữa dòng 2 và dòng 3).'
+              : 'Nốt La (A4) có tần số chuẩn 440 Hz, bậc VI trong giọng Đô Trưởng.'
+        ),
+        (
+          'b4',
+          'B4',
+          'Si (B4)',
+          isStaffReading
+              ? 'Khóa Sol (𝄞): Nốt Si (B4) nằm chính giữa dòng kẻ thứ 3 (dòng giữa khuông nhạc).'
+              : 'Nốt Si (B4) là nốt dẫn nằm ngay dưới Đô cao (C5) nửa cung.'
+        ),
       ];
 
       // Mức 2: Gói gọn trong quãng C4 (C4..B4) có thêm 5 nốt dấu thăng/giáng (#/b)
       final level2C4Chromatic = [
         ...level1C4Natural,
-        ('csharp4', 'C#4', 'Đô# / Rêb (C#4)', 'Nốt Đô thăng (C#4 / Db4) là phím đen đầu tiên trong cụm 2 phím đen.'),
-        ('dsharp4', 'D#4', 'Rê# / Mib (D#4)', 'Nốt Rê thăng (D#4 / Eb4) là phím đen thứ hai trong cụm 2 phím đen.'),
-        ('fsharp4', 'F#4', 'Fa# / Solb (F#4)', 'Nốt Fa thăng (F#4 / Gb4) là phím đen đầu tiên trong cụm 3 phím đen.'),
-        ('gsharp4', 'G#4', 'Sol# / Lab (G#4)', 'Nốt Sol thăng (G#4 / Ab4) nằm ở giữa cụm 3 phím đen.'),
-        ('asharp4', 'A#4', 'La# / Sib (A#4)', 'Nốt La thăng (A#4 / Bb4) là phím đen ngoài cùng bên phải cụm 3 phím đen.'),
+        (
+          'csharp4',
+          'C#4',
+          'Đô# / Rêb (C#4)',
+          isStaffReading
+              ? 'Khóa Sol (𝄞): Nốt Đô thăng (C#4) nằm trên dòng kẻ phụ dưới cùng kèm dấu thăng (♯).'
+              : 'Nốt Đô thăng (C#4 / Db4) là phím đen đầu tiên trong cụm 2 phím đen.'
+        ),
+        (
+          'dsharp4',
+          'D#4',
+          'Rê# / Mib (D#4)',
+          isStaffReading
+              ? 'Khóa Sol (𝄞): Nốt Rê thăng (D#4) nằm sát dưới dòng kẻ 1 kèm dấu thăng (♯).'
+              : 'Nốt Rê thăng (D#4 / Eb4) là phím đen thứ hai trong cụm 2 phím đen.'
+        ),
+        (
+          'fsharp4',
+          'F#4',
+          'Fa# / Solb (F#4)',
+          isStaffReading
+              ? 'Khóa Sol (𝄞): Nốt Fa thăng (F#4) nằm ở khe thứ 1 kèm dấu thăng (♯).'
+              : 'Nốt Fa thăng (F#4 / Gb4) là phím đen đầu tiên trong cụm 3 phím đen.'
+        ),
+        (
+          'gsharp4',
+          'G#4',
+          'Sol# / Lab (G#4)',
+          isStaffReading
+              ? 'Khóa Sol (𝄞): Nốt Sol thăng (G#4) nằm trên dòng kẻ thứ 2 kèm dấu thăng (♯).'
+              : 'Nốt Sol thăng (G#4 / Ab4) nằm ở giữa cụm 3 phím đen.'
+        ),
+        (
+          'asharp4',
+          'A#4',
+          'La# / Sib (A#4)',
+          isStaffReading
+              ? 'Khóa Sol (𝄞): Nốt La thăng (A#4) nằm ở khe thứ 2 kèm dấu thăng (♯).'
+              : 'Nốt La thăng (A#4 / Bb4) là phím đen ngoài cùng bên phải cụm 3 phím đen.'
+        ),
       ];
 
       // Mức 3: Đa quãng tám C3–C5 nhưng chỉ các nốt tự nhiên (không dấu #/b)
       final level3MultiNatural = [
-        ('c3', 'C3', 'Đô trầm (C3)', 'Nốt Đô quãng 3 (C3 - 130.8 Hz), thấp hơn Đô chuẩn (C4) đúng 1 quãng tám.'),
-        ('d3', 'D3', 'Rê trầm (D3)', 'Nốt Rê quãng 3 (D3 - 146.8 Hz), âm vực trầm ấm.'),
-        ('e3', 'E3', 'Mi trầm (E3)', 'Nốt Mi quãng 3 (E3 - 164.8 Hz), bậc III ở quãng tám dưới.'),
-        ('f3', 'F3', 'Fa trầm (F3)', 'Nốt Fa quãng 3 (F3 - 174.6 Hz), nằm ở quãng tám trầm.'),
-        ('g3', 'G3', 'Sol trầm (G3)', 'Nốt Sol quãng 3 (G3 - 196.0 Hz), nằm ở âm vực trầm ấm dưới C4.'),
-        ('a3', 'A3', 'La trầm (A3)', 'Nốt La quãng 3 (A3 - 220.0 Hz), thấp hơn La chuẩn (A4) đúng 1 quãng tám.'),
-        ('b3', 'B3', 'Si trầm (B3)', 'Nốt Si quãng 3 (B3 - 246.9 Hz), nằm ngay dưới Đô chuẩn (C4) nửa cung.'),
+        (
+          'c3',
+          'C3',
+          'Đô trầm (C3)',
+          isStaffReading
+              ? 'Khóa Fa (𝄢): Nốt Đô trầm (C3) nằm ở khe thứ 2 (từ dưới lên) của khuông nhạc Khóa Fa.'
+              : 'Nốt Đô quãng 3 (C3 - 130.8 Hz), thấp hơn Đô chuẩn (C4) đúng 1 quãng tám.'
+        ),
+        (
+          'd3',
+          'D3',
+          'Rê trầm (D3)',
+          isStaffReading
+              ? 'Khóa Fa (𝄢): Nốt Rê trầm (D3) nằm chính giữa dòng kẻ thứ 3 (dòng giữa) của Khóa Fa.'
+              : 'Nốt Rê quãng 3 (D3 - 146.8 Hz), âm vực trầm ấm.'
+        ),
+        (
+          'e3',
+          'E3',
+          'Mi trầm (E3)',
+          isStaffReading
+              ? 'Khóa Fa (𝄢): Nốt Mi trầm (E3) nằm ở khe thứ 3 của khuông nhạc Khóa Fa.'
+              : 'Nốt Mi quãng 3 (E3 - 164.8 Hz), bậc III ở quãng tám dưới.'
+        ),
+        (
+          'f3',
+          'F3',
+          'Fa trầm (F3)',
+          isStaffReading
+              ? 'Khóa Fa (𝄢): Nốt Fa trầm (F3) nằm trên dòng kẻ thứ 4 (giữa 2 dấu chấm của Khóa Fa).'
+              : 'Nốt Fa quãng 3 (F3 - 174.6 Hz), nằm ở quãng tám trầm.'
+        ),
+        (
+          'g3',
+          'G3',
+          'Sol trầm (G3)',
+          isStaffReading
+              ? 'Khóa Fa (𝄢): Nốt Sol trầm (G3) nằm ở khe thứ 4 (giữa dòng 4 và dòng 5) của Khóa Fa.'
+              : 'Nốt Sol quãng 3 (G3 - 196.0 Hz), nằm ở âm vực trầm ấm dưới C4.'
+        ),
+        (
+          'a3',
+          'A3',
+          'La trầm (A3)',
+          isStaffReading
+              ? 'Khóa Fa (𝄢): Nốt La trầm (A3) nằm trên dòng kẻ thứ 5 (trên cùng) của khuông nhạc Khóa Fa.'
+              : 'Nốt La quãng 3 (A3 - 220.0 Hz), thấp hơn La chuẩn (A4) đúng 1 quãng tám.'
+        ),
+        (
+          'b3',
+          'B3',
+          'Si trầm (B3)',
+          isStaffReading
+              ? 'Khóa Fa (𝄢): Nốt Si trầm (B3) nằm sát ngay phía trên dòng kẻ thứ 5 của Khóa Fa.'
+              : 'Nốt Si quãng 3 (B3 - 246.9 Hz), nằm ngay dưới Đô chuẩn (C4) nửa cung.'
+        ),
         ...level1C4Natural,
-        ('c5', 'C5', 'Đô cao (C5)', 'Nốt Đô quãng 5 (C5 - 523.3 Hz), cao hơn Đô chuẩn (C4) đúng 1 quãng tám.'),
-        ('d5', 'D5', 'Rê cao (D5)', 'Nốt Rê quãng 5 (D5 - 587.3 Hz), âm vực cao sáng.'),
-        ('e5', 'E5', 'Mi cao (E5)', 'Nốt Mi quãng 5 (E5 - 659.3 Hz), mang âm sắc sáng rõ ở quãng tám trên.'),
-        ('f5', 'F5', 'Fa cao (F5)', 'Nốt Fa quãng 5 (F5 - 698.5 Hz), cao hơn Mi cao nửa cung.'),
-        ('g5', 'G5', 'Sol cao (G5)', 'Nốt Sol quãng 5 (G5 - 784.0 Hz), nằm ở âm vực cao trong sáng.'),
-        ('a5', 'A5', 'La cao (A5)', 'Nốt La quãng 5 (A5 - 880.0 Hz), cao hơn La chuẩn (A4) đúng 1 quãng tám.'),
-        ('b5', 'B5', 'Si cao (B5)', 'Nốt Si quãng 5 (B5 - 987.8 Hz), dẫn lên Đô C6.'),
+        (
+          'c5',
+          'C5',
+          'Đô cao (C5)',
+          isStaffReading
+              ? 'Khóa Sol (𝄞): Nốt Đô cao (C5) nằm trong khe thứ 3 (giữa dòng 3 và dòng 4).'
+              : 'Nốt Đô quãng 5 (C5 - 523.3 Hz), cao hơn Đô chuẩn (C4) đúng 1 quãng tám.'
+        ),
+        (
+          'd5',
+          'D5',
+          'Rê cao (D5)',
+          isStaffReading
+              ? 'Khóa Sol (𝄞): Nốt Rê cao (D5) nằm trên dòng kẻ thứ 4 của khuông nhạc Khóa Sol.'
+              : 'Nốt Rê quãng 5 (D5 - 587.3 Hz), âm vực cao sáng.'
+        ),
+        (
+          'e5',
+          'E5',
+          'Mi cao (E5)',
+          isStaffReading
+              ? 'Khóa Sol (𝄞): Nốt Mi cao (E5) nằm trong khe thứ 4 (khe trên cùng) của Khóa Sol.'
+              : 'Nốt Mi quãng 5 (E5 - 659.3 Hz), mang âm sắc sáng rõ ở quãng tám trên.'
+        ),
+        (
+          'f5',
+          'F5',
+          'Fa cao (F5)',
+          isStaffReading
+              ? 'Khóa Sol (𝄞): Nốt Fa cao (F5) nằm trên dòng kẻ thứ 5 (trên cùng) của Khóa Sol.'
+              : 'Nốt Fa quãng 5 (F5 - 698.5 Hz), cao hơn Mi cao nửa cung.'
+        ),
+        (
+          'g5',
+          'G5',
+          'Sol cao (G5)',
+          isStaffReading
+              ? 'Khóa Sol (𝄞): Nốt Sol cao (G5) nằm sát ngay phía trên dòng kẻ thứ 5.'
+              : 'Nốt Sol quãng 5 (G5 - 784.0 Hz), nằm ở âm vực cao trong sáng.'
+        ),
+        (
+          'a5',
+          'A5',
+          'La cao (A5)',
+          isStaffReading
+              ? 'Khóa Sol (𝄞): Nốt La cao (A5) nằm trên 1 dòng kẻ phụ phía trên khuông nhạc Khóa Sol.'
+              : 'Nốt La quãng 5 (A5 - 880.0 Hz), cao hơn La chuẩn (A4) đúng 1 quãng tám.'
+        ),
+        (
+          'b5',
+          'B5',
+          'Si cao (B5)',
+          isStaffReading
+              ? 'Khóa Sol (𝄞): Nốt Si cao (B5) nằm ngay phía trên dòng kẻ phụ thứ 1 trên khuông Khóa Sol.'
+              : 'Nốt Si quãng 5 (B5 - 987.8 Hz), dẫn lên Đô C6.'
+        ),
       ];
 
-      // Mức 4: Đa quãng tám C3–C5 đầy đủ cả tự nhiên lẫn dấu hóa (#/b), tắt tham chiếu C4
+      // Mức 4: Đa quãng tám C3–C5 đầy đủ cả tự nhiên lẫn dấu hóa (#/b)
       final level4MultiChromatic = [
         ...level3MultiNatural,
-        ('csharp3', 'C#3', 'Đô# / Rêb trầm (C#3)', 'Nốt Đô thăng ở quãng 3 trầm (C#3 / Db3).'),
-        ('dsharp3', 'D#3', 'Rê# / Mib trầm (D#3)', 'Nốt Rê thăng ở quãng 3 trầm (D#3 / Eb3).'),
-        ('fsharp3', 'F#3', 'Fa# / Solb trầm (F#3)', 'Nốt Fa thăng ở quãng 3 trầm (F#3 / Gb3).'),
-        ('gsharp3', 'G#3', 'Sol# / Lab trầm (G#3)', 'Nốt Sol thăng ở quãng 3 trầm (G#3 / Ab3).'),
-        ('asharp3', 'A#3', 'La# / Sib trầm (A#3)', 'Nốt La thăng ở quãng 3 trầm (A#3 / Bb3).'),
-        ('csharp4', 'C#4', 'Đô# / Rêb (C#4)', 'Nốt Đô thăng quãng 4 (C#4 / Db4).'),
-        ('dsharp4', 'D#4', 'Rê# / Mib (D#4)', 'Nốt Rê thăng quãng 4 (D#4 / Eb4).'),
-        ('fsharp4', 'F#4', 'Fa# / Solb (F#4)', 'Nốt Fa thăng quãng 4 (F#4 / Gb4).'),
-        ('gsharp4', 'G#4', 'Sol# / Lab (G#4)', 'Nốt Sol thăng quãng 4 (G#4 / Ab4).'),
-        ('asharp4', 'A#4', 'La# / Sib (A#4)', 'Nốt La thăng quãng 4 (A#4 / Bb4).'),
-        ('csharp5', 'C#5', 'Đô# / Rêb cao (C#5)', 'Nốt Đô thăng ở quãng 5 cao (C#5 / Db5).'),
-        ('dsharp5', 'D#5', 'Rê# / Mib cao (D#5)', 'Nốt Rê thăng ở quãng 5 cao (D#5 / Eb5).'),
-        ('fsharp5', 'F#5', 'Fa# / Solb cao (F#5)', 'Nốt Fa thăng ở quãng 5 cao (F#5 / Gb5).'),
-        ('gsharp5', 'G#5', 'Sol# / Lab cao (G#5)', 'Nốt Sol thăng ở quãng 5 cao (G#5 / Ab5).'),
-        ('asharp5', 'A#5', 'La# / Sib cao (A#5)', 'Nốt La thăng ở quãng 5 cao (A#5 / Bb5).'),
+        (
+          'csharp3',
+          'C#3',
+          'Đô# / Rêb trầm (C#3)',
+          isStaffReading
+              ? 'Khóa Fa (𝄢): Nốt Đô thăng trầm (C#3) nằm ở khe thứ 2 kèm dấu thăng (♯).'
+              : 'Nốt Đô thăng ở quãng 3 trầm (C#3 / Db3).'
+        ),
+        (
+          'dsharp3',
+          'D#3',
+          'Rê# / Mib trầm (D#3)',
+          isStaffReading
+              ? 'Khóa Fa (𝄢): Nốt Rê thăng trầm (D#3) nằm trên dòng kẻ thứ 3 kèm dấu thăng (♯).'
+              : 'Nốt Rê thăng ở quãng 3 trầm (D#3 / Eb3).'
+        ),
+        (
+          'fsharp3',
+          'F#3',
+          'Fa# / Solb trầm (F#3)',
+          isStaffReading
+              ? 'Khóa Fa (𝄢): Nốt Fa thăng trầm (F#3) nằm trên dòng kẻ thứ 4 kèm dấu thăng (♯).'
+              : 'Nốt Fa thăng ở quãng 3 trầm (F#3 / Gb3).'
+        ),
+        (
+          'gsharp3',
+          'G#3',
+          'Sol# / Lab trầm (G#3)',
+          isStaffReading
+              ? 'Khóa Fa (𝄢): Nốt Sol thăng trầm (G#3) nằm ở khe thứ 4 kèm dấu thăng (♯).'
+              : 'Nốt Sol thăng ở quãng 3 trầm (G#3 / Ab3).'
+        ),
+        (
+          'asharp3',
+          'A#3',
+          'La# / Sib trầm (A#3)',
+          isStaffReading
+              ? 'Khóa Fa (𝄢): Nốt La thăng trầm (A#3) nằm trên dòng kẻ thứ 5 kèm dấu thăng (♯).'
+              : 'Nốt La thăng ở quãng 3 trầm (A#3 / Bb3).'
+        ),
+        (
+          'csharp4',
+          'C#4',
+          'Đô# / Rêb (C#4)',
+          isStaffReading
+              ? 'Khóa Sol (𝄞): Nốt Đô thăng (C#4) nằm trên dòng kẻ phụ dưới kèm dấu thăng (♯).'
+              : 'Nốt Đô thăng quãng 4 (C#4 / Db4).'
+        ),
+        (
+          'dsharp4',
+          'D#4',
+          'Rê# / Mib (D#4)',
+          isStaffReading
+              ? 'Khóa Sol (𝄞): Nốt Rê thăng (D#4) nằm sát dưới dòng kẻ 1 kèm dấu thăng (♯).'
+              : 'Nốt Rê thăng quãng 4 (D#4 / Eb4).'
+        ),
+        (
+          'fsharp4',
+          'F#4',
+          'Fa# / Solb (F#4)',
+          isStaffReading
+              ? 'Khóa Sol (𝄞): Nốt Fa thăng (F#4) nằm ở khe thứ 1 kèm dấu thăng (♯).'
+              : 'Nốt Fa thăng quãng 4 (F#4 / Gb4).'
+        ),
+        (
+          'gsharp4',
+          'G#4',
+          'Sol# / Lab (G#4)',
+          isStaffReading
+              ? 'Khóa Sol (𝄞): Nốt Sol thăng (G#4) nằm trên dòng kẻ thứ 2 kèm dấu thăng (♯).'
+              : 'Nốt Sol thăng quãng 4 (G#4 / Ab4).'
+        ),
+        (
+          'asharp4',
+          'A#4',
+          'La# / Sib (A#4)',
+          isStaffReading
+              ? 'Khóa Sol (𝄞): Nốt La thăng (A#4) nằm ở khe thứ 2 kèm dấu thăng (♯).'
+              : 'Nốt La thăng quãng 4 (A#4 / Bb4).'
+        ),
+        (
+          'csharp5',
+          'C#5',
+          'Đô# / Rêb cao (C#5)',
+          isStaffReading
+              ? 'Khóa Sol (𝄞): Nốt Đô thăng cao (C#5) nằm ở khe thứ 3 kèm dấu thăng (♯).'
+              : 'Nốt Đô thăng ở quãng 5 cao (C#5 / Db5).'
+        ),
+        (
+          'dsharp5',
+          'D#5',
+          'Rê# / Mib cao (D#5)',
+          isStaffReading
+              ? 'Khóa Sol (𝄞): Nốt Rê thăng cao (D#5) nằm trên dòng kẻ thứ 4 kèm dấu thăng (♯).'
+              : 'Nốt Rê thăng ở quãng 5 cao (D#5 / Eb5).'
+        ),
+        (
+          'fsharp5',
+          'F#5',
+          'Fa# / Solb cao (F#5)',
+          isStaffReading
+              ? 'Khóa Sol (𝄞): Nốt Fa thăng cao (F#5) nằm trên dòng kẻ thứ 5 kèm dấu thăng (♯).'
+              : 'Nốt Fa thăng ở quãng 5 cao (F#5 / Gb5).'
+        ),
+        (
+          'gsharp5',
+          'G#5',
+          'Sol# / Lab cao (G#5)',
+          isStaffReading
+              ? 'Khóa Sol (𝄞): Nốt Sol thăng cao (G#5) nằm sát trên dòng kẻ 5 kèm dấu thăng (♯).'
+              : 'Nốt Sol thăng ở quãng 5 cao (G#5 / Ab5).'
+        ),
+        (
+          'asharp5',
+          'A#5',
+          'La# / Sib cao (A#5)',
+          isStaffReading
+              ? 'Khóa Sol (𝄞): Nốt La thăng cao (A#5) nằm trên dòng kẻ phụ trên kèm dấu thăng (♯).'
+              : 'Nốt La thăng ở quãng 5 cao (A#5 / Bb5).'
+        ),
       ];
 
       final noteDefs = isMaster
@@ -235,21 +523,35 @@ class HybridQuestionGenerator {
               ? level3MultiNatural
               : (isInter ? level2C4Chromatic : level1C4Natural));
 
-      final promptText = isMaster
-          ? '[Mức 4 • C3–C5 Đầy đủ #/b] Nghe âm thanh (không tham chiếu C4) và chọn chính xác tên nốt:'
-          : (isAdvanced
-              ? '[Mức 3 • C3–C5 Tự nhiên] Nghe âm thanh (có thể đối chiếu C4) và chọn đúng tên nốt + quãng tám:'
-              : (isInter
-                  ? '[Mức 2 • C4 có dấu #/b] Nghe nốt nhạc trong quãng 4 và chọn đáp án đúng (hoặc bấm phím đàn):'
-                  : '[Mức 1 • C4 Tự nhiên] Nghe nốt nhạc trong quãng C4 và chọn đáp án đúng (hoặc bấm phím đàn):'));
+      final String promptText;
+      if (isStaffReading) {
+        promptText = isMaster
+            ? '[Đọc nốt • Mức 4 Khóa Sol & Fa đầy đủ #/b] Nhìn vị trí nốt trên khuông nhạc và chọn tên nốt (hoặc bấm phím đàn):'
+            : (isAdvanced
+                ? '[Đọc nốt • Mức 3 Khóa Sol & Fa C3–C5] Quan sát Khóa nhạc (𝄞/𝄢) cùng vị trí dòng/khe để chọn đúng nốt:'
+                : (isInter
+                    ? '[Đọc nốt • Mức 2 Khóa Sol có dấu #/b] Quan sát nốt và dấu hóa (♯) trên khuông nhạc để chọn đáp án:'
+                    : '[Đọc nốt • Mức 1 Khóa Sol C4–B4] Nhìn vị trí nốt trên 5 dòng kẻ nhạc và chọn đáp án đúng (hoặc bấm phím đàn):'));
+      } else {
+        promptText = isMaster
+            ? '[Mức 4 • C3–C5 Đầy đủ #/b] Nghe âm thanh (không tham chiếu C4) và chọn chính xác tên nốt:'
+            : (isAdvanced
+                ? '[Mức 3 • C3–C5 Tự nhiên] Nghe âm thanh (có thể đối chiếu C4) và chọn đúng tên nốt + quãng tám:'
+                : (isInter
+                    ? '[Mức 2 • C4 có dấu #/b] Nghe nốt nhạc trong quãng 4 và chọn đáp án đúng (hoặc bấm phím đàn):'
+                    : '[Mức 1 • C4 Tự nhiên] Nghe nốt nhạc trong quãng C4 và chọn đáp án đúng (hoặc bấm phím đàn):'));
+      }
 
       // Generate 2 distractor sets for Level 1 so it has 14 rich questions, and 1 set for Levels 2..4
       final passes = diff == 1 ? 2 : 1;
+      final idPrefix = isStaffReading ? 'dyn_staff' : 'dyn_note';
+      final questionType = isStaffReading ? 'read_staff_note' : 'listen_note';
+
       for (int pass = 0; pass < passes; pass++) {
         for (int i = 0; i < noteDefs.length; i++) {
           final (fileKey, optKey, label, desc) = noteDefs[i];
           final suffix = pass == 0 ? fileKey : '${fileKey}_v2';
-          final qId = 'dyn_note_${levelId}_$suffix';
+          final qId = '${idPrefix}_${levelId}_$suffix';
           final step1 = pass == 0 ? 1 : 2;
           final step2 = pass == 0 ? 2 : 3;
           final step3 = pass == 0 ? 4 : 5;
@@ -286,7 +588,7 @@ class HybridQuestionGenerator {
               id: qId,
               topicId: topicId,
               levelId: levelId,
-              type: 'listen_note',
+              type: questionType,
               prompt: promptText,
               explanation: desc,
               audioAsset: 'assets/audio/notes/$fileKey.wav',

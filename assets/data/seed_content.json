@@ -1,5 +1,5 @@
 {
-  "content_version": 5,
+  "content_version": 6,
   "topics": [
     {
       "id": "topic_notes",
@@ -10,11 +10,19 @@
       "is_enabled": true
     },
     {
+      "id": "topic_staff_reading",
+      "code": "staff_reading",
+      "name": "Đọc nốt nhạc",
+      "description": "Nhìn vị trí nốt trên khuông nhạc 5 dòng (Khóa Sol & Khóa Fa), đọc tên nốt hoặc bấm phím đàn Piano.",
+      "sort_order": 2,
+      "is_enabled": true
+    },
+    {
       "id": "topic_intervals",
       "code": "interval_recognition",
       "name": "Nhận biết quãng",
       "description": "Phân biệt khoảng cách cao độ từ quãng 2 đến quãng 8 (giai điệu & hòa thanh).",
-      "sort_order": 2,
+      "sort_order": 3,
       "is_enabled": true
     },
     {
@@ -22,7 +30,7 @@
       "code": "key_recognition",
       "name": "Nhận biết giọng",
       "description": "Cảm nhận màu sắc Trưởng – Thứ và nhận diện hóa biểu các giọng cơ bản.",
-      "sort_order": 3,
+      "sort_order": 4,
       "is_enabled": true
     },
     {
@@ -30,7 +38,7 @@
       "code": "chord_recognition",
       "name": "Nhận biết hợp âm",
       "description": "Phân biệt hợp âm Trưởng, Thứ, Tăng, Giảm và hợp âm 7.",
-      "sort_order": 4,
+      "sort_order": 5,
       "is_enabled": false
     },
     {
@@ -38,7 +46,7 @@
       "code": "melody_recognition",
       "name": "Nhận biết giai điệu",
       "description": "Ghi nhớ và xác định chuỗi nốt giai điệu ngắn.",
-      "sort_order": 5,
+      "sort_order": 6,
       "is_enabled": false
     },
     {
@@ -46,7 +54,7 @@
       "code": "rhythm_recognition",
       "name": "Nhận biết nhịp điệu",
       "description": "Nhận diện mẫu tiết tấu và các loại nhịp 2/4, 3/4, 4/4, 6/8.",
-      "sort_order": 6,
+      "sort_order": 7,
       "is_enabled": false
     }
   ],
@@ -80,6 +88,38 @@
       "topic_id": "topic_notes",
       "code": "level_4_multi_chromatic",
       "name": "Mức 4: Nâng cao (C3–C5 Đầy đủ #/b)",
+      "difficulty": 4,
+      "unlock_rule": "always_unlocked"
+    },
+    {
+      "id": "lvl_staff_basic",
+      "topic_id": "topic_staff_reading",
+      "code": "staff_level_1_treble_natural",
+      "name": "Mức 1: Dễ (Khóa Sol C4–B4)",
+      "difficulty": 1,
+      "unlock_rule": "always_unlocked"
+    },
+    {
+      "id": "lvl_staff_inter",
+      "topic_id": "topic_staff_reading",
+      "code": "staff_level_2_treble_chromatic",
+      "name": "Mức 2: Trung bình (Khóa Sol có #/b)",
+      "difficulty": 2,
+      "unlock_rule": "always_unlocked"
+    },
+    {
+      "id": "lvl_staff_adv",
+      "topic_id": "topic_staff_reading",
+      "code": "staff_level_3_treble_bass_natural",
+      "name": "Mức 3: Khá (Khóa Sol & Fa C3–C5)",
+      "difficulty": 3,
+      "unlock_rule": "always_unlocked"
+    },
+    {
+      "id": "lvl_staff_master",
+      "topic_id": "topic_staff_reading",
+      "code": "staff_level_4_treble_bass_chromatic",
+      "name": "Mức 4: Nâng cao (Khóa Sol & Fa đầy đủ #/b)",
       "difficulty": 4,
       "unlock_rule": "always_unlocked"
     },

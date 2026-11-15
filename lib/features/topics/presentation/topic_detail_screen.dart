@@ -41,6 +41,8 @@ class _TopicDetailScreenState extends ConsumerState<TopicDetailScreen> {
   Future<void> _startLevelPractice(LevelModel level) async {
     if (widget.topicId == 'topic_notes') {
       ref.read(selectedNoteLevelIdProvider.notifier).state = level.id;
+    } else if (widget.topicId == 'topic_staff_reading') {
+      ref.read(selectedStaffLevelIdProvider.notifier).state = level.id;
     }
     final notifier = ref.read(practiceSessionProvider.notifier);
     final isTest = ref.read(audioServiceProvider).isTestMode;
@@ -69,6 +71,16 @@ class _TopicDetailScreenState extends ConsumerState<TopicDetailScreen> {
         return 'Mức 3 (Khá): Mở rộng các nốt tự nhiên (không dấu #/b) trên 3 quãng tám từ trầm đến cao (C3 – C5), có hỗ trợ đối chiếu Đô chuẩn C4.';
       } else {
         return 'Mức 4 (Nâng cao): Đầy đủ cả nốt tự nhiên và dấu thăng/giáng (#/b) trải rộng từ C3 đến C5, tắt nút tham chiếu C4 để rèn cảm âm tuyệt đối.';
+      }
+    } else if (topicId == 'topic_staff_reading') {
+      if (difficulty == 1) {
+        return 'Mức 1 (Dễ): Nhìn vị trí nốt trên khuông nhạc 5 dòng kẻ Khóa Sol (𝄞) trong quãng C4 (7 nốt tự nhiên Đô – Si, không dấu #/b). Không phát tiếng trước; bấm phím đàn hoặc chọn đáp án sẽ vang lên tiếng nốt thật.';
+      } else if (difficulty == 2) {
+        return 'Mức 2 (Trung bình): Đọc nốt trên khuông nhạc Khóa Sol (𝄞) trong quãng C4, bổ sung thêm các nốt có dấu hóa (#/b) và bật 5 phím đen trên đàn Piano.';
+      } else if (difficulty == 3) {
+        return 'Mức 3 (Khá): Đọc nốt tự nhiên đa quãng tám (C3 – C5) kết hợp cả Khóa Sol (𝄞, cho C4–C5) và Khóa Fa (𝄢, cho C3–B3) cùng đường kẻ phụ.';
+      } else {
+        return 'Mức 4 (Nâng cao): Đọc toàn bộ nốt tự nhiên và dấu hóa (#/b) từ C3 đến C5 trên cả Khóa Sol (𝄞) và Khóa Fa (𝄢).';
       }
     } else if (topicId == 'topic_intervals') {
       if (difficulty == 1) {
@@ -289,7 +301,10 @@ class _TopicDetailScreenState extends ConsumerState<TopicDetailScreen> {
                                             Row(
                                               mainAxisSize: MainAxisSize.min,
                                               children: List.generate(
-                                                widget.topicId == 'topic_notes'
+                                                (widget.topicId ==
+                                                            'topic_notes' ||
+                                                        widget.topicId ==
+                                                            'topic_staff_reading')
                                                     ? 4
                                                     : 3,
                                                 (s) {

@@ -25,6 +25,14 @@ final selectedPracticeDurationProvider = StateProvider<int>((ref) => 60);
 final selectedNoteLevelIdProvider =
     StateProvider<String>((ref) => 'lvl_notes_basic');
 
+/// Selected difficulty level for "Đọc nốt nhạc" (Staff Sight-Reading):
+/// - 'lvl_staff_basic': Mức 1 (Dễ - Khóa Sol C4–B4 tự nhiên)
+/// - 'lvl_staff_inter': Mức 2 (Trung bình - Khóa Sol C4–B4 có dấu #/b)
+/// - 'lvl_staff_adv':   Mức 3 (Khá - Khóa Sol & Khóa Fa C3–C5 tự nhiên)
+/// - 'lvl_staff_master': Mức 4 (Nâng cao - Khóa Sol & Khóa Fa C3–C5 đầy đủ #/b)
+final selectedStaffLevelIdProvider =
+    StateProvider<String>((ref) => 'lvl_staff_basic');
+
 const List<(String id, String shortTitle, String subTitle, String fullDesc)>
     kNoteRecognitionLevels = [
   (
@@ -50,6 +58,34 @@ const List<(String id, String shortTitle, String subTitle, String fullDesc)>
     'Mức 4',
     'C3–C5 Đầy đủ',
     'Nâng cao: Đầy đủ nốt tự nhiên & dấu #/b từ C3–C5, tắt gợi ý C4.'
+  ),
+];
+
+const List<(String id, String shortTitle, String subTitle, String fullDesc)>
+    kStaffReadingLevels = [
+  (
+    'lvl_staff_basic',
+    'Mức 1',
+    'Khóa Sol C4',
+    'Dễ: Đọc 7 nốt tự nhiên trên khuông nhạc Khóa Sol (C4–B4), không dấu #/b.'
+  ),
+  (
+    'lvl_staff_inter',
+    'Mức 2',
+    'Khóa Sol #/b',
+    'Trung bình: Đọc khuông nhạc Khóa Sol (C4–B4) có thêm dấu thăng (♯).'
+  ),
+  (
+    'lvl_staff_adv',
+    'Mức 3',
+    'Sol & Fa C3–C5',
+    'Khá: Đọc cả Khóa Sol (𝄞) & Khóa Fa (𝄢) từ C3–C5 với các nốt tự nhiên.'
+  ),
+  (
+    'lvl_staff_master',
+    'Mức 4',
+    'Sol & Fa Đầy đủ',
+    'Nâng cao: Đọc thành thạo Khóa Sol & Khóa Fa (C3–C5) đầy đủ dấu hóa (#/b).'
   ),
 ];
 
@@ -331,9 +367,11 @@ class PracticeSessionNotifier extends StateNotifier<PracticeSessionState> {
 
     _startTimerIfNeeded();
 
-    // Auto-play first question if user enabled autoPlayQuestionAudio in Settings
+    // Auto-play first question if user enabled autoPlayQuestionAudio in Settings (never auto-play for Sight-Reading!)
     final settings = _ref.read(appSettingsProvider);
-    if (settings.autoPlayQuestionAudio && state.currentQuestion != null) {
+    if (settings.autoPlayQuestionAudio &&
+        state.currentQuestion != null &&
+        !state.currentQuestion!.isSightReading) {
       await _audioService.playAsset(state.currentQuestion!.audioAsset);
     }
 
@@ -359,16 +397,24 @@ class PracticeSessionNotifier extends StateNotifier<PracticeSessionState> {
     }
   }
 
-  /// Allows switching Note Recognition level (Mức 1..4) dynamically inside the Practice Room.
+  /// Allows switching Note Recognition or Staff Reading level (Mức 1..4) dynamically inside the Practice Room.
   Future<void> switchNoteLevelInSession(String newLevelId) async {
-    if (state.topicId != 'topic_notes' || state.levelId == newLevelId) return;
-    _ref.read(selectedNoteLevelIdProvider.notifier).state = newLevelId;
+    if ((state.topicId != 'topic_notes' &&
+            state.topicId != 'topic_staff_reading') ||
+        state.levelId == newLevelId) {
+      return;
+    }
+    if (state.topicId == 'topic_staff_reading') {
+      _ref.read(selectedStaffLevelIdProvider.notifier).state = newLevelId;
+    } else {
+      _ref.read(selectedNoteLevelIdProvider.notifier).state = newLevelId;
+    }
     await _audioService.stop();
 
     final batchSize = state.isContinuousScoringMode ? 20 : 10;
     final generated = await _generator.generateSessionQuestions(
       mode: 'topic',
-      topicId: 'topic_notes',
+      topicId: state.topicId,
       levelId: newLevelId,
       targetCount: batchSize,
     );
@@ -383,7 +429,71 @@ class PracticeSessionNotifier extends StateNotifier<PracticeSessionState> {
     );
 
     final settings = _ref.read(appSettingsProvider);
-    if (settings.autoPlayQuestionAudio && state.currentQuestion != null) {
+    if (settings.autoPlayQuestionAudio &&
+        state.currentQuestion != null &&
+        !state.currentQuestion!.isSightReading) {
+      await _audioService.playAsset(state.currentQuestion!.audioAsset);
+    }
+  }
+
+  /// Allows toggling directly between "🎧 Nghe nốt" ('topic_notes') and "🎼 Đọc nốt" ('topic_staff_reading')
+  /// inside the Practice Room while preserving the difficulty tier (Mức 1..4).
+  Future<void> switchNotePracticeModeInSession(String targetTopicId) async {
+    if (state.topicId == targetTopicId) return;
+    if (targetTopicId != 'topic_notes' &&
+        targetTopicId != 'topic_staff_reading') {
+      return;
+    }
+    await _audioService.stop();
+
+    final curLvl = state.levelId ?? '';
+    final String mappedLevelId;
+    if (targetTopicId == 'topic_staff_reading') {
+      if (curLvl.contains('master')) {
+        mappedLevelId = 'lvl_staff_master';
+      } else if (curLvl.contains('adv')) {
+        mappedLevelId = 'lvl_staff_adv';
+      } else if (curLvl.contains('inter')) {
+        mappedLevelId = 'lvl_staff_inter';
+      } else {
+        mappedLevelId = 'lvl_staff_basic';
+      }
+      _ref.read(selectedStaffLevelIdProvider.notifier).state = mappedLevelId;
+    } else {
+      if (curLvl.contains('master')) {
+        mappedLevelId = 'lvl_notes_master';
+      } else if (curLvl.contains('adv')) {
+        mappedLevelId = 'lvl_notes_adv';
+      } else if (curLvl.contains('inter')) {
+        mappedLevelId = 'lvl_notes_inter';
+      } else {
+        mappedLevelId = 'lvl_notes_basic';
+      }
+      _ref.read(selectedNoteLevelIdProvider.notifier).state = mappedLevelId;
+    }
+
+    final batchSize = state.isContinuousScoringMode ? 20 : 10;
+    final generated = await _generator.generateSessionQuestions(
+      mode: 'topic',
+      topicId: targetTopicId,
+      levelId: mappedLevelId,
+      targetCount: batchSize,
+    );
+    if (generated.questions.isEmpty) return;
+
+    _questionShownAt = DateTime.now();
+    state = state.copyWith(
+      topicId: targetTopicId,
+      levelId: mappedLevelId,
+      questions: generated.questions,
+      currentIndex: 0,
+      clearSelectedOption: true,
+    );
+
+    final settings = _ref.read(appSettingsProvider);
+    if (settings.autoPlayQuestionAudio &&
+        state.currentQuestion != null &&
+        !state.currentQuestion!.isSightReading) {
       await _audioService.playAsset(state.currentQuestion!.audioAsset);
     }
   }
@@ -430,6 +540,7 @@ class PracticeSessionNotifier extends StateNotifier<PracticeSessionState> {
     );
     await submitAnswer(wrongSyntheticOption);
   }
+
   Future<void> submitAnswer(QuestionOptionModel option) async {
     final currentQ = state.currentQuestion;
     if (currentQ == null || state.isCurrentAnswered || state.isCompleted) {
@@ -463,6 +574,10 @@ class PracticeSessionNotifier extends StateNotifier<PracticeSessionState> {
         HapticFeedback.lightImpact();
       } catch (_) {}
     }
+    if (currentQ.isSightReading) {
+      // In Sight-Reading mode, play the true piano pitch after the user answers so they connect eye & ear!
+      unawaited(_audioService.playAsset(currentQ.audioAsset));
+    }
     await _audioService.playFeedbackSfx(isCorrect: option.isCorrect);
   }
 
@@ -492,7 +607,9 @@ class PracticeSessionNotifier extends StateNotifier<PracticeSessionState> {
           clearSelectedOption: true,
         );
         final settings = _ref.read(appSettingsProvider);
-        if (settings.autoPlayQuestionAudio && state.currentQuestion != null) {
+        if (settings.autoPlayQuestionAudio &&
+            state.currentQuestion != null &&
+            !state.currentQuestion!.isSightReading) {
           await _audioService.playAsset(state.currentQuestion!.audioAsset);
         }
         return false;
@@ -506,7 +623,9 @@ class PracticeSessionNotifier extends StateNotifier<PracticeSessionState> {
         clearSelectedOption: true,
       );
       final settings = _ref.read(appSettingsProvider);
-      if (settings.autoPlayQuestionAudio && state.currentQuestion != null) {
+      if (settings.autoPlayQuestionAudio &&
+          state.currentQuestion != null &&
+          !state.currentQuestion!.isSightReading) {
         await _audioService.playAsset(state.currentQuestion!.audioAsset);
       }
       return false; // Not finished yet

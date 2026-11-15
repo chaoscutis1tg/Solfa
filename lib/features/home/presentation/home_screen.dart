@@ -26,6 +26,7 @@ class HomeScreen extends ConsumerWidget {
     final isTest = ref.read(audioServiceProvider).isTestMode;
     final dur = ref.read(selectedPracticeDurationProvider);
     final selectedNoteLevel = ref.read(selectedNoteLevelIdProvider);
+    final selectedStaffLevel = ref.read(selectedStaffLevelIdProvider);
 
     final ok = await notifier.startSession(
       mode: topicId != null ? 'topic' : 'quick',
@@ -33,7 +34,7 @@ class HomeScreen extends ConsumerWidget {
       levelId: levelId ??
           ((topicId == null || topicId == 'topic_notes')
               ? selectedNoteLevel
-              : null),
+              : (topicId == 'topic_staff_reading' ? selectedStaffLevel : null)),
       targetCount: 10,
       timeLimitSeconds: isTest ? null : (dur == 0 ? null : dur),
       isUnlimitedMode: isTest ? false : (dur == 0),
@@ -204,6 +205,36 @@ class HomeScreen extends ConsumerWidget {
                     ),
                     label: Text(
                       'Luyện tập ngay (${TopicsScreen.durationLabel(selectedDuration)})',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    key: const Key('btn_quick_staff_reading'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.white.withOpacity(0.14),
+                      side: BorderSide(
+                        color: Colors.white.withOpacity(0.45),
+                      ),
+                      minimumSize: const Size(double.infinity, 44),
+                    ),
+                    onPressed: () => _startQuickPractice(
+                      context,
+                      ref,
+                      topicId: 'topic_staff_reading',
+                    ),
+                    icon: const Icon(
+                      Icons.menu_book_rounded,
+                      size: 19,
+                      color: Color(0xFFFFD166),
+                    ),
+                    label: Text(
+                      'Luyện Đọc nốt nhạc trên khuông (${TopicsScreen.durationLabel(selectedDuration)})',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -843,6 +874,8 @@ class HomeScreen extends ConsumerWidget {
       case 'note_recognition':
       case 'notes':
         return Icons.music_note_rounded;
+      case 'staff_reading':
+        return Icons.menu_book_rounded;
       case 'interval_recognition':
       case 'intervals':
         return Icons.swap_vert_circle_outlined;

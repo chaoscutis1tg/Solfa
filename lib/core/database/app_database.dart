@@ -711,7 +711,7 @@ class AppDatabase {
         COALESCE(SUM(CASE WHEN a.is_correct = 1 THEN 1 ELSE 0 END), 0) AS correct_cnt
       FROM answers a
       INNER JOIN practice_sessions ps ON ps.id = a.session_id AND ps.status = 'completed'
-      INNER JOIN questions q ON q.id = a.question_id AND q.topic_id = 'topic_notes'
+      INNER JOIN questions q ON q.id = a.question_id AND q.topic_id IN ('topic_notes', 'topic_staff_reading')
       INNER JOIN question_options qo ON qo.question_id = q.id AND qo.is_correct = 1
       GROUP BY qo.option_key
     ''');

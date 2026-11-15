@@ -143,12 +143,25 @@ class QuestionModel {
   QuestionOptionModel get correctOption =>
       options.firstWhere((o) => o.isCorrect, orElse: () => options.first);
 
-  /// Whether this question can show reference pitch C4 (Topic notes, difficulty 1..3)
-  bool get supportsReferencePitch =>
-      topicId == 'topic_notes' && difficulty <= 3 && type != 'compare_pitch';
+  /// Whether this question is a visual Sight-Reading question (read note from staff without listening first)
+  bool get isSightReading =>
+      type == 'read_staff_note' || topicId == 'topic_staff_reading';
 
-  /// Whether this question should display the interactive Piano Keyboard helper
-  bool get showPianoHelper => topicId == 'topic_notes';
+  /// Whether this question can show reference pitch C4 (Topic notes ear training, difficulty 1..3)
+  bool get supportsReferencePitch =>
+      topicId == 'topic_notes' &&
+      !isSightReading &&
+      difficulty <= 3 &&
+      type != 'compare_pitch';
+
+  /// Whether this question should display the interactive Musical Staff & Piano Keyboard helper
+  bool get showPianoHelper =>
+      topicId == 'topic_notes' ||
+      topicId == 'topic_staff_reading' ||
+      isSightReading;
+
+  /// Whether black keys (#/b) are enabled on the interactive Piano helper for this question's level
+  bool get allowBlackKeysOnPiano => difficulty == 2 || difficulty == 4;
 
   factory QuestionModel.fromMap(
     Map<String, dynamic> map, {

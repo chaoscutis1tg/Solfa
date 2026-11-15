@@ -456,7 +456,7 @@ void main() {
         allPresets = await db.getMetronomePresets();
         expect(allPresets.any((p) => p.id == 'custom_test_1'), isFalse);
 
-        // 7. Note Mastery Heatmap in OverallProgressStats
+        // 7. Note Mastery Heatmap in OverallProgressStats & Sight-Reading (Đọc nốt nhạc)
         await sessionNotifier.finishSessionNow();
         final statsWithHeatmap = await db.getOverallProgressStats();
         expect(statsWithHeatmap.noteMasteryStats.length, equals(12));
@@ -464,6 +464,57 @@ void main() {
           statsWithHeatmap.noteMasteryStats.any((n) => n.totalAnswered > 0),
           isTrue,
         );
+
+        // 8. Chủ đề Đọc nốt nhạc (topic_staff_reading) 4 mức độ & Chuyển đổi Nghe <-> Đọc
+        final staffLevels = await db.getLevelsByTopic('topic_staff_reading');
+        expect(staffLevels.length, equals(4));
+
+        await sessionNotifier.startSession(
+          mode: 'topic',
+          topicId: 'topic_staff_reading',
+          levelId: 'lvl_staff_basic',
+          targetCount: 4,
+          seed: 19,
+        );
+        final staffQ1 = container.read(practiceSessionProvider).currentQuestion!;
+        expect(staffQ1.isSightReading, isTrue);
+        expect(staffQ1.supportsReferencePitch, isFalse);
+        expect(staffQ1.showPianoHelper, isTrue);
+        expect(staffQ1.allowBlackKeysOnPiano, isFalse);
+
+        // Chuyển sang Mức 3 (Khóa Sol + Khóa Fa C3-C5) và Mức 4 (Đầy đủ #/b)
+        await sessionNotifier.switchNoteLevelInSession('lvl_staff_adv');
+        final staffQ3 = container.read(practiceSessionProvider).currentQuestion!;
+        expect(staffQ3.isSightReading, isTrue);
+        expect(staffQ3.allowBlackKeysOnPiano, isFalse);
+
+        await sessionNotifier.switchNoteLevelInSession('lvl_staff_master');
+        final staffQ4 = container.read(practiceSessionProvider).currentQuestion!;
+        expect(staffQ4.isSightReading, isTrue);
+        expect(staffQ4.allowBlackKeysOnPiano, isTrue);
+
+        // Chuyển đổi trực tiếp giữa Đọc nốt nhạc <-> Nghe nốt ngay trong phiên
+        await sessionNotifier.switchNotePracticeModeInSession('topic_notes');
+        expect(
+          container.read(practiceSessionProvider).topicId,
+          equals('topic_notes'),
+        );
+        expect(
+          container.read(practiceSessionProvider).currentQuestion!.isSightReading,
+          isFalse,
+        );
+        await sessionNotifier.switchNotePracticeModeInSession(
+          'topic_staff_reading',
+        );
+        expect(
+          container.read(practiceSessionProvider).topicId,
+          equals('topic_staff_reading'),
+        );
+        expect(
+          container.read(practiceSessionProvider).currentQuestion!.isSightReading,
+          isTrue,
+        );
+        await sessionNotifier.finishSessionNow();
       },
     );
 
@@ -549,6 +600,28 @@ void main() {
 
         await tester.runAsync(() async {
           await sessionNotifier.switchNoteLevelInSession('lvl_notes_master');
+        });
+        await pumpFrames(250);
+        expect(tester.takeException(), isNull);
+
+        // Chuyển sang chế độ Đọc nốt nhạc (Sight-Reading) ngay trên thanh công cụ và kiểm tra giao diện 360x680
+        await tester.runAsync(() async {
+          await sessionNotifier.switchNotePracticeModeInSession(
+            'topic_staff_reading',
+          );
+        });
+        await pumpFrames(250);
+        expect(
+          find.byKey(const Key('sight_reading_instruction_banner')),
+          findsOneWidget,
+        );
+        expect(find.byKey(const Key('musical_staff_widget')), findsOneWidget);
+        expect(tester.takeException(), isNull);
+
+        await tester.runAsync(() async {
+          final currentQ =
+              container.read(practiceSessionProvider).currentQuestion!;
+          await sessionNotifier.submitAnswer(currentQ.options.first);
         });
         await pumpFrames(250);
         expect(tester.takeException(), isNull);
