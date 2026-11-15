@@ -31,6 +31,7 @@ class AppSettingsState {
   final String defaultMetronomeSound;
   final bool keepScreenAwakeOnMetronome;
   final bool unlockAllLevels;
+  final int dailyGoalTarget;
   final bool isLoaded;
 
   const AppSettingsState({
@@ -42,6 +43,7 @@ class AppSettingsState {
     this.defaultMetronomeSound = 'tempo',
     this.keepScreenAwakeOnMetronome = true,
     this.unlockAllLevels = true,
+    this.dailyGoalTarget = 20,
     this.isLoaded = false,
   });
 
@@ -54,6 +56,7 @@ class AppSettingsState {
     String? defaultMetronomeSound,
     bool? keepScreenAwakeOnMetronome,
     bool? unlockAllLevels,
+    int? dailyGoalTarget,
     bool? isLoaded,
   }) {
     return AppSettingsState(
@@ -66,6 +69,7 @@ class AppSettingsState {
       keepScreenAwakeOnMetronome:
           keepScreenAwakeOnMetronome ?? this.keepScreenAwakeOnMetronome,
       unlockAllLevels: unlockAllLevels ?? this.unlockAllLevels,
+      dailyGoalTarget: dailyGoalTarget ?? this.dailyGoalTarget,
       isLoaded: isLoaded ?? this.isLoaded,
     );
   }
@@ -97,6 +101,8 @@ class AppSettingsNotifier extends StateNotifier<AppSettingsState> {
     final metroSound = map['default_metronome_sound'] ?? 'tempo';
     final keepAwake = (map['keep_screen_awake'] ?? 'true') == 'true';
     final unlockAll = (map['unlock_all_levels'] ?? 'true') == 'true';
+    final dailyGoal =
+        (int.tryParse(map['daily_goal_target'] ?? '') ?? 20).clamp(5, 200);
 
     _audioService.updateConfig(lessonVolume: volume, sfxEnabled: sfx);
 
@@ -109,6 +115,7 @@ class AppSettingsNotifier extends StateNotifier<AppSettingsState> {
       defaultMetronomeSound: metroSound,
       keepScreenAwakeOnMetronome: keepAwake,
       unlockAllLevels: unlockAll,
+      dailyGoalTarget: dailyGoal,
       isLoaded: true,
     );
   }
@@ -174,6 +181,14 @@ class AppSettingsNotifier extends StateNotifier<AppSettingsState> {
     state = state.copyWith(unlockAllLevels: value);
     try {
       await _db.setSetting('unlock_all_levels', value.toString());
+    } catch (_) {}
+  }
+
+  Future<void> setDailyGoalTarget(int value) async {
+    final clamped = value.clamp(5, 200);
+    state = state.copyWith(dailyGoalTarget: clamped);
+    try {
+      await _db.setSetting('daily_goal_target', clamped.toString());
     } catch (_) {}
   }
 }

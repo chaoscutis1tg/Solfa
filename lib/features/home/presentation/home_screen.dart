@@ -870,72 +870,86 @@ class HomeScreen extends ConsumerWidget {
         const SizedBox(height: 10),
         Card(
           key: const Key('daily_goal_progress_card'),
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      stats.isDailyGoalReached
-                          ? Icons.verified_rounded
-                          : Icons.flag_circle_rounded,
-                      color: stats.isDailyGoalReached
-                          ? AppColors.correct
-                          : AppColors.primary,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
+          child: InkWell(
+            borderRadius: BorderRadius.circular(20),
+            onTap: () => _showDailyGoalPicker(
+              context,
+              ref,
+              stats.dailyGoalTarget,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
                         stats.isDailyGoalReached
-                            ? '🎯 Hoàn thành mục tiêu hôm nay (${stats.todayAnsweredCount}/${stats.dailyGoalTarget} nốt)!'
-                            : '🎯 Mục tiêu hôm nay: ${stats.todayAnsweredCount}/${stats.dailyGoalTarget} nốt',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w800,
-                        ),
+                            ? Icons.verified_rounded
+                            : Icons.flag_circle_rounded,
+                        color: stats.isDailyGoalReached
+                            ? AppColors.correct
+                            : AppColors.primary,
+                        size: 20,
                       ),
-                    ),
-                    if (stats.bestScore > 0 || stats.bestComboStreak > 0)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.accentAmber.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(99),
-                        ),
+                      const SizedBox(width: 8),
+                      Expanded(
                         child: Text(
-                          '🏆 ${stats.bestScore}đ • 🔥x${stats.bestComboStreak}',
+                          stats.isDailyGoalReached
+                              ? '🎯 Hoàn thành mục tiêu hôm nay (${stats.todayAnsweredCount}/${stats.dailyGoalTarget} nốt)!'
+                              : '🎯 Mục tiêu hôm nay: ${stats.todayAnsweredCount}/${stats.dailyGoalTarget} nốt',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            fontSize: 11,
+                            fontSize: 13.5,
                             fontWeight: FontWeight.w800,
-                            color: AppColors.accentAmber,
                           ),
                         ),
                       ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(99),
-                  child: LinearProgressIndicator(
-                    value: stats.dailyGoalProgress,
-                    minHeight: 6,
-                    backgroundColor: AppColors.primary.withOpacity(0.14),
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      stats.isDailyGoalReached
-                          ? AppColors.correct
-                          : AppColors.primary,
+                      if (stats.bestScore > 0 || stats.bestComboStreak > 0)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.accentAmber.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(99),
+                          ),
+                          child: Text(
+                            '🏆 ${stats.bestScore}đ • 🔥x${stats.bestComboStreak}',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.accentAmber,
+                            ),
+                          ),
+                        ),
+                      const SizedBox(width: 4),
+                      const Icon(
+                        Icons.tune_rounded,
+                        size: 16,
+                        color: AppColors.primary,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(99),
+                    child: LinearProgressIndicator(
+                      value: stats.dailyGoalProgress,
+                      minHeight: 6,
+                      backgroundColor: AppColors.primary.withOpacity(0.14),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        stats.isDailyGoalReached
+                            ? AppColors.correct
+                            : AppColors.primary,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -1007,6 +1021,64 @@ class HomeScreen extends ConsumerWidget {
         ],
       ],
     );
+  }
+
+  Future<void> _showDailyGoalPicker(
+    BuildContext context,
+    WidgetRef ref,
+    int currentGoal,
+  ) async {
+    final chosen = await showModalBottomSheet<int>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(18, 16, 18, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  '🎯 Đặt mục tiêu luyện tập hàng ngày',
+                  style: TextStyle(fontSize: 16.5, fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Chọn số câu/nốt nhạc bạn muốn hoàn thành mỗi ngày:',
+                  style: TextStyle(fontSize: 12.8),
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final g in const [
+                      (10, '10 nốt/ngày (Khởi động)'),
+                      (20, '20 nốt/ngày (Tiêu chuẩn)'),
+                      (30, '30 nốt/ngày (Chăm chỉ)'),
+                      (50, '50 nốt/ngày (Chuyên sâu)'),
+                    ])
+                      ChoiceChip(
+                        key: Key('chip_daily_goal_${g.$1}'),
+                        label: Text(g.$2),
+                        selected: currentGoal == g.$1,
+                        onSelected: (_) => Navigator.of(ctx).pop(g.$1),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+    if (chosen != null) {
+      await ref.read(appSettingsProvider.notifier).setDailyGoalTarget(chosen);
+      ref.invalidate(overallProgressProvider);
+    }
   }
 
   IconData _iconForTopic(String code) {

@@ -568,6 +568,9 @@ void main() {
         expect(find.textContaining('Khóa Fa'), findsWidgets);
         await tester.tap(find.byKey(const Key('explorer_octave_5')));
         await pumpFrames(200);
+        await tester.tap(find.byKey(const Key('explorer_harmony_C_maj')));
+        await pumpFrames(200);
+        expect(find.textContaining('Hợp âm Đô Trưởng'), findsOneWidget);
         await tester.tap(find.byKey(const Key('btn_close_free_piano_explorer')));
         await pumpFrames(250);
         expect(tester.takeException(), isNull);
@@ -885,6 +888,25 @@ void main() {
         expect(stats.bestComboStreak, equals(3));
         expect(stats.todayAnsweredCount, equals(4));
         expect(stats.dailyGoalTarget, equals(20));
+
+        // 4. Kiểm tra tùy chỉnh Mục tiêu hàng ngày (Daily Goal) & Đổi cấp độ trực tiếp trong phiên cho Hợp âm
+        await container.read(appSettingsProvider.notifier).setDailyGoalTarget(30);
+        final updatedStats = await db.getOverallProgressStats();
+        expect(updatedStats.dailyGoalTarget, equals(30));
+
+        await sessionNotifier.startSession(
+          mode: 'topic',
+          topicId: 'topic_chords',
+          levelId: 'lvl_chords_basic',
+          targetCount: 4,
+          seed: 77,
+        );
+        await sessionNotifier.switchNoteLevelInSession('lvl_chords_inter');
+        expect(
+          container.read(practiceSessionProvider).levelId,
+          equals('lvl_chords_inter'),
+        );
+        await sessionNotifier.abandonSessionIfIncomplete();
       },
     );
   });

@@ -202,6 +202,77 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
     return false;
   }
 
+  static List<String> _harmonyKeysForOptionKey(String optionKey) {
+    switch (optionKey) {
+      case 'C_maj':
+        return const ['C4', 'E4', 'G4'];
+      case 'A_min':
+        return const ['A4', 'C4', 'E4'];
+      case 'F_maj':
+        return const ['F4', 'A4', 'C4'];
+      case 'G_maj':
+        return const ['G4', 'B4', 'D4'];
+      case 'D_min':
+        return const ['D4', 'F4', 'A4'];
+      case 'E_min':
+        return const ['E4', 'G4', 'B4'];
+      case 'C_aug':
+        return const ['C4', 'E4', 'G#4'];
+      case 'B_dim':
+        return const ['B4', 'D4', 'F4'];
+      case 'G_dom7':
+        return const ['G4', 'B4', 'D4', 'F4'];
+      case 'C_maj7':
+        return const ['C4', 'E4', 'G4', 'B4'];
+      case 'A_min7':
+        return const ['A4', 'C4', 'E4', 'G4'];
+      case 'D_min7':
+        return const ['D4', 'F4', 'A4', 'C4'];
+      case 'm2':
+        return const ['C4', 'C#4'];
+      case 'M2':
+        return const ['C4', 'D4'];
+      case 'm3':
+        return const ['C4', 'D#4'];
+      case 'M3':
+        return const ['C4', 'E4'];
+      case 'P4':
+        return const ['C4', 'F4'];
+      case 'P5':
+        return const ['C4', 'G4'];
+      case 'M6':
+        return const ['C4', 'A4'];
+      case 'M7':
+        return const ['C4', 'B4'];
+      case 'P8':
+        return const ['C4'];
+      case 'mel_c_d_e_c':
+        return const ['C4', 'D4', 'E4'];
+      case 'mel_c_e_g_c5':
+      case 'mel_g_e_c_g':
+      case 'mel_c_g_e_c':
+        return const ['C4', 'E4', 'G4'];
+      case 'mel_g_f_e_d':
+        return const ['G4', 'F4', 'E4', 'D4'];
+      case 'mel_e_d_c_d':
+        return const ['E4', 'D4', 'C4'];
+      case 'mel_c_f_g_c':
+        return const ['C4', 'F4', 'G4'];
+      case 'mel_d_f_a_d':
+        return const ['D4', 'F4', 'A4'];
+      case 'mel_a_c_e_a':
+        return const ['A4', 'C4', 'E4'];
+      case 'mel_c_d_f_e':
+        return const ['C4', 'D4', 'F4', 'E4'];
+      case 'mel_e_g_a_g':
+        return const ['E4', 'G4', 'A4'];
+      case 'mel_g_a_b_c5':
+        return const ['G4', 'A4', 'B4', 'C4'];
+      default:
+        return const [];
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // Automatically navigate to SessionResultScreen when countdown timer expires
@@ -512,6 +583,19 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
                             enableBlackKeys: question.difficulty == 2 ||
                                 question.difficulty == 4,
                             onKeyTap: _handlePianoKeyTap,
+                          ),
+                        ] else if (isCurrentAnswered &&
+                            _harmonyKeysForOptionKey(
+                                    question.correctOption.optionKey)
+                                .isNotEmpty) ...[
+                          const SizedBox(height: 10),
+                          PianoKeyboardWidget(
+                            highlightedNoteKeys: _harmonyKeysForOptionKey(
+                              question.correctOption.optionKey,
+                            ),
+                            showHighlight: true,
+                            enableBlackKeys: true,
+                            onKeyTap: (k) => audioService.playPianoKey(k),
                           ),
                         ],
                       ],
@@ -845,17 +929,34 @@ class _PracticeRoomScoreboardHeader extends ConsumerWidget {
                   ),
                 ],
               ),
+            ],
+            if (scoreState.mode != 'review' &&
+                scoreState.topicId.isNotEmpty) ...[
               const SizedBox(height: 6),
               Builder(
                 builder: (context) {
-                  final levelDefs =
-                      scoreState.topicId == 'topic_staff_reading'
-                          ? kStaffReadingLevels
-                          : kNoteRecognitionLevels;
-                  final defaultLvl =
-                      scoreState.topicId == 'topic_staff_reading'
-                          ? 'lvl_staff_basic'
-                          : 'lvl_notes_basic';
+                  final tId = scoreState.topicId;
+                  final List<(String id, String label)> levelDefs;
+                  final String defaultLvl;
+                  if (tId == 'topic_staff_reading') {
+                    levelDefs = kStaffReadingLevels
+                        .map((e) => (e.$1, e.$2))
+                        .toList();
+                    defaultLvl = 'lvl_staff_basic';
+                  } else if (tId == 'topic_notes') {
+                    levelDefs = kNoteRecognitionLevels
+                        .map((e) => (e.$1, e.$2))
+                        .toList();
+                    defaultLvl = 'lvl_notes_basic';
+                  } else {
+                    final short = tId.replaceFirst('topic_', '');
+                    levelDefs = [
+                      ('lvl_${short}_basic', 'Cơ bản'),
+                      ('lvl_${short}_inter', 'Trung bình'),
+                      ('lvl_${short}_adv', 'Nâng cao'),
+                    ];
+                    defaultLvl = 'lvl_${short}_basic';
+                  }
                   return Row(
                     children: [
                       const Icon(

@@ -422,12 +422,11 @@ class PracticeSessionNotifier extends StateNotifier<PracticeSessionState> {
     }
   }
 
-  /// Allows switching Note Recognition or Staff Reading level (Mức 1..4) dynamically inside the Practice Room.
+  /// Allows switching level dynamically inside the Practice Room across all topics.
   Future<void> switchNoteLevelInSession(String newLevelId) async {
     if (_isBusy ||
         state.mode == 'review' ||
-        (state.topicId != 'topic_notes' &&
-            state.topicId != 'topic_staff_reading') ||
+        state.topicId.isEmpty ||
         state.levelId == newLevelId) {
       return;
     }
@@ -435,7 +434,7 @@ class PracticeSessionNotifier extends StateNotifier<PracticeSessionState> {
     try {
       if (state.topicId == 'topic_staff_reading') {
         _ref.read(selectedStaffLevelIdProvider.notifier).state = newLevelId;
-      } else {
+      } else if (state.topicId == 'topic_notes') {
         _ref.read(selectedNoteLevelIdProvider.notifier).state = newLevelId;
       }
       await _audioService.stop();

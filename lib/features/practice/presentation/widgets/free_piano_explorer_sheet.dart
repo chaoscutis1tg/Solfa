@@ -31,8 +31,87 @@ class _FreePianoExplorerSheetState
     extends ConsumerState<FreePianoExplorerSheet> {
   int _selectedOctave = 4; // 3, 4, or 5
   String _selectedPitchClass = 'C'; // 'C', 'C#', 'D', ..., 'B'
+  String? _activeHarmonyCode;
+  String? _activeHarmonyTitle;
+  String? _activeHarmonyFormula;
+  String? _activeHarmonyAsset;
+  List<String>? _activeHarmonyKeys;
 
   String get _activeNoteKey => '$_selectedPitchClass$_selectedOctave';
+
+  static const List<(
+    String code,
+    String chipLabel,
+    String title,
+    String formula,
+    String asset,
+    List<String> keys,
+  )> _harmonySamples = [
+    (
+      'C_maj',
+      '🎹 Đô Trưởng (C)',
+      'Hợp âm Đô Trưởng (C – E – G)',
+      'Cấu tạo: Đô (C4) + Mi (E4, +4 bán âm) + Sol (G4, +7 bán âm). Âm sắc tươi sáng, vững chãi.',
+      'assets/audio/keys/chord_c_maj.wav',
+      ['C4', 'E4', 'G4'],
+    ),
+    (
+      'A_min',
+      '🎹 La Thứ (Am)',
+      'Hợp âm La Thứ (A – C – E)',
+      'Cấu tạo: La (A) + Đô (C, +3 bán âm) + Mi (E, +7 bán âm). Âm sắc trữ tình, sâu lắng.',
+      'assets/audio/keys/chord_a_min.wav',
+      ['A4', 'C4', 'E4'],
+    ),
+    (
+      'F_maj',
+      '🎹 Fa Trưởng (F)',
+      'Hợp âm Fa Trưởng (F – A – C)',
+      'Cấu tạo: Fa (F) + La (A, +4 bán âm) + Đô (C, +7 bán âm). Bậc IV ấm áp trong giọng Đô trưởng.',
+      'assets/audio/keys/chord_f_maj.wav',
+      ['F4', 'A4', 'C4'],
+    ),
+    (
+      'G_dom7',
+      '🎹 Sol Bảy (G7)',
+      'Hợp âm Bảy Át Sol 7 (G – B – D – F)',
+      'Cấu tạo 4 nốt: Sol (G) + Si (B) + Rê (D) + Fa (F). Tạo lực hút mạnh về hợp âm chủ Đô Trưởng.',
+      'assets/audio/keys/chord_g_dom7.wav',
+      ['G4', 'B4', 'D4', 'F4'],
+    ),
+    (
+      'C_aug',
+      '🎹 Đô Tăng (Caug)',
+      'Hợp âm Đô Tăng (C – E – G♯)',
+      'Cấu tạo: Đô (C4) + Mi (E4, +4 bán âm) + Sol thăng (G♯4, +8 bán âm). Màu sắc lơ lửng, kịch tính.',
+      'assets/audio/keys/chord_c_aug.wav',
+      ['C4', 'E4', 'G#4'],
+    ),
+    (
+      'B_dim',
+      '🎹 Si Giảm (Bdim)',
+      'Hợp âm Si Giảm (B – D – F)',
+      'Cấu tạo: Si (B) + Rê (D, +3 bán âm) + Fa (F, +6 bán âm). Quãng 5 giảm căng thẳng, hút về Đô.',
+      'assets/audio/keys/chord_b_dim.wav',
+      ['B4', 'D4', 'F4'],
+    ),
+    (
+      'M3',
+      '📏 Quãng 3 Trưởng',
+      'Quãng 3 Trưởng (Đô C4 → Mi E4)',
+      'Khoảng cách 2 cung (4 bán âm) từ Đô (C4) lên Mi (E4) — nền tảng của hợp âm Trưởng.',
+      'assets/audio/intervals/int_m3_maj_c4_e4.wav',
+      ['C4', 'E4'],
+    ),
+    (
+      'P5',
+      '📏 Quãng 5 Đúng',
+      'Quãng 5 Đúng (Đô C4 → Sol G4)',
+      'Khoảng cách 3.5 cung (7 bán âm) từ Đô (C4) lên Sol (G4) — âm thanh hòa hợp hoàn hảo.',
+      'assets/audio/intervals/int_p5_c4_g4.wav',
+      ['C4', 'G4'],
+    ),
+  ];
 
   static const Map<String, int> _semitoneOffsets = {
     'C': 0,
@@ -119,8 +198,35 @@ class _FreePianoExplorerSheetState
     setState(() {
       _selectedPitchClass = pitchClass;
       _selectedOctave = octave;
+      _activeHarmonyCode = null;
+      _activeHarmonyTitle = null;
+      _activeHarmonyFormula = null;
+      _activeHarmonyAsset = null;
+      _activeHarmonyKeys = null;
     });
     ref.read(audioServiceProvider).playPianoKey('$pitchClass$octave');
+  }
+
+  void _selectHarmonySample((
+    String code,
+    String chipLabel,
+    String title,
+    String formula,
+    String asset,
+    List<String> keys,
+  ) sample) {
+    final firstKey = sample.$6.first;
+    final pc = firstKey.replaceAll(RegExp(r'[0-9]'), '').toUpperCase();
+    setState(() {
+      _selectedPitchClass = pc;
+      _selectedOctave = 4;
+      _activeHarmonyCode = sample.$1;
+      _activeHarmonyTitle = sample.$3;
+      _activeHarmonyFormula = sample.$4;
+      _activeHarmonyAsset = sample.$5;
+      _activeHarmonyKeys = sample.$6;
+    });
+    ref.read(audioServiceProvider).playAsset(sample.$5);
   }
 
   @override
@@ -283,7 +389,7 @@ class _FreePianoExplorerSheetState
                               borderRadius: BorderRadius.circular(99),
                             ),
                             child: Text(
-                              vnName,
+                              _activeHarmonyTitle ?? vnName,
                               key: const Key('explorer_active_note_label'),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -296,25 +402,27 @@ class _FreePianoExplorerSheetState
                           ),
                         ),
                         const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.accentAmber.withOpacity(0.18),
-                            borderRadius: BorderRadius.circular(99),
-                          ),
-                          child: Text(
-                            '${freq.toStringAsFixed(1)} Hz',
-                            style: const TextStyle(
-                              color: AppColors.accentAmber,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 11.5,
+                        if (_activeHarmonyKeys == null) ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.accentAmber.withOpacity(0.18),
+                              borderRadius: BorderRadius.circular(99),
+                            ),
+                            child: Text(
+                              '${freq.toStringAsFixed(1)} Hz',
+                              style: const TextStyle(
+                                color: AppColors.accentAmber,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 11.5,
+                              ),
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 6),
+                          const SizedBox(width: 6),
+                        ],
                         TextButton.icon(
                           key: const Key('btn_explorer_replay_note'),
                           style: TextButton.styleFrom(
@@ -327,8 +435,16 @@ class _FreePianoExplorerSheetState
                             backgroundColor:
                                 AppColors.primary.withOpacity(0.14),
                           ),
-                          onPressed: () =>
-                              _selectAndPlay(_selectedPitchClass, _selectedOctave),
+                          onPressed: () {
+                            if (_activeHarmonyAsset != null) {
+                              ref
+                                  .read(audioServiceProvider)
+                                  .playAsset(_activeHarmonyAsset!);
+                            } else {
+                              _selectAndPlay(
+                                  _selectedPitchClass, _selectedOctave);
+                            }
+                          },
                           icon: const Icon(Icons.volume_up_rounded, size: 15),
                           label: const Text(
                             'Nghe',
@@ -342,7 +458,7 @@ class _FreePianoExplorerSheetState
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      staffDesc,
+                      _activeHarmonyFormula ?? staffDesc,
                       style: const TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w600,
@@ -354,9 +470,45 @@ class _FreePianoExplorerSheetState
               ),
               const SizedBox(height: 10),
 
+              // Quick Chord & Interval Multi-Key Explorer Strip
+              const Text(
+                '🎶 Bấm thử Hợp âm & Quãng chuẩn (Tô sáng các phím cấu thành):',
+                style: TextStyle(
+                  fontSize: 11.8,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 6),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    for (final sample in _harmonySamples)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 6),
+                        child: ChoiceChip(
+                          key: Key('explorer_harmony_${sample.$1}'),
+                          label: Text(
+                            sample.$2,
+                            style: const TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          selected: _activeHarmonyCode == sample.$1,
+                          visualDensity: VisualDensity.compact,
+                          onSelected: (_) => _selectHarmonySample(sample),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+
               // Interactive Piano Keyboard
               PianoKeyboardWidget(
                 highlightedNoteKey: _activeNoteKey,
+                highlightedNoteKeys: _activeHarmonyKeys,
                 selectedNoteKey: _activeNoteKey,
                 showHighlight: true,
                 enableBlackKeys: true,

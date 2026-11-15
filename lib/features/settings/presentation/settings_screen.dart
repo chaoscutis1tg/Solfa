@@ -346,6 +346,49 @@ class SettingsScreen extends ConsumerWidget {
                     ),
                   ),
                   const Divider(height: 1),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Mục tiêu luyện tập hàng ngày',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          'Số nốt/câu trả lời mỗi ngày để hoàn thành mục tiêu',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color:
+                                Theme.of(context).textTheme.bodySmall?.color,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          key: const Key('row_daily_goal_selector'),
+                          children: [
+                            for (final goal in const [10, 20, 30, 50]) ...[
+                              if (goal != 10) const SizedBox(width: 6),
+                              _DurationChoiceButton(
+                                label: '$goal nốt',
+                                isSelected: settings.dailyGoalTarget == goal,
+                                isDark: isDark,
+                                onTap: () async {
+                                  await notifier.setDailyGoalTarget(goal);
+                                  ref.invalidate(overallProgressProvider);
+                                },
+                              ),
+                            ],
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 1),
                   SwitchListTile(
                     key: const Key('switch_unlock_all_levels'),
                     title: const Text(

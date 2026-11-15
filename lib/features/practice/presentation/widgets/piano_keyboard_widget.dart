@@ -7,6 +7,7 @@ import '../../../../app/theme/app_colors.dart';
 /// and allows tapping keys to preview their pitch.
 class PianoKeyboardWidget extends StatefulWidget {
   final String? highlightedNoteKey; // e.g. 'C4', 'F4', 'F#4'
+  final List<String>? highlightedNoteKeys; // Multi-note highlight for chords/intervals
   final String? selectedNoteKey; // User's selected option key
   final bool showHighlight;
   final bool enableBlackKeys;
@@ -15,6 +16,7 @@ class PianoKeyboardWidget extends StatefulWidget {
   const PianoKeyboardWidget({
     super.key,
     this.highlightedNoteKey,
+    this.highlightedNoteKeys,
     this.selectedNoteKey,
     this.showHighlight = false,
     this.enableBlackKeys = true,
@@ -57,7 +59,17 @@ class _PianoKeyboardWidgetState extends State<PianoKeyboardWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final normalizedTarget = _normalizeToOctave4(widget.highlightedNoteKey);
+    final normalizedTargets = <String>{};
+    final singleTarget = _normalizeToOctave4(widget.highlightedNoteKey);
+    if (singleTarget.isNotEmpty) {
+      normalizedTargets.add(singleTarget);
+    }
+    if (widget.highlightedNoteKeys != null) {
+      for (final k in widget.highlightedNoteKeys!) {
+        final norm = _normalizeToOctave4(k);
+        if (norm.isNotEmpty) normalizedTargets.add(norm);
+      }
+    }
     final normalizedSelected = _normalizeToOctave4(widget.selectedNoteKey);
 
     return Column(
@@ -93,7 +105,7 @@ class _PianoKeyboardWidgetState extends State<PianoKeyboardWidget> {
                     children: _whiteKeys.map((entry) {
                       final keyCode = entry.$1;
                       final isTarget = widget.showHighlight &&
-                          normalizedTarget == keyCode;
+                          normalizedTargets.contains(keyCode);
                       final isWrongSelected = widget.showHighlight &&
                           normalizedSelected == keyCode &&
                           !isTarget;
@@ -175,7 +187,7 @@ class _PianoKeyboardWidgetState extends State<PianoKeyboardWidget> {
                     final noteCode = bKey.$2;
                     final shortLabel = bKey.$3;
                     final isTarget = widget.showHighlight &&
-                        normalizedTarget == noteCode;
+                        normalizedTargets.contains(noteCode);
                     final isWrongSelected = widget.showHighlight &&
                         normalizedSelected == noteCode &&
                         !isTarget;
