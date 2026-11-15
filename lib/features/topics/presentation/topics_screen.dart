@@ -19,11 +19,12 @@ class TopicsScreen extends ConsumerWidget {
     final notifier = ref.read(practiceSessionProvider.notifier);
     final isTest = ref.read(audioServiceProvider).isTestMode;
     final dur = ref.read(selectedPracticeDurationProvider);
+    final noteLevelId = ref.read(selectedNoteLevelIdProvider);
 
     final ok = await notifier.startSession(
       mode: 'topic',
       topicId: topic.id,
-      levelId: null, // Defaults to Basic level
+      levelId: topic.id == 'topic_notes' ? noteLevelId : null,
       targetCount: 10,
       timeLimitSeconds: isTest ? null : (dur == 0 ? null : dur),
       isUnlimitedMode: isTest ? false : (dur == 0),
@@ -53,6 +54,7 @@ class TopicsScreen extends ConsumerWidget {
     final topicsAsync = ref.watch(topicsListProvider);
     final progressAsync = ref.watch(overallProgressProvider);
     final selectedDuration = ref.watch(selectedPracticeDurationProvider);
+    final selectedNoteLevelId = ref.watch(selectedNoteLevelIdProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return topicsAsync.when(
@@ -239,7 +241,9 @@ class TopicsScreen extends ConsumerWidget {
                                           child: Text(
                                             sessionsDone > 0
                                                 ? '$sessionsDone phiên • $answered nốt'
-                                                : '3 cấp độ • Cơ bản',
+                                                : (topic.id == 'topic_notes'
+                                                    ? '4 mức độ • Mở khóa sẵn'
+                                                    : '3 cấp độ • Mở khóa sẵn'),
                                             style: TextStyle(
                                               fontSize: 11.5,
                                               color: accent,
@@ -285,6 +289,94 @@ class TopicsScreen extends ConsumerWidget {
                             style:
                                 const TextStyle(fontSize: 13.5, height: 1.38),
                           ),
+                          if (topic.id == 'topic_notes') ...[
+                            const SizedBox(height: 12),
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: accent.withOpacity(isDark ? 0.12 : 0.07),
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                  color: accent.withOpacity(0.25),
+                                ),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Row(
+                                    children: [
+                                      Icon(
+                                        Icons.workspace_premium_rounded,
+                                        size: 16,
+                                        color: AppColors.primary,
+                                      ),
+                                      SizedBox(width: 5),
+                                      Text(
+                                        'Chọn mức độ Nhận biết nốt:',
+                                        style: TextStyle(
+                                          fontSize: 12.5,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    children: [
+                                      for (int lvlIdx = 0;
+                                          lvlIdx < kNoteRecognitionLevels.length;
+                                          lvlIdx++) ...[
+                                        if (lvlIdx > 0)
+                                          const SizedBox(width: 6),
+                                        Expanded(
+                                          child: _NoteLevelQuickButton(
+                                            key: Key(
+                                              'topic_note_lvl_${kNoteRecognitionLevels[lvlIdx].$1}',
+                                            ),
+                                            title:
+                                                kNoteRecognitionLevels[lvlIdx]
+                                                    .$2,
+                                            subtitle:
+                                                kNoteRecognitionLevels[lvlIdx]
+                                                    .$3,
+                                            isSelected: selectedNoteLevelId ==
+                                                kNoteRecognitionLevels[lvlIdx]
+                                                    .$1,
+                                            isDark: isDark,
+                                            onTap: () => ref
+                                                .read(
+                                                    selectedNoteLevelIdProvider
+                                                        .notifier)
+                                                .state = kNoteRecognitionLevels[
+                                                    lvlIdx]
+                                                .$1,
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                  const SizedBox(height: 7),
+                                  Text(
+                                    kNoteRecognitionLevels
+                                        .firstWhere(
+                                          (e) => e.$1 == selectedNoteLevelId,
+                                          orElse: () =>
+                                              kNoteRecognitionLevels.first,
+                                        )
+                                        .$4,
+                                    style: TextStyle(
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w600,
+                                      color: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.color,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                           if (answered > 0) ...[
                             const SizedBox(height: 10),
                             ClipRRect(
@@ -530,6 +622,79 @@ class _DurationOptionButton extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NoteLevelQuickButton extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final bool isSelected;
+  final bool isDark;
+  final VoidCallback onTap;
+
+  const _NoteLevelQuickButton({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    required this.isSelected,
+    required this.isDark,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: isSelected
+          ? AppColors.primary
+          : (isDark ? Colors.white.withOpacity(0.06) : Colors.white),
+      borderRadius: BorderRadius.circular(11),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(11),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 4),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(11),
+            border: Border.all(
+              color: isSelected
+                  ? AppColors.secondary
+                  : AppColors.primary.withOpacity(0.22),
+              width: isSelected ? 1.5 : 1.0,
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: isSelected ? Colors.white : AppColors.primary,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 1),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 9.8,
+                    fontWeight: FontWeight.w600,
+                    color: isSelected
+                        ? Colors.white.withOpacity(0.92)
+                        : Theme.of(context).textTheme.bodySmall?.color,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

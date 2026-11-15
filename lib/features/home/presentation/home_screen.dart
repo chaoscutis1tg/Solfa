@@ -25,11 +25,15 @@ class HomeScreen extends ConsumerWidget {
     final notifier = ref.read(practiceSessionProvider.notifier);
     final isTest = ref.read(audioServiceProvider).isTestMode;
     final dur = ref.read(selectedPracticeDurationProvider);
+    final selectedNoteLevel = ref.read(selectedNoteLevelIdProvider);
 
     final ok = await notifier.startSession(
       mode: topicId != null ? 'topic' : 'quick',
       topicId: topicId,
-      levelId: levelId,
+      levelId: levelId ??
+          ((topicId == null || topicId == 'topic_notes')
+              ? selectedNoteLevel
+              : null),
       targetCount: 10,
       timeLimitSeconds: isTest ? null : (dur == 0 ? null : dur),
       isUnlimitedMode: isTest ? false : (dur == 0),
@@ -541,7 +545,7 @@ class HomeScreen extends ConsumerWidget {
                           ),
                           SizedBox(height: 2),
                           Text(
-                            'Nhịp cơ chuẩn',
+                            'Tempo Lite & Nhịp cơ',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(fontSize: 11.5),

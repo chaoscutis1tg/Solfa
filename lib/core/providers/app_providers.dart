@@ -39,9 +39,9 @@ class AppSettingsState {
     this.lessonVolume = 0.9,
     this.feedbackSoundEnabled = true,
     this.hapticFeedbackEnabled = true,
-    this.defaultMetronomeSound = 'click',
+    this.defaultMetronomeSound = 'tempo',
     this.keepScreenAwakeOnMetronome = true,
-    this.unlockAllLevels = false,
+    this.unlockAllLevels = true,
     this.isLoaded = false,
   });
 
@@ -94,9 +94,9 @@ class AppSettingsNotifier extends StateNotifier<AppSettingsState> {
     final volume = double.tryParse(map['lesson_volume'] ?? '') ?? 0.9;
     final sfx = (map['feedback_sound'] ?? 'true') == 'true';
     final haptic = (map['haptic_feedback'] ?? 'true') == 'true';
-    final metroSound = map['default_metronome_sound'] ?? 'click';
+    final metroSound = map['default_metronome_sound'] ?? 'tempo';
     final keepAwake = (map['keep_screen_awake'] ?? 'true') == 'true';
-    final unlockAll = (map['unlock_all_levels'] ?? 'false') == 'true';
+    final unlockAll = (map['unlock_all_levels'] ?? 'true') == 'true';
 
     _audioService.updateConfig(lessonVolume: volume, sfxEnabled: sfx);
 

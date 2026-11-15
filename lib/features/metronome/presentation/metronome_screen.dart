@@ -34,9 +34,17 @@ class _MetronomeScreenState extends ConsumerState<MetronomeScreen>
   ];
 
   static const List<(String code, String label)> _soundTypes = [
+    ('tempo', 'Tempo Lite'),
     ('click', 'Cơ học'),
     ('woodblock', 'Gỗ trầm'),
     ('bell', 'Chuông'),
+  ];
+
+  static const List<(int sub, String label)> _subdivisions = [
+    (1, '♩ Đơn (1x)'),
+    (2, '♪♪ Đôi (2x)'),
+    (3, '♪♪♪ Liên 3'),
+    (4, '♬ Kép (4x)'),
   ];
 
   @override
@@ -162,6 +170,7 @@ class _MetronomeScreenState extends ConsumerState<MetronomeScreen>
           numerator: s.numerator,
           denominator: s.denominator,
           soundType: s.soundType,
+          subdivision: s.subdivision,
           accentFirstBeat: s.accentFirstBeat,
           countInBars: s.countInBars,
           volume: s.volume,
@@ -465,7 +474,34 @@ class _MetronomeScreenState extends ConsumerState<MetronomeScreen>
 
                 const SizedBox(height: 10),
                 const Text(
-                  'Âm sắc máy đếm nhịp cơ',
+                  'Chia nhỏ phách (Subdivision • Tempo Lite)',
+                  style: TextStyle(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    for (int i = 0; i < _subdivisions.length; i++) ...[
+                      if (i > 0) const SizedBox(width: 6),
+                      Expanded(
+                        child: _CompactSelectButton(
+                          key: Key('chip_sub_${_subdivisions[i].$1}'),
+                          label: _subdivisions[i].$2,
+                          isSelected: cfg.subdivision == _subdivisions[i].$1,
+                          isDark: isDark,
+                          onTap: () =>
+                              notifier.setSubdivision(_subdivisions[i].$1),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+
+                const SizedBox(height: 10),
+                const Text(
+                  'Âm sắc máy đếm nhịp (Chuẩn Tempo Lite & Cơ học)',
                   style: TextStyle(
                     fontSize: 13.5,
                     fontWeight: FontWeight.w800,
@@ -673,6 +709,7 @@ class _BeatIndicatorHeader extends ConsumerWidget {
           currentBeat: s.currentBeat,
           isRunning: s.isRunning,
           accentFirstBeat: s.accentFirstBeat,
+          beatStates: s.beatStates,
           status: s.status,
           remainingCountInBeats: s.remainingCountInBeats,
         ),
@@ -680,7 +717,7 @@ class _BeatIndicatorHeader extends ConsumerWidget {
     );
 
     return SizedBox(
-      height: 62,
+      height: 64,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -697,11 +734,13 @@ class _BeatIndicatorHeader extends ConsumerWidget {
                   )
                 : Text(
                     beatData.isRunning
-                        ? 'Phách hiện tại: ${beatData.currentBeat} / ${beatData.numerator}'
-                        : 'Nhịp ${beatData.numerator} phách • Sẵn sàng',
+                        ? 'Phách hiện tại: ${beatData.currentBeat} / ${beatData.numerator} (Chạm số phách để đổi Nhấn/Thường/Tắt)'
+                        : 'Chạm số phách bên dưới để đổi: Nhấn (Cam) • Thường (Xanh) • Tắt',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontWeight: FontWeight.w700,
-                      fontSize: 11.5,
+                      fontSize: 11,
                       color: Theme.of(context).textTheme.bodySmall?.color,
                     ),
                   ),
@@ -715,38 +754,59 @@ class _BeatIndicatorHeader extends ConsumerWidget {
                 final beatNumber = index + 1;
                 final isActive = beatData.isRunning &&
                     beatData.currentBeat == beatNumber;
-                final isAccentBeat =
-                    beatNumber == 1 && beatData.accentFirstBeat;
+                final beatMode = index < beatData.beatStates.length
+                    ? beatData.beatStates[index]
+                    : (beatNumber == 1 && beatData.accentFirstBeat ? 2 : 1);
+                final isAccentBeat = beatMode == 2;
+                final isMutedBeat = beatMode == 0;
 
-                final activeColor = isAccentBeat
-                    ? AppColors.accentAmber
-                    : AppColors.primary;
+                final Color activeColor = isMutedBeat
+                    ? Colors.grey.withOpacity(0.45)
+                    : (isAccentBeat
+                        ? AppColors.accentAmber
+                        : AppColors.primary);
 
-                return Container(
-                  width: 36,
-                  height: 36,
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                  decoration: BoxDecoration(
-                    color: isActive
-                        ? activeColor
-                        : AppColors.primary.withOpacity(0.12),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: isAccentBeat
-                          ? AppColors.accentAmber
-                          : AppColors.primary.withOpacity(0.35),
-                      width: isAccentBeat ? 2.0 : 1.2,
+                final Color idleBgColor = isMutedBeat
+                    ? Colors.grey.withOpacity(0.08)
+                    : (isAccentBeat
+                        ? AppColors.accentAmber.withOpacity(0.14)
+                        : AppColors.primary.withOpacity(0.12));
+
+                final Color borderColor = isMutedBeat
+                    ? Colors.grey.withOpacity(0.40)
+                    : (isAccentBeat
+                        ? AppColors.accentAmber
+                        : AppColors.primary.withOpacity(0.42));
+
+                return GestureDetector(
+                  key: Key('beat_circle_$beatNumber'),
+                  onTap: () => ref
+                      .read(metronomeProvider.notifier)
+                      .cycleBeatState(index),
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    decoration: BoxDecoration(
+                      color: isActive ? activeColor : idleBgColor,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: borderColor,
+                        width: isAccentBeat ? 2.0 : 1.2,
+                      ),
                     ),
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    '$beatNumber',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w900,
-                      fontSize: 14,
-                      color: isActive
-                          ? Colors.white
-                          : Theme.of(context).textTheme.bodyLarge?.color,
+                    alignment: Alignment.center,
+                    child: Text(
+                      isMutedBeat ? '×' : '$beatNumber',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 14,
+                        color: isActive
+                            ? Colors.white
+                            : (isMutedBeat
+                                ? Colors.grey
+                                : Theme.of(context).textTheme.bodyLarge?.color),
+                      ),
                     ),
                   ),
                 );

@@ -17,6 +17,42 @@ import '../domain/hybrid_question_generator.dart';
 /// - 0 = Unlimited (Không giới hạn)
 final selectedPracticeDurationProvider = StateProvider<int>((ref) => 60);
 
+/// Selected difficulty level for "Nhận biết nốt" (Note Recognition):
+/// - 'lvl_notes_basic': Mức 1 (Dễ - Chỉ C4 tự nhiên, không dấu #/b)
+/// - 'lvl_notes_inter': Mức 2 (Trung bình - Chỉ C4, có dấu #/b)
+/// - 'lvl_notes_adv':   Mức 3 (Khá - Đa quãng C3–C5 tự nhiên)
+/// - 'lvl_notes_master': Mức 4 (Nâng cao - Đa quãng C3–C5 đầy đủ #/b, tắt gợi ý C4)
+final selectedNoteLevelIdProvider =
+    StateProvider<String>((ref) => 'lvl_notes_basic');
+
+const List<(String id, String shortTitle, String subTitle, String fullDesc)>
+    kNoteRecognitionLevels = [
+  (
+    'lvl_notes_basic',
+    'Mức 1',
+    'C4 Tự nhiên',
+    'Dễ: Chỉ trong quãng C4 (Đô–Si), không có dấu thăng (#) hay giáng (b).'
+  ),
+  (
+    'lvl_notes_inter',
+    'Mức 2',
+    'C4 Có #/b',
+    'Trung bình: Chỉ trong quãng C4 nhưng có thêm 5 phím đen (dấu # / b).'
+  ),
+  (
+    'lvl_notes_adv',
+    'Mức 3',
+    'C3–C5 Tự nhiên',
+    'Khá: Mở rộng 3 quãng tám (C3–C5) với các nốt tự nhiên, có đối chiếu C4.'
+  ),
+  (
+    'lvl_notes_master',
+    'Mức 4',
+    'C3–C5 Đầy đủ',
+    'Nâng cao: Đầy đủ nốt tự nhiên & dấu #/b từ C3–C5, tắt gợi ý C4.'
+  ),
+];
+
 class PracticeSessionState {
   final String? sessionId;
   final String mode; // 'quick', 'topic', 'review'
@@ -323,8 +359,77 @@ class PracticeSessionNotifier extends StateNotifier<PracticeSessionState> {
     }
   }
 
-  /// Submits an answer for the current question.
-  /// Strictly locks on the first selection (BR-04, TC-13).
+  /// Allows switching Note Recognition level (Mức 1..4) dynamically inside the Practice Room.
+  Future<void> switchNoteLevelInSession(String newLevelId) async {
+    if (state.topicId != 'topic_notes' || state.levelId == newLevelId) return;
+    _ref.read(selectedNoteLevelIdProvider.notifier).state = newLevelId;
+    await _audioService.stop();
+
+    final batchSize = state.isContinuousScoringMode ? 20 : 10;
+    final generated = await _generator.generateSessionQuestions(
+      mode: 'topic',
+      topicId: 'topic_notes',
+      levelId: newLevelId,
+      targetCount: batchSize,
+    );
+    if (generated.questions.isEmpty) return;
+
+    _questionShownAt = DateTime.now();
+    state = state.copyWith(
+      levelId: newLevelId,
+      questions: generated.questions,
+      currentIndex: 0,
+      clearSelectedOption: true,
+    );
+
+    final settings = _ref.read(appSettingsProvider);
+    if (settings.autoPlayQuestionAudio && state.currentQuestion != null) {
+      await _audioService.playAsset(state.currentQuestion!.audioAsset);
+    }
+  }
+
+  /// Submits an answer when the user taps directly on the interactive Piano Keyboard.
+  Future<void> submitPianoKeyAnswer(String tappedNoteKey) async {
+    final currentQ = state.currentQuestion;
+    if (currentQ == null || state.isCurrentAnswered || state.isCompleted) {
+      return;
+    }
+
+    final tappedPitchClass =
+        tappedNoteKey.replaceAll(RegExp(r'[0-9]'), '').toUpperCase();
+
+    // 1. Check pitch-class matches among the 4 options (prioritizing the correct option if same pitch class exists across octaves)
+    final pitchClassMatches = currentQ.options
+        .where((o) =>
+            o.optionKey.replaceAll(RegExp(r'[0-9]'), '').toUpperCase() ==
+            tappedPitchClass)
+        .toList();
+
+    if (pitchClassMatches.isNotEmpty) {
+      final chosenOption =
+          pitchClassMatches.where((o) => o.isCorrect).firstOrNull ??
+              pitchClassMatches
+                  .where((o) =>
+                      o.optionKey.toUpperCase() == tappedNoteKey.toUpperCase())
+                  .firstOrNull ??
+              pitchClassMatches.first;
+      unawaited(_audioService.playPianoKey(chosenOption.optionKey));
+      await submitAnswer(chosenOption);
+      return;
+    }
+
+    // 2. User tapped a piano key that is not among the 4 options -> definitely wrong
+    unawaited(_audioService.playPianoKey(tappedNoteKey));
+    final wrongSyntheticOption = QuestionOptionModel(
+      id: '${currentQ.id}_piano_$tappedNoteKey',
+      questionId: currentQ.id,
+      optionKey: tappedNoteKey,
+      label: tappedNoteKey,
+      isCorrect: false,
+      sortOrder: 99,
+    );
+    await submitAnswer(wrongSyntheticOption);
+  }
   Future<void> submitAnswer(QuestionOptionModel option) async {
     final currentQ = state.currentQuestion;
     if (currentQ == null || state.isCurrentAnswered || state.isCompleted) {

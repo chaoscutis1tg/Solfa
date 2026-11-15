@@ -53,8 +53,8 @@ class LevelModel {
     required this.unlockRule,
   });
 
-  /// Returns true if reference pitch C4 should be available in this level (Decision #2: Basic & Intermediate)
-  bool get allowsReferencePitch => difficulty <= 2;
+  /// Returns true if reference pitch C4 should be available in this level (Levels 1, 2, 3)
+  bool get allowsReferencePitch => difficulty <= 3;
 
   factory LevelModel.fromMap(Map<String, dynamic> map) {
     return LevelModel(
@@ -143,13 +143,12 @@ class QuestionModel {
   QuestionOptionModel get correctOption =>
       options.firstWhere((o) => o.isCorrect, orElse: () => options.first);
 
-  /// Whether this question can show reference pitch C4 (Topic notes, difficulty 1 or 2)
+  /// Whether this question can show reference pitch C4 (Topic notes, difficulty 1..3)
   bool get supportsReferencePitch =>
-      topicId == 'topic_notes' && difficulty <= 2 && type != 'compare_pitch';
+      topicId == 'topic_notes' && difficulty <= 3 && type != 'compare_pitch';
 
   /// Whether this question should display the interactive Piano Keyboard helper
-  bool get showPianoHelper =>
-      topicId == 'topic_notes' && (type == 'piano_key' || difficulty == 1);
+  bool get showPianoHelper => topicId == 'topic_notes';
 
   factory QuestionModel.fromMap(
     Map<String, dynamic> map, {

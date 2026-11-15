@@ -9,6 +9,7 @@ class PianoKeyboardWidget extends StatefulWidget {
   final String? highlightedNoteKey; // e.g. 'C4', 'F4', 'F#4'
   final String? selectedNoteKey; // User's selected option key
   final bool showHighlight;
+  final bool enableBlackKeys;
   final ValueChanged<String>? onKeyTap;
 
   const PianoKeyboardWidget({
@@ -16,6 +17,7 @@ class PianoKeyboardWidget extends StatefulWidget {
     this.highlightedNoteKey,
     this.selectedNoteKey,
     this.showHighlight = false,
+    this.enableBlackKeys = true,
     this.onKeyTap,
   });
 
@@ -47,13 +49,22 @@ class _PianoKeyboardWidgetState extends State<PianoKeyboardWidget> {
     });
   }
 
+  String _normalizeToOctave4(String? rawKey) {
+    if (rawKey == null || rawKey.isEmpty) return '';
+    final pitchClass = rawKey.replaceAll(RegExp(r'[0-9]'), '').toUpperCase();
+    return '${pitchClass}4';
+  }
+
   @override
   Widget build(BuildContext context) {
+    final normalizedTarget = _normalizeToOctave4(widget.highlightedNoteKey);
+    final normalizedSelected = _normalizeToOctave4(widget.selectedNoteKey);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Container(
-          height: 110,
+          height: 114,
           padding: const EdgeInsets.fromLTRB(8, 8, 8, 6),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
@@ -73,7 +84,7 @@ class _PianoKeyboardWidgetState extends State<PianoKeyboardWidget> {
           child: LayoutBuilder(
             builder: (context, constraints) {
               final whiteKeyWidth = constraints.maxWidth / _whiteKeys.length;
-              final blackKeyWidth = whiteKeyWidth * 0.60;
+              final blackKeyWidth = whiteKeyWidth * 0.62;
 
               return Stack(
                 children: [
@@ -82,9 +93,9 @@ class _PianoKeyboardWidgetState extends State<PianoKeyboardWidget> {
                     children: _whiteKeys.map((entry) {
                       final keyCode = entry.$1;
                       final isTarget = widget.showHighlight &&
-                          widget.highlightedNoteKey == keyCode;
+                          normalizedTarget == keyCode;
                       final isWrongSelected = widget.showHighlight &&
-                          widget.selectedNoteKey == keyCode &&
+                          normalizedSelected == keyCode &&
                           !isTarget;
                       final isTapped = _activeTappedKey == keyCode;
 
@@ -103,6 +114,7 @@ class _PianoKeyboardWidgetState extends State<PianoKeyboardWidget> {
 
                       return Expanded(
                         child: GestureDetector(
+                          key: Key('piano_key_$keyCode'),
                           onTap: widget.onKeyTap != null
                               ? () => _handleTap(keyCode)
                               : null,
@@ -153,22 +165,25 @@ class _PianoKeyboardWidgetState extends State<PianoKeyboardWidget> {
                   ),
                   // Black keys (2-group: C#, D#; 3-group: F#, G#, A#)
                   ...[
-                    (0, 'C#4'),
-                    (1, 'D#4'),
-                    (3, 'F#4'),
-                    (4, 'G#4'),
-                    (5, 'A#4'),
+                    (0, 'C#4', 'C#'),
+                    (1, 'D#4', 'D#'),
+                    (3, 'F#4', 'F#'),
+                    (4, 'G#4', 'G#'),
+                    (5, 'A#4', 'A#'),
                   ].map((bKey) {
                     final leftIndex = bKey.$1;
                     final noteCode = bKey.$2;
+                    final shortLabel = bKey.$3;
                     final isTarget = widget.showHighlight &&
-                        widget.highlightedNoteKey == noteCode;
+                        normalizedTarget == noteCode;
                     final isWrongSelected = widget.showHighlight &&
-                        widget.selectedNoteKey == noteCode &&
+                        normalizedSelected == noteCode &&
                         !isTarget;
                     final isTapped = _activeTappedKey == noteCode;
 
-                    Color blackColor = const Color(0xFF171828);
+                    Color blackColor = widget.enableBlackKeys
+                        ? const Color(0xFF171828)
+                        : const Color(0xFF171828).withOpacity(0.45);
                     if (isTarget) {
                       blackColor = AppColors.correct;
                     } else if (isWrongSelected) {
@@ -183,13 +198,17 @@ class _PianoKeyboardWidgetState extends State<PianoKeyboardWidget> {
                       left: leftOffset,
                       top: 0,
                       width: blackKeyWidth,
-                      height: 58,
+                      height: 60,
                       child: GestureDetector(
-                        onTap: widget.onKeyTap != null
+                        key: Key('piano_key_$noteCode'),
+                        onTap: (widget.onKeyTap != null &&
+                                (widget.enableBlackKeys || widget.showHighlight))
                             ? () => _handleTap(noteCode)
                             : null,
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 180),
+                          alignment: Alignment.bottomCenter,
+                          padding: const EdgeInsets.only(bottom: 5),
                           decoration: BoxDecoration(
                             color: blackColor,
                             borderRadius: const BorderRadius.vertical(
@@ -197,7 +216,9 @@ class _PianoKeyboardWidgetState extends State<PianoKeyboardWidget> {
                               top: Radius.circular(3),
                             ),
                             border: Border.all(
-                              color: Colors.black87,
+                              color: widget.enableBlackKeys
+                                  ? Colors.white24
+                                  : Colors.black54,
                               width: 1,
                             ),
                             boxShadow: [
@@ -208,6 +229,16 @@ class _PianoKeyboardWidgetState extends State<PianoKeyboardWidget> {
                               ),
                             ],
                           ),
+                          child: widget.enableBlackKeys
+                              ? Text(
+                                  shortLabel,
+                                  style: const TextStyle(
+                                    fontSize: 9.5,
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.white70,
+                                  ),
+                                )
+                              : null,
                         ),
                       ),
                     );
@@ -217,25 +248,26 @@ class _PianoKeyboardWidgetState extends State<PianoKeyboardWidget> {
             },
           ),
         ),
-        if (widget.onKeyTap != null)
-          Padding(
-            padding: const EdgeInsets.only(top: 6),
-            child: Text(
-              widget.showHighlight
-                  ? '💡 Chạm vào các phím đàn để nghe và so sánh cao độ trực tiếp'
-                  : 'Sơ đồ 1 quãng tám (Đô C4 – Si B4)',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 11.5,
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context)
-                    .textTheme
-                    .bodySmall
-                    ?.color
-                    ?.withOpacity(0.75),
-              ),
+        Padding(
+          padding: const EdgeInsets.only(top: 6),
+          child: Text(
+            widget.showHighlight
+                ? '💡 Chạm vào các phím đàn để nghe và so sánh cao độ trực tiếp'
+                : (widget.enableBlackKeys
+                    ? '🎹 Chạm trực tiếp phím trắng/đen (#/b) để chọn đáp án hoặc chọn A/B/C/D bên dưới'
+                    : '🎹 Mức 1 (C4 tự nhiên): Chạm trực tiếp phím trắng (Đô–Si) hoặc chọn A/B/C/D bên dưới'),
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 11.2,
+              fontWeight: FontWeight.w600,
+              color: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.color
+                  ?.withOpacity(0.82),
             ),
           ),
+        ),
       ],
     );
   }

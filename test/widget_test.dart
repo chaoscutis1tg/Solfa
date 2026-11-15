@@ -339,5 +339,90 @@ void main() {
         expect(afterStats.recentSessions.length, equals(1));
       },
     );
+
+    test(
+      'TC-16: 4 Mức độ Nhận biết nốt (Mức 1..4), trả lời bằng phím Piano & Metronome Tempo Lite (Subdivision + Per-beat state)',
+      () async {
+        await db.seedContent();
+        await container.read(appSettingsProvider.notifier).loadSettings();
+        final sessionNotifier = container.read(practiceSessionProvider.notifier);
+
+        // 1. Mức 1 (lvl_notes_basic): Chỉ C4 tự nhiên, không dấu #/b, không câu compare_pitch
+        await sessionNotifier.startSession(
+          mode: 'topic',
+          topicId: 'topic_notes',
+          levelId: 'lvl_notes_basic',
+          targetCount: 12,
+          seed: 11,
+        );
+        var qList = container.read(practiceSessionProvider).questions;
+        expect(qList.length, equals(12));
+        for (final q in qList) {
+          expect(q.type, isNot(equals('compare_pitch')));
+          expect(q.supportsReferencePitch, isTrue);
+          for (final opt in q.options) {
+            expect(opt.optionKey.contains('#'), isFalse,
+                reason: 'Mức 1 không có dấu thăng/giáng');
+            expect(opt.optionKey.endsWith('4'), isTrue,
+                reason: 'Mức 1 chỉ nằm trong quãng C4');
+          }
+        }
+
+        // Test trả lời trực tiếp bằng bàn phím Piano
+        final firstQ = container.read(practiceSessionProvider).currentQuestion!;
+        await sessionNotifier.submitPianoKeyAnswer(firstQ.correctOption.optionKey);
+        expect(container.read(practiceSessionProvider).isCurrentCorrect, isTrue);
+
+        // 2. Mức 2 (lvl_notes_inter): Chỉ trong quãng C4 nhưng có dấu #/b
+        await sessionNotifier.switchNoteLevelInSession('lvl_notes_inter');
+        qList = container.read(practiceSessionProvider).questions;
+        expect(
+          qList.any((q) => q.options.any((o) => o.optionKey.contains('#'))),
+          isTrue,
+          reason: 'Mức 2 có các nốt dấu hóa #/b trong C4',
+        );
+        for (final q in qList) {
+          for (final opt in q.options) {
+            expect(opt.optionKey.endsWith('4'), isTrue,
+                reason: 'Mức 2 chỉ nằm trong quãng C4');
+          }
+        }
+
+        // 3. Mức 3 (lvl_notes_adv): Đa quãng tám C3–C5 tự nhiên (không dấu #)
+        await sessionNotifier.switchNoteLevelInSession('lvl_notes_adv');
+        qList = container.read(practiceSessionProvider).questions;
+        for (final q in qList) {
+          expect(q.supportsReferencePitch, isTrue);
+          for (final opt in q.options) {
+            expect(opt.optionKey.contains('#'), isFalse,
+                reason: 'Mức 3 đa quãng tám tự nhiên không có dấu #/b');
+          }
+        }
+
+        // 4. Mức 4 (lvl_notes_master): Đa quãng tám C3–C5 đầy đủ #/b & tắt tham chiếu C4
+        await sessionNotifier.switchNoteLevelInSession('lvl_notes_master');
+        qList = container.read(practiceSessionProvider).questions;
+        for (final q in qList) {
+          expect(q.supportsReferencePitch, isFalse,
+              reason: 'Mức 4 tắt tham chiếu C4');
+        }
+
+        // 5. Metronome Tempo Lite sound, Subdivision (1..4) & Per-beat Accent/Normal/Mute
+        final metroNotifier = container.read(metronomeProvider.notifier);
+        expect(container.read(metronomeProvider).soundType, equals('tempo'));
+
+        metroNotifier.setSubdivision(3);
+        expect(container.read(metronomeProvider).subdivision, equals(3));
+
+        // Beat 1 starts at state 2 (Accent) -> cycle to 1 (Normal) -> cycle to 0 (Mute) -> cycle to 2 (Accent)
+        expect(container.read(metronomeProvider).beatStateAt(1), equals(2));
+        metroNotifier.cycleBeatState(0);
+        expect(container.read(metronomeProvider).beatStateAt(1), equals(1));
+        metroNotifier.cycleBeatState(0);
+        expect(container.read(metronomeProvider).beatStateAt(1), equals(0));
+        metroNotifier.cycleBeatState(0);
+        expect(container.read(metronomeProvider).beatStateAt(1), equals(2));
+      },
+    );
   });
 }

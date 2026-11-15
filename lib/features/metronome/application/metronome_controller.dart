@@ -86,12 +86,15 @@ class MetronomeState {
   final int bpm;
   final int numerator;
   final int denominator;
-  final String soundType; // 'click', 'woodblock', 'bell'
+  final String soundType; // 'tempo', 'click', 'woodblock', 'bell'
   final bool accentFirstBeat;
+  final int subdivision; // 1 (Quarter), 2 (Eighth), 3 (Triplet), 4 (Sixteenth)
+  final List<int> beatStates; // Per-beat: 2 = Accent, 1 = Normal, 0 = Muted
   final int countInBars; // 0, 1, or 2
   final double volume;
   final MetronomeStatus status;
   final int currentBeat; // 1..numerator (or 0 when stopped)
+  final int currentSubTick; // 0..subdivision-1
   final int remainingCountInBeats;
   final String? errorMessage;
 
@@ -99,12 +102,15 @@ class MetronomeState {
     this.bpm = 100,
     this.numerator = 4,
     this.denominator = 4,
-    this.soundType = 'click',
+    this.soundType = 'tempo',
     this.accentFirstBeat = true,
+    this.subdivision = 1,
+    this.beatStates = const [2, 1, 1, 1],
     this.countInBars = 0,
     this.volume = 0.9,
     this.status = MetronomeStatus.stopped,
     this.currentBeat = 0,
+    this.currentSubTick = 0,
     this.remainingCountInBeats = 0,
     this.errorMessage,
   });
@@ -116,16 +122,27 @@ class MetronomeState {
 
   double get intervalMs => TapTempoCalculator.intervalMsForBpm(bpm);
 
+  int beatStateAt(int beatNumber1Based) {
+    final idx = beatNumber1Based - 1;
+    if (idx >= 0 && idx < beatStates.length) {
+      return beatStates[idx];
+    }
+    return (beatNumber1Based == 1 && accentFirstBeat) ? 2 : 1;
+  }
+
   MetronomeState copyWith({
     int? bpm,
     int? numerator,
     int? denominator,
     String? soundType,
     bool? accentFirstBeat,
+    int? subdivision,
+    List<int>? beatStates,
     int? countInBars,
     double? volume,
     MetronomeStatus? status,
     int? currentBeat,
+    int? currentSubTick,
     int? remainingCountInBeats,
     String? errorMessage,
   }) {
@@ -135,10 +152,13 @@ class MetronomeState {
       denominator: denominator ?? this.denominator,
       soundType: soundType ?? this.soundType,
       accentFirstBeat: accentFirstBeat ?? this.accentFirstBeat,
+      subdivision: subdivision ?? this.subdivision,
+      beatStates: beatStates ?? this.beatStates,
       countInBars: countInBars ?? this.countInBars,
       volume: volume ?? this.volume,
       status: status ?? this.status,
       currentBeat: currentBeat ?? this.currentBeat,
+      currentSubTick: currentSubTick ?? this.currentSubTick,
       remainingCountInBeats:
           remainingCountInBeats ?? this.remainingCountInBeats,
       errorMessage: errorMessage,
@@ -157,6 +177,7 @@ class MetronomeNotifier extends StateNotifier<MetronomeState> {
 
   AudioPlayer? _accentPlayer;
   AudioPlayer? _normalPlayer;
+  AudioPlayer? _subPlayer;
 
   MetronomeNotifier(this._ref, {this.isTestMode = false})
       : super(const MetronomeState()) {
@@ -177,6 +198,11 @@ class MetronomeNotifier extends StateNotifier<MetronomeState> {
         await _normalPlayer!.setPlayerMode(PlayerMode.lowLatency);
         await _normalPlayer!.setReleaseMode(ReleaseMode.stop);
       }
+      if (_subPlayer == null) {
+        _subPlayer = AudioPlayer();
+        await _subPlayer!.setPlayerMode(PlayerMode.lowLatency);
+        await _subPlayer!.setReleaseMode(ReleaseMode.stop);
+      }
     } catch (_) {}
   }
 
@@ -194,10 +220,16 @@ class MetronomeNotifier extends StateNotifier<MetronomeState> {
   }
 
   void setTimeSignature(int numerator, int denominator) {
+    final updatedStates = List<int>.generate(numerator, (i) {
+      if (i < state.beatStates.length) return state.beatStates[i];
+      return (i == 0 && state.accentFirstBeat) ? 2 : 1;
+    });
     state = state.copyWith(
       numerator: numerator,
       denominator: denominator,
+      beatStates: updatedStates,
       currentBeat: state.isRunning ? 1 : 0,
+      currentSubTick: 0,
     );
   }
 
@@ -205,8 +237,41 @@ class MetronomeNotifier extends StateNotifier<MetronomeState> {
     state = state.copyWith(soundType: soundType);
   }
 
+  void setSubdivision(int sub) {
+    final clamped = sub.clamp(1, 4);
+    if (clamped == state.subdivision) return;
+    state = state.copyWith(subdivision: clamped, currentSubTick: 0);
+    if (state.isRunning) {
+      _rescheduleRunningLoop();
+    }
+  }
+
   void setAccentFirstBeat(bool value) {
-    state = state.copyWith(accentFirstBeat: value);
+    final updated = List<int>.from(state.beatStates);
+    if (updated.isNotEmpty) {
+      updated[0] = value ? 2 : 1;
+    }
+    state = state.copyWith(
+      accentFirstBeat: value,
+      beatStates: updated,
+    );
+  }
+
+  /// Cycles a specific beat (0-based index) through:
+  /// 2 (Accent/Cam) -> 1 (Normal/Xanh) -> 0 (Muted/Xám) -> 2 (Accent/Cam)
+  void cycleBeatState(int beatIndex) {
+    if (beatIndex < 0 || beatIndex >= state.numerator) return;
+    final updated = List<int>.generate(state.numerator, (i) {
+      if (i < state.beatStates.length) return state.beatStates[i];
+      return (i == 0 && state.accentFirstBeat) ? 2 : 1;
+    });
+    final current = updated[beatIndex];
+    final next = current == 2 ? 1 : (current == 1 ? 0 : 2);
+    updated[beatIndex] = next;
+    state = state.copyWith(
+      beatStates: updated,
+      accentFirstBeat: updated.first == 2,
+    );
   }
 
   void setCountInBars(int bars) {
@@ -219,6 +284,7 @@ class MetronomeNotifier extends StateNotifier<MetronomeState> {
     if (!isTestMode) {
       _accentPlayer?.setVolume(v);
       _normalPlayer?.setVolume(v);
+      _subPlayer?.setVolume(v);
     }
   }
 
@@ -260,17 +326,19 @@ class MetronomeNotifier extends StateNotifier<MetronomeState> {
     state = state.copyWith(
       status: initialStatus,
       currentBeat: 1,
+      currentSubTick: 0,
       remainingCountInBeats: totalCountIn > 0 ? totalCountIn - 1 : 0,
       errorMessage: null,
     );
 
-    unawaited(_playBeatClick(isFirstBeat: true));
+    unawaited(_playBeatClick(beatNumber: 1, isSubTick: false));
 
     _stopwatch
       ..reset()
       ..start();
-    final intervalMicros = (60000000.0 / state.bpm).round();
-    _nextBeatTargetMicros = intervalMicros;
+    final subIntervalMicros =
+        (60000000.0 / (state.bpm * state.subdivision)).round();
+    _nextBeatTargetMicros = subIntervalMicros;
     _scheduleNextTick();
   }
 
@@ -279,8 +347,9 @@ class MetronomeNotifier extends StateNotifier<MetronomeState> {
     _stopwatch
       ..reset()
       ..start();
-    final intervalMicros = (60000000.0 / state.bpm).round();
-    _nextBeatTargetMicros = intervalMicros;
+    final subIntervalMicros =
+        (60000000.0 / (state.bpm * state.subdivision)).round();
+    _nextBeatTargetMicros = subIntervalMicros;
     _scheduleNextTick();
   }
 
@@ -293,13 +362,23 @@ class MetronomeNotifier extends StateNotifier<MetronomeState> {
     _schedulerTimer = Timer(Duration(microseconds: delayMicros), () {
       if (!state.isRunning) return;
       _onBeatTick();
-      final intervalMicros = (60000000.0 / state.bpm).round();
-      _nextBeatTargetMicros += intervalMicros;
+      final subIntervalMicros =
+          (60000000.0 / (state.bpm * state.subdivision)).round();
+      _nextBeatTargetMicros += subIntervalMicros;
       _scheduleNextTick();
     });
   }
 
   void _onBeatTick() {
+    final nextSub = (state.currentSubTick + 1) % state.subdivision;
+    if (nextSub != 0) {
+      state = state.copyWith(currentSubTick: nextSub);
+      unawaited(
+        _playBeatClick(beatNumber: state.currentBeat, isSubTick: true),
+      );
+      return;
+    }
+
     if (state.status == MetronomeStatus.countIn) {
       final nextBeat = (state.currentBeat % state.numerator) + 1;
       if (state.remainingCountInBeats <= 0) {
@@ -307,28 +386,50 @@ class MetronomeNotifier extends StateNotifier<MetronomeState> {
         state = state.copyWith(
           status: MetronomeStatus.playing,
           currentBeat: 1,
+          currentSubTick: 0,
           remainingCountInBeats: 0,
         );
-        unawaited(_playBeatClick(isFirstBeat: true));
+        unawaited(_playBeatClick(beatNumber: 1, isSubTick: false));
       } else {
         state = state.copyWith(
           currentBeat: nextBeat,
+          currentSubTick: 0,
           remainingCountInBeats: state.remainingCountInBeats - 1,
         );
-        unawaited(_playBeatClick(isFirstBeat: nextBeat == 1));
+        unawaited(_playBeatClick(beatNumber: nextBeat, isSubTick: false));
       }
       return;
     }
 
     final nextBeat = (state.currentBeat % state.numerator) + 1;
-    state = state.copyWith(currentBeat: nextBeat);
-    unawaited(_playBeatClick(isFirstBeat: nextBeat == 1));
+    state = state.copyWith(currentBeat: nextBeat, currentSubTick: 0);
+    unawaited(_playBeatClick(beatNumber: nextBeat, isSubTick: false));
   }
 
-  Future<void> _playBeatClick({required bool isFirstBeat}) async {
+  Future<void> _playBeatClick({
+    required int beatNumber,
+    required bool isSubTick,
+  }) async {
     if (isTestMode || state.volume <= 0.01) return;
     try {
-      final useAccent = isFirstBeat && state.accentFirstBeat;
+      final beatMode = state.beatStateAt(beatNumber);
+      if (beatMode == 0) {
+        // Muted beat -> silent!
+        return;
+      }
+      if (isSubTick) {
+        final assetPath = 'audio/metronome/${state.soundType}_sub.wav';
+        if (_subPlayer != null) {
+          await _subPlayer!.stop();
+          await _subPlayer!.play(
+            AssetSource(assetPath),
+            volume: (state.volume * 0.78).clamp(0.0, 1.0),
+          );
+        }
+        return;
+      }
+
+      final useAccent = beatMode == 2;
       final suffix = useAccent ? 'accent' : 'normal';
       final assetPath = 'audio/metronome/${state.soundType}_$suffix.wav';
       final player = useAccent ? _accentPlayer : _normalPlayer;
@@ -361,6 +462,7 @@ class MetronomeNotifier extends StateNotifier<MetronomeState> {
     state = state.copyWith(
       status: MetronomeStatus.stopped,
       currentBeat: 0,
+      currentSubTick: 0,
       remainingCountInBeats: 0,
     );
   }
@@ -374,6 +476,7 @@ class MetronomeNotifier extends StateNotifier<MetronomeState> {
         WakelockPlus.disable();
         _accentPlayer?.dispose();
         _normalPlayer?.dispose();
+        _subPlayer?.dispose();
       } catch (_) {}
     }
     super.dispose();

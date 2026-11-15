@@ -7,6 +7,7 @@ import '../../../app/widgets/pulsing_red_heart.dart';
 import '../../../app/widgets/solfa_background.dart';
 import '../../../app/widgets/solfa_logo.dart';
 import '../../../core/providers/app_providers.dart';
+import '../../metronome/application/metronome_controller.dart';
 import '../../practice/application/practice_session_controller.dart';
 import '../../support_developer/application/rewarded_ad_controller.dart';
 
@@ -505,6 +506,47 @@ class SettingsScreen extends ConsumerWidget {
                     ),
                     value: settings.hapticFeedbackEnabled,
                     onChanged: (v) => notifier.setHapticFeedback(v),
+                  ),
+                  const Divider(height: 1),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Âm sắc Metronome mặc định',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            for (final item in const [
+                              ('tempo', 'Tempo Lite'),
+                              ('click', 'Cơ học'),
+                              ('woodblock', 'Gỗ trầm'),
+                              ('bell', 'Chuông'),
+                            ]) ...[
+                              if (item.$1 != 'tempo') const SizedBox(width: 6),
+                              _DurationChoiceButton(
+                                label: item.$2,
+                                isSelected:
+                                    settings.defaultMetronomeSound == item.$1,
+                                isDark: isDark,
+                                onTap: () {
+                                  notifier.setDefaultMetronomeSound(item.$1);
+                                  ref
+                                      .read(metronomeProvider.notifier)
+                                      .setSoundType(item.$1);
+                                },
+                              ),
+                            ],
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                   const Divider(height: 1),
                   SwitchListTile(

@@ -275,9 +275,20 @@ class AppDatabase {
         await txn.insert(
           'metronome_presets',
           pMap,
-          conflictAlgorithm: ConflictAlgorithm.ignore,
+          conflictAlgorithm: ConflictAlgorithm.replace,
         );
       }
+
+      // Remove legacy compare_pitch questions so Note Recognition is 100% pure note identification
+      await txn.rawDelete(
+        "DELETE FROM question_options WHERE question_id IN (SELECT id FROM questions WHERE type = 'compare_pitch')",
+      );
+      await txn.rawDelete(
+        "DELETE FROM review_items WHERE question_id IN (SELECT id FROM questions WHERE type = 'compare_pitch')",
+      );
+      await txn.rawDelete(
+        "DELETE FROM questions WHERE type = 'compare_pitch'",
+      );
 
       // Normalize any legacy interval audio paths from earlier versions
       const legacyIntervalFixes = <String, String>{

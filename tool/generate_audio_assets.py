@@ -409,6 +409,63 @@ def generate_metronome_and_sfx() -> None:
     write_wav(os.path.join(metro_dir, "bell_accent.wav"), make_mechanical_bell_accent())
     write_wav(os.path.join(metro_dir, "bell_normal.wav"), mech_normal)
 
+    # 4. "Metronome: Tempo Lite" Signature Quartz Digital-Acoustic Click (tempo_accent, tempo_normal, tempo_sub)
+    def make_tempo_lite_click(
+        pitch_hz: float,
+        amp: float,
+        decay_rate: float = 95.0,
+        dur: float = 0.055,
+        punch: float = 0.45,
+    ) -> list[float]:
+        """
+        Synthesizes the iconic 'Metronome: Tempo Lite' (by Frozen Ape) crisp studio click:
+        - Razor-sharp 1.5 ms percussive transient so every beat cuts clearly through instruments
+        - Clean pitched quartz-wood resonant body (A6=1760Hz accent, D6=1174.66Hz normal, A5=880Hz subdivision)
+        - Rapid, zero-ring exponential decay.
+        """
+        n = int(SAMPLE_RATE * dur)
+        out = [0.0] * n
+        for i in range(n):
+            t = i / SAMPLE_RATE
+            attack = min(1.0, t / 0.0005)
+            # Crisp initial transient (0..1.8ms)
+            transient_env = math.exp(-1350.0 * t)
+            transient = (
+                math.sin(2.0 * math.pi * 3200.0 * t + 0.4)
+                + 0.75 * math.sin(2.0 * math.pi * 4950.0 * t + 1.2)
+            ) * transient_env * punch
+
+            # Pitched Tempo Lite tone body with slight initial pitch snap
+            f_inst = pitch_hz * (1.0 + 0.08 * math.exp(-600.0 * t))
+            body_env = attack * math.exp(-decay_rate * t)
+            harmonic_env = attack * math.exp(-(decay_rate * 1.65) * t)
+            body = (
+                0.82 * math.sin(2.0 * math.pi * f_inst * t) * body_env
+                + 0.24 * math.sin(2.0 * math.pi * (f_inst * 2.0) * t) * harmonic_env
+                + 0.08 * math.sin(2.0 * math.pi * (f_inst * 3.0) * t) * harmonic_env
+            )
+            out[i] = (transient + body) * amp
+
+        peak = max((abs(x) for x in out), default=1.0)
+        if peak > 1e-6:
+            scale = amp / peak
+            out = [x * scale for x in out]
+        return out
+
+    tempo_accent = make_tempo_lite_click(1760.0, 0.96, decay_rate=88.0, punch=0.52)
+    tempo_normal = make_tempo_lite_click(1174.66, 0.84, decay_rate=102.0, punch=0.40)
+    tempo_sub = make_tempo_lite_click(880.0, 0.56, decay_rate=135.0, punch=0.28)
+    write_wav(os.path.join(metro_dir, "tempo_accent.wav"), tempo_accent)
+    write_wav(os.path.join(metro_dir, "tempo_normal.wav"), tempo_normal)
+    write_wav(os.path.join(metro_dir, "tempo_sub.wav"), tempo_sub)
+
+    # Subdivision ticks for click, woodblock, and bell
+    mech_sub = make_mechanical_pendulum_tick(590.0, 0.52, is_accent=False, wood_depth=0.90)
+    wood_sub = make_mechanical_pendulum_tick(510.0, 0.52, is_accent=False, wood_depth=1.20)
+    write_wav(os.path.join(metro_dir, "click_sub.wav"), mech_sub)
+    write_wav(os.path.join(metro_dir, "woodblock_sub.wav"), wood_sub)
+    write_wav(os.path.join(metro_dir, "bell_sub.wav"), mech_sub)
+
     # UPGRADED CORRECT SFX: Sparkling overlapping 4-note celesta chime arpeggio (G5 -> B5 -> D6 -> G6)
     # Distinct from lesson piano notes, bright, rewarding, and instantaneous!
     chime_1 = synthesize_chime_bell(midi_to_freq(72), 0.32, 0.65)  # C5
@@ -714,15 +771,16 @@ def generate_seed_json() -> None:
     ]
 
     levels = [
-        {"id": "lvl_notes_basic", "topic_id": "topic_notes", "code": "basic", "name": "Cơ bản", "difficulty": 1, "unlock_rule": "always_unlocked"},
-        {"id": "lvl_notes_inter", "topic_id": "topic_notes", "code": "intermediate", "name": "Trung bình", "difficulty": 2, "unlock_rule": "complete_prev_2_sessions_70"},
-        {"id": "lvl_notes_adv", "topic_id": "topic_notes", "code": "advanced", "name": "Nâng cao", "difficulty": 3, "unlock_rule": "complete_prev_2_sessions_70"},
+        {"id": "lvl_notes_basic", "topic_id": "topic_notes", "code": "level_1_c4_natural", "name": "Mức 1: Dễ (C4 Tự nhiên)", "difficulty": 1, "unlock_rule": "always_unlocked"},
+        {"id": "lvl_notes_inter", "topic_id": "topic_notes", "code": "level_2_c4_chromatic", "name": "Mức 2: Trung bình (C4 có #/b)", "difficulty": 2, "unlock_rule": "always_unlocked"},
+        {"id": "lvl_notes_adv", "topic_id": "topic_notes", "code": "level_3_multi_natural", "name": "Mức 3: Khá (C3–C5 Tự nhiên)", "difficulty": 3, "unlock_rule": "always_unlocked"},
+        {"id": "lvl_notes_master", "topic_id": "topic_notes", "code": "level_4_multi_chromatic", "name": "Mức 4: Nâng cao (C3–C5 Đầy đủ #/b)", "difficulty": 4, "unlock_rule": "always_unlocked"},
         {"id": "lvl_intervals_basic", "topic_id": "topic_intervals", "code": "basic", "name": "Cơ bản", "difficulty": 1, "unlock_rule": "always_unlocked"},
-        {"id": "lvl_intervals_inter", "topic_id": "topic_intervals", "code": "intermediate", "name": "Trung bình", "difficulty": 2, "unlock_rule": "complete_prev_2_sessions_70"},
-        {"id": "lvl_intervals_adv", "topic_id": "topic_intervals", "code": "advanced", "name": "Nâng cao", "difficulty": 3, "unlock_rule": "complete_prev_2_sessions_70"},
+        {"id": "lvl_intervals_inter", "topic_id": "topic_intervals", "code": "intermediate", "name": "Trung bình", "difficulty": 2, "unlock_rule": "always_unlocked"},
+        {"id": "lvl_intervals_adv", "topic_id": "topic_intervals", "code": "advanced", "name": "Nâng cao", "difficulty": 3, "unlock_rule": "always_unlocked"},
         {"id": "lvl_keys_basic", "topic_id": "topic_keys", "code": "basic", "name": "Cơ bản", "difficulty": 1, "unlock_rule": "always_unlocked"},
-        {"id": "lvl_keys_inter", "topic_id": "topic_keys", "code": "intermediate", "name": "Trung bình", "difficulty": 2, "unlock_rule": "complete_prev_2_sessions_70"},
-        {"id": "lvl_keys_adv", "topic_id": "topic_keys", "code": "advanced", "name": "Nâng cao", "difficulty": 3, "unlock_rule": "complete_prev_2_sessions_70"},
+        {"id": "lvl_keys_inter", "topic_id": "topic_keys", "code": "intermediate", "name": "Trung bình", "difficulty": 2, "unlock_rule": "always_unlocked"},
+        {"id": "lvl_keys_adv", "topic_id": "topic_keys", "code": "advanced", "name": "Nâng cao", "difficulty": 3, "unlock_rule": "always_unlocked"},
     ]
 
     questions = [
@@ -731,16 +789,16 @@ def generate_seed_json() -> None:
             "topic_id": "topic_notes",
             "level_id": "lvl_notes_basic",
             "type": "listen_note",
-            "prompt": "Nghe âm thanh (có thể đối chiếu nốt Đô chuẩn C4) và chọn tên nốt đúng:",
-            "explanation": "Đây là nốt Đô (C4) – tần số chuẩn 261.6 Hz, trùng khớp hoàn toàn với nốt tham chiếu Đô.",
+            "prompt": "[Mức 1 • C4 Tự nhiên] Nghe âm thanh và chọn đúng tên nốt (hoặc bấm trực tiếp phím đàn):",
+            "explanation": "Đây là nốt Đô (C4) – tần số chuẩn 261.6 Hz, nằm ngay bên trái cụm 2 phím đen.",
             "audio_asset": "assets/audio/notes/c4.wav",
             "difficulty": 1,
-            "version": 1,
+            "version": 2,
             "options": [
-                {"id": "q_note_b01_o1", "option_key": "C4", "label": "Đô (C)", "is_correct": True, "sort_order": 1},
-                {"id": "q_note_b01_o2", "option_key": "D4", "label": "Rê (D)", "is_correct": False, "sort_order": 2},
-                {"id": "q_note_b01_o3", "option_key": "E4", "label": "Mi (E)", "is_correct": False, "sort_order": 3},
-                {"id": "q_note_b01_o4", "option_key": "G4", "label": "Sol (G)", "is_correct": False, "sort_order": 4},
+                {"id": "q_note_b01_o1", "option_key": "C4", "label": "Đô (C4)", "is_correct": True, "sort_order": 1},
+                {"id": "q_note_b01_o2", "option_key": "D4", "label": "Rê (D4)", "is_correct": False, "sort_order": 2},
+                {"id": "q_note_b01_o3", "option_key": "E4", "label": "Mi (E4)", "is_correct": False, "sort_order": 3},
+                {"id": "q_note_b01_o4", "option_key": "G4", "label": "Sol (G4)", "is_correct": False, "sort_order": 4},
             ],
         },
         {
@@ -748,16 +806,16 @@ def generate_seed_json() -> None:
             "topic_id": "topic_notes",
             "level_id": "lvl_notes_basic",
             "type": "listen_note",
-            "prompt": "Nghe nốt nhạc trong quãng tám trung (Octave 4) và chọn đáp án đúng:",
-            "explanation": "Nốt Rê (D4) cao hơn nốt Đô (C4) một cung nguyên (quãng 2 trưởng).",
+            "prompt": "[Mức 1 • C4 Tự nhiên] Nghe âm thanh và chọn đúng tên nốt (hoặc bấm trực tiếp phím đàn):",
+            "explanation": "Nốt Rê (D4) cao hơn nốt Đô (C4) đúng 1 cung nguyên, nằm giữa 2 phím đen C# và D#.",
             "audio_asset": "assets/audio/notes/d4.wav",
             "difficulty": 1,
-            "version": 1,
+            "version": 2,
             "options": [
-                {"id": "q_note_b02_o1", "option_key": "C4", "label": "Đô (C)", "is_correct": False, "sort_order": 1},
-                {"id": "q_note_b02_o2", "option_key": "D4", "label": "Rê (D)", "is_correct": True, "sort_order": 2},
-                {"id": "q_note_b02_o3", "option_key": "F4", "label": "Fa (F)", "is_correct": False, "sort_order": 3},
-                {"id": "q_note_b02_o4", "option_key": "A4", "label": "La (A)", "is_correct": False, "sort_order": 4},
+                {"id": "q_note_b02_o1", "option_key": "C4", "label": "Đô (C4)", "is_correct": False, "sort_order": 1},
+                {"id": "q_note_b02_o2", "option_key": "D4", "label": "Rê (D4)", "is_correct": True, "sort_order": 2},
+                {"id": "q_note_b02_o3", "option_key": "F4", "label": "Fa (F4)", "is_correct": False, "sort_order": 3},
+                {"id": "q_note_b02_o4", "option_key": "A4", "label": "La (A4)", "is_correct": False, "sort_order": 4},
             ],
         },
         {
@@ -765,16 +823,16 @@ def generate_seed_json() -> None:
             "topic_id": "topic_notes",
             "level_id": "lvl_notes_basic",
             "type": "listen_note",
-            "prompt": "Nghe âm thanh và cho biết đây là nốt nào trong thang âm Đô Trưởng:",
-            "explanation": "Nốt Mi (E4) là bậc III của âm giai Đô Trưởng, tạo cảm giác sáng và ấm khi so với Đô (C4).",
+            "prompt": "[Mức 1 • C4 Tự nhiên] Nghe âm thanh và chọn đúng tên nốt (hoặc bấm trực tiếp phím đàn):",
+            "explanation": "Nốt Mi (E4) là bậc III của âm giai Đô Trưởng, nằm ngay bên phải cụm 2 phím đen.",
             "audio_asset": "assets/audio/notes/e4.wav",
             "difficulty": 1,
-            "version": 1,
+            "version": 2,
             "options": [
-                {"id": "q_note_b03_o1", "option_key": "D4", "label": "Rê (D)", "is_correct": False, "sort_order": 1},
-                {"id": "q_note_b03_o2", "option_key": "E4", "label": "Mi (E)", "is_correct": True, "sort_order": 2},
-                {"id": "q_note_b03_o3", "option_key": "G4", "label": "Sol (G)", "is_correct": False, "sort_order": 3},
-                {"id": "q_note_b03_o4", "option_key": "B4", "label": "Si (B)", "is_correct": False, "sort_order": 4},
+                {"id": "q_note_b03_o1", "option_key": "D4", "label": "Rê (D4)", "is_correct": False, "sort_order": 1},
+                {"id": "q_note_b03_o2", "option_key": "E4", "label": "Mi (E4)", "is_correct": True, "sort_order": 2},
+                {"id": "q_note_b03_o3", "option_key": "G4", "label": "Sol (G4)", "is_correct": False, "sort_order": 3},
+                {"id": "q_note_b03_o4", "option_key": "B4", "label": "Si (B4)", "is_correct": False, "sort_order": 4},
             ],
         },
         {
@@ -782,115 +840,67 @@ def generate_seed_json() -> None:
             "topic_id": "topic_notes",
             "level_id": "lvl_notes_basic",
             "type": "listen_note",
-            "prompt": "Nghe âm thanh và chọn tên nốt tương ứng:",
+            "prompt": "[Mức 1 • C4 Tự nhiên] Nghe âm thanh và chọn đúng tên nốt (hoặc bấm trực tiếp phím đàn):",
             "explanation": "Nốt Sol (G4) cách nốt Đô (C4) một quãng 5 đúng (bậc V trong giọng Đô Trưởng).",
             "audio_asset": "assets/audio/notes/g4.wav",
             "difficulty": 1,
-            "version": 1,
+            "version": 2,
             "options": [
-                {"id": "q_note_b04_o1", "option_key": "E4", "label": "Mi (E)", "is_correct": False, "sort_order": 1},
-                {"id": "q_note_b04_o2", "option_key": "F4", "label": "Fa (F)", "is_correct": False, "sort_order": 2},
-                {"id": "q_note_b04_o3", "option_key": "G4", "label": "Sol (G)", "is_correct": True, "sort_order": 3},
-                {"id": "q_note_b04_o4", "option_key": "A4", "label": "La (A)", "is_correct": False, "sort_order": 4},
+                {"id": "q_note_b04_o1", "option_key": "E4", "label": "Mi (E4)", "is_correct": False, "sort_order": 1},
+                {"id": "q_note_b04_o2", "option_key": "F4", "label": "Fa (F4)", "is_correct": False, "sort_order": 2},
+                {"id": "q_note_b04_o3", "option_key": "G4", "label": "Sol (G4)", "is_correct": True, "sort_order": 3},
+                {"id": "q_note_b04_o4", "option_key": "A4", "label": "La (A4)", "is_correct": False, "sort_order": 4},
             ],
         },
         {
             "id": "q_note_b05",
             "topic_id": "topic_notes",
             "level_id": "lvl_notes_basic",
-            "type": "compare_pitch",
-            "prompt": "Nghe hai nốt phát liên tiếp. Nốt thứ hai có cao độ như thế nào so với nốt thứ nhất?",
-            "explanation": "Nốt đầu là Đô (C4), nốt sau là Sol (G4) nên nốt thứ hai cao hơn rõ rệt.",
-            "audio_asset": "assets/audio/notes/cmp_c4_g4.wav",
+            "type": "listen_note",
+            "prompt": "[Mức 1 • C4 Tự nhiên] Nghe âm thanh và chọn đúng tên nốt (hoặc bấm trực tiếp phím đàn):",
+            "explanation": "Phím trắng đầu tiên bên trái cụm 3 phím đen là nốt Fa (F4), cao hơn Mi (E4) nửa cung.",
+            "audio_asset": "assets/audio/notes/f4.wav",
             "difficulty": 1,
-            "version": 1,
+            "version": 2,
             "options": [
-                {"id": "q_note_b05_o1", "option_key": "higher", "label": "Nốt thứ hai cao hơn", "is_correct": True, "sort_order": 1},
-                {"id": "q_note_b05_o2", "option_key": "lower", "label": "Nốt thứ hai thấp hơn", "is_correct": False, "sort_order": 2},
-                {"id": "q_note_b05_o3", "option_key": "equal", "label": "Hai nốt bằng nhau", "is_correct": False, "sort_order": 3},
+                {"id": "q_note_b05_o1", "option_key": "C4", "label": "Đô (C4)", "is_correct": False, "sort_order": 1},
+                {"id": "q_note_b05_o2", "option_key": "E4", "label": "Mi (E4)", "is_correct": False, "sort_order": 2},
+                {"id": "q_note_b05_o3", "option_key": "F4", "label": "Fa (F4)", "is_correct": True, "sort_order": 3},
+                {"id": "q_note_b05_o4", "option_key": "A4", "label": "La (A4)", "is_correct": False, "sort_order": 4},
             ],
         },
         {
             "id": "q_note_b06",
             "topic_id": "topic_notes",
             "level_id": "lvl_notes_basic",
-            "type": "compare_pitch",
-            "prompt": "Nghe hai nốt phát liên tiếp và so sánh cao độ của nốt thứ hai so với nốt đầu:",
-            "explanation": "Nốt đầu là Sol (G4), nốt thứ hai đi xuống Rê (D4) nên thấp hơn.",
-            "audio_asset": "assets/audio/notes/cmp_g4_d4.wav",
+            "type": "listen_note",
+            "prompt": "[Mức 1 • C4 Tự nhiên] Nghe âm chuẩn 440 Hz và chọn đúng tên nốt (hoặc bấm phím đàn):",
+            "explanation": "Tần số 440 Hz chính là nốt La chuẩn (A4) dùng để lên dây nhạc cụ quốc tế.",
+            "audio_asset": "assets/audio/notes/a4.wav",
             "difficulty": 1,
-            "version": 1,
+            "version": 2,
             "options": [
-                {"id": "q_note_b06_o1", "option_key": "higher", "label": "Nốt thứ hai cao hơn", "is_correct": False, "sort_order": 1},
-                {"id": "q_note_b06_o2", "option_key": "lower", "label": "Nốt thứ hai thấp hơn", "is_correct": True, "sort_order": 2},
-                {"id": "q_note_b06_o3", "option_key": "equal", "label": "Hai nốt bằng nhau", "is_correct": False, "sort_order": 3},
+                {"id": "q_note_b06_o1", "option_key": "F4", "label": "Fa (F4)", "is_correct": False, "sort_order": 1},
+                {"id": "q_note_b06_o2", "option_key": "G4", "label": "Sol (G4)", "is_correct": False, "sort_order": 2},
+                {"id": "q_note_b06_o3", "option_key": "A4", "label": "La (A4)", "is_correct": True, "sort_order": 3},
+                {"id": "q_note_b06_o4", "option_key": "B4", "label": "Si (B4)", "is_correct": False, "sort_order": 4},
             ],
         },
         {
             "id": "q_note_b07",
             "topic_id": "topic_notes",
             "level_id": "lvl_notes_basic",
-            "type": "piano_key",
-            "prompt": "Nghe âm thanh và nhìn bàn phím Piano minh họa: Phím nằm ngay bên trái cụm 2 phím đen là nốt gì?",
-            "explanation": "Trên đàn Piano, phím trắng nằm ngay bên trái cụm 2 phím đen luôn là nốt Đô (C).",
-            "audio_asset": "assets/audio/notes/c4.wav",
-            "difficulty": 1,
-            "version": 1,
-            "options": [
-                {"id": "q_note_b07_o1", "option_key": "C4", "label": "Đô (C)", "is_correct": True, "sort_order": 1},
-                {"id": "q_note_b07_o2", "option_key": "F4", "label": "Fa (F)", "is_correct": False, "sort_order": 2},
-                {"id": "q_note_b07_o3", "option_key": "G4", "label": "Sol (G)", "is_correct": False, "sort_order": 3},
-                {"id": "q_note_b07_o4", "option_key": "B4", "label": "Si (B)", "is_correct": False, "sort_order": 4},
-            ],
-        },
-        {
-            "id": "q_note_b08",
-            "topic_id": "topic_notes",
-            "level_id": "lvl_notes_basic",
-            "type": "piano_key",
-            "prompt": "Nghe âm thanh: Phím trắng nằm ngay bên trái cụm 3 phím đen trên đàn Piano là nốt gì?",
-            "explanation": "Phím trắng đầu tiên bên trái cụm 3 phím đen là nốt Fa (F4), cao hơn Mi (E4) nửa cung.",
-            "audio_asset": "assets/audio/notes/f4.wav",
-            "difficulty": 1,
-            "version": 1,
-            "options": [
-                {"id": "q_note_b08_o1", "option_key": "C4", "label": "Đô (C)", "is_correct": False, "sort_order": 1},
-                {"id": "q_note_b08_o2", "option_key": "E4", "label": "Mi (E)", "is_correct": False, "sort_order": 2},
-                {"id": "q_note_b08_o3", "option_key": "F4", "label": "Fa (F)", "is_correct": True, "sort_order": 3},
-                {"id": "q_note_b08_o4", "option_key": "A4", "label": "La (A)", "is_correct": False, "sort_order": 4},
-            ],
-        },
-        {
-            "id": "q_note_b09",
-            "topic_id": "topic_notes",
-            "level_id": "lvl_notes_basic",
             "type": "listen_note",
-            "prompt": "Nghe âm chuẩn 440 Hz và chọn tên nốt nhạc tương ứng:",
-            "explanation": "Tần số 440 Hz chính là nốt La chuẩn (A4) dùng để lên dây nhạc cụ quốc tế.",
-            "audio_asset": "assets/audio/notes/a4.wav",
+            "prompt": "[Mức 1 • C4 Tự nhiên] Nghe âm thanh và chọn đúng tên nốt (hoặc bấm trực tiếp phím đàn):",
+            "explanation": "Nốt Si (B4) là bậc VII (nốt dẫn) nằm ngay bên phải cụm 3 phím đen.",
+            "audio_asset": "assets/audio/notes/b4.wav",
             "difficulty": 1,
-            "version": 1,
+            "version": 2,
             "options": [
-                {"id": "q_note_b09_o1", "option_key": "F4", "label": "Fa (F)", "is_correct": False, "sort_order": 1},
-                {"id": "q_note_b09_o2", "option_key": "G4", "label": "Sol (G)", "is_correct": False, "sort_order": 2},
-                {"id": "q_note_b09_o3", "option_key": "A4", "label": "La (A)", "is_correct": True, "sort_order": 3},
-                {"id": "q_note_b09_o4", "option_key": "B4", "label": "Si (B)", "is_correct": False, "sort_order": 4},
-            ],
-        },
-        {
-            "id": "q_note_b10",
-            "topic_id": "topic_notes",
-            "level_id": "lvl_notes_basic",
-            "type": "compare_pitch",
-            "prompt": "Nghe hai âm liên tiếp và cho biết quan hệ cao độ giữa chúng:",
-            "explanation": "Cả hai âm đều phát nốt Rê (D4) ở cùng tần số nên có cao độ bằng nhau.",
-            "audio_asset": "assets/audio/notes/cmp_d4_d4.wav",
-            "difficulty": 1,
-            "version": 1,
-            "options": [
-                {"id": "q_note_b10_o1", "option_key": "higher", "label": "Nốt thứ hai cao hơn", "is_correct": False, "sort_order": 1},
-                {"id": "q_note_b10_o2", "option_key": "lower", "label": "Nốt thứ hai thấp hơn", "is_correct": False, "sort_order": 2},
-                {"id": "q_note_b10_o3", "option_key": "equal", "label": "Hai nốt bằng nhau", "is_correct": True, "sort_order": 3},
+                {"id": "q_note_b07_o1", "option_key": "E4", "label": "Mi (E4)", "is_correct": False, "sort_order": 1},
+                {"id": "q_note_b07_o2", "option_key": "G4", "label": "Sol (G4)", "is_correct": False, "sort_order": 2},
+                {"id": "q_note_b07_o3", "option_key": "A4", "label": "La (A4)", "is_correct": False, "sort_order": 3},
+                {"id": "q_note_b07_o4", "option_key": "B4", "label": "Si (B4)", "is_correct": True, "sort_order": 4},
             ],
         },
         {
@@ -898,32 +908,33 @@ def generate_seed_json() -> None:
             "topic_id": "topic_notes",
             "level_id": "lvl_notes_inter",
             "type": "listen_note",
-            "prompt": "Nghe nốt nhạc và đối chiếu với nốt Đô chuẩn (C4) để xác định tên nốt:",
-            "explanation": "Nốt Si (B4) là bậc VII (nốt dẫn) nằm ngay dưới Đô cao (C5) nửa cung.",
-            "audio_asset": "assets/audio/notes/b4.wav",
+            "prompt": "[Mức 2 • C4 có dấu #/b] Nghe nốt nhạc trong quãng 4 và chọn tên nốt đúng:",
+            "explanation": "Nốt Đô thăng / Rê giáng (C#4 / Db4) là phím đen đầu tiên trong cụm 2 phím đen.",
+            "audio_asset": "assets/audio/notes/csharp4.wav",
             "difficulty": 2,
-            "version": 1,
+            "version": 2,
             "options": [
-                {"id": "q_note_i01_o1", "option_key": "G4", "label": "Sol (G)", "is_correct": False, "sort_order": 1},
-                {"id": "q_note_i01_o2", "option_key": "A4", "label": "La (A)", "is_correct": False, "sort_order": 2},
-                {"id": "q_note_i01_o3", "option_key": "B4", "label": "Si (B)", "is_correct": True, "sort_order": 3},
-                {"id": "q_note_i01_o4", "option_key": "F4", "label": "Fa (F)", "is_correct": False, "sort_order": 4},
+                {"id": "q_note_i01_o1", "option_key": "C4", "label": "Đô (C4)", "is_correct": False, "sort_order": 1},
+                {"id": "q_note_i01_o2", "option_key": "C#4", "label": "Đô# / Rêb (C#4)", "is_correct": True, "sort_order": 2},
+                {"id": "q_note_i01_o3", "option_key": "D4", "label": "Rê (D4)", "is_correct": False, "sort_order": 3},
+                {"id": "q_note_i01_o4", "option_key": "D#4", "label": "Rê# / Mib (D#4)", "is_correct": False, "sort_order": 4},
             ],
         },
         {
             "id": "q_note_i02",
             "topic_id": "topic_notes",
             "level_id": "lvl_notes_inter",
-            "type": "compare_pitch",
-            "prompt": "Nghe hai nốt cách nhau nửa cung. Nốt thứ hai cao hơn hay thấp hơn nốt đầu?",
-            "explanation": "Nốt đầu là Mi (E4), nốt sau là Fa (F4) cao hơn đúng 1/2 cung.",
-            "audio_asset": "assets/audio/notes/cmp_e4_f4.wav",
+            "type": "listen_note",
+            "prompt": "[Mức 2 • C4 có dấu #/b] Nghe nốt nhạc trong quãng 4 và chọn tên nốt đúng:",
+            "explanation": "Nốt Rê thăng / Mi giáng (D#4 / Eb4) là phím đen thứ hai trong cụm 2 phím đen.",
+            "audio_asset": "assets/audio/notes/dsharp4.wav",
             "difficulty": 2,
-            "version": 1,
+            "version": 2,
             "options": [
-                {"id": "q_note_i02_o1", "option_key": "higher", "label": "Cao hơn (đi lên nửa cung)", "is_correct": True, "sort_order": 1},
-                {"id": "q_note_i02_o2", "option_key": "lower", "label": "Thấp hơn (đi xuống nửa cung)", "is_correct": False, "sort_order": 2},
-                {"id": "q_note_i02_o3", "option_key": "equal", "label": "Bằng nhau", "is_correct": False, "sort_order": 3},
+                {"id": "q_note_i02_o1", "option_key": "D4", "label": "Rê (D4)", "is_correct": False, "sort_order": 1},
+                {"id": "q_note_i02_o2", "option_key": "D#4", "label": "Rê# / Mib (D#4)", "is_correct": True, "sort_order": 2},
+                {"id": "q_note_i02_o3", "option_key": "E4", "label": "Mi (E4)", "is_correct": False, "sort_order": 3},
+                {"id": "q_note_i02_o4", "option_key": "F#4", "label": "Fa# / Solb (F#4)", "is_correct": False, "sort_order": 4},
             ],
         },
         {
@@ -931,16 +942,16 @@ def generate_seed_json() -> None:
             "topic_id": "topic_notes",
             "level_id": "lvl_notes_inter",
             "type": "listen_note",
-            "prompt": "Nghe nốt có dấu hóa trong quãng tám 4 (có thể nghe C4 tham chiếu):",
-            "explanation": "Nốt Fa thăng (F#4) nằm chính giữa Fa (F4) và Sol (G4), cách C4 một quãng 4 tăng.",
+            "prompt": "[Mức 2 • C4 có dấu #/b] Nghe nốt có dấu hóa trong quãng 4 (có thể đối chiếu C4):",
+            "explanation": "Nốt Fa thăng / Sol giáng (F#4 / Gb4) nằm chính giữa Fa (F4) và Sol (G4), là phím đen đầu cụm 3 phím đen.",
             "audio_asset": "assets/audio/notes/fsharp4.wav",
             "difficulty": 2,
-            "version": 1,
+            "version": 2,
             "options": [
-                {"id": "q_note_i03_o1", "option_key": "F4", "label": "Fa (F)", "is_correct": False, "sort_order": 1},
-                {"id": "q_note_i03_o2", "option_key": "F#4", "label": "Fa thăng (F#)", "is_correct": True, "sort_order": 2},
-                {"id": "q_note_i03_o3", "option_key": "G4", "label": "Sol (G)", "is_correct": False, "sort_order": 3},
-                {"id": "q_note_i03_o4", "option_key": "G#4", "label": "Sol thăng (G#)", "is_correct": False, "sort_order": 4},
+                {"id": "q_note_i03_o1", "option_key": "F4", "label": "Fa (F4)", "is_correct": False, "sort_order": 1},
+                {"id": "q_note_i03_o2", "option_key": "F#4", "label": "Fa# / Solb (F#4)", "is_correct": True, "sort_order": 2},
+                {"id": "q_note_i03_o3", "option_key": "G4", "label": "Sol (G4)", "is_correct": False, "sort_order": 3},
+                {"id": "q_note_i03_o4", "option_key": "G#4", "label": "Sol# / Lab (G#4)", "is_correct": False, "sort_order": 4},
             ],
         },
         {
@@ -948,16 +959,16 @@ def generate_seed_json() -> None:
             "topic_id": "topic_notes",
             "level_id": "lvl_notes_adv",
             "type": "listen_note",
-            "prompt": "[Nâng cao - Không tham chiếu] Nghe và nhận diện chính xác tên nốt và quãng tám:",
-            "explanation": "Đây là nốt Đô cao (C5) ở quãng tám 5 (tần số 523.25 Hz).",
+            "prompt": "[Mức 3 • Đa quãng C3–C5 Tự nhiên] Nghe và nhận diện chính xác tên nốt và quãng tám:",
+            "explanation": "Đây là nốt Đô cao (C5) ở quãng tám 5 (tần số 523.25 Hz), cao hơn C4 đúng 1 quãng tám.",
             "audio_asset": "assets/audio/notes/c5.wav",
             "difficulty": 3,
-            "version": 1,
+            "version": 2,
             "options": [
                 {"id": "q_note_a01_o1", "option_key": "C4", "label": "Đô 4 (C4)", "is_correct": False, "sort_order": 1},
                 {"id": "q_note_a01_o2", "option_key": "G4", "label": "Sol 4 (G4)", "is_correct": False, "sort_order": 2},
-                {"id": "q_note_a01_o3", "option_key": "C5", "label": "Đô 5 (C5)", "is_correct": True, "sort_order": 3},
-                {"id": "q_note_a01_o4", "option_key": "E5", "label": "Mi 5 (E5)", "is_correct": False, "sort_order": 4},
+                {"id": "q_note_a01_o3", "option_key": "C5", "label": "Đô cao (C5)", "is_correct": True, "sort_order": 3},
+                {"id": "q_note_a01_o4", "option_key": "E5", "label": "Mi cao (E5)", "is_correct": False, "sort_order": 4},
             ],
         },
         {
@@ -965,16 +976,33 @@ def generate_seed_json() -> None:
             "topic_id": "topic_notes",
             "level_id": "lvl_notes_adv",
             "type": "listen_note",
-            "prompt": "[Nâng cao - Không tham chiếu] Nghe nốt trầm ở quãng tám 3 và chọn đáp án đúng:",
-            "explanation": "Đây là nốt Sol trầm (G3) ở quãng tám 3.",
+            "prompt": "[Mức 3 • Đa quãng C3–C5 Tự nhiên] Nghe nốt trầm ở quãng tám 3 và chọn đáp án đúng:",
+            "explanation": "Đây là nốt Sol trầm (G3) ở quãng tám 3 (tần số 196.0 Hz).",
             "audio_asset": "assets/audio/notes/g3.wav",
             "difficulty": 3,
-            "version": 1,
+            "version": 2,
             "options": [
-                {"id": "q_note_a02_o1", "option_key": "E3", "label": "Mi 3 (E3)", "is_correct": False, "sort_order": 1},
-                {"id": "q_note_a02_o2", "option_key": "G3", "label": "Sol 3 (G3)", "is_correct": True, "sort_order": 2},
-                {"id": "q_note_a02_o3", "option_key": "A3", "label": "La 3 (A3)", "is_correct": False, "sort_order": 3},
+                {"id": "q_note_a02_o1", "option_key": "E3", "label": "Mi trầm (E3)", "is_correct": False, "sort_order": 1},
+                {"id": "q_note_a02_o2", "option_key": "G3", "label": "Sol trầm (G3)", "is_correct": True, "sort_order": 2},
+                {"id": "q_note_a02_o3", "option_key": "A3", "label": "La trầm (A3)", "is_correct": False, "sort_order": 3},
                 {"id": "q_note_a02_o4", "option_key": "C4", "label": "Đô 4 (C4)", "is_correct": False, "sort_order": 4},
+            ],
+        },
+        {
+            "id": "q_note_m01",
+            "topic_id": "topic_notes",
+            "level_id": "lvl_notes_master",
+            "type": "listen_note",
+            "prompt": "[Mức 4 • Nâng cao C3–C5 + #/b] Nghe âm thanh (không tham chiếu C4) và chọn chính xác tên nốt:",
+            "explanation": "Đây là nốt Fa thăng trầm (F#3 / Gb3) ở quãng tám 3.",
+            "audio_asset": "assets/audio/notes/fsharp3.wav",
+            "difficulty": 4,
+            "version": 2,
+            "options": [
+                {"id": "q_note_m01_o1", "option_key": "F3", "label": "Fa trầm (F3)", "is_correct": False, "sort_order": 1},
+                {"id": "q_note_m01_o2", "option_key": "F#3", "label": "Fa# / Solb trầm (F#3)", "is_correct": True, "sort_order": 2},
+                {"id": "q_note_m01_o3", "option_key": "G#4", "label": "Sol# / Lab (G#4)", "is_correct": False, "sort_order": 3},
+                {"id": "q_note_m01_o4", "option_key": "C#5", "label": "Đô# / Rêb cao (C#5)", "is_correct": False, "sort_order": 4},
             ],
         },
         {
@@ -1312,14 +1340,15 @@ def generate_seed_json() -> None:
     ]
 
     presets = [
-        {"id": "preset_slow", "name": "Luyện chậm (Largo)", "bpm": 60, "numerator": 4, "denominator": 4, "sound_type": "woodblock"},
-        {"id": "preset_walk", "name": "Vừa phải (Andante)", "bpm": 90, "numerator": 4, "denominator": 4, "sound_type": "click"},
+        {"id": "preset_slow", "name": "Luyện chậm (Largo)", "bpm": 60, "numerator": 4, "denominator": 4, "sound_type": "tempo"},
+        {"id": "preset_walk", "name": "Vừa phải (Andante)", "bpm": 90, "numerator": 4, "denominator": 4, "sound_type": "tempo"},
         {"id": "preset_waltz", "name": "Nhịp Valse 3/4", "bpm": 110, "numerator": 3, "denominator": 4, "sound_type": "bell"},
+        {"id": "preset_tempo_std", "name": "Chuẩn Tempo Lite", "bpm": 120, "numerator": 4, "denominator": 4, "sound_type": "tempo"},
         {"id": "preset_allegro", "name": "Nhanh (Allegro)", "bpm": 132, "numerator": 4, "denominator": 4, "sound_type": "click"},
     ]
 
     seed_data = {
-        "content_version": 4,
+        "content_version": 5,
         "topics": topics,
         "levels": levels,
         "questions": questions,

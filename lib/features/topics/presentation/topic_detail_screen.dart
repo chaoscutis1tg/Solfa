@@ -39,6 +39,9 @@ class TopicDetailScreen extends ConsumerStatefulWidget {
 
 class _TopicDetailScreenState extends ConsumerState<TopicDetailScreen> {
   Future<void> _startLevelPractice(LevelModel level) async {
+    if (widget.topicId == 'topic_notes') {
+      ref.read(selectedNoteLevelIdProvider.notifier).state = level.id;
+    }
     final notifier = ref.read(practiceSessionProvider.notifier);
     final isTest = ref.read(audioServiceProvider).isTestMode;
     final dur = ref.read(selectedPracticeDurationProvider);
@@ -59,11 +62,13 @@ class _TopicDetailScreenState extends ConsumerState<TopicDetailScreen> {
   String _levelDescription(String topicId, int difficulty) {
     if (topicId == 'topic_notes') {
       if (difficulty == 1) {
-        return 'Hỗ trợ nghe nốt Đô chuẩn (C4), bàn phím Piano tương tác và so sánh cao độ 2 nốt.';
+        return 'Mức 1 (Dễ): Chỉ gồm 7 nốt tự nhiên trong quãng C4 (Đô, Rê, Mi, Fa, Sol, La, Si), không có dấu #/b. Hỗ trợ nghe Đô chuẩn C4 & bấm trực tiếp trên phím đàn Piano.';
       } else if (difficulty == 2) {
-        return 'Hỗ trợ nghe nốt Đô chuẩn (C4); bổ sung các nốt hóa (Fa#, Sol#...) và khoảng cách nửa cung.';
+        return 'Mức 2 (Trung bình): Vẫn gói gọn trong quãng C4 nhưng bổ sung thêm 5 phím đen (dấu thăng # / dấu giáng b). Hỗ trợ nghe Đô chuẩn C4 & bàn phím Piano.';
+      } else if (difficulty == 3) {
+        return 'Mức 3 (Khá): Mở rộng các nốt tự nhiên (không dấu #/b) trên 3 quãng tám từ trầm đến cao (C3 – C5), có hỗ trợ đối chiếu Đô chuẩn C4.';
       } else {
-        return 'Tắt nốt tham chiếu C4 để rèn cảm âm tuyệt đối trên nhiều quãng tám (C3–C5).';
+        return 'Mức 4 (Nâng cao): Đầy đủ cả nốt tự nhiên và dấu thăng/giáng (#/b) trải rộng từ C3 đến C5, tắt nút tham chiếu C4 để rèn cảm âm tuyệt đối.';
       }
     } else if (topicId == 'topic_intervals') {
       if (difficulty == 1) {
@@ -270,7 +275,9 @@ class _TopicDetailScreenState extends ConsumerState<TopicDetailScreen> {
                                           children: [
                                             Expanded(
                                               child: Text(
-                                                'Cấp độ: ${level.name}',
+                                                level.name.startsWith('Mức')
+                                                    ? level.name
+                                                    : 'Cấp độ: ${level.name}',
                                                 maxLines: 1,
                                                 overflow: TextOverflow.ellipsis,
                                                 style: const TextStyle(
@@ -281,16 +288,21 @@ class _TopicDetailScreenState extends ConsumerState<TopicDetailScreen> {
                                             ),
                                             Row(
                                               mainAxisSize: MainAxisSize.min,
-                                              children: List.generate(3, (s) {
-                                                return Icon(
-                                                  s < level.difficulty
-                                                      ? Icons.star_rounded
-                                                      : Icons
-                                                          .star_border_rounded,
-                                                  size: 17,
-                                                  color: AppColors.accentAmber,
-                                                );
-                                              }),
+                                              children: List.generate(
+                                                widget.topicId == 'topic_notes'
+                                                    ? 4
+                                                    : 3,
+                                                (s) {
+                                                  return Icon(
+                                                    s < level.difficulty
+                                                        ? Icons.star_rounded
+                                                        : Icons
+                                                            .star_border_rounded,
+                                                    size: 17,
+                                                    color: AppColors.accentAmber,
+                                                  );
+                                                },
+                                              ),
                                             ),
                                           ],
                                         ),

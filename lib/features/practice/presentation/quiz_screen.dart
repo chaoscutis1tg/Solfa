@@ -54,7 +54,22 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
     final notifier = ref.read(practiceSessionProvider.notifier);
     await notifier.submitAnswer(option);
     if (!mounted) return;
+    _postAnswerReaction();
+  }
 
+  Future<void> _handlePianoKeyTap(String noteCode) async {
+    final currentState = ref.read(practiceSessionProvider);
+    if (currentState.isCurrentAnswered) {
+      ref.read(audioServiceProvider).playPianoKey(noteCode);
+      return;
+    }
+    final notifier = ref.read(practiceSessionProvider.notifier);
+    await notifier.submitPianoKeyAnswer(noteCode);
+    if (!mounted) return;
+    _postAnswerReaction();
+  }
+
+  void _postAnswerReaction() {
     final currentState = ref.read(practiceSessionProvider);
     final answeredQuestionId = currentState.currentQuestion?.id;
 
@@ -419,11 +434,8 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
                             selectedNoteKey:
                                 viewState.selectedOption?.optionKey,
                             showHighlight: isCurrentAnswered,
-                            onKeyTap: isCurrentAnswered
-                                ? (noteCode) {
-                                    audioService.playPianoKey(noteCode);
-                                  }
-                                : null,
+                            enableBlackKeys: question.difficulty >= 2,
+                            onKeyTap: _handlePianoKeyTap,
                           ),
                         ],
                       ],
@@ -565,6 +577,8 @@ class _PracticeRoomScoreboardHeader extends ConsumerWidget {
     final scoreState = ref.watch(
       practiceSessionProvider.select(
         (s) => (
+          topicId: s.topicId,
+          levelId: s.levelId,
           timeLimitSeconds: s.timeLimitSeconds,
           isUnlimitedMode: s.isUnlimitedMode,
           elapsedSeconds: s.elapsedSeconds,
@@ -674,6 +688,51 @@ class _PracticeRoomScoreboardHeader extends ConsumerWidget {
                 ),
               ],
             ),
+            if (scoreState.topicId == 'topic_notes') ...[
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.workspace_premium_outlined,
+                    size: 15,
+                    color: AppColors.primary,
+                  ),
+                  const SizedBox(width: 4),
+                  const Text(
+                    'Mức độ:',
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Row(
+                      children: [
+                        for (int i = 0; i < kNoteRecognitionLevels.length; i++) ...[
+                          if (i > 0) const SizedBox(width: 4),
+                          _QuickTimeModePill(
+                            key: Key(
+                              'quiz_note_lvl_${kNoteRecognitionLevels[i].$1}',
+                            ),
+                            label: kNoteRecognitionLevels[i].$2,
+                            isSelected: (scoreState.levelId ??
+                                    'lvl_notes_basic') ==
+                                kNoteRecognitionLevels[i].$1,
+                            isDark: isDark,
+                            onTap: () => ref
+                                .read(practiceSessionProvider.notifier)
+                                .switchNoteLevelInSession(
+                                  kNoteRecognitionLevels[i].$1,
+                                ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
             const SizedBox(height: 6),
 
             // Row 2: Live Progress Bar
@@ -746,6 +805,7 @@ class _QuickTimeModePill extends StatelessWidget {
   final VoidCallback onTap;
 
   const _QuickTimeModePill({
+    super.key,
     required this.label,
     required this.isSelected,
     required this.isDark,
