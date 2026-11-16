@@ -42,10 +42,10 @@ class _MetronomeScreenState extends ConsumerState<MetronomeScreen>
   ];
 
   static const List<(int sub, String label)> _subdivisions = [
-    (1, '♩ Đơn (1x)'),
-    (2, '♪♪ Đôi (2x)'),
-    (3, '♪♪♪ Liên 3'),
-    (4, '♬ Kép (4x)'),
+    (1, 'Đơn (1x)'),
+    (2, 'Đôi (2x)'),
+    (3, 'Liên 3 (3x)'),
+    (4, 'Kép (4x)'),
   ];
 
   @override
@@ -302,33 +302,36 @@ class _MetronomeScreenState extends ConsumerState<MetronomeScreen>
       physics: const AlwaysScrollableScrollPhysics(
         parent: BouncingScrollPhysics(),
       ),
-      padding: const EdgeInsets.fromLTRB(14, 6, 14, 20),
+      padding: const EdgeInsets.fromLTRB(14, 8, 14, 28),
       children: [
-        // 1. Main Mechanical Metronome Console Card
+        // 1. Điều khiển chính (Primary Metronome Console)
         Card(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+            padding: const EdgeInsets.fromLTRB(14, 14, 14, 16),
             child: Column(
               children: [
-                // Isolated, Fixed-Height Beat Visualizer (ZERO layout shift on beats!)
+                // Isolated, Fixed-Height Beat Visualizer (ZERO layout shift on beats)
                 const RepaintBoundary(
                   child: _BeatIndicatorHeader(),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 8),
 
-                // Compact Tap-to-Edit BPM Display
+                // Large BPM Display (Tap-to-Edit)
                 InkWell(
                   borderRadius: BorderRadius.circular(16),
                   onTap: () => _showDirectBpmInputDialog(cfg.bpm),
                   child: Container(
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(
-                      vertical: 8,
+                      vertical: 12,
                       horizontal: 14,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.08),
+                      color: AppColors.primary.withOpacity(0.06),
                       borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: AppColors.primary.withOpacity(0.16),
+                      ),
                     ),
                     child: Column(
                       children: [
@@ -341,7 +344,7 @@ class _MetronomeScreenState extends ConsumerState<MetronomeScreen>
                               '${cfg.bpm}',
                               key: const Key('metronome_bpm_text'),
                               style: const TextStyle(
-                                fontSize: 44,
+                                fontSize: 52,
                                 fontWeight: FontWeight.w900,
                                 color: AppColors.primary,
                                 height: 1.0,
@@ -352,7 +355,7 @@ class _MetronomeScreenState extends ConsumerState<MetronomeScreen>
                             const Text(
                               'BPM',
                               style: TextStyle(
-                                fontSize: 14.5,
+                                fontSize: 15,
                                 fontWeight: FontWeight.w800,
                                 color: AppColors.primary,
                               ),
@@ -360,17 +363,17 @@ class _MetronomeScreenState extends ConsumerState<MetronomeScreen>
                             const SizedBox(width: 6),
                             Icon(
                               Icons.edit_outlined,
-                              size: 15,
+                              size: 16,
                               color: AppColors.primary.withOpacity(0.75),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: 4),
                         Text(
                           '${_tempoMarking(cfg.bpm)} • ${cfg.intervalMs.toStringAsFixed(0)} ms/phách',
                           textAlign: TextAlign.center,
                           style: const TextStyle(
-                            fontSize: 11.5,
+                            fontSize: 12,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -379,7 +382,7 @@ class _MetronomeScreenState extends ConsumerState<MetronomeScreen>
                   ),
                 ),
 
-                const SizedBox(height: 8),
+                const SizedBox(height: 10),
 
                 // Balanced 4-button Stepper Row (-5, -1, +1, +5)
                 Row(
@@ -388,7 +391,7 @@ class _MetronomeScreenState extends ConsumerState<MetronomeScreen>
                       child: OutlinedButton(
                         key: const Key('btn_bpm_minus_5'),
                         style: OutlinedButton.styleFrom(
-                          minimumSize: const Size(0, 38),
+                          minimumSize: const Size(0, 40),
                           padding: EdgeInsets.zero,
                         ),
                         onPressed: () => notifier.incrementBpm(-5),
@@ -403,7 +406,7 @@ class _MetronomeScreenState extends ConsumerState<MetronomeScreen>
                       child: OutlinedButton(
                         key: const Key('btn_bpm_minus_1'),
                         style: OutlinedButton.styleFrom(
-                          minimumSize: const Size(0, 38),
+                          minimumSize: const Size(0, 40),
                           padding: EdgeInsets.zero,
                         ),
                         onPressed: () => notifier.incrementBpm(-1),
@@ -415,7 +418,7 @@ class _MetronomeScreenState extends ConsumerState<MetronomeScreen>
                       child: OutlinedButton(
                         key: const Key('btn_bpm_plus_1'),
                         style: OutlinedButton.styleFrom(
-                          minimumSize: const Size(0, 38),
+                          minimumSize: const Size(0, 40),
                           padding: EdgeInsets.zero,
                         ),
                         onPressed: () => notifier.incrementBpm(1),
@@ -427,7 +430,7 @@ class _MetronomeScreenState extends ConsumerState<MetronomeScreen>
                       child: OutlinedButton(
                         key: const Key('btn_bpm_plus_5'),
                         style: OutlinedButton.styleFrom(
-                          minimumSize: const Size(0, 38),
+                          minimumSize: const Size(0, 40),
                           padding: EdgeInsets.zero,
                         ),
                         onPressed: () => notifier.incrementBpm(5),
@@ -442,7 +445,7 @@ class _MetronomeScreenState extends ConsumerState<MetronomeScreen>
 
                 // Compact BPM Slider (30 - 300)
                 SizedBox(
-                  height: 36,
+                  height: 38,
                   child: Slider(
                     key: const Key('slider_bpm'),
                     value: cfg.bpm.toDouble(),
@@ -453,16 +456,16 @@ class _MetronomeScreenState extends ConsumerState<MetronomeScreen>
                   ),
                 ),
 
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
 
-                // Play/Stop & Tap Tempo Buttons (2 equal columns)
+                // Play/Stop & Tap Tempo Buttons (One Primary Action: Bắt đầu / Dừng nhịp)
                 Row(
                   children: [
                     Expanded(
                       child: OutlinedButton.icon(
                         key: const Key('btn_tap_tempo'),
                         style: OutlinedButton.styleFrom(
-                          minimumSize: const Size(double.infinity, 46),
+                          minimumSize: const Size(double.infinity, 48),
                           padding: const EdgeInsets.symmetric(horizontal: 10),
                         ),
                         onPressed: notifier.registerTap,
@@ -478,7 +481,7 @@ class _MetronomeScreenState extends ConsumerState<MetronomeScreen>
                       child: ElevatedButton.icon(
                         key: const Key('btn_metronome_play_pause'),
                         style: ElevatedButton.styleFrom(
-                          minimumSize: const Size(double.infinity, 46),
+                          minimumSize: const Size(double.infinity, 48),
                           padding: const EdgeInsets.symmetric(horizontal: 10),
                           backgroundColor: cfg.isRunning
                               ? AppColors.wrong
@@ -501,103 +504,21 @@ class _MetronomeScreenState extends ConsumerState<MetronomeScreen>
                     ),
                   ],
                 ),
-              ],
-            ),
-          ),
-        ),
 
-        const SizedBox(height: 10),
+                const SizedBox(height: 14),
+                const Divider(height: 1),
+                const SizedBox(height: 12),
 
-        // 2. All-in-One Compact Rhythm & Sound Card (Fits on the same screen!)
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Time Signature Row
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Loại nhịp',
-                      style: TextStyle(
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w800,
-                      ),
+                // Time Signature & Subdivision (Core Rhythm Controls)
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Loại nhịp (Time Signature)',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
                     ),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        InkWell(
-                          key: const Key('btn_save_custom_preset'),
-                          borderRadius: BorderRadius.circular(8),
-                          onTap: _showSaveCustomPresetDialog,
-                          child: const Padding(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.bookmark_add_outlined,
-                                  size: 15,
-                                  color: AppColors.accentAmber,
-                                ),
-                                SizedBox(width: 3),
-                                Text(
-                                  '+ Lưu nhịp',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w800,
-                                    color: AppColors.accentAmber,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        presetsAsync.maybeWhen(
-                          data: (presets) => presets.isNotEmpty
-                              ? InkWell(
-                                  key: const Key('btn_open_presets_sheet'),
-                                  borderRadius: BorderRadius.circular(8),
-                                  onTap: () => _showPresetsSheet(presets),
-                                  child: const Padding(
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: 6,
-                                      vertical: 2,
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          Icons.tune_rounded,
-                                          size: 15,
-                                          color: AppColors.primary,
-                                        ),
-                                        SizedBox(width: 4),
-                                        Text(
-                                          'Mẫu tốc độ',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w800,
-                                            color: AppColors.primary,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                )
-                              : const SizedBox.shrink(),
-                          orElse: () => const SizedBox.shrink(),
-                        ),
-                      ],
-                    ),
-                  ],
+                  ),
                 ),
                 const SizedBox(height: 6),
                 Row(
@@ -625,11 +546,14 @@ class _MetronomeScreenState extends ConsumerState<MetronomeScreen>
                 ),
 
                 const SizedBox(height: 10),
-                const Text(
-                  'Chia nhỏ phách (Subdivision)',
-                  style: TextStyle(
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w800,
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Chia nhỏ phách (Subdivision)',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -650,13 +574,120 @@ class _MetronomeScreenState extends ConsumerState<MetronomeScreen>
                     ],
                   ],
                 ),
+              ],
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 14),
+
+        // 2. Cài đặt nâng cao & Mẫu nhịp (Separated Advanced Section)
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'Cài đặt nâng cao',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            InkWell(
+                              key: const Key('btn_save_custom_preset'),
+                              borderRadius: BorderRadius.circular(8),
+                              onTap: _showSaveCustomPresetDialog,
+                              child: const Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 3,
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.bookmark_add_outlined,
+                                      size: 15,
+                                      color: AppColors.primary,
+                                    ),
+                                    SizedBox(width: 3),
+                                    Text(
+                                      '+ Lưu nhịp',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w800,
+                                        color: AppColors.primary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            presetsAsync.maybeWhen(
+                              data: (presets) => presets.isNotEmpty
+                                  ? InkWell(
+                                      key: const Key('btn_open_presets_sheet'),
+                                      borderRadius: BorderRadius.circular(8),
+                                      onTap: () => _showPresetsSheet(presets),
+                                      child: const Padding(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: 6,
+                                          vertical: 3,
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              Icons.tune_rounded,
+                                              size: 15,
+                                              color: AppColors.primary,
+                                            ),
+                                            SizedBox(width: 4),
+                                            Text(
+                                              'Mẫu tốc độ',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w800,
+                                                color: AppColors.primary,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    )
+                                  : const SizedBox.shrink(),
+                              orElse: () => const SizedBox.shrink(),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
 
                 const SizedBox(height: 10),
                 const Text(
                   'Âm sắc nhịp',
                   style: TextStyle(
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w800,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -679,7 +710,7 @@ class _MetronomeScreenState extends ConsumerState<MetronomeScreen>
                 ),
 
                 const SizedBox(height: 10),
-                // Compact Accent + Count-in + Volume Row
+                // Compact Accent + Count-in Row
                 Row(
                   children: [
                     Expanded(
@@ -688,17 +719,19 @@ class _MetronomeScreenState extends ConsumerState<MetronomeScreen>
                         onTap: () =>
                             notifier.setAccentFirstBeat(!cfg.accentFirstBeat),
                         child: Container(
-                          height: 36,
+                          height: 38,
                           padding: const EdgeInsets.symmetric(horizontal: 8),
                           decoration: BoxDecoration(
                             color: cfg.accentFirstBeat
-                                ? AppColors.accentAmber.withOpacity(0.16)
-                                : AppColors.primary.withOpacity(0.06),
+                                ? AppColors.primary.withOpacity(0.12)
+                                : Colors.transparent,
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(
                               color: cfg.accentFirstBeat
-                                  ? AppColors.accentAmber
-                                  : AppColors.primary.withOpacity(0.18),
+                                  ? AppColors.primary
+                                  : (isDark
+                                      ? AppColors.borderDark
+                                      : AppColors.borderLight),
                             ),
                           ),
                           child: Row(
@@ -710,7 +743,7 @@ class _MetronomeScreenState extends ConsumerState<MetronomeScreen>
                                     : Icons.notifications_off_outlined,
                                 size: 16,
                                 color: cfg.accentFirstBeat
-                                    ? AppColors.accentAmber
+                                    ? AppColors.primary
                                     : Colors.grey,
                               ),
                               const SizedBox(width: 5),
@@ -721,7 +754,7 @@ class _MetronomeScreenState extends ConsumerState<MetronomeScreen>
                                     'Nhấn phách 1',
                                     style: TextStyle(
                                       fontSize: 12,
-                                      fontWeight: FontWeight.w800,
+                                      fontWeight: FontWeight.w700,
                                     ),
                                   ),
                                 ),
@@ -740,15 +773,19 @@ class _MetronomeScreenState extends ConsumerState<MetronomeScreen>
                           notifier.setCountInBars(nextBars);
                         },
                         child: Container(
-                          height: 36,
+                          height: 38,
                           padding: const EdgeInsets.symmetric(horizontal: 8),
                           decoration: BoxDecoration(
                             color: cfg.countInBars > 0
-                                ? AppColors.primary.withOpacity(0.14)
-                                : AppColors.primary.withOpacity(0.06),
+                                ? AppColors.primary.withOpacity(0.12)
+                                : Colors.transparent,
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(
-                              color: AppColors.primary.withOpacity(0.22),
+                              color: cfg.countInBars > 0
+                                  ? AppColors.primary
+                                  : (isDark
+                                      ? AppColors.borderDark
+                                      : AppColors.borderLight),
                             ),
                           ),
                           child: Row(
@@ -769,7 +806,7 @@ class _MetronomeScreenState extends ConsumerState<MetronomeScreen>
                                         : 'Đếm trước: ${cfg.countInBars} nhịp',
                                     style: const TextStyle(
                                       fontSize: 12,
-                                      fontWeight: FontWeight.w800,
+                                      fontWeight: FontWeight.w700,
                                     ),
                                   ),
                                 ),
@@ -783,18 +820,20 @@ class _MetronomeScreenState extends ConsumerState<MetronomeScreen>
                 ),
 
                 const SizedBox(height: 10),
-                // Speed Trainer / Automator (Tempo Lite Pro style)
+                // Speed Trainer / Automator
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     color: cfg.autoSpeedUpEnabled
-                        ? AppColors.correct.withOpacity(0.10)
-                        : AppColors.primary.withOpacity(0.05),
+                        ? AppColors.correct.withOpacity(0.08)
+                        : Colors.transparent,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: cfg.autoSpeedUpEnabled
                           ? AppColors.correct.withOpacity(0.45)
-                          : AppColors.primary.withOpacity(0.16),
+                          : (isDark
+                              ? AppColors.borderDark
+                              : AppColors.borderLight),
                     ),
                   ),
                   child: Column(
@@ -814,7 +853,7 @@ class _MetronomeScreenState extends ConsumerState<MetronomeScreen>
                             child: Text(
                               cfg.autoSpeedUpEnabled
                                   ? 'Tự động tăng tốc: +${cfg.speedUpIncrementBpm} BPM / ${cfg.speedUpEveryBars} ô nhịp (Đã chạy: ${cfg.completedBarsCount} ô)'
-                                  : 'Tự động tăng tốc (Speed Trainer • Luyện ngón)',
+                                  : 'Tự động tăng tốc (Speed Trainer)',
                               style: const TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w800,

@@ -350,49 +350,60 @@ class _SupportDeveloperScreenState
           ),
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
           children: [
-            // 1. Hero Supporter Badge & Gratitude Card
+            // Phần 1: Đổi Điểm Uy Tín lấy Lượt Đấu Trường
+            _buildPrestigePointsRedeemCard(
+              context,
+              adState,
+              battleState,
+              isDark,
+            ),
+
+            const SizedBox(height: 16),
+
+            // Phần 2: Ủng Hộ Nhà Phát Triển & Nhận Thưởng (Unified Card)
             Card(
               child: Padding(
-                padding: const EdgeInsets.all(18),
+                padding: const EdgeInsets.all(16),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Row(
                       children: [
                         Stack(
                           clipBehavior: Clip.none,
                           children: [
-                            const SolfaLogo(size: 60, showShadow: false),
+                            const SolfaLogo(size: 52, showShadow: false),
                             Positioned(
                               right: -4,
                               bottom: -4,
                               child: Container(
-                                padding: const EdgeInsets.all(5),
+                                padding: const EdgeInsets.all(4),
                                 decoration: const BoxDecoration(
                                   color: kHeartRedColor,
                                   shape: BoxShape.circle,
                                 ),
                                 child: const Icon(
                                   Icons.favorite_rounded,
-                                  size: 14,
+                                  size: 13,
                                   color: Colors.white,
                                 ),
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(width: 14),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Container(
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: 9,
+                                  horizontal: 8,
                                   vertical: 3,
                                 ),
                                 decoration: BoxDecoration(
                                   color:
-                                      AppColors.accentAmber.withOpacity(0.16),
+                                      AppColors.accentAmber.withOpacity(0.14),
                                   borderRadius: BorderRadius.circular(99),
                                 ),
                                 child: Row(
@@ -400,7 +411,7 @@ class _SupportDeveloperScreenState
                                   children: [
                                     const Icon(
                                       Icons.workspace_premium_rounded,
-                                      size: 15,
+                                      size: 14,
                                       color: AppColors.accentAmber,
                                     ),
                                     const SizedBox(width: 4),
@@ -417,18 +428,18 @@ class _SupportDeveloperScreenState
                                   ],
                                 ),
                               ),
-                              const SizedBox(height: 5),
+                              const SizedBox(height: 4),
                               const Text(
-                                'Ủng hộ Solfa tự nguyện',
+                                'Ủng Hộ Nhà Phát Triển & Nhận Thưởng',
                                 style: TextStyle(
-                                  fontSize: 17.5,
+                                  fontSize: 16,
                                   fontWeight: FontWeight.w800,
                                 ),
                               ),
                               const SizedBox(height: 2),
                               const Text(
-                                '100% bài học & Metronome luôn miễn phí',
-                                style: TextStyle(fontSize: 12.5),
+                                'Xem video ngắn (15s) nhận +100 Điểm Uy Tín & +1 Lượt Đấu',
+                                style: TextStyle(fontSize: 12),
                               ),
                             ],
                           ),
@@ -436,22 +447,19 @@ class _SupportDeveloperScreenState
                       ],
                     ),
                     const SizedBox(height: 12),
-                    const Text(
-                      'Mỗi lượt xem trọn vẹn video quảng cáo ngắn (15 giây) khi có mạng Internet sẽ giúp nhóm phát triển duy trì và bổ sung thêm nhiều bài luyện cảm âm mới cho cộng đồng.',
-                      style: TextStyle(fontSize: 13.5, height: 1.4),
-                    ),
-                    const SizedBox(height: 14),
 
                     // Supporter Counter & Milestone Bar
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: isDark
-                            ? Colors.white.withOpacity(0.06)
-                            : AppColors.primary.withOpacity(0.07),
-                        borderRadius: BorderRadius.circular(14),
+                            ? Colors.white.withOpacity(0.04)
+                            : AppColors.primary.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: AppColors.primary.withOpacity(0.18),
+                          color: isDark
+                              ? AppColors.borderDark
+                              : AppColors.borderLight,
                         ),
                       ),
                       child: Column(
@@ -465,8 +473,8 @@ class _SupportDeveloperScreenState
                                   key: const Key('text_supported_count'),
                                   style: const TextStyle(
                                     fontWeight: FontWeight.w800,
-                                    fontSize: 13,
-                                    color: kHeartRedColor,
+                                    fontSize: 12.5,
+                                    color: AppColors.primary,
                                   ),
                                 ),
                               ),
@@ -486,7 +494,7 @@ class _SupportDeveloperScreenState
                               value: milestoneProgress,
                               minHeight: 6,
                               backgroundColor:
-                                  AppColors.primary.withOpacity(0.15),
+                                  AppColors.primary.withOpacity(0.14),
                               valueColor: const AlwaysStoppedAnimation<Color>(
                                 AppColors.accentAmber,
                               ),
@@ -495,74 +503,34 @@ class _SupportDeveloperScreenState
                         ],
                       ),
                     ),
-                  ],
-                ),
-              ),
-            ),
 
-            const SizedBox(height: 14),
-
-            // 2. Prestige Points -> Battle Arena Turns Exchange Station Card
-            _buildPrestigePointsRedeemCard(
-              context,
-              adState,
-              battleState,
-              isDark,
-            ),
-
-            const SizedBox(height: 14),
-
-            // 3. Video Ad Control & Status Card (Section 13.3)
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
+                    const SizedBox(height: 12),
                     Row(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: _statusColor(adState.status)
-                                .withOpacity(0.14),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Icon(
-                            _statusIcon(adState.status),
-                            color: _statusColor(adState.status),
-                            size: 20,
-                          ),
+                        Icon(
+                          _statusIcon(adState.status),
+                          color: _statusColor(adState.status),
+                          size: 18,
                         ),
-                        const SizedBox(width: 10),
+                        const SizedBox(width: 6),
                         Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Trạng thái: ${_statusLabel(adState.status)}',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 15,
-                                ),
-                              ),
-                              const SizedBox(height: 1),
-                              const Text(
-                                'Thời lượng video: 15 giây • Có âm thanh minh họa',
-                                style: TextStyle(fontSize: 11.5),
-                              ),
-                            ],
+                          child: Text(
+                            'Trạng thái: ${_statusLabel(adState.status)}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 13.5,
+                            ),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 4),
                     Text(
                       adState.statusMessage,
                       key: const Key('text_ad_status_message'),
-                      style: const TextStyle(fontSize: 13.5, height: 1.38),
+                      style: const TextStyle(fontSize: 12.8, height: 1.35),
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 12),
 
                     // Primary Watch Video Ad Button
                     if (adState.status == RewardedAdStatus.ready)
@@ -570,12 +538,12 @@ class _SupportDeveloperScreenState
                         key: const Key('btn_watch_rewarded_ad'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.correct,
-                          minimumSize: const Size(double.infinity, 50),
+                          minimumSize: const Size(double.infinity, 48),
                         ),
                         onPressed: _openRewardedVideoPlayerModal,
                         icon: const Icon(
                           Icons.play_circle_fill_rounded,
-                          size: 24,
+                          size: 22,
                         ),
                         label: const Text(
                           'Xem video quảng cáo ủng hộ ngay (15s)',
@@ -585,7 +553,7 @@ class _SupportDeveloperScreenState
                       ElevatedButton.icon(
                         key: const Key('btn_load_rewarded_ad'),
                         style: ElevatedButton.styleFrom(
-                          minimumSize: const Size(double.infinity, 50),
+                          minimumSize: const Size(double.infinity, 48),
                         ),
                         onPressed: adState.status == RewardedAdStatus.loading
                             ? null
@@ -613,7 +581,7 @@ class _SupportDeveloperScreenState
                         Expanded(
                           child: OutlinedButton.icon(
                             style: OutlinedButton.styleFrom(
-                              minimumSize: const Size(0, 42),
+                              minimumSize: const Size(0, 40),
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 8),
                             ),
@@ -633,7 +601,7 @@ class _SupportDeveloperScreenState
                           child: OutlinedButton.icon(
                             key: const Key('btn_simulate_offline_ad'),
                             style: OutlinedButton.styleFrom(
-                              minimumSize: const Size(0, 42),
+                              minimumSize: const Size(0, 40),
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 8),
                             ),

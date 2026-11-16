@@ -585,7 +585,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
   }
 }
 
-/// Isolated Header for Live Note Scoreboard (Time/Mode/Level selectors removed since chosen before entering).
+/// Isolated Header for Progress, Time, and Compact Score/Combo (Section 3.4).
 class _PracticeRoomScoreboardHeader extends ConsumerWidget {
   const _PracticeRoomScoreboardHeader();
 
@@ -598,8 +598,6 @@ class _PracticeRoomScoreboardHeader extends ConsumerWidget {
           isUnlimitedMode: s.isUnlimitedMode,
           elapsedSeconds: s.elapsedSeconds,
           remainingSeconds: s.remainingSeconds,
-          correctCount: s.correctCount,
-          wrongCount: s.wrongCount,
           scorePoints: s.scorePoints,
           currentCombo: s.currentCombo,
           currentIndex: s.currentIndex,
@@ -607,6 +605,7 @@ class _PracticeRoomScoreboardHeader extends ConsumerWidget {
         ),
       ),
     );
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final String timerDisplay;
     final double progressValue;
@@ -623,7 +622,7 @@ class _PracticeRoomScoreboardHeader extends ConsumerWidget {
       progressValue = 1.0;
     } else {
       timerDisplay =
-          '${scoreState.currentIndex + 1}/${scoreState.questionsLength} câu';
+          'Câu ${scoreState.currentIndex + 1} / ${scoreState.questionsLength}';
       progressValue = scoreState.questionsLength > 0
           ? (scoreState.currentIndex + 1) / scoreState.questionsLength
           : 0.0;
@@ -632,135 +631,87 @@ class _PracticeRoomScoreboardHeader extends ConsumerWidget {
     final isLowTime = scoreState.timeLimitSeconds != null &&
         scoreState.remainingSeconds <= 10;
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Row 1: Live Progress Bar
-            ClipRRect(
-              borderRadius: BorderRadius.circular(99),
-              child: LinearProgressIndicator(
-                value: progressValue,
-                minHeight: 4,
-                backgroundColor: AppColors.primary.withOpacity(0.15),
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  isLowTime ? AppColors.wrong : AppColors.primary,
-                ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // 1.Thanh tiến trình và thời gian
+          ClipRRect(
+            borderRadius: BorderRadius.circular(99),
+            child: LinearProgressIndicator(
+              value: progressValue,
+              minHeight: 6,
+              backgroundColor: AppColors.primary.withOpacity(0.12),
+              valueColor: AlwaysStoppedAnimation<Color>(
+                isLowTime ? AppColors.wrong : AppColors.primary,
               ),
             ),
-            const SizedBox(height: 8),
+          ),
+          const SizedBox(height: 8),
 
-            // Row 2: Live Note Scoreboard (Đồng hồ, Nốt Đúng, Nốt Sai, Điểm)
-            Row(
-              children: [
-                Expanded(
-                  child: _ScoreBadgeBox(
-                    label: scoreState.timeLimitSeconds != null
-                        ? 'Còn lại'
-                        : 'Tiến độ',
-                    value: timerDisplay,
-                    color: isLowTime ? AppColors.wrong : AppColors.primary,
-                    icon: Icons.access_time_filled_rounded,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: _ScoreBadgeBox(
-                    label: 'Nốt đúng',
-                    value: '${scoreState.correctCount}',
-                    color: AppColors.correct,
-                    icon: Icons.check_circle_rounded,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: _ScoreBadgeBox(
-                    label: 'Nốt sai',
-                    value: '${scoreState.wrongCount}',
-                    color: AppColors.wrong,
-                    icon: Icons.cancel_rounded,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: _ScoreBadgeBox(
-                    label: scoreState.currentCombo >= 2
-                        ? 'Combo x${scoreState.currentCombo}'
-                        : 'Điểm số',
-                    value: '${scoreState.scorePoints}',
-                    color: AppColors.accentAmber,
-                    icon: scoreState.currentCombo >= 2
-                        ? Icons.local_fire_department_rounded
-                        : Icons.stars_rounded,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ScoreBadgeBox extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color color;
-  final IconData icon;
-
-  const _ScoreBadgeBox({
-    required this.label,
-    required this.value,
-    required this.color,
-    required this.icon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 4),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.10),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withOpacity(0.24)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
+          // 2. Điểm số và Combo ở dạng thông tin nhỏ gọn
           Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(icon, size: 12.5, color: color),
-              const SizedBox(width: 3),
-              Flexible(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    value,
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.schedule_rounded,
+                    size: 15,
+                    color: isLowTime
+                        ? AppColors.wrong
+                        : (isDark
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondaryLight),
+                  ),
+                  const SizedBox(width: 5),
+                  Text(
+                    timerDisplay,
                     style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w900,
-                      color: color,
-                      fontFeatures: const [FontFeature.tabularFigures()],
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: isLowTime ? AppColors.wrong : null,
                     ),
                   ),
-                ),
+                ],
+              ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (scoreState.currentCombo >= 2) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.accentAmber.withOpacity(0.14),
+                        borderRadius: BorderRadius.circular(99),
+                      ),
+                      child: Text(
+                        'Combo x${scoreState.currentCombo}',
+                        style: const TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.accentAmber,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  Text(
+                    '${scoreState.scorePoints} điểm',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ],
               ),
             ],
-          ),
-          const SizedBox(height: 1),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
           ),
         ],
       ),

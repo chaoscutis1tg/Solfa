@@ -153,68 +153,73 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
                         padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
                         child: FadeSlideIn(
                           index: 0,
-                          child: Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFF0D6EFD), Color(0xFF074CB2)],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.auto_fix_high_rounded,
-                                      color: Colors.white,
-                                      size: 20,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        'Đang có ${items.length} câu cần ôn tập',
-                                        style: const TextStyle(
-                                          fontSize: 16.5,
-                                          fontWeight: FontWeight.w800,
-                                          color: Colors.white,
+                          child: Card(
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.primary
+                                              .withOpacity(0.10),
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                        ),
+                                        child: const Icon(
+                                          Icons.auto_fix_high_rounded,
+                                          color: AppColors.primary,
+                                          size: 20,
                                         ),
                                       ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Trả lời đúng 2 lần liên tiếp để đánh dấu thuộc bài.',
-                                  style: TextStyle(
-                                    fontSize: 12.8,
-                                    color: Colors.white.withOpacity(0.90),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'Đang có ${items.length} câu cần ôn tập',
+                                              style: const TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w800,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 2),
+                                            const Text(
+                                              'Trả lời đúng 2 lần liên tiếp để đánh dấu thuộc bài.',
+                                              style: TextStyle(fontSize: 12.5),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ),
-                                const SizedBox(height: 12),
-                                ScaleTap(
-                                  child: ElevatedButton.icon(
-                                    key: const Key('btn_start_review_session'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.white,
-                                      foregroundColor: AppColors.primaryDark,
-                                      minimumSize:
-                                          const Size(double.infinity, 46),
-                                    ),
-                                    onPressed: _startReviewSession,
-                                    icon: const Icon(
-                                      Icons.play_arrow_rounded,
-                                      size: 20,
-                                    ),
-                                    label: Text(
-                                      'Bắt đầu ôn tập (${items.length > 10 ? 10 : items.length} câu)',
+                                  const SizedBox(height: 12),
+                                  ScaleTap(
+                                    child: ElevatedButton.icon(
+                                      key: const Key('btn_start_review_session'),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: AppColors.primary,
+                                        foregroundColor: Colors.white,
+                                        minimumSize:
+                                            const Size(double.infinity, 46),
+                                      ),
+                                      onPressed: _startReviewSession,
+                                      icon: const Icon(
+                                        Icons.play_arrow_rounded,
+                                        size: 20,
+                                      ),
+                                      label: Text(
+                                        'Bắt đầu ôn tập (${items.length > 10 ? 10 : items.length} câu)',
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         ),

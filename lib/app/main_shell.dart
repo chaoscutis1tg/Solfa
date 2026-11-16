@@ -10,7 +10,6 @@ import '../features/metronome/application/metronome_controller.dart';
 import '../features/support_developer/application/rewarded_ad_controller.dart';
 import 'theme/app_colors.dart';
 import 'widgets/crossed_swords_icon.dart';
-import 'widgets/pulsing_red_heart.dart';
 import 'widgets/solfa_background.dart';
 import 'widgets/solfa_logo.dart';
 
@@ -62,10 +61,11 @@ class MainShell extends ConsumerWidget {
         backgroundColor: Colors.transparent,
         extendBody: false,
         appBar: AppBar(
+          toolbarHeight: 52,
           titleSpacing: 16,
           title: Row(
             children: [
-              const SolfaLogo(size: 36, showShadow: false),
+              const SolfaLogo(size: 30, showShadow: false),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
@@ -73,15 +73,16 @@ class MainShell extends ConsumerWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    fontSize: 19,
+                    fontSize: 18,
                     fontWeight: FontWeight.w800,
+                    letterSpacing: -0.2,
                   ),
                 ),
               ),
             ],
           ),
           actions: [
-            // Red Heart Supporter / Prestige Pill
+            // Compact Prestige Points Pill
             Material(
               color: Colors.transparent,
               child: InkWell(
@@ -90,27 +91,29 @@ class MainShell extends ConsumerWidget {
                 onTap: () => context.push('/support-developer'),
                 child: Container(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                   decoration: BoxDecoration(
-                    color: kHeartRedColor.withOpacity(0.16),
+                    color: AppColors.accentAmber.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(99),
                     border: Border.all(
-                      color: kHeartRedColor.withOpacity(0.50),
+                      color: AppColors.accentAmber.withOpacity(0.35),
                     ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const PulsingRedHeart(size: 15),
-                      const SizedBox(width: 5),
+                      const Icon(
+                        Icons.workspace_premium_rounded,
+                        size: 14,
+                        color: AppColors.accentAmber,
+                      ),
+                      const SizedBox(width: 4),
                       Text(
-                        adState.supportedCount > 0 || adState.prestigePoints > 0
-                            ? '${adState.prestigePoints}đ'
-                            : 'Ủng hộ',
+                        '${adState.prestigePoints}đ',
                         style: const TextStyle(
-                          fontSize: 12,
+                          fontSize: 11.5,
                           fontWeight: FontWeight.w800,
-                          color: kHeartRedColor,
+                          color: AppColors.accentAmber,
                         ),
                       ),
                     ],
@@ -119,13 +122,14 @@ class MainShell extends ConsumerWidget {
               ),
             ),
             const SizedBox(width: 6),
+            // Compact Streak Pill
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
               decoration: BoxDecoration(
-                color: AppColors.accentAmber.withOpacity(0.18),
+                color: AppColors.accentAmber.withOpacity(0.12),
                 borderRadius: BorderRadius.circular(99),
                 border: Border.all(
-                  color: AppColors.accentAmber.withOpacity(0.45),
+                  color: AppColors.accentAmber.withOpacity(0.35),
                 ),
               ),
               child: Row(
@@ -134,13 +138,13 @@ class MainShell extends ConsumerWidget {
                   const Icon(
                     Icons.local_fire_department_rounded,
                     color: AppColors.accentAmber,
-                    size: 16,
+                    size: 14,
                   ),
                   const SizedBox(width: 3),
                   Text(
                     '$streakDays',
                     style: const TextStyle(
-                      fontSize: 13,
+                      fontSize: 12,
                       fontWeight: FontWeight.w800,
                       color: AppColors.accentAmber,
                     ),
@@ -148,11 +152,12 @@ class MainShell extends ConsumerWidget {
                 ],
               ),
             ),
-            const SizedBox(width: 4),
+            const SizedBox(width: 2),
             IconButton(
               key: const Key('btn_open_settings'),
               tooltip: 'Cài đặt',
-              icon: const Icon(Icons.settings_outlined),
+              visualDensity: VisualDensity.compact,
+              icon: const Icon(Icons.settings_outlined, size: 21),
               onPressed: () {
                 context.push('/settings');
               },
@@ -434,29 +439,20 @@ class _DiamondBattleCtaButtonState extends State<_DiamondBattleCtaButton>
                   child: Transform.rotate(
                     angle: math.pi / 4,
                     child: Container(
-                      width: 52,
-                      height: 52,
+                      width: 50,
+                      height: 50,
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [
-                            Color(0xFF38BDF8), // Sky Blue top-left (matches reference image)
-                            Color(0xFF3B82F6), // Royal Blue center
-                            Color(0xFF4F46E5), // Solfa Indigo bottom-right
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(16),
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(15),
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.65),
-                          width: 1.8,
+                          color: Colors.white.withOpacity(0.85),
+                          width: 1.6,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF3B82F6).withOpacity(0.48),
-                            blurRadius: 16,
-                            spreadRadius: 1,
-                            offset: const Offset(4, 4),
+                            color: AppColors.primary.withOpacity(0.28),
+                            blurRadius: 10,
+                            offset: const Offset(2, 3),
                           ),
                         ],
                       ),

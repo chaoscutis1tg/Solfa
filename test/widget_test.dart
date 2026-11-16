@@ -693,7 +693,50 @@ void main() {
         await pumpFrames();
         expect(tester.takeException(), isNull);
 
-        // 7. Kiểm tra TopicDetailScreen & QuizScreen cho chủ đề mới có nhãn dài (Giai điệu & Nhịp điệu) trên 360x680
+        // 7. Kiểm tra thêm kích thước màn hình trung bình (390x844), màn hình lớn (430x932) & System Mode
+        for (final size in const [
+          Size(390, 844),
+          Size(430, 932),
+          Size(360, 680),
+        ]) {
+          tester.view.physicalSize = Size(size.width * 3.0, size.height * 3.0);
+          await pumpFrames(250);
+          expect(tester.takeException(), isNull, reason: 'resize to $size');
+
+          router.go('/home');
+          await pumpFrames(250);
+          expect(tester.takeException(), isNull, reason: 'home at $size');
+
+          router.go('/topics');
+          await pumpFrames(250);
+          expect(tester.takeException(), isNull, reason: 'topics at $size');
+
+          router.go('/metronome');
+          await pumpFrames(250);
+          expect(tester.takeException(), isNull, reason: 'metronome at $size');
+
+          router.go('/progress');
+          await pumpFrames(250);
+          expect(tester.takeException(), isNull, reason: 'progress at $size');
+        }
+
+        await tester.runAsync(() async {
+          await container
+              .read(appSettingsProvider.notifier)
+              .setThemeMode(ThemeMode.system);
+        });
+        await pumpFrames(250);
+        expect(tester.takeException(), isNull, reason: 'system mode');
+
+        await tester.runAsync(() async {
+          await container
+              .read(appSettingsProvider.notifier)
+              .setThemeMode(ThemeMode.dark);
+        });
+        await pumpFrames(250);
+        expect(tester.takeException(), isNull, reason: 'back to dark mode');
+
+        // 8. Kiểm tra TopicDetailScreen & QuizScreen cho chủ đề mới có nhãn dài (Giai điệu & Nhịp điệu) trên 360x680
         router.go('/topics/topic_rhythm');
         await pumpFrames(300);
         expect(tester.takeException(), isNull);

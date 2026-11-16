@@ -148,11 +148,11 @@ class ProgressScreen extends ConsumerWidget {
                   ),
                 )
               else ...[
-                // Summary KPI Grid
+                // 1. Tổng quan học tập (Summary KPI Grid including Best Score & Max Combo moved from Home)
                 const FadeSlideIn(
                   index: 1,
                   child: Text(
-                    'Chỉ số tổng quan',
+                    'Tổng quan học tập',
                     style:
                         TextStyle(fontSize: 17.5, fontWeight: FontWeight.w800),
                   ),
@@ -166,7 +166,7 @@ class ProgressScreen extends ConsumerWidget {
                     physics: const NeverScrollableScrollPhysics(),
                     mainAxisSpacing: 10,
                     crossAxisSpacing: 10,
-                    childAspectRatio: 1.55,
+                    childAspectRatio: 1.62,
                     children: [
                       _KpiTile(
                         label: 'Tổng câu đã làm',
@@ -184,18 +184,16 @@ class ProgressScreen extends ConsumerWidget {
                         color: AppColors.correct,
                       ),
                       _KpiTile(
-                        label: 'Thời gian luyện',
-                        value: NoteFormatter.formatDurationSeconds(
-                          stats.totalDurationSeconds,
-                        ),
-                        sub: 'Thời gian thực tế',
-                        icon: Icons.timer_outlined,
-                        color: AppColors.accentCyan,
+                        label: 'Kỷ lục điểm cao',
+                        value: '${stats.bestScore} điểm',
+                        sub: 'Combo cao nhất: x${stats.bestComboStreak}',
+                        icon: Icons.emoji_events_outlined,
+                        color: AppColors.accentAmber,
                       ),
                       _KpiTile(
                         label: 'Chuỗi ngày học',
                         value: '${stats.currentStreakDays} ngày',
-                        sub: 'Duy trì đều đặn',
+                        sub: 'Thời gian: ${NoteFormatter.formatDurationSeconds(stats.totalDurationSeconds)}',
                         icon: Icons.local_fire_department_rounded,
                         color: AppColors.accentAmber,
                       ),

@@ -81,32 +81,32 @@ class AppTheme {
         ),
       ),
       cardTheme: CardTheme(
-        color: AppColors.surfaceLight.withOpacity(0.91),
+        color: AppColors.surfaceLight,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: BorderSide(
-            color: AppColors.primary.withOpacity(0.18),
-            width: 1.2,
+          borderRadius: BorderRadius.circular(18),
+          side: const BorderSide(
+            color: AppColors.borderLight,
+            width: 1.0,
           ),
         ),
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: Colors.white.withOpacity(0.88),
+        backgroundColor: AppColors.surfaceLight,
         selectedColor: AppColors.primaryLight,
         labelStyle: const TextStyle(
           color: AppColors.textPrimaryLight,
           fontSize: 13,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w600,
         ),
         secondaryLabelStyle: const TextStyle(
           color: AppColors.primaryDark,
           fontSize: 13,
-          fontWeight: FontWeight.w800,
+          fontWeight: FontWeight.w700,
         ),
-        side: BorderSide(color: AppColors.primary.withOpacity(0.22)),
+        side: const BorderSide(color: AppColors.borderLight),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),
@@ -116,34 +116,34 @@ class AppTheme {
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
           elevation: 0,
-          minimumSize: const Size(double.infinity, 50),
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
+          minimumSize: const Size(double.infinity, 48),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
+            borderRadius: BorderRadius.circular(14),
           ),
           textStyle: const TextStyle(
-            fontSize: 15.5,
-            fontWeight: FontWeight.w800,
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
             letterSpacing: 0.1,
           ),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.primaryDark,
-          backgroundColor: Colors.white.withOpacity(0.75),
-          minimumSize: const Size(double.infinity, 48),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          side: BorderSide(
-            color: AppColors.primary.withOpacity(0.55),
-            width: 1.5,
+          foregroundColor: AppColors.textPrimaryLight,
+          backgroundColor: AppColors.surfaceLight,
+          minimumSize: const Size(double.infinity, 46),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+          side: const BorderSide(
+            color: AppColors.borderLight,
+            width: 1.2,
           ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
+            borderRadius: BorderRadius.circular(14),
           ),
           textStyle: const TextStyle(
-            fontSize: 14.5,
-            fontWeight: FontWeight.w800,
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ),
@@ -225,32 +225,32 @@ class AppTheme {
         ),
       ),
       cardTheme: CardTheme(
-        color: AppColors.surfaceDark.withOpacity(0.90),
+        color: AppColors.surfaceDark,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: BorderSide(
-            color: AppColors.secondary.withOpacity(0.20),
-            width: 1.1,
+          borderRadius: BorderRadius.circular(18),
+          side: const BorderSide(
+            color: AppColors.borderDark,
+            width: 1.0,
           ),
         ),
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: const Color(0xFF0E1738).withOpacity(0.90),
+        backgroundColor: AppColors.surfaceDark,
         selectedColor: AppColors.primary,
         labelStyle: const TextStyle(
           color: AppColors.textPrimaryDark,
           fontSize: 13,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w600,
         ),
         secondaryLabelStyle: const TextStyle(
           color: Colors.white,
           fontSize: 13,
-          fontWeight: FontWeight.w800,
+          fontWeight: FontWeight.w700,
         ),
-        side: BorderSide(color: AppColors.secondary.withOpacity(0.26)),
+        side: const BorderSide(color: AppColors.borderDark),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),
@@ -260,34 +260,34 @@ class AppTheme {
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
           elevation: 0,
-          minimumSize: const Size(double.infinity, 50),
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13),
+          minimumSize: const Size(double.infinity, 48),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
+            borderRadius: BorderRadius.circular(14),
           ),
           textStyle: const TextStyle(
-            fontSize: 15.5,
-            fontWeight: FontWeight.w800,
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
             letterSpacing: 0.1,
           ),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.secondary,
-          backgroundColor: const Color(0xFF0A112B).withOpacity(0.82),
-          minimumSize: const Size(double.infinity, 48),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          side: BorderSide(
-            color: AppColors.secondary.withOpacity(0.55),
-            width: 1.4,
+          foregroundColor: AppColors.textPrimaryDark,
+          backgroundColor: AppColors.surfaceDark,
+          minimumSize: const Size(double.infinity, 46),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+          side: const BorderSide(
+            color: AppColors.borderDark,
+            width: 1.2,
           ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
+            borderRadius: BorderRadius.circular(14),
           ),
           textStyle: const TextStyle(
-            fontSize: 14.5,
-            fontWeight: FontWeight.w800,
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ),

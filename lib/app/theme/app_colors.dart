@@ -1,65 +1,46 @@
 import 'package:flutter/material.dart';
 
-/// Color palette harmonized with the official Solfa Logo & Sky/Cosmic Backgrounds.
+/// Unified Modern Minimalist Color System for Solfa Studio.
+/// Uses 1 Primary brand color and strictly controlled semantic accents.
 class AppColors {
-  // Core brand colors (Vibrant Royal Azure Blue + Glowing Cyan + Solfa Golden Orange)
-  static const Color primary = Color(0xFF0B68E3);
-  static const Color primaryDark = Color(0xFF074CB2);
-  static const Color primaryLight = Color(0xFFE1F3FE);
-  static const Color secondary = Color(0xFF00C2FF);
-  static const Color secondaryLight = Color(0xFFE0F7FA);
-  static const Color accentCyan = Color(0xFF00B4D8);
-  static const Color accentAmber = Color(0xFFFF9800);
-  static const Color accentCoral = Color(0xFFFF5E7E);
+  // 1 Primary Brand Color & Controlled Accents
+  static const Color primary = Color(0xFF2563EB);
+  static const Color primaryDark = Color(0xFF1D4ED8);
+  static const Color primaryLight = Color(0xFFEFF6FF);
+  static const Color secondary = Color(0xFF3B82F6);
+  static const Color secondaryLight = Color(0xFFDBEAFE);
+  static const Color accentCyan = Color(0xFF0284C7);
+  static const Color accentAmber = Color(0xFFF59E0B);
+  static const Color accentCoral = Color(0xFFEF4444);
 
-  // Light mode surfaces & high-contrast navy typography (for bg_light.jpg)
-  static const Color backgroundLight = Color(0xFFD8F2FF);
+  // Calm Light Mode Surfaces & Typography
+  static const Color backgroundLight = Color(0xFFF4F7FB);
   static const Color surfaceLight = Color(0xFFFFFFFF);
-  static const Color textPrimaryLight = Color(0xFF082046);
-  static const Color textSecondaryLight = Color(0xFF34527E);
+  static const Color borderLight = Color(0xFFE2E8F0);
+  static const Color textPrimaryLight = Color(0xFF0F172A);
+  static const Color textSecondaryLight = Color(0xFF475569);
 
-  // Dark mode surfaces & crisp starlight typography (for bg_dark.jpg)
-  static const Color backgroundDark = Color(0xFF040714);
-  static const Color surfaceDark = Color(0xFF0A1026);
-  static const Color textPrimaryDark = Color(0xFFF4F8FF);
-  static const Color textSecondaryDark = Color(0xFFA8C0E8);
+  // Calm Dark Mode Surfaces & Typography
+  static const Color backgroundDark = Color(0xFF090D16);
+  static const Color surfaceDark = Color(0xFF111827);
+  static const Color borderDark = Color(0xFF1E293B);
+  static const Color textPrimaryDark = Color(0xFFF8FAFC);
+  static const Color textSecondaryDark = Color(0xFF94A3B8);
 
-  // Semantic feedback colors
-  static const Color correct = Color(0xFF16B374);
-  static const Color correctBgLight = Color(0xFFE5F9F0);
-  static const Color correctBgDark = Color(0xFF0F382B);
+  // Strictly Semantic Feedback Colors
+  static const Color correct = Color(0xFF10B981);
+  static const Color correctBgLight = Color(0xFFECFDF5);
+  static const Color correctBgDark = Color(0xFF064E3B);
 
-  static const Color wrong = Color(0xFFE85656);
-  static const Color wrongBgLight = Color(0xFFFEECEC);
-  static const Color wrongBgDark = Color(0xFF3E1926);
+  static const Color wrong = Color(0xFFEF4444);
+  static const Color wrongBgLight = Color(0xFFFEF2F2);
+  static const Color wrongBgDark = Color(0xFF450A0A);
 
-  static const Color warning = Color(0xFFFF9800);
+  static const Color warning = Color(0xFFF59E0B);
 
-  /// Topic-specific harmonious accent color helper
+  /// Controlled topic accent helper — keeps a cohesive blue/indigo/teal family
+  /// instead of competing rainbow colors across screens.
   static Color topicAccent(String code) {
-    switch (code) {
-      case 'note_recognition':
-      case 'notes':
-        return const Color(0xFF0B68E3);
-      case 'staff_reading':
-        return const Color(0xFF635BFF);
-      case 'interval_recognition':
-      case 'intervals':
-        return const Color(0xFF0FA97A);
-      case 'key_recognition':
-      case 'keys':
-        return const Color(0xFFF58216);
-      case 'chord_recognition':
-      case 'chords':
-        return const Color(0xFFE03E6D);
-      case 'melody_recognition':
-      case 'melody':
-        return const Color(0xFF0097B2);
-      case 'rhythm_recognition':
-      case 'rhythm':
-        return const Color(0xFF8B5CF6);
-      default:
-        return primary;
-    }
+    return primary;
   }
 }

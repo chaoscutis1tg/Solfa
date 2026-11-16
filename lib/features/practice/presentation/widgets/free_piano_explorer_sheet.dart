@@ -482,23 +482,28 @@ class _FreePianoExplorerSheetState
               ),
               const SizedBox(height: 12),
 
-              // 5-Line Musical Staff Preview
+              // 1. Khuông nhạc ở phía trên
               MusicalStaffWidget(
                 targetNoteKey: _activeNoteKey,
                 selectedNoteKey: _activeNoteKey,
                 showNote: true,
                 isSightReading: false,
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
 
-              // Active Note Details Card (Name + Hz + Staff line/space explanation + Replay button)
+              // 2. Thông tin nốt được chọn ở khu vực nhỏ gọn (1 dòng + giải thích ngắn)
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 9,
+                ),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(isDark ? 0.14 : 0.07),
-                  borderRadius: BorderRadius.circular(14),
+                  color: isDark
+                      ? Colors.white.withOpacity(0.04)
+                      : AppColors.backgroundLight,
+                  borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: AppColors.primary.withOpacity(0.28),
+                    color: isDark ? AppColors.borderDark : AppColors.borderLight,
                   ),
                 ),
                 child: Column(
@@ -506,62 +511,30 @@ class _FreePianoExplorerSheetState
                   children: [
                     Row(
                       children: [
-                        Flexible(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
+                        Expanded(
+                          child: Text(
+                            _activeHarmonyTitle ??
+                                '$vnName • ${freq.toStringAsFixed(1)} Hz',
+                            key: const Key('explorer_active_note_label'),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 13.5,
                               color: AppColors.primary,
-                              borderRadius: BorderRadius.circular(99),
-                            ),
-                            child: Text(
-                              _activeHarmonyTitle ?? vnName,
-                              key: const Key('explorer_active_note_label'),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w900,
-                                fontSize: 12.5,
-                              ),
                             ),
                           ),
                         ),
-                        const SizedBox(width: 6),
-                        if (_activeHarmonyKeys == null) ...[
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.accentAmber.withOpacity(0.18),
-                              borderRadius: BorderRadius.circular(99),
-                            ),
-                            child: Text(
-                              '${freq.toStringAsFixed(1)} Hz',
-                              style: const TextStyle(
-                                color: AppColors.accentAmber,
-                                fontWeight: FontWeight.w800,
-                                fontSize: 11.5,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                        ],
+                        const SizedBox(width: 8),
                         TextButton.icon(
                           key: const Key('btn_explorer_replay_note'),
                           style: TextButton.styleFrom(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 8,
-                              vertical: 4,
+                              vertical: 3,
                             ),
-                            minimumSize: const Size(0, 30),
+                            minimumSize: const Size(0, 28),
                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            backgroundColor:
-                                AppColors.primary.withOpacity(0.14),
                           ),
                           onPressed: () {
                             if (_activeHarmonyAsset != null) {
@@ -570,27 +543,32 @@ class _FreePianoExplorerSheetState
                                   .playAsset(_activeHarmonyAsset!);
                             } else {
                               _selectAndPlay(
-                                  _selectedPitchClass, _selectedOctave);
+                                _selectedPitchClass,
+                                _selectedOctave,
+                              );
                             }
                           },
                           icon: const Icon(Icons.volume_up_rounded, size: 15),
                           label: const Text(
-                            'Nghe',
+                            'Nghe lại',
                             style: TextStyle(
                               fontSize: 11.5,
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 3),
                     Text(
                       _activeHarmonyFormula ?? staffDesc,
-                      style: const TextStyle(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w600,
-                        height: 1.32,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 11.8,
+                        color: isDark
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondaryLight,
                       ),
                     ),
                   ],
@@ -598,27 +576,22 @@ class _FreePianoExplorerSheetState
               ),
               const SizedBox(height: 10),
 
-              // Quick Chord & Interval Multi-Key Explorer Strip
-              const Row(
-                children: [
-                  Icon(
-                    Icons.library_music_rounded,
-                    size: 14,
-                    color: AppColors.primary,
-                  ),
-                  SizedBox(width: 5),
-                  Expanded(
-                    child: Text(
-                      'Bấm thử Hợp âm & Quãng chuẩn (Tô sáng các phím cấu thành):',
-                      style: TextStyle(
-                        fontSize: 11.8,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ),
-                ],
+              // 3. Đàn Piano ở phía dưới (Ưu tiên diện tích thao tác chính)
+              PianoKeyboardWidget(
+                highlightedNoteKey: _activeNoteKey,
+                highlightedNoteKeys: _activeHarmonyKeys,
+                selectedNoteKey: _activeNoteKey,
+                showHighlight: true,
+                enableBlackKeys: true,
+                onKeyTap: (rawKey) {
+                  final pc =
+                      rawKey.replaceAll(RegExp(r'[0-9]'), '').toUpperCase();
+                  _selectAndPlay(pc, _selectedOctave, fromPianoTap: true);
+                },
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 10),
+
+              // 4. Danh sách lựa chọn Hợp âm & Quãng mẫu
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
@@ -632,7 +605,7 @@ class _FreePianoExplorerSheetState
                             sample.$2,
                             style: const TextStyle(
                               fontSize: 11.5,
-                              fontWeight: FontWeight.w700,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                           selected: _activeHarmonyCode == sample.$1,
@@ -645,23 +618,8 @@ class _FreePianoExplorerSheetState
               ),
               const SizedBox(height: 8),
 
-              // Melodic Dictation Mini-Game (Chép nhạc giai điệu 3–4 nốt)
+              // 5. Chép nhạc giai điệu (Thu gọn mặc định)
               _buildMelodicDictationSection(isDark),
-              const SizedBox(height: 8),
-
-              // Interactive Piano Keyboard
-              PianoKeyboardWidget(
-                highlightedNoteKey: _activeNoteKey,
-                highlightedNoteKeys: _activeHarmonyKeys,
-                selectedNoteKey: _activeNoteKey,
-                showHighlight: true,
-                enableBlackKeys: true,
-                onKeyTap: (rawKey) {
-                  final pc =
-                      rawKey.replaceAll(RegExp(r'[0-9]'), '').toUpperCase();
-                  _selectAndPlay(pc, _selectedOctave, fromPianoTap: true);
-                },
-              ),
             ],
           ),
         ),

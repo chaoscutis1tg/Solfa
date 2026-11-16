@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../theme/app_colors.dart';
 import '../theme/app_theme.dart';
 
 /// Renders the custom Light (`bg_light.jpg`) and Dark (`bg_dark.jpg`)
@@ -59,8 +60,8 @@ class SolfaBackground extends StatelessWidget {
                 ),
                 ColoredBox(
                   color: isDark
-                      ? const Color(0xFF050816).withOpacity(0.68)
-                      : const Color(0xFFF5F8FF).withOpacity(0.62),
+                      ? AppColors.backgroundDark.withOpacity(0.86)
+                      : AppColors.backgroundLight.withOpacity(0.88),
                 ),
               ],
             ),
