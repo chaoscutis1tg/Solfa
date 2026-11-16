@@ -357,11 +357,11 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Text(
-                          question.prompt
-                              .replaceAll(' (hoặc bấm trực tiếp phím đàn)', '')
-                              .replaceAll(' (hoặc bấm phím đàn)', ''),
+                          _concisePrompt(question.prompt),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            fontSize: 15.5,
+                            fontSize: 15,
                             fontWeight: FontWeight.w800,
                             height: 1.3,
                           ),
@@ -494,6 +494,15 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
         ),
       ),
     );
+  }
+
+  String _concisePrompt(String rawPrompt) {
+    final cleaned = rawPrompt
+        .replaceAll(RegExp(r'^\[[^\]]+\]\s*'), '')
+        .replaceAll(' (hoặc bấm trực tiếp phím đàn)', '')
+        .replaceAll(' (hoặc bấm phím đàn)', '')
+        .trim();
+    return cleaned.isEmpty ? rawPrompt : cleaned;
   }
 
   Widget _buildOptionsGrid({

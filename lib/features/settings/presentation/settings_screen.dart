@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../app/widgets/pulsing_red_heart.dart';
 import '../../../app/widgets/solfa_background.dart';
+import '../../../app/widgets/solfa_gem_icon.dart';
 import '../../../app/widgets/solfa_logo.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../metronome/application/metronome_controller.dart';
@@ -112,6 +113,29 @@ class SettingsScreen extends ConsumerWidget {
                 '• Quyền kết nối Internet chỉ được sử dụng khi bạn chủ động bấm xem video tại mục "Hỗ trợ nhà phát triển".',
                 style: TextStyle(fontSize: 12.5, height: 1.42),
               ),
+              SizedBox(height: 12),
+              Text(
+                '4. Quy định Đơn vị thưởng ảo (Gem)',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5),
+              ),
+              SizedBox(height: 4),
+              Text(
+                '• "Gem" là đơn vị điểm thưởng nội bộ dùng để mở khóa phiên luyện tập chuyên sâu 1 tiếng (50 Gem) hoặc đổi lượt Đấu Trường.\n'
+                '• Gem được nhận miễn phí thông qua nhiệm vụ học tập hàng ngày, thăng hạng Đấu Trường hoặc xem video ủng hộ tự nguyện.\n'
+                '• Gem hoàn toàn KHÔNG có giá trị tiền mặt, KHÔNG mua bán bằng tiền thật, KHÔNG chuyển nhượng và KHÔNG quy đổi/rút thành tiền dưới mọi hình thức.',
+                style: TextStyle(fontSize: 12.5, height: 1.42),
+              ),
+              SizedBox(height: 12),
+              Text(
+                '5. Cơ chế Chống gian lận & Bảo vệ toàn vẹn (SolfaIntegrityGuard)',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5),
+              ),
+              SizedBox(height: 4),
+              Text(
+                '• Ứng dụng tích hợp chữ ký băm (Salted Checksum Signature) bảo vệ số dư Gem, Sao xếp hạng và tiến độ nhiệm vụ cục bộ.\n'
+                '• Hệ thống kiểm tra đồng hồ đơn điệu (Monotonic Clock Guard) tự động phát hiện hành vi tua ngược hoặc chỉnh lùi giờ thiết bị nhằm trục lợi nhiệm vụ hàng ngày. Nếu phát hiện can thiệp trái phép, dữ liệu gian lận sẽ tự động khôi phục về trạng thái hợp lệ.',
+                style: TextStyle(fontSize: 12.5, height: 1.42),
+              ),
             ],
           ),
         ),
@@ -165,7 +189,7 @@ class SettingsScreen extends ConsumerWidget {
                             children: [
                               const Expanded(
                                 child: Text(
-                                  'Solfa Studio v1.8',
+                                  'Solfa Studio v1.8.2',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
@@ -693,16 +717,12 @@ class SettingsScreen extends ConsumerWidget {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(
-                              Icons.favorite_rounded,
-                              size: 12,
-                              color: kHeartRedColor,
-                            ),
-                            const SizedBox(width: 3),
+                            const SolfaGemIcon(size: 12),
+                            const SizedBox(width: 4),
                             Text(
                               adState.supportedCount > 0
-                                  ? '${adState.supportedCount} lần • +${adState.prestigePoints}đ'
-                                  : 'Ủng hộ 15s',
+                                  ? '${adState.supportedCount} lần • ${adState.prestigePoints} Gem'
+                                  : '${adState.prestigePoints} Gem',
                               style: const TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w800,
@@ -718,8 +738,8 @@ class SettingsScreen extends ConsumerWidget {
                     padding: const EdgeInsets.only(top: 4),
                     child: Text(
                       adState.supportedCount > 0
-                          ? 'Danh hiệu: ${adState.supporterBadgeTitle} • Bấm để trao thêm tim'
-                          : 'Xem video ngắn 15s tự nguyện để nhận Huy hiệu Tri Ân & Điểm Uy Tín',
+                          ? 'Danh hiệu: ${adState.supporterBadgeTitle} • Bấm để nhận thêm Gem'
+                          : 'Xem video ngắn 15s tự nguyện để nhận +100 Gem & Huy hiệu Tri Ân',
                       style: const TextStyle(
                         fontSize: 12,
                         height: 1.32,
@@ -740,6 +760,53 @@ class SettingsScreen extends ConsumerWidget {
             Card(
               child: Column(
                 children: [
+                  ListTile(
+                    key: const Key('tile_anti_tamper_status'),
+                    leading: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.14),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.shield_outlined,
+                        color: AppColors.primary,
+                        size: 20,
+                      ),
+                    ),
+                    title: const Text(
+                      'Bảo vệ chống gian lận & toàn vẹn Gem',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 14.5,
+                      ),
+                    ),
+                    subtitle: const Text(
+                      'Chữ ký số SHA-Salt & kiểm tra đồng hồ chống chỉnh giờ: Đang bật',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                    trailing: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.correct.withOpacity(0.14),
+                        borderRadius: BorderRadius.circular(99),
+                      ),
+                      child: const Text(
+                        'An toàn',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.correct,
+                        ),
+                      ),
+                    ),
+                    onTap: () => _showPrivacyAndLegalDialog(context),
+                  ),
+                  const Divider(height: 1),
                   ListTile(
                     key: const Key('tile_privacy_legal'),
                     leading: Container(
@@ -763,7 +830,7 @@ class SettingsScreen extends ConsumerWidget {
                       ),
                     ),
                     subtitle: const Text(
-                      'Bảo vệ dữ liệu cá nhân, bản quyền âm thanh & điều khoản',
+                      'Bảo vệ dữ liệu cá nhân, quy định Gem, chống gian lận & bản quyền',
                       style: TextStyle(fontSize: 12),
                     ),
                     trailing: const Icon(Icons.chevron_right_rounded),
@@ -800,7 +867,7 @@ class SettingsScreen extends ConsumerWidget {
                     onTap: () => showLicensePage(
                       context: context,
                       applicationName: 'Solfa Studio',
-                      applicationVersion: '1.8.0 (Offline-First)',
+                      applicationVersion: '1.8.2 (Offline-First)',
                       applicationIcon: const Padding(
                         padding: EdgeInsets.all(8.0),
                         child: SolfaLogo(size: 56),

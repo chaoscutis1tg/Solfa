@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../app/widgets/crossed_swords_icon.dart';
 import '../../../app/widgets/solfa_background.dart';
+import '../../../app/widgets/solfa_gem_icon.dart';
 import '../../../core/models/domain_models.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../practice/presentation/widgets/musical_staff_widget.dart';
@@ -86,7 +87,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Đã hồi +1 Lượt Đấu Trường (Hiện có: $turns lượt) & +100 Điểm Uy Tín ủng hộ nhà phát triển!',
+                  'Đã hồi +1 Lượt Đấu Trường (Hiện có: $turns lượt) & +100 Gem ủng hộ nhà phát triển!',
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
               ),
@@ -141,7 +142,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
             ),
             const SizedBox(height: 8),
             Text(
-              'Mỗi ngày Đấu Trường tặng 5 lượt miễn phí. Bạn có thể xem 1 video (15 giây) để hồi ngay +1 lượt & nhận +100 Điểm Uy Tín, hoặc dùng Điểm Uy Tín tích lũy (hiện có: $availablePointsđ) để đổi sang lượt chơi!',
+              'Mỗi ngày Đấu Trường tặng 5 lượt miễn phí. Bạn có thể xem 1 video (15 giây) để hồi ngay +1 lượt & nhận +100 Gem, hoặc dùng Gem tích lũy (hiện có: $availablePoints Gem) để đổi sang lượt chơi!',
               textAlign: TextAlign.center,
               style: const TextStyle(fontSize: 13, height: 1.38),
             ),
@@ -161,7 +162,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
                 onPressed: () => Navigator.of(ctx).pop('watch_ad'),
                 icon: const Icon(Icons.smart_display_rounded, size: 20),
                 label: const Text(
-                  'Xem Video 15s (+1 Lượt & +100đ)',
+                  'Xem Video 15s (+1 Lượt & +100 Gem)',
                   style: TextStyle(fontWeight: FontWeight.w800),
                 ),
               ),
@@ -183,15 +184,11 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
                   ),
                 ),
                 onPressed: () => Navigator.of(ctx).pop('redeem_points'),
-                icon: Icon(
-                  Icons.swap_horiz_rounded,
-                  size: 19,
-                  color: canRedeem ? AppColors.correct : AppColors.accentAmber,
-                ),
+                icon: const SolfaGemIcon(size: 16),
                 label: FittedBox(
                   fit: BoxFit.scaleDown,
                   child: Text(
-                    'Đổi 100 Điểm Uy Tín → +1 Lượt ($availablePointsđ)',
+                    'Đổi 100 Gem → +1 Lượt ($availablePoints Gem)',
                     style: TextStyle(
                       fontWeight: FontWeight.w800,
                       color:
@@ -887,15 +884,22 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
                   ),
                 ),
               ),
-              Text(
-                '$availablePoints điểm uy tín',
-                style: TextStyle(
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w600,
-                  color: isDark
-                      ? AppColors.textSecondaryDark
-                      : AppColors.textSecondaryLight,
-                ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SolfaGemIcon(size: 13),
+                  const SizedBox(width: 4),
+                  Text(
+                    '$availablePoints Gem',
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
+                      color: isDark
+                          ? AppColors.textSecondaryDark
+                          : AppColors.textSecondaryLight,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -986,15 +990,11 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
                     pointsCost: 100,
                     turnsToGrant: 1,
                   ),
-                  icon: Icon(
-                    Icons.swap_horiz_rounded,
-                    size: 15,
-                    color: canRedeem ? AppColors.correct : null,
-                  ),
+                  icon: const SolfaGemIcon(size: 13),
                   label: FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Text(
-                      'Đổi 100đ → +1 Lượt',
+                      'Đổi 100 Gem → +1 Lượt',
                       style: TextStyle(
                         fontSize: 11.5,
                         fontWeight: FontWeight.w700,
@@ -2159,15 +2159,11 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
-                        Icons.workspace_premium_rounded,
-                        size: 16,
-                        color: AppColors.correct,
-                      ),
+                      const SolfaGemIcon(size: 15),
                       const SizedBox(width: 5),
                       Flexible(
                         child: Text(
-                          'Thưởng Thăng Hạng ${state.rankInfo.tierName}: +${state.lastRankUpBonusPoints} Điểm Uy Tín!',
+                          'Thưởng Thăng Hạng ${state.rankInfo.tierName}: +${state.lastRankUpBonusPoints} Gem!',
                           textAlign: TextAlign.center,
                           style: const TextStyle(
                             fontSize: 12,
@@ -2241,14 +2237,14 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
                       ),
                       SizedBox(height: 2),
                       Text(
-                        'Nhận ngay +40 Điểm Uy Tín thưởng nhiệm vụ ngày',
+                        'Nhận ngay +40 Gem thưởng nhiệm vụ ngày',
                         style: TextStyle(fontSize: 11.5),
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(width: 8),
-                ElevatedButton(
+                ElevatedButton.icon(
                   key: const Key('btn_battle_claim_quest_battle'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.correct,
@@ -2261,18 +2257,25 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
                         .read(rewardedAdProvider.notifier)
                         .claimDailyQuest('battle');
                     if (pts > 0 && context.mounted) {
+                      showGemRewardAnimation(
+                        context,
+                        gemsAdded: pts,
+                        subtitle: 'Nhiệm vụ Chiến binh Đấu Trường',
+                        isTestMode: ref.read(audioServiceProvider).isTestMode,
+                      );
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           backgroundColor: AppColors.correct,
                           content: Text(
-                            'Đã nhận +$pts Điểm Uy Tín từ nhiệm vụ Chiến binh Đấu Trường!',
+                            'Đã nhận +$pts Gem từ nhiệm vụ Chiến binh Đấu Trường!',
                           ),
                         ),
                       );
                     }
                   },
-                  child: const Text(
-                    'Nhận +40đ',
+                  icon: const SolfaGemIcon(size: 13),
+                  label: const Text(
+                    'Nhận +40 Gem',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w900,

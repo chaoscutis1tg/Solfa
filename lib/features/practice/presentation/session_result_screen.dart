@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../app/widgets/pulsing_red_heart.dart';
 import '../../../app/widgets/solfa_background.dart';
+import '../../../app/widgets/solfa_gem_icon.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/utils/note_formatter.dart';
 import '../../support_developer/application/rewarded_ad_controller.dart';
@@ -379,14 +380,14 @@ class _SessionResultScreenState extends ConsumerState<SessionResultScreen> {
                             ),
                             SizedBox(height: 2),
                             Text(
-                              'Nhận ngay +30 Điểm Uy Tín để tích lũy đổi Lượt Đấu Trường',
+                              'Nhận ngay +30 Gem để tích lũy đổi Lượt Đấu Trường & gói 1 tiếng',
                               style: TextStyle(fontSize: 11.5),
                             ),
                           ],
                         ),
                       ),
                       const SizedBox(width: 8),
-                      ElevatedButton(
+                      ElevatedButton.icon(
                         key: const Key('btn_result_claim_quest_practice'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.correct,
@@ -399,18 +400,26 @@ class _SessionResultScreenState extends ConsumerState<SessionResultScreen> {
                               .read(rewardedAdProvider.notifier)
                               .claimDailyQuest('practice');
                           if (pts > 0 && context.mounted) {
+                            showGemRewardAnimation(
+                              context,
+                              gemsAdded: pts,
+                              subtitle: 'Nhiệm vụ Khởi động Cảm Âm',
+                              isTestMode:
+                                  ref.read(audioServiceProvider).isTestMode,
+                            );
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 backgroundColor: AppColors.correct,
                                 content: Text(
-                                  'Đã nhận +$pts Điểm Uy Tín từ nhiệm vụ Khởi động Cảm Âm!',
+                                  'Đã nhận +$pts Gem từ nhiệm vụ Khởi động Cảm Âm!',
                                 ),
                               ),
                             );
                           }
                         },
-                        child: const Text(
-                          'Nhận +30đ',
+                        icon: const SolfaGemIcon(size: 13),
+                        label: const Text(
+                          'Nhận +30 Gem',
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w900,
@@ -656,7 +665,7 @@ class _SessionResultScreenState extends ConsumerState<SessionResultScreen> {
                                   ),
                                   const SizedBox(height: 2),
                                   const Text(
-                                    'Nhận ngay +100 Điểm Uy Tín & Huy hiệu Tri Ân trên Trang chủ',
+                                    'Nhận ngay +100 Gem & Huy hiệu Tri Ân trên Trang chủ',
                                     style: TextStyle(fontSize: 11.5),
                                   ),
                                 ],

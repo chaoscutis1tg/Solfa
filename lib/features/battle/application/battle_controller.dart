@@ -1334,7 +1334,7 @@ class BattleNotifier extends StateNotifier<BattleState> {
               .grantBonusPrestigePoints(
                 rankUpBonus,
                 customMessage:
-                    'Thăng hạng $nextTierName! Tặng thưởng +$rankUpBonus Điểm Uy Tín!',
+                    'Thăng hạng $nextTierName! Tặng thưởng +$rankUpBonus Gem!',
               );
         } catch (_) {}
       }

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/design_system/solfa_design_system.dart';
 import '../../../app/theme/app_colors.dart';
+import '../../../app/widgets/solfa_gem_icon.dart';
 import '../../../core/models/domain_models.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../practice/application/practice_session_controller.dart';
@@ -27,9 +28,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     String? topicId,
     String? levelId,
   }) async {
+    final dur = ref.read(selectedPracticeDurationProvider);
+    final canProceed = await checkAndSpendGemsForDurationIfNeeded(
+      context,
+      ref,
+      durationSeconds: dur,
+    );
+    if (!canProceed || !context.mounted) return;
+
     final notifier = ref.read(practiceSessionProvider.notifier);
     final isTest = ref.read(audioServiceProvider).isTestMode;
-    final dur = ref.read(selectedPracticeDurationProvider);
     final selectedNoteLevel = ref.read(selectedNoteLevelIdProvider);
     final selectedStaffLevel = ref.read(selectedStaffLevelIdProvider);
 
@@ -155,9 +163,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           _buildUnifiedQuickAccessGroup(context, stats, isDark),
           const SizedBox(height: SolfaSpacing.lg),
 
-          // KHU VỰC 5 – Mục tiêu hôm nay (Tối giản: Số câu đã hoàn thành / Mục tiêu + Thanh tiến trình)
+          // KHU VỰC 5 – Mục tiêu hôm nay (Tối giản: Số câu đã hoàn thành / Mục tiêu + Thanh tiến trình + Thưởng +20 Gem)
           if (stats != null) ...[
-            _buildTodayGoalSection(context, stats, isDark),
+            _buildTodayGoalSection(context, stats, adState, isDark),
             const SizedBox(height: SolfaSpacing.lg),
           ],
 
@@ -427,7 +435,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     const durations = [
       (60, '60 giây'),
       (900, '15 phút'),
-      (3600, '1 tiếng'),
+      (3600, '1h (50 Gem)'),
       (0, 'Tự do'),
     ];
 
@@ -558,12 +566,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  /// Khu vực 5: Mục tiêu hôm nay (Chỉ hiển thị số câu đã hoàn thành / mục tiêu + thanh tiến trình).
+  /// Khu vực 5: Mục tiêu hôm nay (Chỉ hiển thị số câu đã hoàn thành / mục tiêu + thanh tiến trình + thưởng +20 Gem khi hoàn thành).
   Widget _buildTodayGoalSection(
     BuildContext context,
     OverallProgressStats stats,
+    RewardedAdState adState,
     bool isDark,
   ) {
+    final canClaimGoalGem =
+        stats.isDailyGoalReached && !adState.dailyGoalGemClaimedToday;
+
     return SolfaSurfaceCard(
       padding: const EdgeInsets.all(15),
       child: Column(
@@ -587,20 +599,63 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   style: SolfaTypography.cardTitle,
                 ),
               ),
-              TextButton(
-                style: TextButton.styleFrom(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  minimumSize: const Size(0, 28),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              if (canClaimGoalGem)
+                TextButton.icon(
+                  key: const Key('btn_claim_daily_goal_gem'),
+                  style: TextButton.styleFrom(
+                    backgroundColor: AppColors.correct,
+                    foregroundColor: Colors.white,
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    minimumSize: const Size(0, 30),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  onPressed: () async {
+                    final isTest = ref.read(audioServiceProvider).isTestMode;
+                    final bonus = await ref
+                        .read(rewardedAdProvider.notifier)
+                        .awardDailyGoalBonusIfEligible();
+                    if (bonus > 0 && context.mounted) {
+                      showGemRewardAnimation(
+                        context,
+                        gemsAdded: bonus,
+                        subtitle: 'Hoàn thành mục tiêu hôm nay!',
+                        isTestMode: isTest,
+                      );
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          backgroundColor: AppColors.correct,
+                          content: Text(
+                            'Chúc mừng! Bạn vừa nhận +$bonus Gem hoàn thành mục tiêu hôm nay.',
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                  icon: const SolfaGemIcon(size: 13),
+                  label: const Text(
+                    'Nhận +20 Gem',
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                )
+              else
+                TextButton(
+                  style: TextButton.styleFrom(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    minimumSize: const Size(0, 28),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  onPressed: () =>
+                      _showDailyGoalPicker(context, stats.dailyGoalTarget),
+                  child: const Text(
+                    'Đổi mục tiêu',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                  ),
                 ),
-                onPressed: () =>
-                    _showDailyGoalPicker(context, stats.dailyGoalTarget),
-                child: const Text(
-                  'Đổi mục tiêu',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
-                ),
-              ),
             ],
           ),
           const SizedBox(height: 10),
@@ -786,15 +841,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ? null
               : () async {
                   if (isReadyToClaim) {
+                    final isTest = ref.read(audioServiceProvider).isTestMode;
                     final pts = await ref
                         .read(rewardedAdProvider.notifier)
                         .claimDailyQuest(questCode);
                     if (pts > 0 && context.mounted) {
+                      showGemRewardAnimation(
+                        context,
+                        gemsAdded: pts,
+                        subtitle: 'Hoàn thành nhiệm vụ hàng ngày',
+                        isTestMode: isTest,
+                      );
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           backgroundColor: AppColors.correct,
                           content: Text(
-                            'Đã nhận +$pts Điểm Uy Tín!',
+                            'Đã nhận +$pts Gem!',
                           ),
                         ),
                       );
@@ -803,14 +865,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     onGoAction();
                   }
                 },
-          child: Text(
-            isClaimed
-                ? 'Đã nhận +$rewardPointsđ'
-                : (isReadyToClaim ? 'Nhận +$rewardPointsđ' : '+$rewardPointsđ'),
-            style: const TextStyle(
-              fontSize: 11.5,
-              fontWeight: FontWeight.w700,
-            ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SolfaGemIcon(size: 13),
+              const SizedBox(width: 4),
+              Text(
+                isClaimed
+                    ? 'Đã nhận +$rewardPoints Gem'
+                    : (isReadyToClaim
+                        ? 'Nhận +$rewardPoints Gem'
+                        : '+$rewardPoints Gem'),
+                style: const TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
           ),
         ),
       ],
@@ -862,7 +933,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ? const Radius.circular(SolfaRadius.lg)
                         : Radius.zero,
                   ),
-                  onTap: () => context.push('/topics/${topic.id}'),
+                  onTap: () => showTopicPracticeSetupModal(context, ref, topic),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 14,

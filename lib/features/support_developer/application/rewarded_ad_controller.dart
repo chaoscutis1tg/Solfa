@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../../core/providers/app_providers.dart';
+import '../../../core/security/solfa_integrity_guard.dart';
 
 enum RewardedAdStatus {
   notLoaded,
@@ -15,6 +16,15 @@ enum RewardedAdStatus {
 }
 
 class RewardedAdState {
+  /// Chi phí mở khóa 1 phiên luyện tập chuyên sâu 1 tiếng (3600 giây).
+  static const int kOneHourPracticeGemCost = 50;
+
+  /// Phần thưởng Gem khi hoàn thành mục tiêu hàng ngày.
+  static const int kDailyGoalBonusGems = 20;
+
+  /// Phần thưởng Gem mỗi khi thăng bậc Rank mới trong Đấu Trường.
+  static const int kRankUpBonusGems = 50;
+
   final RewardedAdStatus status;
   final int supportedCount;
   final int bonusPrestigePoints;
@@ -22,8 +32,10 @@ class RewardedAdState {
   final bool questPracticeClaimedToday;
   final bool questBattleClaimedToday;
   final bool questDictationClaimedToday;
+  final bool dailyGoalGemClaimedToday;
   final int dailyBattlesPlayed;
   final int dailyDictationCompletedCount;
+  final bool isIntegrityVerified;
   final String statusMessage;
 
   const RewardedAdState({
@@ -34,20 +46,28 @@ class RewardedAdState {
     this.questPracticeClaimedToday = false,
     this.questBattleClaimedToday = false,
     this.questDictationClaimedToday = false,
+    this.dailyGoalGemClaimedToday = false,
     this.dailyBattlesPlayed = 0,
     this.dailyDictationCompletedCount = 0,
+    this.isIntegrityVerified = true,
     this.statusMessage =
-        'Quảng cáo video có thưởng hoàn toàn tự nguyện, cần kết nối Internet và không khóa bất kỳ bài học nào.',
+        'Quảng cáo video có thưởng hoàn toàn tự nguyện (+100 Gem & +1 Lượt Đấu), cần kết nối Internet và không khóa các bài học 60s/15p.',
   });
 
-  /// Tổng Điểm Uy Tín tích lũy trọn đời (từ video ủng hộ + nhiệm vụ & thăng hạng).
+  /// Tổng Gem tích lũy trọn đời (từ video ủng hộ + nhiệm vụ, mục tiêu ngày & thăng hạng).
   int get totalPrestigePoints => supportedCount * 100 + bonusPrestigePoints;
 
-  /// Số dư Điểm Uy Tín khả dụng hiện tại (có thể dùng để quy đổi sang Lượt Đấu Trường).
+  /// Số dư Gem khả dụng hiện tại (dùng để mở phiên 1 tiếng hoặc quy đổi sang Lượt Đấu Trường).
   int get prestigePoints =>
       (totalPrestigePoints - spentPrestigePoints).clamp(0, 999999);
 
+  /// Alias cho `prestigePoints` theo tên đơn vị mới `Gem`.
+  int get gems => prestigePoints;
+
   bool get canRedeemSingleTurn => prestigePoints >= 100;
+
+  bool get canAffordOneHourPractice =>
+      prestigePoints >= kOneHourPracticeGemCost;
 
   int get claimedQuestsCountToday =>
       (questPracticeClaimedToday ? 1 : 0) +
@@ -55,7 +75,7 @@ class RewardedAdState {
       (questDictationClaimedToday ? 1 : 0);
 
   String get supporterBadgeTitle {
-    if (supportedCount >= 10) return 'Đại sứ Vàng Solfa';
+    if (supportedCount >= 10) return 'Đại sứ Kim Cương Solfa';
     if (supportedCount >= 5) return 'Nhà tài trợ Cảm âm';
     if (supportedCount >= 1) return 'Người đồng hành Âm nhạc';
     return 'Người bạn của Solfa';
@@ -69,8 +89,10 @@ class RewardedAdState {
     bool? questPracticeClaimedToday,
     bool? questBattleClaimedToday,
     bool? questDictationClaimedToday,
+    bool? dailyGoalGemClaimedToday,
     int? dailyBattlesPlayed,
     int? dailyDictationCompletedCount,
+    bool? isIntegrityVerified,
     String? statusMessage,
   }) {
     return RewardedAdState(
@@ -84,9 +106,12 @@ class RewardedAdState {
           questBattleClaimedToday ?? this.questBattleClaimedToday,
       questDictationClaimedToday:
           questDictationClaimedToday ?? this.questDictationClaimedToday,
+      dailyGoalGemClaimedToday:
+          dailyGoalGemClaimedToday ?? this.dailyGoalGemClaimedToday,
       dailyBattlesPlayed: dailyBattlesPlayed ?? this.dailyBattlesPlayed,
       dailyDictationCompletedCount:
           dailyDictationCompletedCount ?? this.dailyDictationCompletedCount,
+      isIntegrityVerified: isIntegrityVerified ?? this.isIntegrityVerified,
       statusMessage: statusMessage ?? this.statusMessage,
     );
   }
@@ -107,24 +132,83 @@ class RewardedAdNotifier extends StateNotifier<RewardedAdState> {
     return '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
   }
 
+  Future<void> _persistWalletSignature({
+    required int supportedCount,
+    required int bonusGems,
+    required int spentGems,
+  }) async {
+    try {
+      final sig = SolfaIntegrityGuard.computeWalletSignature(
+        supportedCount: supportedCount,
+        bonusGems: bonusGems,
+        spentGems: spentGems,
+      );
+      final nowMs = DateTime.now().millisecondsSinceEpoch;
+      await _db.setSetting('wallet_integrity_sig', '$sig|$nowMs');
+    } catch (_) {}
+  }
+
   Future<void> _loadSupportCount() async {
     try {
       final map = await _db.getAllSettings();
       if (!mounted) return;
-      final count = int.tryParse(map['developer_support_count'] ?? '0') ?? 0;
-      final bonus =
+      int count = int.tryParse(map['developer_support_count'] ?? '0') ?? 0;
+      int bonus =
           int.tryParse(map['developer_support_bonus_points'] ?? '0') ?? 0;
-      final spent =
+      int spent =
           int.tryParse(map['developer_support_points_spent'] ?? '0') ?? 0;
+      final rawSig = map['wallet_integrity_sig'];
+      String? savedSig;
+      int? lastEpochMs;
+      if (rawSig != null && rawSig.contains('|')) {
+        final parts = rawSig.split('|');
+        savedSig = parts.first;
+        lastEpochMs = int.tryParse(parts.last);
+      } else {
+        savedSig = rawSig;
+        lastEpochMs = int.tryParse(map['wallet_last_epoch_ms'] ?? '');
+      }
+      final nowEpochMs = DateTime.now().millisecondsSinceEpoch;
+
+      final sigOk = SolfaIntegrityGuard.verifyWalletSignature(
+        supportedCount: count,
+        bonusGems: bonus,
+        spentGems: spent,
+        savedSignature: savedSig,
+      );
+      final clockOk = SolfaIntegrityGuard.isSystemClockValid(
+        lastVerifiedEpochMs: lastEpochMs,
+        currentEpochMs: nowEpochMs,
+      );
+
+      if (!sigOk) {
+        // Nếu phát hiện chỉnh sửa dữ liệu trái phép từ bên ngoài -> khôi phục về 0 an toàn
+        count = 0;
+        bonus = 0;
+        spent = 0;
+        await _db.setSetting('developer_support_count', '0');
+        await _db.setSetting('developer_support_bonus_points', '0');
+        await _db.setSetting('developer_support_points_spent', '0');
+        await _persistWalletSignature(
+          supportedCount: 0,
+          bonusGems: 0,
+          spentGems: 0,
+        );
+      }
 
       final today = _todayDateKey();
       final questDate = map['daily_quests_date'];
       final isTodayQuest = questDate == today;
-      final qPractice =
-          isTodayQuest && map['daily_quest_practice_claimed'] == '1';
-      final qBattle = isTodayQuest && map['daily_quest_battle_claimed'] == '1';
-      final qDictation =
-          isTodayQuest && map['daily_quest_dictation_claimed'] == '1';
+      // Nếu phát hiện tua ngược đồng hồ -> khóa nhận lại nhiệm vụ
+      final qPractice = !clockOk ||
+          (isTodayQuest && map['daily_quest_practice_claimed'] == '1');
+      final qBattle =
+          !clockOk || (isTodayQuest && map['daily_quest_battle_claimed'] == '1');
+      final qDictation = !clockOk ||
+          (isTodayQuest && map['daily_quest_dictation_claimed'] == '1');
+      final dailyGoalClaimed = !clockOk ||
+          (map['daily_goal_gem_date'] == today &&
+              map['daily_goal_gem_claimed'] == '1');
       final dictationCount = isTodayQuest
           ? (int.tryParse(map['daily_dictation_completed_count'] ?? '0') ?? 0)
           : 0;
@@ -145,8 +229,10 @@ class RewardedAdNotifier extends StateNotifier<RewardedAdState> {
         questPracticeClaimedToday: qPractice,
         questBattleClaimedToday: qBattle,
         questDictationClaimedToday: qDictation,
+        dailyGoalGemClaimedToday: dailyGoalClaimed,
         dailyBattlesPlayed: battlesToday.clamp(0, 999),
         dailyDictationCompletedCount: dictationCount.clamp(0, 999),
+        isIntegrityVerified: sigOk && clockOk,
       );
     } catch (_) {}
   }
@@ -189,7 +275,7 @@ class RewardedAdNotifier extends StateNotifier<RewardedAdState> {
     state = state.copyWith(
       status: RewardedAdStatus.ready,
       statusMessage:
-          'Video quảng cáo ngắn (15 giây) đã sẵn sàng. Nhấn "Xem video quảng cáo" để ủng hộ nhà phát triển.',
+          'Video quảng cáo ngắn (15 giây) đã sẵn sàng. Nhấn "Xem video quảng cáo" để nhận +100 Gem & ủng hộ nhà phát triển.',
     );
     return true;
   }
@@ -211,14 +297,14 @@ class RewardedAdNotifier extends StateNotifier<RewardedAdState> {
       status: RewardedAdStatus.completed,
       supportedCount: nextCount,
       statusMessage:
-          'Cảm ơn bạn rất nhiều! Lượt xem video ủng hộ thứ #$nextCount của bạn đã được ghi nhận (+100 Điểm Uy Tín).',
+          'Cảm ơn bạn rất nhiều! Lượt xem video ủng hộ thứ #$nextCount của bạn đã được ghi nhận (+100 Gem).',
     );
     try {
       await _db.setSetting('developer_support_count', nextCount.toString());
     } catch (_) {}
   }
 
-  /// Quy đổi Điểm Uy Tín khả dụng (`prestigePoints`) sang Lượt Đấu Trường.
+  /// Quy đổi Gem khả dụng (`prestigePoints`) sang Lượt Đấu Trường.
   /// Danh hiệu ủng hộ (`supportedCount`) vẫn được bảo toàn vĩnh viễn!
   Future<bool> spendPrestigePointsForTurns({
     required int pointsCost,
@@ -232,7 +318,7 @@ class RewardedAdNotifier extends StateNotifier<RewardedAdState> {
     state = state.copyWith(
       spentPrestigePoints: nextSpent,
       statusMessage:
-          'Đã quy đổi $pointsCost Điểm Uy Tín sang +$turnsGranted Lượt Đấu Trường thành công!',
+          'Đã quy đổi $pointsCost Gem sang +$turnsGranted Lượt Đấu Trường thành công!',
     );
     try {
       await _db.setSetting(
@@ -243,7 +329,31 @@ class RewardedAdNotifier extends StateNotifier<RewardedAdState> {
     return true;
   }
 
-  /// Cộng Điểm Uy Tín thưởng từ Nhiệm Vụ Hàng Ngày hoặc Thăng Hạng Đấu Trường.
+  /// Mở khóa phiên luyện tập chuyên sâu 1 tiếng (`3600s`) bằng `50 Gem`.
+  /// Các phiên `60 giây`, `15 phút` và `Tự do` hoàn toàn miễn phí (`0 Gem`).
+  Future<bool> spendGemsForOneHourSession({
+    int gemCost = RewardedAdState.kOneHourPracticeGemCost,
+  }) async {
+    if (!mounted) return false;
+    if (gemCost <= 0) return true;
+    if (state.prestigePoints < gemCost) return false;
+
+    final nextSpent = state.spentPrestigePoints + gemCost;
+    state = state.copyWith(
+      spentPrestigePoints: nextSpent,
+      statusMessage:
+          'Đã mở khóa phiên luyện tập chuyên sâu 1 tiếng (-$gemCost Gem). Chúc bạn luyện tập hiệu quả!',
+    );
+    try {
+      await _db.setSetting(
+        'developer_support_points_spent',
+        nextSpent.toString(),
+      );
+    } catch (_) {}
+    return true;
+  }
+
+  /// Cộng Gem thưởng từ Nhiệm Vụ Hàng Ngày, Đạt Mục Tiêu Ngày hoặc Thăng Hạng Đấu Trường.
   Future<void> grantBonusPrestigePoints(
     int points, {
     String? customMessage,
@@ -252,8 +362,7 @@ class RewardedAdNotifier extends StateNotifier<RewardedAdState> {
     final nextBonus = state.bonusPrestigePoints + points;
     state = state.copyWith(
       bonusPrestigePoints: nextBonus,
-      statusMessage:
-          customMessage ?? 'Bạn vừa nhận thêm +$points Điểm Uy Tín thưởng!',
+      statusMessage: customMessage ?? 'Bạn vừa nhận thêm +$points Gem thưởng!',
     );
     try {
       await _db.setSetting(
@@ -261,6 +370,28 @@ class RewardedAdNotifier extends StateNotifier<RewardedAdState> {
         nextBonus.toString(),
       );
     } catch (_) {}
+  }
+
+  /// Thưởng nóng +20 Gem khi hoàn thành Mục tiêu hàng ngày (nhận 1 lần/ngày).
+  Future<int> awardDailyGoalBonusIfEligible() async {
+    if (!mounted || state.dailyGoalGemClaimedToday) return 0;
+    const bonus = RewardedAdState.kDailyGoalBonusGems;
+    final nextBonus = state.bonusPrestigePoints + bonus;
+    state = state.copyWith(
+      dailyGoalGemClaimedToday: true,
+      bonusPrestigePoints: nextBonus,
+      statusMessage:
+          'Chúc mừng bạn đã hoàn thành Mục tiêu hôm nay! Nhận thưởng +$bonus Gem.',
+    );
+    try {
+      await _db.setSetting('daily_goal_gem_date', _todayDateKey());
+      await _db.setSetting('daily_goal_gem_claimed', '1');
+      await _db.setSetting(
+        'developer_support_bonus_points',
+        nextBonus.toString(),
+      );
+    } catch (_) {}
+    return bonus;
   }
 
   /// Ghi nhận người dùng vừa tham gia 1 trận Đấu Trường 1v1 hôm nay.
@@ -283,7 +414,7 @@ class RewardedAdNotifier extends StateNotifier<RewardedAdState> {
     } catch (_) {}
   }
 
-  /// Nhận thưởng Nhiệm Vụ Hàng Ngày ('practice' -> +30đ, 'battle' -> +40đ, 'dictation' -> +30đ).
+  /// Nhận thưởng Nhiệm Vụ Hàng Ngày ('practice' -> +30 Gem, 'battle' -> +40 Gem, 'dictation' -> +30 Gem).
   Future<int> claimDailyQuest(String questCode) async {
     if (!mounted) return 0;
     int rewardPoints = 0;
@@ -297,7 +428,7 @@ class RewardedAdNotifier extends StateNotifier<RewardedAdState> {
         questPracticeClaimedToday: true,
         bonusPrestigePoints: state.bonusPrestigePoints + rewardPoints,
         statusMessage:
-            'Đã nhận +$rewardPoints Điểm Uy Tín từ nhiệm vụ Luyện Tập Cảm Âm!',
+            'Đã nhận +$rewardPoints Gem từ nhiệm vụ Luyện Tập Cảm Âm!',
       );
     } else if (questCode == 'battle') {
       if (state.questBattleClaimedToday) return 0;
@@ -307,7 +438,7 @@ class RewardedAdNotifier extends StateNotifier<RewardedAdState> {
         questBattleClaimedToday: true,
         bonusPrestigePoints: state.bonusPrestigePoints + rewardPoints,
         statusMessage:
-            'Đã nhận +$rewardPoints Điểm Uy Tín từ nhiệm vụ Chiến Binh Đấu Trường!',
+            'Đã nhận +$rewardPoints Gem từ nhiệm vụ Chiến Binh Đấu Trường!',
       );
     } else if (questCode == 'dictation') {
       if (state.questDictationClaimedToday) return 0;
@@ -317,7 +448,7 @@ class RewardedAdNotifier extends StateNotifier<RewardedAdState> {
         questDictationClaimedToday: true,
         bonusPrestigePoints: state.bonusPrestigePoints + rewardPoints,
         statusMessage:
-            'Đã nhận +$rewardPoints Điểm Uy Tín từ nhiệm vụ Chép Nhạc Giai Điệu!',
+            'Đã nhận +$rewardPoints Gem từ nhiệm vụ Chép Nhạc Giai Điệu!',
       );
     } else {
       return 0;

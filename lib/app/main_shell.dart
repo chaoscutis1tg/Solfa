@@ -11,6 +11,7 @@ import '../features/support_developer/application/rewarded_ad_controller.dart';
 import 'theme/app_colors.dart';
 import 'widgets/crossed_swords_icon.dart';
 import 'widgets/solfa_background.dart';
+import 'widgets/solfa_gem_icon.dart';
 import 'widgets/solfa_logo.dart';
 
 class MainShell extends ConsumerWidget {
@@ -82,7 +83,7 @@ class MainShell extends ConsumerWidget {
             ],
           ),
           actions: [
-            // Compact Prestige Points Pill
+            // Compact Gem Pill (Viên Kim Cương)
             Material(
               color: Colors.transparent,
               child: InkWell(
@@ -93,27 +94,23 @@ class MainShell extends ConsumerWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppColors.accentAmber.withOpacity(0.12),
+                    color: AppColors.primary.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(99),
                     border: Border.all(
-                      color: AppColors.accentAmber.withOpacity(0.35),
+                      color: AppColors.primary.withOpacity(0.35),
                     ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
-                        Icons.workspace_premium_rounded,
-                        size: 14,
-                        color: AppColors.accentAmber,
-                      ),
+                      const SolfaGemIcon(size: 14),
                       const SizedBox(width: 4),
                       Text(
-                        '${adState.prestigePoints}đ',
+                        '${adState.prestigePoints} Gem',
                         style: const TextStyle(
                           fontSize: 11.5,
                           fontWeight: FontWeight.w800,
-                          color: AppColors.accentAmber,
+                          color: AppColors.primary,
                         ),
                       ),
                     ],

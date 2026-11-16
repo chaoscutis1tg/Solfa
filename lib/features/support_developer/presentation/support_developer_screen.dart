@@ -7,6 +7,7 @@ import '../../../app/theme/app_colors.dart';
 import '../../../app/widgets/animated_ui.dart';
 import '../../../app/widgets/pulsing_red_heart.dart';
 import '../../../app/widgets/solfa_background.dart';
+import '../../../app/widgets/solfa_gem_icon.dart';
 import '../../../app/widgets/solfa_logo.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../battle/application/battle_controller.dart';
@@ -73,6 +74,14 @@ Future<bool> showSolfaRewardedVideoAdModal(
   if (completed == true) {
     await ref.read(battleProvider.notifier).restoreTurnFromRewardedAd(turns: 1);
     await audioService.playSessionCompleteFanfare();
+    if (context.mounted) {
+      showGemRewardAnimation(
+        context,
+        gemsAdded: 100,
+        subtitle: '+1 Lượt Đấu Trường',
+        isTestMode: audioService.isTestMode,
+      );
+    }
     return true;
   }
   return false;
@@ -105,7 +114,7 @@ Future<bool> redeemPrestigePointsForBattleTurns(
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'Bạn cần thêm $missing Điểm Uy Tín nữa để đổi gói +$turnsToGrant Lượt Đấu. Hãy xem 1 video ủng hộ (15s) để nhận ngay +100 điểm nhé!',
+                  'Bạn cần thêm $missing Gem nữa để đổi gói +$turnsToGrant Lượt Đấu. Hãy xem 1 video ủng hộ (15s) để nhận ngay +100 Gem nhé!',
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
               ),
@@ -148,7 +157,7 @@ Future<bool> redeemPrestigePointsForBattleTurns(
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                'Đổi thành công $pointsCost Điểm Uy Tín → +$turnsToGrant Lượt Đấu Trường! (Hiện có: $remainingTurns lượt • Còn $remainingPoints điểm)',
+                'Đổi thành công $pointsCost Gem → +$turnsToGrant Lượt Đấu Trường! (Hiện có: $remainingTurns lượt • Còn $remainingPoints Gem)',
                 style: const TextStyle(fontWeight: FontWeight.w700),
               ),
             ),
@@ -221,22 +230,28 @@ class _SupportDeveloperScreenState
       await ref.read(battleProvider.notifier).restoreTurnFromRewardedAd(turns: 1);
       await audioService.playSessionCompleteFanfare();
       if (!mounted) return;
+      showGemRewardAnimation(
+        context,
+        gemsAdded: 100,
+        subtitle: 'Cảm ơn bạn đã ủng hộ Solfa!',
+        isTestMode: audioService.isTestMode,
+      );
       final updatedState = ref.read(rewardedAdProvider);
       final count = updatedState.supportedCount;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          backgroundColor: kHeartRedColor,
+          backgroundColor: AppColors.primary,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
           ),
           content: Row(
             children: [
-              const Icon(Icons.celebration_rounded, color: Colors.white),
+              const SolfaGemIcon(size: 20),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'Cảm ơn bạn! +1 Lượt Đấu Trường & +100 Điểm Uy Tín (Lượt ủng hộ #$count • ${updatedState.supporterBadgeTitle}).',
+                  'Cảm ơn bạn! +1 Lượt Đấu Trường & +100 Gem (Lượt ủng hộ #$count • ${updatedState.supporterBadgeTitle}).',
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
               ),
@@ -261,7 +276,7 @@ class _SupportDeveloperScreenState
                     Icon(Icons.auto_awesome_rounded,
                         color: AppColors.accentAmber, size: 26),
                     SizedBox(width: 10),
-                    PulsingRedHeart(size: 42, showGlowBadge: true),
+                    SolfaGemIcon(size: 42),
                     SizedBox(width: 10),
                     Icon(Icons.celebration_rounded,
                         color: AppColors.accentAmber, size: 26),
@@ -269,7 +284,7 @@ class _SupportDeveloperScreenState
                 ),
                 const SizedBox(height: 14),
                 const Text(
-                  'Cảm ơn trái tim đỏ của bạn!',
+                  'Nhận thành công +100 Gem!',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 18,
@@ -283,32 +298,32 @@ class _SupportDeveloperScreenState
                     vertical: 5,
                   ),
                   decoration: BoxDecoration(
-                    color: kHeartRedColor.withOpacity(0.14),
+                    color: AppColors.primary.withOpacity(0.14),
                     borderRadius: BorderRadius.circular(99),
                   ),
                   child: Text(
-                    '+100 Điểm Uy Tín • Tổng: ${updatedState.prestigePoints} điểm',
+                    '+100 Gem • Tổng khả dụng: ${updatedState.prestigePoints} Gem',
                     style: const TextStyle(
                       fontWeight: FontWeight.w800,
                       fontSize: 13,
-                      color: kHeartRedColor,
+                      color: AppColors.primary,
                     ),
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Huy hiệu hiện tại: ${updatedState.supporterBadgeTitle}\n(Đã hiển thị vinh danh trên Trang chủ của bạn)',
+                  'Huy hiệu hiện tại: ${updatedState.supporterBadgeTitle}\n(Dùng Gem để mở khóa phiên học 1 tiếng hoặc đổi Lượt Đấu Trường)',
                   textAlign: TextAlign.center,
                   style: const TextStyle(fontSize: 12.8, height: 1.38),
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: kHeartRedColor,
+                    backgroundColor: AppColors.primary,
                     minimumSize: const Size(double.infinity, 44),
                   ),
                   onPressed: () => Navigator.of(ctx).pop(),
-                  icon: const Icon(Icons.favorite_rounded, size: 18),
+                  icon: const SolfaGemIcon(size: 18),
                   label: const Text('Tuyệt vời!'),
                 ),
               ],
@@ -430,7 +445,7 @@ class _SupportDeveloperScreenState
                               ),
                               const SizedBox(height: 4),
                               const Text(
-                                'Ủng Hộ Nhà Phát Triển & Nhận Thưởng',
+                                'Ủng Hộ Nhà Phát Triển & Nhận Gem',
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w800,
@@ -438,7 +453,7 @@ class _SupportDeveloperScreenState
                               ),
                               const SizedBox(height: 2),
                               const Text(
-                                'Xem video ngắn (15s) nhận +100 Điểm Uy Tín & +1 Lượt Đấu',
+                                'Xem video ngắn (15s) nhận +100 Gem & +1 Lượt Đấu',
                                 style: TextStyle(fontSize: 12),
                               ),
                             ],
@@ -469,7 +484,7 @@ class _SupportDeveloperScreenState
                             children: [
                               Expanded(
                                 child: Text(
-                                  'Số lượt bạn đã ủng hộ trên thiết bị này: ${adState.supportedCount} (${adState.prestigePoints} điểm Uy tín)',
+                                  'Đã ủng hộ: ${adState.supportedCount} lần (${adState.prestigePoints} Gem khả dụng)',
                                   key: const Key('text_supported_count'),
                                   style: const TextStyle(
                                     fontWeight: FontWeight.w800,
@@ -648,16 +663,10 @@ class _SupportDeveloperScreenState
                 Container(
                   padding: const EdgeInsets.all(9),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFFF9500), Color(0xFFFF5E3A)],
-                    ),
+                    color: AppColors.primary.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(11),
                   ),
-                  child: const Icon(
-                    Icons.swap_horiz_rounded,
-                    color: Colors.white,
-                    size: 20,
-                  ),
+                  child: const SolfaGemIcon(size: 20),
                 ),
                 const SizedBox(width: 11),
                 Expanded(
@@ -665,7 +674,7 @@ class _SupportDeveloperScreenState
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'Đổi Điểm Uy Tín → Lượt Đấu Trường',
+                        'Trạm Đổi Gem → Lượt Đấu Trường & Phiên 1h',
                         style: TextStyle(
                           fontWeight: FontWeight.w900,
                           fontSize: 15,
@@ -673,7 +682,7 @@ class _SupportDeveloperScreenState
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Đổi bất cứ lúc nào (kể cả khi Offline) • Giữ nguyên danh hiệu vinh danh',
+                        '50 Gem mở khóa phiên 1 tiếng • 100 Gem đổi +1 Lượt Đấu (100% Offline)',
                         style: TextStyle(
                           fontSize: 11.3,
                           color: isDark ? Colors.white70 : Colors.black54,
@@ -692,10 +701,10 @@ class _SupportDeveloperScreenState
               decoration: BoxDecoration(
                 color: isDark
                     ? Colors.white.withOpacity(0.05)
-                    : AppColors.accentAmber.withOpacity(0.08),
+                    : AppColors.primary.withOpacity(0.06),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: AppColors.accentAmber.withOpacity(0.3),
+                  color: AppColors.primary.withOpacity(0.28),
                 ),
               ),
               child: Column(
@@ -706,20 +715,16 @@ class _SupportDeveloperScreenState
                       Expanded(
                         child: Row(
                           children: [
-                            const Icon(
-                              Icons.generating_tokens_rounded,
-                              size: 16,
-                              color: AppColors.accentAmber,
-                            ),
+                            const SolfaGemIcon(size: 16),
                             const SizedBox(width: 5),
                             Flexible(
                               child: Text(
-                                'Khả dụng: $availablePoints điểm',
+                                'Khả dụng: $availablePoints Gem',
                                 key: const Key('text_available_prestige_points'),
                                 style: const TextStyle(
                                   fontWeight: FontWeight.w900,
                                   fontSize: 12.8,
-                                  color: AppColors.accentAmber,
+                                  color: AppColors.primary,
                                 ),
                               ),
                             ),
@@ -793,7 +798,7 @@ class _SupportDeveloperScreenState
                   if (adState.spentPrestigePoints > 0) ...[
                     const SizedBox(height: 6),
                     Text(
-                      'Tổng tích lũy trọn đời: ${adState.totalPrestigePoints}đ • Đã quy đổi: ${adState.spentPrestigePoints}đ',
+                      'Tổng tích lũy trọn đời: ${adState.totalPrestigePoints} Gem • Đã dùng: ${adState.spentPrestigePoints} Gem',
                       style: TextStyle(
                         fontSize: 10.8,
                         fontWeight: FontWeight.w600,
@@ -807,11 +812,11 @@ class _SupportDeveloperScreenState
 
             const SizedBox(height: 12),
 
-            // Package 1: 100 Points -> +1 Turn
+            // Package 1: 100 Gems -> +1 Turn
             _buildRedeemPackageTile(
               buttonKey: const Key('btn_redeem_100_points'),
               title: 'Gói Nạp Nhanh: +1 Lượt Đấu Trường',
-              subtitle: 'Tỷ lệ chuẩn 1:1 • Đổi ngay cả khi không có mạng',
+              subtitle: 'Tỷ lệ chuẩn 100 Gem = 1 Lượt • Đổi ngay cả khi Offline',
               pointsCost: 100,
               turnsToGrant: 1,
               availablePoints: availablePoints,
@@ -821,30 +826,30 @@ class _SupportDeveloperScreenState
             ),
             const SizedBox(height: 8),
 
-            // Package 2: 250 Points -> +3 Turns (Save 50 pts)
+            // Package 2: 250 Gems -> +3 Turns (Save 50 Gems)
             _buildRedeemPackageTile(
               buttonKey: const Key('btn_redeem_250_points'),
               title: 'Gói Tăng Tốc: +3 Lượt Đấu Trường',
-              subtitle: 'Tiết kiệm 50 Điểm Uy Tín (+20% giá trị lượt chơi)',
+              subtitle: 'Tiết kiệm 50 Gem (+20% giá trị lượt chơi)',
               pointsCost: 250,
               turnsToGrant: 3,
               availablePoints: availablePoints,
-              badgeText: 'TIẾT KIỆM 50Đ',
+              badgeText: 'TIẾT KIỆM 50 GEM',
               accentColor: AppColors.correct,
               isDark: isDark,
             ),
             const SizedBox(height: 8),
 
-            // Package 3: 400 Points -> +5 Turns (Save 100 pts)
+            // Package 3: 400 Gems -> +5 Turns (Save 100 Gems)
             _buildRedeemPackageTile(
               buttonKey: const Key('btn_redeem_400_points'),
               title: 'Gói Cao Thủ: +5 Lượt Đấu Trường',
-              subtitle: 'Tiết kiệm 100 Điểm (Tặng 1 lượt miễn phí • Đầy 5/5 thanh)',
+              subtitle: 'Tiết kiệm 100 Gem (Tặng 1 lượt miễn phí • Đầy 5/5 thanh)',
               pointsCost: 400,
               turnsToGrant: 5,
               availablePoints: availablePoints,
               badgeText: 'HOT • TẶNG +1 LƯỢT',
-              accentColor: kHeartRedColor,
+              accentColor: AppColors.primary,
               isDark: isDark,
             ),
           ],
@@ -957,12 +962,19 @@ class _SupportDeveloperScreenState
               pointsCost: pointsCost,
               turnsToGrant: turnsToGrant,
             ),
-            child: Text(
-              'Đổi $pointsCostđ',
-              style: const TextStyle(
-                fontSize: 11.5,
-                fontWeight: FontWeight.w900,
-              ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SolfaGemIcon(size: 13),
+                const SizedBox(width: 4),
+                Text(
+                  'Đổi $pointsCost Gem',
+                  style: const TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
             ),
           ),
         ],

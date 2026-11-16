@@ -7,6 +7,7 @@ import 'package:solfa/core/audio/audio_service.dart';
 import 'package:solfa/core/database/app_database.dart';
 import 'package:solfa/core/models/domain_models.dart';
 import 'package:solfa/core/providers/app_providers.dart';
+import 'package:solfa/core/security/solfa_integrity_guard.dart';
 import 'package:solfa/features/battle/application/battle_controller.dart';
 import 'package:solfa/features/metronome/application/metronome_controller.dart';
 import 'package:solfa/features/practice/application/practice_session_controller.dart';
@@ -1594,6 +1595,55 @@ void main() {
           }
           await sessionNotifier.abandonSessionIfIncomplete();
         }
+
+        // 6. Kiểm tra Hệ Kinh Tế Gem (50 Gem cho 1 tiếng, +20 Gem mục tiêu hôm nay) & Chống Hack SolfaIntegrityGuard
+        final sigValid = SolfaIntegrityGuard.computeWalletSignature(
+          supportedCount: 2,
+          bonusGems: 50,
+          spentGems: 50,
+        );
+        expect(
+          SolfaIntegrityGuard.verifyWalletSignature(
+            supportedCount: 2,
+            bonusGems: 50,
+            spentGems: 50,
+            savedSignature: sigValid,
+          ),
+          isTrue,
+        );
+        expect(
+          SolfaIntegrityGuard.verifyWalletSignature(
+            supportedCount: 2,
+            bonusGems: 999999, // giả lập hack sửa điểm Gem trong SQLite
+            spentGems: 50,
+            savedSignature: sigValid,
+          ),
+          isFalse,
+          reason: 'SolfaIntegrityGuard phải phát hiện hành vi sửa điểm Gem trái phép',
+        );
+        expect(
+          SolfaIntegrityGuard.isSystemClockValid(
+            lastVerifiedEpochMs: 1700000000000,
+            currentEpochMs: 1700000000000 - (2 * 3600 * 1000), // chỉnh lùi 2 tiếng
+          ),
+          isFalse,
+          reason: 'SolfaIntegrityGuard phải phát hiện hành vi chỉnh lùi giờ hệ thống',
+        );
+
+        final adNotifier = container.read(rewardedAdProvider.notifier);
+        // Khi chưa có Gem (0 Gem), mở gói 1 tiếng (50 Gem) phải từ chối
+        expect(await adNotifier.spendGemsForOneHourSession(), isFalse);
+        // Nhận thưởng hoàn thành Mục tiêu hôm nay (+20 Gem) và Nhiệm vụ Khởi động (+30 Gem) => tổng 50 Gem
+        final dailyBonus = await adNotifier.awardDailyGoalBonusIfEligible();
+        expect(dailyBonus, equals(20));
+        // Nhận lần 2 trong cùng ngày sẽ trả về 0 (chống nhận trùng)
+        expect(await adNotifier.awardDailyGoalBonusIfEligible(), equals(0));
+        final practiceQuest = await adNotifier.claimDailyQuest('practice');
+        expect(practiceQuest, equals(30));
+        expect(container.read(rewardedAdProvider).prestigePoints, equals(50));
+        // Đủ 50 Gem -> mở khóa phiên luyện tập chuyên sâu 1 tiếng thành công, trừ 50 Gem
+        expect(await adNotifier.spendGemsForOneHourSession(), isTrue);
+        expect(container.read(rewardedAdProvider).prestigePoints, equals(0));
       },
     );
   });
