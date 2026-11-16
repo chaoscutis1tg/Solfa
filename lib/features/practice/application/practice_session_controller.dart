@@ -383,11 +383,9 @@ class PracticeSessionNotifier extends StateNotifier<PracticeSessionState> {
 
       _startTimerIfNeeded();
 
-      // Auto-play first question if user enabled autoPlayQuestionAudio in Settings (never auto-play for Sight-Reading!)
+      // Auto-play first question across ALL modes when autoPlayQuestionAudio is enabled
       final settings = _ref.read(appSettingsProvider);
-      if (settings.autoPlayQuestionAudio &&
-          state.currentQuestion != null &&
-          !state.currentQuestion!.isSightReading) {
+      if (settings.autoPlayQuestionAudio && state.currentQuestion != null) {
         await _audioService.playAsset(state.currentQuestion!.audioAsset);
       }
 
@@ -465,9 +463,7 @@ class PracticeSessionNotifier extends StateNotifier<PracticeSessionState> {
       );
 
       final settings = _ref.read(appSettingsProvider);
-      if (settings.autoPlayQuestionAudio &&
-          state.currentQuestion != null &&
-          !state.currentQuestion!.isSightReading) {
+      if (settings.autoPlayQuestionAudio && state.currentQuestion != null) {
         await _audioService.playAsset(state.currentQuestion!.audioAsset);
       }
     } catch (_) {
@@ -543,9 +539,7 @@ class PracticeSessionNotifier extends StateNotifier<PracticeSessionState> {
       );
 
       final settings = _ref.read(appSettingsProvider);
-      if (settings.autoPlayQuestionAudio &&
-          state.currentQuestion != null &&
-          !state.currentQuestion!.isSightReading) {
+      if (settings.autoPlayQuestionAudio && state.currentQuestion != null) {
         await _audioService.playAsset(state.currentQuestion!.audioAsset);
       }
     } catch (_) {
@@ -690,9 +684,7 @@ class PracticeSessionNotifier extends StateNotifier<PracticeSessionState> {
             clearSelectedOption: true,
           );
           final settings = _ref.read(appSettingsProvider);
-          if (settings.autoPlayQuestionAudio &&
-              state.currentQuestion != null &&
-              !state.currentQuestion!.isSightReading) {
+          if (settings.autoPlayQuestionAudio && state.currentQuestion != null) {
             await _audioService.playAsset(state.currentQuestion!.audioAsset);
           }
           return false;
@@ -706,9 +698,7 @@ class PracticeSessionNotifier extends StateNotifier<PracticeSessionState> {
           clearSelectedOption: true,
         );
         final settings = _ref.read(appSettingsProvider);
-        if (settings.autoPlayQuestionAudio &&
-            state.currentQuestion != null &&
-            !state.currentQuestion!.isSightReading) {
+        if (settings.autoPlayQuestionAudio && state.currentQuestion != null) {
           await _audioService.playAsset(state.currentQuestion!.audioAsset);
         }
         return false; // Not finished yet

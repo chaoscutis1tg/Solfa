@@ -601,7 +601,9 @@ void main() {
         router.push('/quiz');
         await pumpFrames();
         expect(find.byKey(const Key('musical_staff_widget')), findsOneWidget);
-        expect(find.byKey(const Key('piano_key_C4')), findsOneWidget);
+        expect(find.byKey(const Key('btn_play_question_audio')), findsOneWidget);
+        // Bàn phím Piano đã được loại bỏ khỏi QuizScreen để tối giản giao diện học
+        expect(find.byKey(const Key('piano_key_C4')), findsNothing);
         expect(tester.takeException(), isNull);
 
         // Trả lời câu hỏi và kiểm tra hiển thị Khuông nhạc Khóa Sol + Feedback không tràn khung
@@ -612,7 +614,7 @@ void main() {
         await pumpFrames();
         expect(tester.takeException(), isNull);
 
-        // Đổi sang Mức 3, Mức 4 ngay trên thanh công cụ
+        // Đổi sang Mức 3, Mức 4
         await tester.runAsync(() async {
           await sessionNotifier.switchNoteLevelInSession('lvl_notes_adv');
         });
@@ -625,7 +627,7 @@ void main() {
         await pumpFrames(250);
         expect(tester.takeException(), isNull);
 
-        // Chuyển sang chế độ Đọc nốt nhạc (Sight-Reading) ngay trên thanh công cụ và kiểm tra giao diện 360x680
+        // Chuyển sang chế độ Đọc nốt nhạc (Sight-Reading) và kiểm tra giao diện 360x680 + tự động phát âm thanh
         await tester.runAsync(() async {
           await sessionNotifier.switchNotePracticeModeInSession(
             'topic_staff_reading',
@@ -633,7 +635,7 @@ void main() {
         });
         await pumpFrames(250);
         expect(
-          find.byKey(const Key('sight_reading_instruction_banner')),
+          find.byKey(const Key('btn_play_question_audio')),
           findsOneWidget,
         );
         expect(find.byKey(const Key('musical_staff_widget')), findsOneWidget);

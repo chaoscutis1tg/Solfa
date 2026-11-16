@@ -9,6 +9,7 @@ import '../core/providers/app_providers.dart';
 import '../features/metronome/application/metronome_controller.dart';
 import '../features/support_developer/application/rewarded_ad_controller.dart';
 import 'theme/app_colors.dart';
+import 'widgets/crossed_swords_icon.dart';
 import 'widgets/pulsing_red_heart.dart';
 import 'widgets/solfa_background.dart';
 import 'widgets/solfa_logo.dart';
@@ -462,10 +463,10 @@ class _DiamondBattleCtaButtonState extends State<_DiamondBattleCtaButton>
                       child: Transform.rotate(
                         angle: -math.pi / 4,
                         child: const Center(
-                          child: Icon(
-                            Icons.sports_kabaddi_rounded,
+                          child: CrossedSwordsIcon(
+                            size: 26,
                             color: Colors.white,
-                            size: 25,
+                            guardColor: Color(0xFFFFE082),
                           ),
                         ),
                       ),

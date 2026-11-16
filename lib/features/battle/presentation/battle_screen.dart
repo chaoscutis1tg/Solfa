@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/theme/app_colors.dart';
+import '../../../app/widgets/crossed_swords_icon.dart';
 import '../../../app/widgets/pulsing_red_heart.dart';
 import '../../../app/widgets/solfa_background.dart';
 import '../../../core/models/domain_models.dart';
@@ -292,10 +293,10 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
                     ),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(
-                    Icons.sports_kabaddi_rounded,
-                    color: Colors.white,
+                  child: const CrossedSwordsIcon(
                     size: 18,
+                    color: Colors.white,
+                    guardColor: Color(0xFFFFE082),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -440,11 +441,11 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
 
     return ListView(
       key: const Key('battle_lobby_view'),
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
+      padding: const EdgeInsets.fromLTRB(14, 6, 14, 24),
       children: [
-        // 1. Rank & Stars Hero Banner
+        // 1. Compact AoV (Liên Quân) Rank Emblem & Hero Title Card
         Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: isDark
@@ -453,12 +454,16 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
-            borderRadius: BorderRadius.circular(22),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: rankColor.withOpacity(0.55),
+              width: 1.5,
+            ),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF6366F1).withOpacity(0.28),
-                blurRadius: 16,
-                offset: const Offset(0, 6),
+                color: const Color(0xFF6366F1).withOpacity(0.24),
+                blurRadius: 14,
+                offset: const Offset(0, 5),
               ),
             ],
           ),
@@ -468,47 +473,64 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
               Row(
                 children: [
                   Container(
-                    width: 52,
-                    height: 52,
+                    width: 48,
+                    height: 48,
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.16),
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: Colors.white.withOpacity(0.38),
-                        width: 1.5,
+                        color: const Color(0xFFFFE082),
+                        width: 2.0,
                       ),
                     ),
                     alignment: Alignment.center,
                     child: Icon(
                       rank.badgeIcon,
-                      color: Colors.white,
-                      size: 28,
+                      color: const Color(0xFFFFE082),
+                      size: 26,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'BẬC XẾP HẠNG HIỆN TẠI',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.8,
-                            color: Colors.white.withOpacity(0.75),
-                          ),
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                'Hạng ${rank.tierName}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 17.5,
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFE082).withOpacity(0.22),
+                                borderRadius: BorderRadius.circular(99),
+                              ),
+                              child: Text(
+                                rank.heroTitle,
+                                style: const TextStyle(
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w800,
+                                  color: Color(0xFFFFE082),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'Hạng ${rank.tierName}',
-                          style: const TextStyle(
-                            fontSize: 19,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: 3),
                         Row(
                           children: [
                             const Icon(
@@ -519,12 +541,13 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
                             const SizedBox(width: 4),
                             Expanded(
                               child: Text(
-                                '${state.totalStars} / ${rank.nextTierStars} Sao để thăng bậc tiếp theo',
+                                '${state.totalStars}/${rank.nextTierStars} Sao • Chuỗi thắng: x${state.currentWinStreak} (3 thắng +1 Sao)',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.white.withOpacity(0.88),
+                                  fontSize: 11.5,
+                                  color: Colors.white.withOpacity(0.90),
+                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
                             ),
@@ -535,17 +558,17 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 9),
               ClipRRect(
                 borderRadius: BorderRadius.circular(99),
                 child: LinearProgressIndicator(
                   value: rank.progressToNextTier,
-                  minHeight: 8,
+                  minHeight: 6,
                   backgroundColor: Colors.white.withOpacity(0.18),
                   valueColor: AlwaysStoppedAnimation<Color>(rankColor),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 9),
               Row(
                 children: [
                   _buildMiniStatPill('Trận thắng', '${state.totalWins}'),
@@ -558,123 +581,138 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
             ],
           ),
         ),
+        const SizedBox(height: 10),
+
+        // 2. Compact Daily 5-Battle Energy & Watch-Ad Recovery Card
+        _buildDailyTurnsEnergyCard(context, ref, state, isDark),
         const SizedBox(height: 12),
 
-        // 1B. Daily 5-Battle Energy & Watch-Ad Recovery Card
-        _buildDailyTurnsEnergyCard(context, ref, state, isDark),
-        const SizedBox(height: 16),
-
-        // 2. Choose Battle Mode (Smart Matchmaking / Bot AI / Local 2P Split-Screen)
-        const Text(
-          '1. Chọn Chế Độ Thi Đấu',
-          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
-        ),
-        const SizedBox(height: 10),
-        _buildModeOptionCard(
-          key: const Key('btn_battle_mode_matchmaking'),
-          title: 'Ghép Trận Ngẫu Nhiên 1v1',
-          subtitle:
-              'Hệ thống quét Radar ghép đối thủ cùng mức Rank, thắng nhận +1 đến +2 Sao',
-          icon: Icons.radar_rounded,
-          accent: const Color(0xFF6366F1),
-          isSelected: state.mode == BattleMode.smartMatchmaking,
-          isDark: isDark,
-          onTap: () => notifier.setBattleMode(BattleMode.smartMatchmaking),
-        ),
-        const SizedBox(height: 8),
-        _buildModeOptionCard(
-          key: const Key('btn_battle_mode_bot'),
-          title: 'Khiêu Chiến Bot AI (4 Cấp Độ)',
-          subtitle:
-              'Luyện phản xạ tốc độ và chuỗi Combo Bạo kích cùng AI từ Tập Sự đến Huyền Thoại',
-          icon: Icons.smart_toy_rounded,
-          accent: const Color(0xFFEC4899),
-          isSelected: state.mode == BattleMode.botAi,
-          isDark: isDark,
-          onTap: () => notifier.setBattleMode(BattleMode.botAi),
+        // 3. Horizontal 3-Card Mode Selector (Liên Quân Arena Style)
+        Row(
+          children: [
+            Expanded(
+              child: _buildHorizontalArenaModeCard(
+                key: const Key('btn_battle_mode_matchmaking'),
+                title: 'ĐẤU HẠNG 1v1',
+                subtitle: 'Ghép Rank • +Sao',
+                icon: Icons.radar_rounded,
+                accent: const Color(0xFF6366F1),
+                isSelected: state.mode == BattleMode.smartMatchmaking,
+                isDark: isDark,
+                onTap: () =>
+                    notifier.setBattleMode(BattleMode.smartMatchmaking),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildHorizontalArenaModeCard(
+                key: const Key('btn_battle_mode_bot'),
+                title: 'ĐẤU MÁY AI',
+                subtitle: '4 Cấp độ luyện',
+                icon: Icons.smart_toy_rounded,
+                accent: const Color(0xFFEC4899),
+                isSelected: state.mode == BattleMode.botAi,
+                isDark: isDark,
+                onTap: () => notifier.setBattleMode(BattleMode.botAi),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildHorizontalArenaModeCard(
+                key: const Key('btn_battle_mode_local_pvp'),
+                title: '2 NGƯỜI 1 MÁY',
+                subtitle: 'Chia đôi màn hình',
+                icon: Icons.people_alt_rounded,
+                accent: const Color(0xFFF59E0B),
+                isSelected: state.mode == BattleMode.localSplitScreen,
+                isDark: isDark,
+                onTap: () =>
+                    notifier.setBattleMode(BattleMode.localSplitScreen),
+              ),
+            ),
+          ],
         ),
         if (state.mode == BattleMode.botAi) ...[
           const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final (diff, label, botIcon) in const [
-                (BotDifficulty.rookie, 'Tập Sự (Dễ)', Icons.smart_toy_rounded),
-                (BotDifficulty.academy, 'Học Viện (Vừa)', Icons.school_rounded),
-                (BotDifficulty.maestro, 'Nhạc Trưởng (Khó)', Icons.auto_awesome_rounded),
-                (BotDifficulty.legend, 'Huyền Thoại (Siêu Cấp)', Icons.workspace_premium_rounded),
-              ])
-                ChoiceChip(
-                  key: Key('chip_bot_${diff.name}'),
-                  avatar: Icon(
-                    botIcon,
-                    size: 16,
-                    color: state.botDifficulty == diff
-                        ? const Color(0xFFEC4899)
-                        : AppColors.textSecondaryLight,
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                for (final (diff, label, botIcon) in const [
+                  (BotDifficulty.rookie, 'Tập Sự', Icons.smart_toy_rounded),
+                  (BotDifficulty.academy, 'Tinh Anh', Icons.shield_rounded),
+                  (BotDifficulty.maestro, 'Cao Thủ', Icons.auto_awesome_rounded),
+                  (BotDifficulty.legend, 'Thách Đấu', Icons.workspace_premium_rounded),
+                ])
+                  Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: ChoiceChip(
+                      key: Key('chip_bot_${diff.name}'),
+                      visualDensity: VisualDensity.compact,
+                      avatar: Icon(
+                        botIcon,
+                        size: 15,
+                        color: state.botDifficulty == diff
+                            ? const Color(0xFFEC4899)
+                            : AppColors.textSecondaryLight,
+                      ),
+                      label: Text(
+                        label,
+                        style: const TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      selected: state.botDifficulty == diff,
+                      onSelected: (_) => notifier.setBotDifficulty(diff),
+                    ),
                   ),
-                  label: Text(label),
-                  selected: state.botDifficulty == diff,
-                  onSelected: (_) => notifier.setBotDifficulty(diff),
+              ],
+            ),
+          ),
+        ],
+        const SizedBox(height: 10),
+
+        // 4. Single-Line Compact Topic Filter Strip
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              for (final (tId, tLabel, tIcon) in _battleTopics)
+                Padding(
+                  padding: const EdgeInsets.only(right: 6),
+                  child: ChoiceChip(
+                    key: Key('chip_battle_topic_$tId'),
+                    visualDensity: VisualDensity.compact,
+                    avatar: Icon(
+                      tIcon,
+                      size: 15,
+                      color: state.selectedTopicId == tId
+                          ? AppColors.primary
+                          : AppColors.textSecondaryLight,
+                    ),
+                    label: Text(
+                      tLabel,
+                      style: TextStyle(
+                        fontSize: 11.8,
+                        fontWeight: state.selectedTopicId == tId
+                            ? FontWeight.w800
+                            : FontWeight.w600,
+                      ),
+                    ),
+                    selected: state.selectedTopicId == tId,
+                    onSelected: (_) => notifier.setSelectedTopicId(tId),
+                  ),
                 ),
             ],
           ),
-        ],
-        const SizedBox(height: 8),
-        _buildModeOptionCard(
-          key: const Key('btn_battle_mode_local_pvp'),
-          title: 'Đấu 2 Người Trên 1 Máy (Split-Screen)',
-          subtitle:
-              '2 người chơi đối kháng trực tiếp trên cùng 1 điện thoại — ai bấm đúng nhanh hơn sẽ tung đòn!',
-          icon: Icons.people_alt_rounded,
-          accent: const Color(0xFFF59E0B),
-          isSelected: state.mode == BattleMode.localSplitScreen,
-          isDark: isDark,
-          onTap: () => notifier.setBattleMode(BattleMode.localSplitScreen),
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 12),
 
-        // 3. Choose Topic Filter
-        const Text(
-          '2. Chọn Nội Dung Thi Đấu',
-          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
-        ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            for (final (tId, tLabel, tIcon) in _battleTopics)
-              ChoiceChip(
-                key: Key('chip_battle_topic_$tId'),
-                avatar: Icon(
-                  tIcon,
-                  size: 16,
-                  color: state.selectedTopicId == tId
-                      ? AppColors.primary
-                      : AppColors.textSecondaryLight,
-                ),
-                label: Text(
-                  tLabel,
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: state.selectedTopicId == tId
-                        ? FontWeight.w800
-                        : FontWeight.w600,
-                  ),
-                ),
-                selected: state.selectedTopicId == tId,
-                onSelected: (_) => notifier.setSelectedTopicId(tId),
-              ),
-          ],
-        ),
-        const SizedBox(height: 22),
-
-        // 4. Start Battle CTA Button
+        // 5. Large AoV Start Battle CTA Button with Crossed Swords
         SizedBox(
           width: double.infinity,
-          height: 54,
+          height: 52,
           child: ElevatedButton.icon(
             key: const Key('btn_start_battle_now'),
             style: ElevatedButton.styleFrom(
@@ -690,20 +728,21 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
             onPressed: state.isLoading
                 ? null
                 : () => _onTapStartOrRematch(context, ref),
-            icon: Icon(
-              state.canStartBattle
-                  ? Icons.flash_on_rounded
-                  : Icons.smart_display_rounded,
-              size: 22,
-            ),
+            icon: state.canStartBattle
+                ? const CrossedSwordsIcon(
+                    size: 22,
+                    color: Colors.white,
+                    guardColor: Color(0xFFFFE082),
+                  )
+                : const Icon(Icons.smart_display_rounded, size: 22),
             label: Text(
               state.canStartBattle
-                  ? 'VÀO ĐẤU TRƯỜNG NGAY (CÒN ${state.remainingBattlesToday}/${BattleState.maxDailyFreeBattles} LƯỢT)'
+                  ? 'BẮT ĐẦU GHÉP TRẬN (CÒN ${state.remainingBattlesToday}/${BattleState.maxDailyFreeBattles} LƯỢT)'
                   : 'HẾT LƯỢT • XEM QC HOẶC ĐỔI ĐIỂM HỒI LƯỢT',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
-                fontSize: 14,
+                fontSize: 13.5,
                 fontWeight: FontWeight.w900,
                 letterSpacing: 0.3,
               ),
@@ -711,7 +750,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
           ),
         ),
         if (state.matchHistory.isNotEmpty) ...[
-          const SizedBox(height: 18),
+          const SizedBox(height: 14),
           _buildRecentMatchesSection(state, isDark),
         ],
       ],
@@ -1041,7 +1080,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
     );
   }
 
-  Widget _buildModeOptionCard({
+  Widget _buildHorizontalArenaModeCard({
     required Key key,
     required String title,
     required String subtitle,
@@ -1053,7 +1092,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
   }) {
     return Material(
       color: isSelected
-          ? accent.withOpacity(isDark ? 0.22 : 0.11)
+          ? accent.withOpacity(isDark ? 0.26 : 0.14)
           : (isDark ? AppColors.surfaceDark : Colors.white),
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
@@ -1061,7 +1100,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
         borderRadius: BorderRadius.circular(16),
         onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.all(13),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
@@ -1070,51 +1109,57 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
                   : (isDark
                       ? Colors.white.withOpacity(0.14)
                       : const Color(0xFFD8E4F8)),
-              width: isSelected ? 1.8 : 1.0,
+              width: isSelected ? 2.0 : 1.0,
             ),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: accent.withOpacity(0.24),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
+                    ),
+                  ]
+                : null,
           ),
-          child: Row(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 42,
-                height: 42,
+                width: 38,
+                height: 38,
                 decoration: BoxDecoration(
                   color: accent.withOpacity(0.16),
-                  borderRadius: BorderRadius.circular(12),
+                  shape: BoxShape.circle,
                 ),
-                child: Icon(icon, color: accent, size: 22),
+                alignment: Alignment.center,
+                child: Icon(icon, color: accent, size: 20),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 14.5,
-                        fontWeight: FontWeight.w800,
-                        color: isSelected ? accent : null,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: isDark
-                            ? AppColors.textSecondaryDark
-                            : AppColors.textSecondaryLight,
-                      ),
-                    ),
-                  ],
+              const SizedBox(height: 8),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  style: TextStyle(
+                    fontSize: 12.2,
+                    fontWeight: FontWeight.w900,
+                    color: isSelected ? accent : null,
+                  ),
                 ),
               ),
-              Icon(
-                isSelected
-                    ? Icons.radio_button_checked_rounded
-                    : Icons.radio_button_off_rounded,
-                color: isSelected ? accent : AppColors.textSecondaryLight,
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 10.2,
+                  fontWeight: FontWeight.w600,
+                  color: isDark
+                      ? AppColors.textSecondaryDark
+                      : AppColors.textSecondaryLight,
+                ),
               ),
             ],
           ),
@@ -1131,6 +1176,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
   ) {
     final notifier = ref.read(battleProvider.notifier);
     final isScanning = state.phase == BattlePhase.matchmaking;
+    final rank = state.rankInfo;
 
     return Padding(
       key: const Key('battle_vs_matchmaking_view'),
@@ -1169,22 +1215,25 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
               ],
             ),
           ),
-          const SizedBox(height: 22),
+          const SizedBox(height: 18),
 
-          // Fighter 1 Card
+          // Fighter 1 Card (Player with AoV Rank Frame & Win Streak)
           _buildVsFighterCard(
             name: state.player1Name,
             subtitle: state.player1Title,
-            icon: Icons.shield_rounded,
+            slogan: state.currentWinStreak >= 2
+                ? 'Đang giữ Chuỗi ${state.currentWinStreak} Trận Thắng liên tiếp!'
+                : 'Danh hiệu: ${rank.heroTitle}',
+            icon: rank.badgeIcon,
             accent: const Color(0xFF4F46E5),
             isDark: isDark,
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
 
-          // Lightning VS Badge
+          // Crossed Swords VS Emblem (Liên Quân Style)
           Container(
-            width: 58,
-            height: 58,
+            width: 56,
+            height: 56,
             decoration: BoxDecoration(
               gradient: const LinearGradient(
                 colors: [Color(0xFFF59E0B), Color(0xFFEF4444)],
@@ -1198,27 +1247,24 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
               ],
             ),
             alignment: Alignment.center,
-            child: const Text(
-              'VS',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-                color: Colors.white,
-                fontStyle: FontStyle.italic,
-              ),
+            child: const CrossedSwordsIcon(
+              size: 28,
+              color: Colors.white,
+              guardColor: Color(0xFFFFE082),
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
 
-          // Fighter 2 Card
+          // Fighter 2 Card (Challenger with AoV Mastery & Taunt Slogan)
           _buildVsFighterCard(
             name: state.player2Name,
             subtitle: state.player2Title,
+            slogan: '"${state.player2Slogan}"',
             icon: state.player2AvatarIcon,
             accent: const Color(0xFFEC4899),
             isDark: isDark,
           ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 22),
 
           SizedBox(
             width: double.infinity,
@@ -1233,7 +1279,11 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
                 ),
               ),
               onPressed: () => notifier.enterArenaNow(),
-              icon: const Icon(Icons.bolt_rounded),
+              icon: const CrossedSwordsIcon(
+                size: 20,
+                color: Colors.white,
+                guardColor: Color(0xFFFFE082),
+              ),
               label: const Text(
                 'BẮT ĐẦU HIỆP 1 NGAY',
                 style: TextStyle(fontWeight: FontWeight.w900),
@@ -1248,6 +1298,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
   Widget _buildVsFighterCard({
     required String name,
     required String subtitle,
+    required String slogan,
     required IconData icon,
     required Color accent,
     required bool isDark,
@@ -1258,10 +1309,10 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
       decoration: BoxDecoration(
         color: isDark ? AppColors.surfaceDark : Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: accent.withOpacity(0.65), width: 1.8),
+        border: Border.all(color: accent.withOpacity(0.75), width: 2.0),
         boxShadow: [
           BoxShadow(
-            color: accent.withOpacity(0.16),
+            color: accent.withOpacity(0.18),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -1270,11 +1321,15 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
       child: Row(
         children: [
           Container(
-            width: 48,
-            height: 48,
+            width: 50,
+            height: 50,
             decoration: BoxDecoration(
               color: accent.withOpacity(0.16),
               shape: BoxShape.circle,
+              border: Border.all(
+                color: const Color(0xFFFFE082).withOpacity(0.85),
+                width: 1.8,
+              ),
             ),
             alignment: Alignment.center,
             child: Icon(icon, color: accent, size: 25),
@@ -1299,14 +1354,28 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 11.8,
+                    fontWeight: FontWeight.w700,
                     color: accent,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  slogan,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontStyle: FontStyle.italic,
+                    color: isDark
+                        ? AppColors.textSecondaryDark
+                        : AppColors.textSecondaryLight,
                   ),
                 ),
               ],
             ),
           ),
+          const SizedBox(width: 6),
           const Text(
             '100 HP',
             style: TextStyle(
@@ -2073,6 +2142,40 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
                     ],
                   ),
                 ),
+              if (state.winStreakBonusStarGranted) ...[
+                const SizedBox(height: 8),
+                Container(
+                  key: const Key('badge_win_streak_bonus_star'),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEC4899).withOpacity(0.16),
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.local_fire_department_rounded,
+                        size: 16,
+                        color: Color(0xFFEC4899),
+                      ),
+                      const SizedBox(width: 5),
+                      Flexible(
+                        child: Text(
+                          'Tinh Tú Hộ Mệnh (Chuỗi ${state.currentWinStreak} Thắng): +1 Sao Thưởng!',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFFEC4899),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               if (state.lastRankUpBonusPoints > 0) ...[
                 const SizedBox(height: 8),
                 Container(

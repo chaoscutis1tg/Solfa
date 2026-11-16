@@ -11,7 +11,6 @@ import '../../../core/providers/app_providers.dart';
 import '../../../core/utils/note_formatter.dart';
 import '../application/practice_session_controller.dart';
 import 'widgets/musical_staff_widget.dart';
-import 'widgets/piano_keyboard_widget.dart';
 
 /// UI-05 (Màn hình câu hỏi Phòng luyện tập) & UI-06 (Phản hồi câu trả lời)
 /// - Tự động chuyển sang nốt tiếp theo sau 0.8s khi chọn Đúng.
@@ -64,18 +63,6 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
   Future<void> _handleSelectOption(QuestionOptionModel option) async {
     final notifier = ref.read(practiceSessionProvider.notifier);
     await notifier.submitAnswer(option);
-    if (!mounted) return;
-    _postAnswerReaction();
-  }
-
-  Future<void> _handlePianoKeyTap(String noteCode) async {
-    final currentState = ref.read(practiceSessionProvider);
-    if (currentState.isCurrentAnswered) {
-      ref.read(audioServiceProvider).playPianoKey(noteCode);
-      return;
-    }
-    final notifier = ref.read(practiceSessionProvider.notifier);
-    await notifier.submitPianoKeyAnswer(noteCode);
     if (!mounted) return;
     _postAnswerReaction();
   }
@@ -200,135 +187,6 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
       return true;
     }
     return false;
-  }
-
-  static List<String> _harmonyKeysForOptionKey(String optionKey) {
-    switch (optionKey) {
-      case 'C_maj':
-      case 'C':
-      case 'c_major':
-      case 'major':
-        return const ['C4', 'E4', 'G4'];
-      case 'A_min':
-      case 'Am':
-      case 'a_minor':
-      case 'minor':
-        return const ['A4', 'C4', 'E4'];
-      case 'C_min':
-        return const ['C4', 'D#4', 'G4'];
-      case 'F_maj':
-      case 'F':
-      case 'f_major':
-        return const ['F4', 'A4', 'C4'];
-      case 'G_maj':
-      case 'G':
-      case 'g_major':
-        return const ['G4', 'B4', 'D4'];
-      case 'D_min':
-      case 'Dm':
-      case 'd_minor':
-        return const ['D4', 'F4', 'A4'];
-      case 'E_min':
-      case 'Em':
-      case 'e_minor':
-        return const ['E4', 'G4', 'B4'];
-      case 'D':
-      case 'd_major':
-        return const ['D4', 'F#4', 'A4'];
-      case 'Bm':
-      case 'b_minor':
-        return const ['B4', 'D4', 'F#4'];
-      case 'Bb':
-      case 'bb_major':
-        return const ['A#4', 'D4', 'F4'];
-      case 'Gm':
-      case 'g_minor':
-        return const ['G4', 'A#4', 'D4'];
-      case 'C_aug':
-        return const ['C4', 'E4', 'G#4'];
-      case 'C_dim':
-        return const ['C4', 'D#4', 'F#4'];
-      case 'B_dim':
-        return const ['B4', 'D4', 'F4'];
-      case 'C_sus4':
-        return const ['C4', 'F4', 'G4'];
-      case 'G_dom7':
-        return const ['G4', 'B4', 'D4', 'F4'];
-      case 'C_maj7':
-        return const ['C4', 'E4', 'G4', 'B4'];
-      case 'A_min7':
-        return const ['A4', 'C4', 'E4', 'G4'];
-      case 'D_min7':
-        return const ['D4', 'F4', 'A4', 'C4'];
-      case 'm2':
-      case 'min2':
-        return const ['C4', 'C#4'];
-      case 'M2':
-      case 'maj2':
-        return const ['C4', 'D4'];
-      case 'm3':
-      case 'min3':
-        return const ['C4', 'D#4'];
-      case 'M3':
-      case 'maj3':
-        return const ['C4', 'E4'];
-      case 'P4':
-      case 'p4':
-        return const ['C4', 'F4'];
-      case 'tritone':
-        return const ['C4', 'F#4'];
-      case 'P5':
-      case 'p5':
-        return const ['C4', 'G4'];
-      case 'm6':
-      case 'min6':
-        return const ['C4', 'G#4'];
-      case 'M6':
-      case 'maj6':
-        return const ['C4', 'A4'];
-      case 'm7':
-      case 'min7':
-        return const ['C4', 'A#4'];
-      case 'M7':
-      case 'maj7':
-        return const ['C4', 'B4'];
-      case 'P8':
-      case 'p8':
-        return const ['C4'];
-      case 'C_D_E':
-      case 'mel_c_d_e_c':
-        return const ['C4', 'D4', 'E4'];
-      case 'E_D_C':
-      case 'mel_e_d_c_d':
-        return const ['E4', 'D4', 'C4'];
-      case 'C_E_G':
-      case 'G_E_C':
-      case 'C_E_G_C5':
-      case 'mel_c_e_g_c5':
-      case 'mel_g_e_c_g':
-      case 'mel_c_g_e_c':
-        return const ['C4', 'E4', 'G4'];
-      case 'C_F_G':
-      case 'mel_c_f_g_c':
-        return const ['C4', 'F4', 'G4'];
-      case 'G_A_G':
-        return const ['G4', 'A4'];
-      case 'C_D_E_G':
-        return const ['C4', 'D4', 'E4', 'G4'];
-      case 'G_F_E_D':
-      case 'mel_g_f_e_d':
-        return const ['G4', 'F4', 'E4', 'D4'];
-      case 'E_G_A_G':
-      case 'mel_e_g_a_g':
-        return const ['E4', 'G4', 'A4'];
-      case 'A3_C4_E4_A4':
-      case 'mel_a_c_e_a':
-        return const ['A4', 'C4', 'E4'];
-      case 'D_F_A_G':
-        return const ['D4', 'F4', 'A4', 'G4'];
-      default:
-        return const [];
-    }
   }
 
   @override
@@ -499,7 +357,8 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Text(
-                          question.prompt,
+                          question.prompt
+                              .replaceAll(' (hoặc bấm phím đàn)', ''),
                           style: const TextStyle(
                             fontSize: 15.5,
                             fontWeight: FontWeight.w800,
@@ -508,152 +367,82 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
                         ),
                         const SizedBox(height: 10),
 
-                        // Main Audio Studio Player Box (UI-05) or Sight-Reading Visual Prompt
-                        if (question.isSightReading && !isCurrentAnswered)
-                          Container(
-                            key: const Key('sight_reading_instruction_banner'),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 9,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF635BFF)
-                                  .withOpacity(isDark ? 0.18 : 0.10),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: const Color(0xFF635BFF).withOpacity(0.35),
-                              ),
-                            ),
-                            child: Row(
+                        // Audio Studio Replay Bar (Auto-plays on question entry; tap to replay anytime)
+                        ValueListenableBuilder<bool>(
+                          valueListenable: audioService.isPlayingNotifier,
+                          builder: (context, isPlaying, _) {
+                            return Row(
                               children: [
-                                Icon(
-                                  Icons.visibility_rounded,
-                                  size: 18,
-                                  color: isDark
-                                      ? AppColors.secondary
-                                      : const Color(0xFF635BFF),
-                                ),
-                                const SizedBox(width: 8),
                                 Expanded(
-                                  child: Text(
-                                    'Chế độ Đọc khuông nhạc (Không nghe trước) • Nhìn dòng/khe bên dưới để chọn nốt',
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w700,
-                                      color: isDark
-                                          ? AppColors.textPrimaryDark
-                                          : const Color(0xFF3B32B3),
+                                  child: ElevatedButton.icon(
+                                    key: const Key('btn_play_question_audio'),
+                                    style: ElevatedButton.styleFrom(
+                                      minimumSize: const Size(0, 44),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                      ),
+                                      backgroundColor: isPlaying
+                                          ? AppColors.primaryDark
+                                          : AppColors.primary,
+                                    ),
+                                    onPressed: () {
+                                      audioService
+                                          .playAsset(question.audioAsset);
+                                    },
+                                    icon: Icon(
+                                      isPlaying
+                                          ? Icons.graphic_eq_rounded
+                                          : Icons.volume_up_rounded,
+                                      size: 20,
+                                    ),
+                                    label: FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      child: Text(
+                                        isPlaying
+                                            ? 'Đang phát... (Nghe lại)'
+                                            : 'Nghe lại âm thanh câu hỏi',
+                                        style: const TextStyle(fontSize: 14),
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ],
-                            ),
-                          )
-                        else
-                          ValueListenableBuilder<bool>(
-                            valueListenable: audioService.isPlayingNotifier,
-                            builder: (context, isPlaying, _) {
-                              return Row(
-                                children: [
-                                  Expanded(
-                                    child: ElevatedButton.icon(
-                                      key: const Key('btn_play_question_audio'),
-                                      style: ElevatedButton.styleFrom(
-                                        minimumSize: const Size(0, 46),
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                        ),
-                                        backgroundColor: isPlaying
-                                            ? AppColors.primaryDark
-                                            : AppColors.primary,
+                                if (question.supportsReferencePitch) ...[
+                                  const SizedBox(width: 8),
+                                  OutlinedButton.icon(
+                                    key: const Key('btn_play_reference_c4'),
+                                    style: OutlinedButton.styleFrom(
+                                      minimumSize: const Size(0, 44),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
                                       ),
-                                      onPressed: () {
-                                        audioService
-                                            .playAsset(question.audioAsset);
-                                      },
-                                      icon: Icon(
-                                        isPlaying
-                                            ? Icons.graphic_eq_rounded
-                                            : Icons.volume_up_rounded,
-                                        size: 22,
-                                      ),
-                                      label: FittedBox(
-                                        fit: BoxFit.scaleDown,
-                                        child: Text(
-                                          isPlaying
-                                              ? 'Đang phát... (Nghe lại)'
-                                              : (question.isSightReading
-                                                  ? 'Nghe âm thanh nốt vừa đọc'
-                                                  : 'Nghe âm thanh câu hỏi'),
-                                          style:
-                                              const TextStyle(fontSize: 14.5),
-                                        ),
-                                      ),
+                                    ),
+                                    onPressed: () {
+                                      audioService.playReferenceC4();
+                                    },
+                                    icon: const Icon(
+                                      Icons.music_note_outlined,
+                                      size: 17,
+                                    ),
+                                    label: const Text(
+                                      'Đô C4',
+                                      style: TextStyle(fontSize: 13),
                                     ),
                                   ),
-                                  if (question.supportsReferencePitch) ...[
-                                    const SizedBox(width: 8),
-                                    OutlinedButton.icon(
-                                      key: const Key('btn_play_reference_c4'),
-                                      style: OutlinedButton.styleFrom(
-                                        minimumSize: const Size(0, 46),
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 10,
-                                        ),
-                                      ),
-                                      onPressed: () {
-                                        audioService.playReferenceC4();
-                                      },
-                                      icon: const Icon(
-                                        Icons.music_note_outlined,
-                                        size: 17,
-                                      ),
-                                      label: const Text(
-                                        'Đô C4',
-                                        style: TextStyle(fontSize: 13),
-                                      ),
-                                    ),
-                                  ],
                                 ],
-                              );
-                            },
-                          ),
+                              ],
+                            );
+                          },
+                        ),
 
-                        // Visual & Interactive Musical Staff + Piano Helper (UC-05)
+                        // Visual 5-Line Musical Staff (Piano Keyboard removed for a clean, focused layout)
                         if (question.showPianoHelper) ...[
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 12),
                           MusicalStaffWidget(
                             targetNoteKey: question.correctOption.optionKey,
                             selectedNoteKey:
                                 viewState.selectedOption?.optionKey,
                             showNote: isCurrentAnswered,
                             isSightReading: question.isSightReading,
-                          ),
-                          const SizedBox(height: 8),
-                          PianoKeyboardWidget(
-                            highlightedNoteKey:
-                                question.correctOption.optionKey,
-                            selectedNoteKey:
-                                viewState.selectedOption?.optionKey,
-                            showHighlight: isCurrentAnswered,
-                            enableBlackKeys: question.difficulty == 2 ||
-                                question.difficulty == 4,
-                            onKeyTap: _handlePianoKeyTap,
-                          ),
-                        ] else if (isCurrentAnswered &&
-                            _harmonyKeysForOptionKey(
-                                    question.correctOption.optionKey)
-                                .isNotEmpty) ...[
-                          const SizedBox(height: 10),
-                          PianoKeyboardWidget(
-                            highlightedNoteKeys: _harmonyKeysForOptionKey(
-                              question.correctOption.optionKey,
-                            ),
-                            showHighlight: true,
-                            enableBlackKeys: true,
-                            onKeyTap: (k) => audioService.playPianoKey(k),
                           ),
                         ],
                       ],
@@ -796,7 +585,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
   }
 }
 
-/// Isolated Header for Practice Room Duration Modes (60s, 15m, 1h, Unlimited) & Live Note Scoreboard.
+/// Isolated Header for Live Note Scoreboard (Time/Mode/Level selectors removed since chosen before entering).
 class _PracticeRoomScoreboardHeader extends ConsumerWidget {
   const _PracticeRoomScoreboardHeader();
 
@@ -805,9 +594,6 @@ class _PracticeRoomScoreboardHeader extends ConsumerWidget {
     final scoreState = ref.watch(
       practiceSessionProvider.select(
         (s) => (
-          mode: s.mode,
-          topicId: s.topicId,
-          levelId: s.levelId,
           timeLimitSeconds: s.timeLimitSeconds,
           isUnlimitedMode: s.isUnlimitedMode,
           elapsedSeconds: s.elapsedSeconds,
@@ -816,18 +602,11 @@ class _PracticeRoomScoreboardHeader extends ConsumerWidget {
           wrongCount: s.wrongCount,
           scorePoints: s.scorePoints,
           currentCombo: s.currentCombo,
-          maxComboInSession: s.maxComboInSession,
-          isContinuous: s.isContinuousScoringMode,
           currentIndex: s.currentIndex,
           questionsLength: s.questions.length,
         ),
       ),
     );
-
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final activeDurationOption = scoreState.isUnlimitedMode
-        ? 0
-        : (scoreState.timeLimitSeconds ?? -1);
 
     final String timerDisplay;
     final double progressValue;
@@ -855,193 +634,11 @@ class _PracticeRoomScoreboardHeader extends ConsumerWidget {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+        padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Row 1: Duration Selector Chips (60s, 15p, 1h, Không giới hạn)
-            Row(
-              children: [
-                const Icon(
-                  Icons.timer_outlined,
-                  size: 15,
-                  color: AppColors.primary,
-                ),
-                const SizedBox(width: 4),
-                const Text(
-                  'Thời gian:',
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Row(
-                    children: [
-                      _QuickTimeModePill(
-                        label: '60s',
-                        isSelected: activeDurationOption == 60,
-                        isDark: isDark,
-                        onTap: () => ref
-                            .read(practiceSessionProvider.notifier)
-                            .setPracticeDurationOption(60),
-                      ),
-                      const SizedBox(width: 4),
-                      _QuickTimeModePill(
-                        label: '15p',
-                        isSelected: activeDurationOption == 900,
-                        isDark: isDark,
-                        onTap: () => ref
-                            .read(practiceSessionProvider.notifier)
-                            .setPracticeDurationOption(900),
-                      ),
-                      const SizedBox(width: 4),
-                      _QuickTimeModePill(
-                        label: '1 tiếng',
-                        isSelected: activeDurationOption == 3600,
-                        isDark: isDark,
-                        onTap: () => ref
-                            .read(practiceSessionProvider.notifier)
-                            .setPracticeDurationOption(3600),
-                      ),
-                      const SizedBox(width: 4),
-                      _QuickTimeModePill(
-                        label: 'Tự do',
-                        isSelected: activeDurationOption == 0,
-                        isDark: isDark,
-                        onTap: () => ref
-                            .read(practiceSessionProvider.notifier)
-                            .setPracticeDurationOption(0),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            if (scoreState.mode != 'review' &&
-                (scoreState.topicId == 'topic_notes' ||
-                    scoreState.topicId == 'topic_staff_reading')) ...[
-              const SizedBox(height: 6),
-              Row(
-                children: [
-                  const Icon(
-                    Icons.tune_rounded,
-                    size: 15,
-                    color: AppColors.primary,
-                  ),
-                  const SizedBox(width: 4),
-                  const Text(
-                    'Chế độ:',
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Row(
-                      children: [
-                        _QuickTimeModePill(
-                          key: const Key('quiz_mode_listen_notes'),
-                          label: 'Nghe nốt',
-                          isSelected: scoreState.topicId == 'topic_notes',
-                          isDark: isDark,
-                          onTap: () => ref
-                              .read(practiceSessionProvider.notifier)
-                              .switchNotePracticeModeInSession('topic_notes'),
-                        ),
-                        const SizedBox(width: 6),
-                        _QuickTimeModePill(
-                          key: const Key('quiz_mode_read_staff'),
-                          label: 'Đọc nốt nhạc',
-                          isSelected:
-                              scoreState.topicId == 'topic_staff_reading',
-                          isDark: isDark,
-                          onTap: () => ref
-                              .read(practiceSessionProvider.notifier)
-                              .switchNotePracticeModeInSession(
-                                'topic_staff_reading',
-                              ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ],
-            if (scoreState.mode != 'review' &&
-                scoreState.topicId.isNotEmpty) ...[
-              const SizedBox(height: 6),
-              Builder(
-                builder: (context) {
-                  final tId = scoreState.topicId;
-                  final List<(String id, String label)> levelDefs;
-                  final String defaultLvl;
-                  if (tId == 'topic_staff_reading') {
-                    levelDefs = kStaffReadingLevels
-                        .map((e) => (e.$1, e.$2))
-                        .toList();
-                    defaultLvl = 'lvl_staff_basic';
-                  } else if (tId == 'topic_notes') {
-                    levelDefs = kNoteRecognitionLevels
-                        .map((e) => (e.$1, e.$2))
-                        .toList();
-                    defaultLvl = 'lvl_notes_basic';
-                  } else {
-                    final short = tId.replaceFirst('topic_', '');
-                    levelDefs = [
-                      ('lvl_${short}_basic', 'Cơ bản'),
-                      ('lvl_${short}_inter', 'Trung bình'),
-                      ('lvl_${short}_adv', 'Nâng cao'),
-                    ];
-                    defaultLvl = 'lvl_${short}_basic';
-                  }
-                  return Row(
-                    children: [
-                      const Icon(
-                        Icons.workspace_premium_outlined,
-                        size: 15,
-                        color: AppColors.primary,
-                      ),
-                      const SizedBox(width: 4),
-                      const Text(
-                        'Mức độ:',
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Row(
-                          children: [
-                            for (int i = 0; i < levelDefs.length; i++) ...[
-                              if (i > 0) const SizedBox(width: 4),
-                              _QuickTimeModePill(
-                                key: Key('quiz_note_lvl_${levelDefs[i].$1}'),
-                                label: levelDefs[i].$2,
-                                isSelected: (scoreState.levelId ?? defaultLvl) ==
-                                    levelDefs[i].$1,
-                                isDark: isDark,
-                                onTap: () => ref
-                                    .read(practiceSessionProvider.notifier)
-                                    .switchNoteLevelInSession(
-                                      levelDefs[i].$1,
-                                    ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                    ],
-                  );
-                },
-              ),
-            ],
-            const SizedBox(height: 6),
-
-            // Row 2: Live Progress Bar
+            // Row 1: Live Progress Bar
             ClipRRect(
               borderRadius: BorderRadius.circular(99),
               child: LinearProgressIndicator(
@@ -1055,14 +652,14 @@ class _PracticeRoomScoreboardHeader extends ConsumerWidget {
             ),
             const SizedBox(height: 8),
 
-            // Row 3: Live Note Scoreboard (Đồng hồ, Nốt Đúng, Nốt Sai, Điểm)
+            // Row 2: Live Note Scoreboard (Đồng hồ, Nốt Đúng, Nốt Sai, Điểm)
             Row(
               children: [
                 Expanded(
                   child: _ScoreBadgeBox(
                     label: scoreState.timeLimitSeconds != null
                         ? 'Còn lại'
-                        : 'Thời gian',
+                        : 'Tiến độ',
                     value: timerDisplay,
                     color: isLowTime ? AppColors.wrong : AppColors.primary,
                     icon: Icons.access_time_filled_rounded,
@@ -1102,59 +699,6 @@ class _PracticeRoomScoreboardHeader extends ConsumerWidget {
               ],
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _QuickTimeModePill extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-  final bool isDark;
-  final VoidCallback onTap;
-
-  const _QuickTimeModePill({
-    super.key,
-    required this.label,
-    required this.isSelected,
-    required this.isDark,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Material(
-        color: isSelected
-            ? AppColors.primary
-            : (isDark
-                ? Colors.white.withOpacity(0.08)
-                : AppColors.primary.withOpacity(0.08)),
-        borderRadius: BorderRadius.circular(8),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(8),
-          onTap: onTap,
-          child: Container(
-            height: 25,
-            alignment: Alignment.center,
-            padding: const EdgeInsets.symmetric(horizontal: 2),
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  color: isSelected
-                      ? Colors.white
-                      : (isDark
-                          ? AppColors.textPrimaryDark
-                          : AppColors.primaryDark),
-                ),
-              ),
-            ),
-          ),
         ),
       ),
     );
