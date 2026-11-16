@@ -317,6 +317,10 @@ class AppDatabase {
           [entry.key, entry.value, '%${entry.key}%'],
         );
       }
+      // Clean legacy prompt suffixes referencing removed in-quiz piano keyboard
+      await txn.rawUpdate(
+        "UPDATE questions SET prompt = REPLACE(REPLACE(prompt, ' (hoặc bấm trực tiếp phím đàn)', ''), ' (hoặc bấm phím đàn)', '') WHERE prompt LIKE '%phím đàn%'",
+      );
     });
   }
 
@@ -718,8 +722,8 @@ class AppDatabase {
       SELECT
         t.id AS topic_id,
         t.name AS topic_name,
-        COUNT(a.id) AS answered_cnt,
-        COALESCE(SUM(CASE WHEN a.is_correct = 1 THEN 1 ELSE 0 END), 0) AS correct_cnt,
+        COUNT(s.id) AS answered_cnt,
+        COALESCE(SUM(CASE WHEN s.id IS NOT NULL AND a.is_correct = 1 THEN 1 ELSE 0 END), 0) AS correct_cnt,
         (
           SELECT COUNT(*)
           FROM practice_sessions ps

@@ -358,6 +358,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
                       children: [
                         Text(
                           question.prompt
+                              .replaceAll(' (hoặc bấm trực tiếp phím đàn)', '')
                               .replaceAll(' (hoặc bấm phím đàn)', ''),
                           style: const TextStyle(
                             fontSize: 15.5,

@@ -5,7 +5,7 @@ import '../../../core/database/app_database.dart';
 import '../../../core/models/domain_models.dart';
 
 class HybridQuestionGenerator {
-  static const int _currentGeneratorVersion = 3;
+  static const int _currentGeneratorVersion = 4;
   static final Random _entropySource = Random();
 
   final AppDatabase _db;
@@ -59,26 +59,8 @@ class HybridQuestionGenerator {
     String resolvedLevelId = levelId ?? 'lvl_notes_basic';
 
     if (mode == 'quick' && topicId == null) {
-      final stats = await _db.getOverallProgressStats();
-      if (!stats.hasAnyHistory) {
-        // New user -> default to Basic Note Recognition (UC-02)
-        resolvedTopicId = 'topic_notes';
-        resolvedLevelId = levelId ?? 'lvl_notes_basic';
-      } else {
-        // Returning user -> pick topic with lowest accuracy or least practiced
-        final sortedTopics = [...stats.topicStats]..sort((a, b) {
-            if (a.totalAnswered == 0 && b.totalAnswered > 0) return -1;
-            if (b.totalAnswered == 0 && a.totalAnswered > 0) return 1;
-            return a.accuracyPercent.compareTo(b.accuracyPercent);
-          });
-        if (sortedTopics.isNotEmpty) {
-          resolvedTopicId = sortedTopics.first.topicId;
-        }
-        final levels = await _db.getLevelsByTopic(resolvedTopicId);
-        resolvedLevelId = (resolvedTopicId == 'topic_notes' && levelId != null)
-            ? levelId
-            : (levels.isNotEmpty ? levels.first.id : 'lvl_notes_basic');
-      }
+      resolvedTopicId = 'topic_notes';
+      resolvedLevelId = levelId ?? 'lvl_notes_basic';
     } else if (levelId == null) {
       final levels = await _db.getLevelsByTopic(resolvedTopicId);
       resolvedLevelId = levels.isNotEmpty ? levels.first.id : 'lvl_notes_basic';
@@ -348,7 +330,9 @@ class HybridQuestionGenerator {
       topicId: q.topicId,
       levelId: q.levelId,
       type: q.type,
-      prompt: q.prompt.replaceAll(' (hoặc bấm phím đàn)', ''),
+      prompt: q.prompt
+          .replaceAll(' (hoặc bấm trực tiếp phím đàn)', '')
+          .replaceAll(' (hoặc bấm phím đàn)', ''),
       explanation: q.explanation,
       audioAsset: q.audioAsset,
       difficulty: q.difficulty,
@@ -432,7 +416,9 @@ class HybridQuestionGenerator {
       topicId: q.topicId,
       levelId: q.levelId,
       type: q.type,
-      prompt: q.prompt.replaceAll(' (hoặc bấm phím đàn)', ''),
+      prompt: q.prompt
+          .replaceAll(' (hoặc bấm trực tiếp phím đàn)', '')
+          .replaceAll(' (hoặc bấm phím đàn)', ''),
       explanation: q.explanation,
       audioAsset: q.audioAsset,
       difficulty: q.difficulty,

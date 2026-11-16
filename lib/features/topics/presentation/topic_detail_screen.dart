@@ -71,9 +71,9 @@ class _TopicDetailScreenState extends ConsumerState<TopicDetailScreen> {
   String _levelDescription(String topicId, int difficulty) {
     if (topicId == 'topic_notes') {
       if (difficulty == 1) {
-        return 'Mức 1 (Dễ): Chỉ gồm 7 nốt tự nhiên trong quãng C4 (Đô, Rê, Mi, Fa, Sol, La, Si), không có dấu #/b. Hỗ trợ nghe Đô chuẩn C4 & bấm trực tiếp trên phím đàn Piano.';
+        return 'Mức 1 (Dễ): Chỉ gồm 7 nốt tự nhiên trong quãng C4 (Đô, Rê, Mi, Fa, Sol, La, Si), không có dấu #/b. Tự động phát âm chuẩn & hỗ trợ đối chiếu Đô (C4).';
       } else if (difficulty == 2) {
-        return 'Mức 2 (Trung bình): Vẫn gói gọn trong quãng C4 nhưng bổ sung thêm 5 phím đen (dấu thăng # / dấu giáng b). Hỗ trợ nghe Đô chuẩn C4 & bàn phím Piano.';
+        return 'Mức 2 (Trung bình): Gói gọn trong quãng C4 nhưng bổ sung thêm 5 nốt dấu thăng (#) / dấu giáng (b). Tự động phát âm chuẩn & hỗ trợ đối chiếu Đô (C4).';
       } else if (difficulty == 3) {
         return 'Mức 3 (Khá): Mở rộng các nốt tự nhiên (không dấu #/b) trên 3 quãng tám từ trầm đến cao (C3 – C5), có hỗ trợ đối chiếu Đô chuẩn C4.';
       } else {
@@ -81,13 +81,13 @@ class _TopicDetailScreenState extends ConsumerState<TopicDetailScreen> {
       }
     } else if (topicId == 'topic_staff_reading') {
       if (difficulty == 1) {
-        return 'Mức 1 (Dễ): Nhìn vị trí nốt trên khuông nhạc 5 dòng kẻ Khóa Sol (𝄞) trong quãng C4 (7 nốt tự nhiên Đô – Si, không dấu #/b). Không phát tiếng trước; bấm phím đàn hoặc chọn đáp án sẽ vang lên tiếng nốt thật.';
+        return 'Mức 1 (Dễ): Nhìn vị trí nốt trên khuông nhạc 5 dòng kẻ Khóa Sol trong quãng C4 (7 nốt tự nhiên Đô – Si, không dấu #/b) kết hợp nghe cao độ chuẩn.';
       } else if (difficulty == 2) {
-        return 'Mức 2 (Trung bình): Đọc nốt trên khuông nhạc Khóa Sol (𝄞) trong quãng C4, bổ sung thêm các nốt có dấu hóa (#/b) và bật 5 phím đen trên đàn Piano.';
+        return 'Mức 2 (Trung bình): Đọc nốt trên khuông nhạc Khóa Sol trong quãng C4, bổ sung thêm các nốt có dấu hóa (#/b).';
       } else if (difficulty == 3) {
-        return 'Mức 3 (Khá): Đọc nốt tự nhiên đa quãng tám (C3 – C5) kết hợp cả Khóa Sol (𝄞, cho C4–C5) và Khóa Fa (𝄢, cho C3–B3) cùng đường kẻ phụ.';
+        return 'Mức 3 (Khá): Đọc nốt tự nhiên đa quãng tám (C3 – C5) kết hợp cả Khóa Sol (C4–C5) và Khóa Fa (C3–B3) cùng đường kẻ phụ.';
       } else {
-        return 'Mức 4 (Nâng cao): Đọc toàn bộ nốt tự nhiên và dấu hóa (#/b) từ C3 đến C5 trên cả Khóa Sol (𝄞) và Khóa Fa (𝄢).';
+        return 'Mức 4 (Nâng cao): Đọc toàn bộ nốt tự nhiên và dấu hóa (#/b) từ C3 đến C5 trên cả Khóa Sol và Khóa Fa.';
       }
     } else if (topicId == 'topic_intervals') {
       if (difficulty == 1) {
@@ -136,7 +136,6 @@ class _TopicDetailScreenState extends ConsumerState<TopicDetailScreen> {
   Widget build(BuildContext context) {
     final topicsAsync = ref.watch(topicsListProvider);
     final levelsAsync = ref.watch(topicDetailLevelsProvider(widget.topicId));
-    final settings = ref.watch(appSettingsProvider);
     final selectedDuration = ref.watch(selectedPracticeDurationProvider);
 
     final topic = topicsAsync.valueOrNull
@@ -239,28 +238,6 @@ class _TopicDetailScreenState extends ConsumerState<TopicDetailScreen> {
                                 .state = 0,
                           ),
                         ],
-                      ),
-                      const Divider(height: 22),
-                      SwitchListTile(
-                        contentPadding: EdgeInsets.zero,
-                        dense: true,
-                        title: const Text(
-                          'Mở khóa sẵn mọi cấp độ',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 13.5,
-                          ),
-                        ),
-                        subtitle: const Text(
-                          'Bật nếu bạn đã có nền tảng nhạc lý cơ bản',
-                          style: TextStyle(fontSize: 12),
-                        ),
-                        value: settings.unlockAllLevels,
-                        onChanged: (v) {
-                          ref
-                              .read(appSettingsProvider.notifier)
-                              .setUnlockAllLevels(v);
-                        },
                       ),
                     ],
                   ),

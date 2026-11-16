@@ -1435,5 +1435,110 @@ void main() {
         expect(tester.takeException(), isNull);
       },
     );
+
+    test(
+      'TC-22: Kiểm định toàn diện các bài học Nhận biết nốt (Mức 1..4), Đọc nốt nhạc (Mức 1..4) & Hệ thống thông tin người dùng (SQLite + Progress + Clear Data)',
+      () async {
+        await db.seedContent();
+        await container.read(appSettingsProvider.notifier).loadSettings();
+        final sessionNotifier =
+            container.read(practiceSessionProvider.notifier);
+
+        // 1. Kiểm tra cả 4 mức độ Nhận biết nốt (lvl_notes_basic -> inter -> adv -> master)
+        const noteLevels = [
+          'lvl_notes_basic',
+          'lvl_notes_inter',
+          'lvl_notes_adv',
+          'lvl_notes_master',
+        ];
+        for (final lvlId in noteLevels) {
+          final ok = await sessionNotifier.startSession(
+            mode: 'topic',
+            topicId: 'topic_notes',
+            levelId: lvlId,
+            targetCount: 10,
+            seed: 2026,
+          );
+          expect(ok, isTrue, reason: 'Khởi tạo $lvlId phải thành công');
+          final state = container.read(practiceSessionProvider);
+          expect(state.topicId, equals('topic_notes'));
+          expect(state.levelId, equals(lvlId));
+          expect(state.questions.length, equals(10));
+
+          for (final q in state.questions) {
+            expect(q.prompt.contains('phím đàn'), isFalse,
+                reason: 'Prompt không còn nhắc bấm phím đàn trong phòng học');
+            expect(q.options.length, equals(4));
+            final labels = q.options.map((o) => o.label).toSet();
+            expect(labels.length, equals(4),
+                reason: '4 đáp án A/B/C/D không bao giờ trùng lặp');
+            expect(q.options.where((o) => o.isCorrect).length, equals(1));
+          }
+
+          // Trả lời đúng 8 câu, sai 2 câu để kiểm tra hệ thống lưu thông tin người dùng
+          for (int i = 0; i < 10; i++) {
+            final curQ =
+                container.read(practiceSessionProvider).currentQuestion!;
+            final chosen = i < 8
+                ? curQ.correctOption
+                : curQ.options.firstWhere((o) => !o.isCorrect);
+            await sessionNotifier.submitAnswer(chosen);
+            await sessionNotifier.nextQuestion();
+          }
+          expect(container.read(practiceSessionProvider).isCompleted, isTrue);
+        }
+
+        // 2. Sau khi đã có lịch sử học tập, bấm Luyện tập nhanh (mode: 'quick') vẫn ổn định vào Nhận biết nốt (topic_notes)
+        final quickOk = await sessionNotifier.startSession(
+          mode: 'quick',
+          levelId: 'lvl_notes_inter',
+          targetCount: 5,
+          seed: 777,
+        );
+        expect(quickOk, isTrue);
+        expect(
+          container.read(practiceSessionProvider).topicId,
+          equals('topic_notes'),
+        );
+        expect(
+          container.read(practiceSessionProvider).levelId,
+          equals('lvl_notes_inter'),
+        );
+        await sessionNotifier.abandonSessionIfIncomplete();
+
+        // 3. Kiểm tra hệ thống thông tin người dùng (OverallProgressStats)
+        final stats = await db.getOverallProgressStats();
+        expect(stats.totalAnswered, equals(40));
+        expect(stats.totalCorrect, equals(32));
+        expect(stats.overallAccuracyPercent, closeTo(80.0, 0.01));
+        expect(stats.currentStreakDays, greaterThanOrEqualTo(1));
+        expect(stats.todayAnsweredCount, equals(40));
+        expect(stats.isDailyGoalReached, isTrue);
+        expect(stats.bestScore, equals(80));
+        expect(stats.bestComboStreak, equals(8));
+        expect(stats.noteMasteryStats.length, equals(12));
+        expect(
+          stats.topicStats
+              .firstWhere((t) => t.topicId == 'topic_notes')
+              .completedSessions,
+          equals(4),
+        );
+        expect(
+          stats.topicStats
+              .firstWhere((t) => t.topicId == 'topic_notes')
+              .totalAnswered,
+          equals(40),
+        );
+
+        // 4. Kiểm tra chức năng Xóa dữ liệu lịch sử học tập (clearLearningHistory) bảo toàn 7 chủ đề & 23 cấp độ
+        await db.clearLearningHistory();
+        final clearedStats = await db.getOverallProgressStats();
+        expect(clearedStats.totalAnswered, equals(0));
+        expect(clearedStats.pendingReviewCount, equals(0));
+        expect(clearedStats.bestScore, equals(0));
+        final topicsAfterClear = await db.getTopics(onlyEnabled: true);
+        expect(topicsAfterClear.length, equals(7));
+      },
+    );
   });
 }

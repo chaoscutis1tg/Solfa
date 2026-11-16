@@ -106,6 +106,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final progressAsync = ref.watch(overallProgressProvider);
     final topicsAsync = ref.watch(topicsListProvider);
     final selectedDuration = ref.watch(selectedPracticeDurationProvider);
+    final selectedNoteLevel = ref.watch(selectedNoteLevelIdProvider);
     final adState = ref.watch(rewardedAdProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final stats = progressAsync.valueOrNull;
@@ -142,7 +143,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           const SizedBox(height: SolfaSpacing.lg),
 
           // KHU VỰC 3 – Bắt đầu luyện tập (Chọn thời lượng & Nút chính)
-          _buildQuickPracticeSection(context, selectedDuration, isDark),
+          _buildQuickPracticeSection(
+            context,
+            selectedDuration,
+            selectedNoteLevel,
+            isDark,
+          ),
           const SizedBox(height: SolfaSpacing.lg),
 
           // KHU VỰC 4 – Truy cập nhanh (1 nhóm tiện ích thống nhất)
@@ -411,10 +417,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  /// Khu vực 3: Bắt đầu luyện tập (Chọn thời lượng 60s / 15p / 1h / Tự do & Nút bắt đầu).
+  /// Khu vực 3: Bắt đầu luyện tập (Chọn mức độ Nhận biết nốt, thời lượng 60s / 15p / 1h / Tự do & Nút bắt đầu).
   Widget _buildQuickPracticeSection(
     BuildContext context,
     int selectedDuration,
+    String selectedNoteLevel,
     bool isDark,
   ) {
     const durations = [
@@ -430,10 +437,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Luyện tập nhanh theo thời gian',
+            'Luyện tập Nhận biết nốt',
             style: SolfaTypography.cardTitle,
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              for (int i = 0; i < kNoteRecognitionLevels.length; i++) ...[
+                if (i > 0) const SizedBox(width: 6),
+                Expanded(
+                  child: _DurationSegmentPill(
+                    key: Key('home_note_lvl_${kNoteRecognitionLevels[i].$1}'),
+                    label: kNoteRecognitionLevels[i].$2,
+                    isSelected:
+                        selectedNoteLevel == kNoteRecognitionLevels[i].$1,
+                    isDark: isDark,
+                    onTap: () => ref
+                        .read(selectedNoteLevelIdProvider.notifier)
+                        .state = kNoteRecognitionLevels[i].$1,
+                  ),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 8),
           Row(
             children: [
               for (int i = 0; i < durations.length; i++) ...[
@@ -460,7 +487,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               foregroundColor:
                   isDark ? AppColors.textPrimaryDark : AppColors.primary,
             ),
-            onPressed: () => _startQuickPractice(context),
+            onPressed: () => _startQuickPractice(
+              context,
+              topicId: 'topic_notes',
+              levelId: selectedNoteLevel,
+            ),
             icon: const Icon(Icons.headphones_rounded, size: 19),
             label: FittedBox(
               fit: BoxFit.scaleDown,
@@ -942,6 +973,7 @@ class _DurationSegmentPill extends StatelessWidget {
   final VoidCallback onTap;
 
   const _DurationSegmentPill({
+    super.key,
     required this.label,
     required this.isSelected,
     required this.isDark,
