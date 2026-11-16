@@ -33,6 +33,8 @@ class _FreePianoExplorerSheetState
     extends ConsumerState<FreePianoExplorerSheet> {
   int _selectedOctave = 4; // 3, 4, or 5
   String _selectedPitchClass = 'C'; // 'C', 'C#', 'D', ..., 'B'
+  String? _overrideLedgerKey;
+  String? _overrideLedgerDesc;
   String? _activeHarmonyCode;
   String? _activeHarmonyTitle;
   String? _activeHarmonyFormula;
@@ -81,7 +83,75 @@ class _FreePianoExplorerSheetState
     ),
   ];
 
-  String get _activeNoteKey => '$_selectedPitchClass$_selectedOctave';
+  String get _activeNoteKey =>
+      _overrideLedgerKey ?? '$_selectedPitchClass$_selectedOctave';
+
+  static const List<(String key, String chipLabel, String pitchClass, int octave, String desc)>
+      _ledgerQuickNotes = [
+    (
+      'G3_SOL',
+      'Sol trầm (G3 • Phụ 2 dưới Sol)',
+      'G',
+      3,
+      'Khóa Sol • Dưới dòng phụ 2: Nằm sát dưới dòng kẻ phụ thứ 2 bên dưới khuông nhạc.'
+    ),
+    (
+      'A3_SOL',
+      'La trầm (A3 • Phụ 2 dưới Sol)',
+      'A',
+      3,
+      'Khóa Sol • Dòng kẻ phụ 2 dưới: Nằm chính giữa dòng kẻ phụ thứ 2 bên dưới khuông nhạc.'
+    ),
+    (
+      'B3_SOL',
+      'Si trầm (B3 • Dưới phụ 1 Sol)',
+      'B',
+      3,
+      'Khóa Sol • Dưới dòng phụ 1: Nằm sát ngay dưới dòng kẻ phụ thứ 1 (dưới Đô C4).'
+    ),
+    (
+      'C4',
+      'Đô chuẩn (C4 • Phụ 1 dưới Sol)',
+      'C',
+      4,
+      'Khóa Sol • Dòng kẻ phụ 1 dưới: Nằm chính giữa dòng kẻ phụ thứ 1 bên dưới dòng 1.'
+    ),
+    (
+      'A5',
+      'La cao (A5 • Phụ 1 trên Sol)',
+      'A',
+      5,
+      'Khóa Sol • Dòng kẻ phụ 1 trên: Nằm chính giữa dòng kẻ phụ thứ 1 phía trên dòng 5.'
+    ),
+    (
+      'B5',
+      'Si cao (B5 • Trên phụ 1 Sol)',
+      'B',
+      5,
+      'Khóa Sol • Trên dòng phụ 1: Nằm sát ngay phía trên dòng kẻ phụ thứ 1 phía trên khuông.'
+    ),
+    (
+      'C6',
+      'Đô rất cao (C6 • Phụ 2 trên Sol)',
+      'C',
+      6,
+      'Khóa Sol • Dòng kẻ phụ 2 trên: Nằm chính giữa dòng kẻ phụ thứ 2 phía trên dòng 5.'
+    ),
+    (
+      'C4_FA',
+      'Đô trung (C4 • Phụ 1 trên Fa)',
+      'C',
+      4,
+      'Khóa Fa • Dòng kẻ phụ 1 trên: Nằm chính giữa dòng kẻ phụ thứ 1 phía trên dòng 5 Khóa Fa.'
+    ),
+    (
+      'D4_FA',
+      'Rê trung (D4 • Trên phụ 1 Fa)',
+      'D',
+      4,
+      'Khóa Fa • Trên dòng phụ 1: Nằm sát phía trên dòng kẻ phụ thứ 1 phía trên Khóa Fa.'
+    ),
+  ];
 
   static const List<(
     String code,
@@ -243,6 +313,8 @@ class _FreePianoExplorerSheetState
     setState(() {
       _selectedPitchClass = pitchClass;
       _selectedOctave = octave;
+      _overrideLedgerKey = null;
+      _overrideLedgerDesc = null;
       _activeHarmonyCode = null;
       _activeHarmonyTitle = null;
       _activeHarmonyFormula = null;
@@ -348,6 +420,8 @@ class _FreePianoExplorerSheetState
     setState(() {
       _selectedPitchClass = pc;
       _selectedOctave = 4;
+      _overrideLedgerKey = null;
+      _overrideLedgerDesc = null;
       _activeHarmonyCode = sample.$1;
       _activeHarmonyTitle = sample.$3;
       _activeHarmonyFormula = sample.$4;
@@ -561,7 +635,7 @@ class _FreePianoExplorerSheetState
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      _activeHarmonyFormula ?? staffDesc,
+                      _activeHarmonyFormula ?? _overrideLedgerDesc ?? staffDesc,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -578,18 +652,62 @@ class _FreePianoExplorerSheetState
 
               // 3. Đàn Piano ở phía dưới (Ưu tiên diện tích thao tác chính)
               PianoKeyboardWidget(
-                highlightedNoteKey: _activeNoteKey,
+                highlightedNoteKey: NoteFormatter.cleanNoteKey(_activeNoteKey),
                 highlightedNoteKeys: _activeHarmonyKeys,
-                selectedNoteKey: _activeNoteKey,
+                selectedNoteKey: NoteFormatter.cleanNoteKey(_activeNoteKey),
                 showHighlight: true,
                 enableBlackKeys: true,
                 onKeyTap: (rawKey) {
                   final pc =
                       rawKey.replaceAll(RegExp(r'[0-9]'), '').toUpperCase();
-                  _selectAndPlay(pc, _selectedOctave, fromPianoTap: true);
+                  final clampedOctave =
+                      _selectedOctave > 5 ? 5 : _selectedOctave;
+                  _selectAndPlay(pc, clampedOctave, fromPianoTap: true);
                 },
               ),
               const SizedBox(height: 10),
+
+              // 3b. Tra cứu nhanh các nốt Dòng kẻ phụ (G3–C6 trên Khóa Sol & C4–D4 trên Khóa Fa)
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    for (final item in _ledgerQuickNotes)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 6),
+                        child: ChoiceChip(
+                          key: Key('explorer_ledger_${item.$1}'),
+                          label: Text(
+                            item.$2,
+                            style: const TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          selected: _overrideLedgerKey == item.$1,
+                          visualDensity: VisualDensity.compact,
+                          onSelected: (_) {
+                            setState(() {
+                              _selectedPitchClass = item.$3;
+                              _selectedOctave = item.$4;
+                              _overrideLedgerKey = item.$1;
+                              _overrideLedgerDesc = item.$5;
+                              _activeHarmonyCode = null;
+                              _activeHarmonyTitle = null;
+                              _activeHarmonyFormula = null;
+                              _activeHarmonyAsset = null;
+                              _activeHarmonyKeys = null;
+                            });
+                            ref
+                                .read(audioServiceProvider)
+                                .playPianoKey(item.$1);
+                          },
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
 
               // 4. Danh sách lựa chọn Hợp âm & Quãng mẫu
               SingleChildScrollView(

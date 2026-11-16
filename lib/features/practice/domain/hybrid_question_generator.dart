@@ -3,9 +3,11 @@ import 'dart:math';
 import '../../../core/audio/asset_validator.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/models/domain_models.dart';
+import '../../../core/utils/note_formatter.dart';
+import '../presentation/widgets/musical_staff_widget.dart';
 
 class HybridQuestionGenerator {
-  static const int _currentGeneratorVersion = 4;
+  static const int _currentGeneratorVersion = 5;
   static final Random _entropySource = Random();
 
   final AppDatabase _db;
@@ -25,6 +27,7 @@ class HybridQuestionGenerator {
     int? seed,
     String? excludeAudioAsset,
     String? excludeOptionKey,
+    bool ledgerOnly = false,
   }) async {
     final rng = seed != null
         ? Random(seed)
@@ -86,6 +89,20 @@ class HybridQuestionGenerator {
               levelId: resolvedLevelId,
             ))
         .toList();
+
+    // Optional Ledger-Lines-Only filter for "Đọc nốt nhạc" (Chuyên luyện Dòng kẻ phụ)
+    if (ledgerOnly && resolvedTopicId == 'topic_staff_reading') {
+      final ledgerFiltered = candidates
+          .where(
+            (q) => MusicalStaffWidget.isLedgerLineNoteKey(
+              q.correctOption.optionKey,
+            ),
+          )
+          .toList();
+      if (ledgerFiltered.isNotEmpty) {
+        candidates = ledgerFiltered;
+      }
+    }
 
     // Fallback to all levels in the topic ONLY if this level has 0 questions
     if (candidates.isEmpty) {
@@ -281,11 +298,11 @@ class HybridQuestionGenerator {
     if (topicId == 'topic_notes' && q.type == 'compare_pitch') {
       return false;
     }
-    if (topicId == 'topic_notes' || topicId == 'topic_staff_reading') {
-      final isMaster = levelId.contains('master') || levelId.contains('4');
-      final isAdvanced = levelId.contains('adv') || levelId.contains('3');
-      final isInter = levelId.contains('inter') || levelId.contains('2');
+    final isMaster = levelId.contains('master') || levelId.contains('4');
+    final isAdvanced = levelId.contains('adv') || levelId.contains('3');
+    final isInter = levelId.contains('inter') || levelId.contains('2');
 
+    if (topicId == 'topic_notes') {
       if (!isMaster && !isAdvanced && !isInter) {
         // Mức 1 (Basic): Chỉ 7 nốt tự nhiên trong quãng C4 (C4..B4), không dấu #/b
         return q.options.every(
@@ -296,6 +313,23 @@ class HybridQuestionGenerator {
         return q.options.every((o) => o.optionKey.endsWith('4'));
       } else if (isAdvanced) {
         // Mức 3 (Adv): Đa quãng C3–C5 nhưng chỉ các nốt tự nhiên (không dấu #/b)
+        return q.options.every((o) => !o.optionKey.contains('#'));
+      }
+    } else if (topicId == 'topic_staff_reading') {
+      if (!isMaster && !isAdvanced && !isInter) {
+        // Mức 1 (Basic): Khóa Sol tự nhiên (C4–B4) + Dòng kẻ phụ tự nhiên Khóa Sol (G3..C4, A5..C6), không dấu #/b
+        return q.options.every(
+          (o) =>
+              !o.optionKey.contains('#') &&
+              !o.optionKey.toUpperCase().endsWith('_FA'),
+        );
+      } else if (isInter) {
+        // Mức 2 (Inter): Khóa Sol có cả tự nhiên và dấu #/b + Dòng kẻ phụ Khóa Sol
+        return q.options.every(
+          (o) => !o.optionKey.toUpperCase().endsWith('_FA'),
+        );
+      } else if (isAdvanced) {
+        // Mức 3 (Adv): Khóa Sol & Khóa Fa tự nhiên (không dấu #/b) + Dòng kẻ phụ 2 khóa
         return q.options.every((o) => !o.optionKey.contains('#'));
       }
     }
@@ -356,8 +390,9 @@ class HybridQuestionGenerator {
     if (q.options.length >= 4 && wrongSlotOpts.isNotEmpty) {
       final isNoteQuestion =
           q.type == 'listen_note' || q.type == 'read_staff_note';
-      final correctPitchClass =
-          correctOpt.optionKey.replaceAll(RegExp(r'[0-9]'), '').toUpperCase();
+      final correctPitchClass = NoteFormatter.cleanNoteKey(correctOpt.optionKey)
+          .replaceAll(RegExp(r'[0-9]'), '')
+          .toUpperCase();
 
       final shuffledPool = [...typeOptionPool]..shuffle(rng);
       final List<(String optionKey, String label)> selectedWrong = [];
@@ -369,8 +404,9 @@ class HybridQuestionGenerator {
           continue;
         }
         if (isNoteQuestion) {
-          final candPc =
-              cand.$1.replaceAll(RegExp(r'[0-9]'), '').toUpperCase();
+          final candPc = NoteFormatter.cleanNoteKey(cand.$1)
+              .replaceAll(RegExp(r'[0-9]'), '')
+              .toUpperCase();
           if (usedPitchClasses.contains(candPc)) continue;
           usedPitchClasses.add(candPc);
         }
@@ -800,21 +836,141 @@ class HybridQuestionGenerator {
         ),
       ];
 
-      final noteDefs = isMaster
-          ? level4MultiChromatic
-          : (isAdvanced
-              ? level3MultiNatural
-              : (isInter ? level2C4Chromatic : level1C4Natural));
+      // Dòng kẻ phụ Khóa Sol tự nhiên (1–2 dòng phụ dưới & trên: G3, A3, B3, A5, B5, C6)
+      const trebleLedgerNatural = [
+        (
+          'g3',
+          'G3_SOL',
+          'Sol trầm (G3)',
+          'Khóa Sol • Dưới dòng phụ 2: Nốt Sol trầm (G3) nằm sát dưới dòng kẻ phụ thứ 2 bên dưới khuông nhạc (đếm từ Đô C4 xuống: C4 [phụ 1] → B3 → A3 [phụ 2] → G3).'
+        ),
+        (
+          'a3',
+          'A3_SOL',
+          'La trầm (A3)',
+          'Khóa Sol • Dòng kẻ phụ 2 dưới: Nốt La trầm (A3) nằm chính giữa dòng kẻ phụ thứ 2 bên dưới khuông nhạc (thấp hơn Đô C4 một quãng 3 thứ).'
+        ),
+        (
+          'b3',
+          'B3_SOL',
+          'Si trầm (B3)',
+          'Khóa Sol • Dưới dòng phụ 1: Nốt Si trầm (B3) nằm sát ngay dưới dòng kẻ phụ thứ 1 (ngay dưới nốt Đô trung C4).'
+        ),
+        (
+          'a5',
+          'A5',
+          'La cao (A5)',
+          'Khóa Sol • Dòng kẻ phụ 1 trên: Nốt La cao (A5) nằm chính giữa dòng kẻ phụ thứ 1 phía trên dòng kẻ thứ 5.'
+        ),
+        (
+          'b5',
+          'B5',
+          'Si cao (B5)',
+          'Khóa Sol • Trên dòng phụ 1: Nốt Si cao (B5) nằm sát ngay phía trên dòng kẻ phụ thứ 1 phía trên khuông nhạc.'
+        ),
+        (
+          'c6',
+          'C6',
+          'Đô rất cao (C6)',
+          'Khóa Sol • Dòng kẻ phụ 2 trên: Nốt Đô rất cao (C6) nằm chính giữa dòng kẻ phụ thứ 2 phía trên khuông nhạc (đếm từ Fa F5 [dòng 5] lên: G5 → A5 [phụ 1] → B5 → C6 [phụ 2]).'
+        ),
+      ];
+
+      // Dòng kẻ phụ Khóa Sol có dấu hóa (#/b)
+      const trebleLedgerChromatic = [
+        (
+          'gsharp3',
+          'G#3_SOL',
+          'Sol# / Lab trầm (G#3)',
+          'Khóa Sol • Dưới dòng phụ 2: Nốt Sol thăng trầm (G#3) nằm sát dưới dòng kẻ phụ thứ 2 bên dưới kèm dấu thăng (♯).'
+        ),
+        (
+          'asharp3',
+          'A#3_SOL',
+          'La# / Sib trầm (A#3)',
+          'Khóa Sol • Dòng kẻ phụ 2 dưới: Nốt La thăng trầm (A#3) nằm trên dòng kẻ phụ thứ 2 bên dưới kèm dấu thăng (♯).'
+        ),
+        (
+          'asharp5',
+          'A#5',
+          'La# / Sib cao (A#5)',
+          'Khóa Sol • Dòng kẻ phụ 1 trên: Nốt La thăng cao (A#5) nằm trên dòng kẻ phụ thứ 1 phía trên kèm dấu thăng (♯).'
+        ),
+      ];
+
+      // Dòng kẻ phụ trên của Khóa Fa (C4, D4, C#4)
+      const bassLedgerNatural = [
+        (
+          'c4',
+          'C4_FA',
+          'Đô trung (C4 • Khóa Fa)',
+          'Khóa Fa • Dòng kẻ phụ 1 trên: Nốt Đô trung (C4) nằm chính giữa dòng kẻ phụ thứ 1 phía trên dòng kẻ thứ 5 (nốt La A3) của Khóa Fa.'
+        ),
+        (
+          'd4',
+          'D4_FA',
+          'Rê trung (D4 • Khóa Fa)',
+          'Khóa Fa • Trên dòng phụ 1: Nốt Rê trung (D4) nằm sát ngay phía trên dòng kẻ phụ thứ 1 phía trên khuông nhạc Khóa Fa.'
+        ),
+      ];
+
+      const bassLedgerChromatic = [
+        (
+          'csharp4',
+          'C#4_FA',
+          'Đô# / Rêb (C#4 • Khóa Fa)',
+          'Khóa Fa • Dòng kẻ phụ 1 trên: Nốt Đô thăng (C#4) nằm trên dòng kẻ phụ thứ 1 phía trên Khóa Fa kèm dấu thăng (♯).'
+        ),
+      ];
+
+      final List<(String, String, String, String)> noteDefs;
+      if (isStaffReading) {
+        if (isMaster) {
+          noteDefs = [
+            ...level4MultiChromatic,
+            ...trebleLedgerNatural
+                .where((n) => n.$2.endsWith('_SOL') || n.$2 == 'C6'),
+            ...trebleLedgerChromatic
+                .where((n) => n.$2.endsWith('_SOL')),
+            ...bassLedgerNatural,
+            ...bassLedgerChromatic,
+          ];
+        } else if (isAdvanced) {
+          noteDefs = [
+            ...level3MultiNatural,
+            ...trebleLedgerNatural
+                .where((n) => n.$2.endsWith('_SOL') || n.$2 == 'C6'),
+            ...bassLedgerNatural,
+          ];
+        } else if (isInter) {
+          noteDefs = [
+            ...level2C4Chromatic,
+            ...trebleLedgerNatural,
+            ...trebleLedgerChromatic,
+          ];
+        } else {
+          noteDefs = [
+            ...level1C4Natural,
+            ...trebleLedgerNatural,
+          ];
+        }
+      } else {
+        noteDefs = isMaster
+            ? level4MultiChromatic
+            : (isAdvanced
+                ? level3MultiNatural
+                : (isInter ? level2C4Chromatic : level1C4Natural));
+      }
 
       final String promptText;
       if (isStaffReading) {
         promptText = isMaster
-            ? '[Đọc nốt • Mức 4 Khóa Sol & Fa đầy đủ #/b] Nhìn vị trí nốt trên khuông nhạc và chọn tên nốt:'
+            ? '[Đọc nốt • Mức 4 Khóa Sol & Fa + Dòng kẻ phụ #/b] Nhìn vị trí nốt trên khuông nhạc / dòng kẻ phụ và chọn tên nốt:'
             : (isAdvanced
-                ? '[Đọc nốt • Mức 3 Khóa Sol & Fa C3–C5] Quan sát Khóa nhạc (𝄞/𝄢) cùng vị trí dòng/khe để chọn đúng nốt:'
+                ? '[Đọc nốt • Mức 3 Khóa Sol & Fa + Dòng kẻ phụ] Quan sát Khóa nhạc cùng vị trí dòng/khe hoặc dòng kẻ phụ để chọn đúng nốt:'
                 : (isInter
-                    ? '[Đọc nốt • Mức 2 Khóa Sol có dấu #/b] Quan sát nốt và dấu hóa (♯) trên khuông nhạc để chọn đáp án:'
-                    : '[Đọc nốt • Mức 1 Khóa Sol C4–B4] Nhìn vị trí nốt trên 5 dòng kẻ nhạc và chọn đáp án đúng:'));
+                    ? '[Đọc nốt • Mức 2 Khóa Sol + Dòng kẻ phụ & #/b] Quan sát nốt, dòng kẻ phụ và dấu hóa (♯) trên khuông nhạc để chọn đáp án:'
+                    : '[Đọc nốt • Mức 1 Khóa Sol + Dòng kẻ phụ] Nhìn vị trí nốt trên 5 dòng kẻ nhạc và dòng kẻ phụ (G3–C6) để chọn đáp án đúng:'));
       } else {
         promptText = isMaster
             ? '[Mức 4 • C3–C5 Đầy đủ #/b] Nghe âm thanh (không tham chiếu C4) và chọn chính xác tên nốt:'
@@ -832,20 +988,29 @@ class HybridQuestionGenerator {
       for (int pass = 0; pass < passes; pass++) {
         for (int i = 0; i < noteDefs.length; i++) {
           final (fileKey, optKey, label, desc) = noteDefs[i];
-          final suffix = pass == 0 ? fileKey : '${fileKey}_v2';
+          final idSlug = optKey.toLowerCase().replaceAll('#', 'sharp');
+          final suffix = pass == 0 ? idSlug : '${idSlug}_v2';
           final qId = '${idPrefix}_${levelId}_$suffix';
           final step1 = pass == 0 ? 1 : 2;
           final step2 = pass == 0 ? 2 : 3;
           final step3 = pass == 0 ? 4 : 5;
-          final distractors = <int>{
-            (i + step1) % noteDefs.length,
-            (i + step2) % noteDefs.length,
-            (i + step3) % noteDefs.length,
-          };
+          final distractors = <int>[];
+          final usedLabels = <String>{label};
+
+          for (final rawStep in [step1, step2, step3]) {
+            final cand = (i + rawStep) % noteDefs.length;
+            if (cand != i && !usedLabels.contains(noteDefs[cand].$3)) {
+              distractors.add(cand);
+              usedLabels.add(noteDefs[cand].$3);
+            }
+          }
           int fallbackOffset = 1;
-          while (distractors.length < 3) {
+          while (distractors.length < 3 && fallbackOffset <= noteDefs.length) {
             final cand = (i + fallbackOffset) % noteDefs.length;
-            if (cand != i) distractors.add(cand);
+            if (cand != i && !usedLabels.contains(noteDefs[cand].$3)) {
+              distractors.add(cand);
+              usedLabels.add(noteDefs[cand].$3);
+            }
             fallbackOffset++;
           }
           final allIndices = [i, ...distractors];

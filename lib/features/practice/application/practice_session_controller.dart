@@ -33,6 +33,11 @@ final selectedNoteLevelIdProvider =
 final selectedStaffLevelIdProvider =
     StateProvider<String>((ref) => 'lvl_staff_basic');
 
+/// Filter for "Đọc nốt nhạc" (Staff Sight-Reading):
+/// - false (default): Tất cả nốt (Trong khuông + Dòng kẻ phụ)
+/// - true: Chuyên luyện Dòng kẻ phụ (100% câu hỏi là nốt trên dòng kẻ phụ trên & dưới)
+final staffLedgerOnlyProvider = StateProvider<bool>((ref) => false);
+
 const List<(String id, String shortTitle, String subTitle, String fullDesc)>
     kNoteRecognitionLevels = [
   (
@@ -66,26 +71,26 @@ const List<(String id, String shortTitle, String subTitle, String fullDesc)>
   (
     'lvl_staff_basic',
     'Mức 1',
-    'Khóa Sol C4',
-    'Dễ: Đọc 7 nốt tự nhiên trên khuông nhạc Khóa Sol (C4–B4), không dấu #/b.'
+    'Sol + Phụ',
+    'Dễ: Đọc nốt tự nhiên trên khuông Khóa Sol và dòng kẻ phụ (G3–C6), không dấu #/b.'
   ),
   (
     'lvl_staff_inter',
     'Mức 2',
-    'Khóa Sol #/b',
-    'Trung bình: Đọc khuông nhạc Khóa Sol (C4–B4) có thêm dấu thăng (♯).'
+    'Sol #/b + Phụ',
+    'Trung bình: Đọc khuông nhạc Khóa Sol và dòng kẻ phụ (G3–C6) có thêm dấu thăng (♯).'
   ),
   (
     'lvl_staff_adv',
     'Mức 3',
-    'Sol & Fa C3–C5',
-    'Khá: Đọc cả Khóa Sol (𝄞) & Khóa Fa (𝄢) từ C3–C5 với các nốt tự nhiên.'
+    'Sol & Fa + Phụ',
+    'Khá: Đọc cả Khóa Sol & Khóa Fa (C3–C6) cùng dòng kẻ phụ 2 khóa với nốt tự nhiên.'
   ),
   (
     'lvl_staff_master',
     'Mức 4',
     'Sol & Fa Đầy đủ',
-    'Nâng cao: Đọc thành thạo Khóa Sol & Khóa Fa (C3–C5) đầy đủ dấu hóa (#/b).'
+    'Nâng cao: Đọc thành thạo Khóa Sol & Khóa Fa (C3–C6) đầy đủ dòng kẻ phụ và dấu hóa (#/b).'
   ),
 ];
 
@@ -312,6 +317,7 @@ class PracticeSessionNotifier extends StateNotifier<PracticeSessionState> {
     int? timeLimitSeconds,
     bool isUnlimitedMode = false,
     int? seed,
+    bool? ledgerOnly,
   }) async {
     if (_isBusy) return false;
     _isBusy = true;
@@ -330,6 +336,8 @@ class PracticeSessionNotifier extends StateNotifier<PracticeSessionState> {
 
       final initialBatchSize =
           (timeLimitSeconds != null || isUnlimitedMode) ? 20 : targetCount;
+      final bool useLedgerOnly =
+          (ledgerOnly ?? _ref.read(staffLedgerOnlyProvider)) == true;
 
       final generated = await _generator.generateSessionQuestions(
         mode: mode,
@@ -337,6 +345,7 @@ class PracticeSessionNotifier extends StateNotifier<PracticeSessionState> {
         levelId: levelId,
         targetCount: initialBatchSize,
         seed: seed,
+        ledgerOnly: useLedgerOnly,
       );
 
       if (generated.questions.isEmpty) {
@@ -443,6 +452,7 @@ class PracticeSessionNotifier extends StateNotifier<PracticeSessionState> {
         topicId: state.topicId,
         levelId: newLevelId,
         targetCount: batchSize,
+        ledgerOnly: _ref.read(staffLedgerOnlyProvider),
       );
       if (generated.questions.isEmpty) return;
 
@@ -518,6 +528,7 @@ class PracticeSessionNotifier extends StateNotifier<PracticeSessionState> {
         topicId: targetTopicId,
         levelId: mappedLevelId,
         targetCount: batchSize,
+        ledgerOnly: _ref.read(staffLedgerOnlyProvider),
       );
       if (generated.questions.isEmpty) return;
 
@@ -674,6 +685,7 @@ class PracticeSessionNotifier extends StateNotifier<PracticeSessionState> {
           targetCount: 15,
           excludeAudioAsset: lastQ?.audioAsset,
           excludeOptionKey: lastQ?.correctOption.optionKey,
+          ledgerOnly: _ref.read(staffLedgerOnlyProvider),
         );
         if (more.questions.isNotEmpty) {
           final updatedQuestions = [...state.questions, ...more.questions];

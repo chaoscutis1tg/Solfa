@@ -785,7 +785,12 @@ class AppDatabase {
 
     final Map<String, (int total, int correct)> pitchClassAgg = {};
     for (final row in noteRows) {
-      final rawKey = (row['correct_key'] as String? ?? '').toUpperCase();
+      final rawKey = (row['correct_key'] as String? ?? '')
+          .toUpperCase()
+          .replaceAll('_SOL', '')
+          .replaceAll('_FA', '')
+          .replaceAll('_TREBLE', '')
+          .replaceAll('_BASS', '');
       final pc = rawKey.replaceAll(RegExp(r'[0-9]'), '');
       if (pc.isEmpty) continue;
       final t = (row['total_cnt'] as num?)?.toInt() ?? 0;

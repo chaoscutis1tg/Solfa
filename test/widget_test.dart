@@ -10,6 +10,7 @@ import 'package:solfa/core/providers/app_providers.dart';
 import 'package:solfa/features/battle/application/battle_controller.dart';
 import 'package:solfa/features/metronome/application/metronome_controller.dart';
 import 'package:solfa/features/practice/application/practice_session_controller.dart';
+import 'package:solfa/features/practice/presentation/widgets/musical_staff_widget.dart';
 import 'package:solfa/features/support_developer/application/rewarded_ad_controller.dart';
 
 void main() {
@@ -1538,6 +1539,61 @@ void main() {
         expect(clearedStats.bestScore, equals(0));
         final topicsAfterClear = await db.getTopics(onlyEnabled: true);
         expect(topicsAfterClear.length, equals(7));
+
+        // 5. Kiểm tra hệ thống Dòng kẻ phụ (Ledger Lines: G3_SOL..C6 & C4_FA..D4_FA) và chế độ "Chuyên luyện Dòng kẻ phụ"
+        for (final ledgerKey in const [
+          'G3_SOL',
+          'A3_SOL',
+          'B3_SOL',
+          'C4',
+          'A5',
+          'B5',
+          'C6',
+          'C4_FA',
+          'D4_FA',
+        ]) {
+          expect(
+            MusicalStaffWidget.isLedgerLineNoteKey(ledgerKey),
+            isTrue,
+            reason: '$ledgerKey phải được nhận diện là nốt trên dòng kẻ phụ',
+          );
+        }
+        for (final inStaffKey in const ['E4', 'G4', 'B4', 'D5', 'F5']) {
+          expect(
+            MusicalStaffWidget.isLedgerLineNoteKey(inStaffKey),
+            isFalse,
+            reason: '$inStaffKey nằm trong 5 dòng kẻ chính của Khóa Sol',
+          );
+        }
+
+        for (final staffLvl in const [
+          'lvl_staff_basic',
+          'lvl_staff_inter',
+          'lvl_staff_adv',
+          'lvl_staff_master',
+        ]) {
+          final ledgerOk = await sessionNotifier.startSession(
+            mode: 'topic',
+            topicId: 'topic_staff_reading',
+            levelId: staffLvl,
+            targetCount: 10,
+            seed: 888,
+            ledgerOnly: true,
+          );
+          expect(ledgerOk, isTrue);
+          final ledgerQuestions =
+              container.read(practiceSessionProvider).questions;
+          expect(ledgerQuestions.length, equals(10));
+          for (final q in ledgerQuestions) {
+            expect(
+              MusicalStaffWidget.isLedgerLineNoteKey(q.correctOption.optionKey),
+              isTrue,
+              reason:
+                  'Ở chế độ Chuyên dòng kẻ phụ ($staffLvl), 100% câu hỏi phải thuộc dòng kẻ phụ (${q.correctOption.optionKey})',
+            );
+          }
+          await sessionNotifier.abandonSessionIfIncomplete();
+        }
       },
     );
   });

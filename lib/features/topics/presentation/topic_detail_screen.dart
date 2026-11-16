@@ -81,13 +81,13 @@ class _TopicDetailScreenState extends ConsumerState<TopicDetailScreen> {
       }
     } else if (topicId == 'topic_staff_reading') {
       if (difficulty == 1) {
-        return 'Mức 1 (Dễ): Nhìn vị trí nốt trên khuông nhạc 5 dòng kẻ Khóa Sol trong quãng C4 (7 nốt tự nhiên Đô – Si, không dấu #/b) kết hợp nghe cao độ chuẩn.';
+        return 'Mức 1 (Dễ): Đọc nốt tự nhiên trên khuông nhạc 5 dòng kẻ Khóa Sol cùng các nốt trên 1–2 dòng kẻ phụ dưới & trên (G3, A3, B3, C4 và A5, B5, C6).';
       } else if (difficulty == 2) {
-        return 'Mức 2 (Trung bình): Đọc nốt trên khuông nhạc Khóa Sol trong quãng C4, bổ sung thêm các nốt có dấu hóa (#/b).';
+        return 'Mức 2 (Trung bình): Đọc nốt trên khuông nhạc Khóa Sol và dòng kẻ phụ (G3–C6), bổ sung thêm các nốt có dấu hóa (#/b).';
       } else if (difficulty == 3) {
-        return 'Mức 3 (Khá): Đọc nốt tự nhiên đa quãng tám (C3 – C5) kết hợp cả Khóa Sol (C4–C5) và Khóa Fa (C3–B3) cùng đường kẻ phụ.';
+        return 'Mức 3 (Khá): Đọc nốt tự nhiên đa quãng tám (C3 – C6) kết hợp cả Khóa Sol và Khóa Fa cùng đầy đủ dòng kẻ phụ trên & dưới của 2 khóa.';
       } else {
-        return 'Mức 4 (Nâng cao): Đọc toàn bộ nốt tự nhiên và dấu hóa (#/b) từ C3 đến C5 trên cả Khóa Sol và Khóa Fa.';
+        return 'Mức 4 (Nâng cao): Đọc toàn bộ nốt tự nhiên, dòng kẻ phụ và dấu hóa (#/b) từ C3 đến C6 trên cả Khóa Sol và Khóa Fa.';
       }
     } else if (topicId == 'topic_intervals') {
       if (difficulty == 1) {
@@ -137,6 +137,7 @@ class _TopicDetailScreenState extends ConsumerState<TopicDetailScreen> {
     final topicsAsync = ref.watch(topicsListProvider);
     final levelsAsync = ref.watch(topicDetailLevelsProvider(widget.topicId));
     final selectedDuration = ref.watch(selectedPracticeDurationProvider);
+    final staffLedgerOnly = ref.watch(staffLedgerOnlyProvider);
 
     final topic = topicsAsync.valueOrNull
         ?.where((t) => t.id == widget.topicId)
@@ -239,6 +240,39 @@ class _TopicDetailScreenState extends ConsumerState<TopicDetailScreen> {
                           ),
                         ],
                       ),
+                      if (widget.topicId == 'topic_staff_reading') ...[
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Vùng nốt muốn luyện tập:',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 13.5,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            ChoiceChip(
+                              key: const Key('detail_staff_mode_all'),
+                              label: const Text('Tất cả nốt (Khuông + Phụ)'),
+                              selected: !staffLedgerOnly,
+                              onSelected: (_) => ref
+                                  .read(staffLedgerOnlyProvider.notifier)
+                                  .state = false,
+                            ),
+                            ChoiceChip(
+                              key: const Key('detail_staff_mode_ledger'),
+                              label: const Text('Chuyên luyện Dòng kẻ phụ'),
+                              selected: staffLedgerOnly,
+                              onSelected: (_) => ref
+                                  .read(staffLedgerOnlyProvider.notifier)
+                                  .state = true,
+                            ),
+                          ],
+                        ),
+                      ],
                     ],
                   ),
                 ),

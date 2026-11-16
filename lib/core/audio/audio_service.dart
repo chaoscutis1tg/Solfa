@@ -85,10 +85,15 @@ class AudioService {
     return playAsset('assets/audio/notes/c4.wav');
   }
 
-  /// Plays a specific piano note by key code (e.g. 'C4', 'F#4') for interactive keyboard preview.
+  /// Plays a specific piano note by key code (e.g. 'C4', 'F#4', 'G3_SOL', 'C6') for interactive keyboard preview.
   Future<bool> playPianoKey(String keyCode) async {
-    final normalizedKey =
-        keyCode.toLowerCase().replaceAll('#', 'sharp');
+    final normalizedKey = keyCode
+        .toLowerCase()
+        .replaceAll('_sol', '')
+        .replaceAll('_fa', '')
+        .replaceAll('_treble', '')
+        .replaceAll('_bass', '')
+        .replaceAll('#', 'sharp');
     return playAsset('assets/audio/notes/$normalizedKey.wav');
   }
 

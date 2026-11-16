@@ -7,14 +7,15 @@ import '../../../../core/utils/note_formatter.dart';
 /// - **Ear Training mode (`isSightReading == false`)**:
 ///   Hides the note (`?`) while listening, then reveals the note on the staff after answering.
 /// - **Sight-Reading mode (`isSightReading == true`)**:
-///   Plots the note (notehead, stem, ledger lines, sharp `♯`) on the 5-line staff
-///   (Treble Clef `𝄞` for C4–B5, Bass Clef `𝄢` for C3–B3) BEFORE answering while
-///   hiding the note name (`?`), then reveals the answer (`✓` / `✗`) after answering.
+///   Plots the note (notehead, stem, 1–2 upper/lower ledger lines, sharp `♯`) on the 5-line staff
+///   (Treble Clef `𝄞` including G3–C6 ledger lines, Bass Clef `𝄢` including C3–D4 ledger lines)
+///   BEFORE answering while hiding the note name (`?`), then reveals the answer (`✓` / `✗`) after answering.
 class MusicalStaffWidget extends StatelessWidget {
-  final String? targetNoteKey; // e.g. 'C4', 'F#4', 'G3', 'C5'
+  final String? targetNoteKey; // e.g. 'C4', 'G3_SOL', 'A3_SOL', 'C6', 'C4_FA'
   final String? selectedNoteKey; // e.g. 'D4'
   final bool showNote;
   final bool isSightReading;
+  final bool? forceBassClef;
 
   const MusicalStaffWidget({
     super.key,
@@ -22,43 +23,74 @@ class MusicalStaffWidget extends StatelessWidget {
     this.selectedNoteKey,
     required this.showNote,
     this.isSightReading = false,
+    this.forceBassClef,
   });
+
+  /// Returns true if [rawKey] lies on or beyond a ledger line (outside step 1..11).
+  static bool isLedgerLineNoteKey(String? rawKey, {bool? forceBassClef}) {
+    final parsed = _ParsedStaffNote.tryParse(rawKey);
+    if (parsed == null) return false;
+    final useBass = forceBassClef ??
+        (parsed.explicitClef == 'bass'
+            ? true
+            : (parsed.explicitClef == 'treble' ? false : parsed.octave <= 3));
+    final step = parsed.staffStep(useBassClef: useBass);
+    return step <= 0 || step >= 12;
+  }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final hasWrongComparison = showNote &&
-        selectedNoteKey != null &&
-        targetNoteKey != null &&
-        selectedNoteKey!.toUpperCase() != targetNoteKey!.toUpperCase();
-
     final targetParsed = _ParsedStaffNote.tryParse(targetNoteKey);
-    final useBassClef = targetParsed != null && targetParsed.octave <= 3;
+    final selectedParsed = _ParsedStaffNote.tryParse(selectedNoteKey);
+
+    final hasWrongComparison = showNote &&
+        selectedParsed != null &&
+        targetParsed != null &&
+        selectedParsed.cleanKey != targetParsed.cleanKey;
+
+    final bool useBassClef = forceBassClef ??
+        (targetParsed != null
+            ? (targetParsed.explicitClef == 'bass'
+                ? true
+                : (targetParsed.explicitClef == 'treble'
+                    ? false
+                    : targetParsed.octave <= 3))
+            : false);
 
     final String headerTitle = useBassClef
         ? 'Khuông nhạc Khóa Fa (𝄢)'
         : 'Khuông nhạc Khóa Sol (𝄞)';
 
+    final String? ledgerHint =
+        targetParsed?.ledgerLineBadgeLabel(useBassClef: useBassClef);
+
     final String statusBadgeText;
     if (showNote) {
-      statusBadgeText =
-          'Vị trí: ${NoteFormatter.toVietnameseLabel(targetNoteKey ?? '')}';
+      final cleanLabel =
+          NoteFormatter.toVietnameseLabel(targetParsed?.cleanKey ?? '');
+      statusBadgeText = ledgerHint != null
+          ? '$cleanLabel • $ledgerHint'
+          : 'Vị trí: $cleanLabel';
     } else if (isSightReading) {
-      statusBadgeText = useBassClef
-          ? 'Đọc Khóa Fa (Dòng 4 = Fa3)'
-          : 'Đọc Khóa Sol (Dòng 2 = Sol4)';
+      if (ledgerHint != null) {
+        statusBadgeText = ledgerHint;
+      } else {
+        statusBadgeText = useBassClef
+            ? 'Đọc Khóa Fa (Dòng 4 = Fa3)'
+            : 'Đọc Khóa Sol (Dòng 2 = Sol4)';
+      }
     } else {
       statusBadgeText = 'Hiện vị trí nốt sau khi chọn đáp án';
     }
 
-    final Color activeHeaderColor = isSightReading
-        ? (isDark ? AppColors.secondary : const Color(0xFF635BFF))
-        : (isDark ? AppColors.secondary : AppColors.primary);
+    final Color activeHeaderColor =
+        isDark ? AppColors.secondary : AppColors.primary;
 
     return Container(
       key: const Key('musical_staff_widget'),
-      height: isSightReading ? 90 : 82,
-      padding: const EdgeInsets.fromLTRB(10, 4, 10, 4),
+      height: isSightReading ? 114 : 96,
+      padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
       decoration: BoxDecoration(
         color: isDark
             ? const Color(0xFF1A1E36).withOpacity(0.92)
@@ -76,9 +108,9 @@ class MusicalStaffWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Dedicated Header Row (never overlaps high notes on the staff!)
+          // Dedicated Header Row (never overlaps high notes on upper ledger lines!)
           SizedBox(
-            height: 18,
+            height: 20,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -88,7 +120,7 @@ class MusicalStaffWidget extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: 10.5,
+                      fontSize: 11,
                       fontWeight: FontWeight.w800,
                       color: activeHeaderColor,
                     ),
@@ -98,13 +130,15 @@ class MusicalStaffWidget extends StatelessWidget {
                 Flexible(
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 7,
-                      vertical: 1,
+                      horizontal: 8,
+                      vertical: 2,
                     ),
                     decoration: BoxDecoration(
                       color: showNote
                           ? AppColors.correct.withOpacity(0.15)
-                          : activeHeaderColor.withOpacity(0.12),
+                          : (ledgerHint != null && isSightReading
+                              ? AppColors.accentAmber.withOpacity(0.16)
+                              : activeHeaderColor.withOpacity(0.12)),
                       borderRadius: BorderRadius.circular(99),
                     ),
                     child: FittedBox(
@@ -112,10 +146,13 @@ class MusicalStaffWidget extends StatelessWidget {
                       child: Text(
                         statusBadgeText,
                         style: TextStyle(
-                          fontSize: 10,
+                          fontSize: 10.5,
                           fontWeight: FontWeight.w800,
-                          color:
-                              showNote ? AppColors.correct : activeHeaderColor,
+                          color: showNote
+                              ? AppColors.correct
+                              : (ledgerHint != null && isSightReading
+                                  ? AppColors.accentAmber
+                                  : activeHeaderColor),
                         ),
                       ),
                     ),
@@ -124,7 +161,7 @@ class MusicalStaffWidget extends StatelessWidget {
               ],
             ),
           ),
-          // 5-Line Staff Canvas
+          // 5-Line Staff Canvas with spacious upper & lower ledger-line margins
           Expanded(
             child: CustomPaint(
               painter: _MusicalStaffPainter(
@@ -145,37 +182,59 @@ class MusicalStaffWidget extends StatelessWidget {
 
 class _ParsedStaffNote {
   final String rawKey;
+  final String cleanKey; // e.g. 'G3', 'C6', 'F#4'
   final String letter; // C, D, E, F, G, A, B
   final bool isSharp;
-  final int octave; // 3, 4, 5
+  final int octave; // 2..6
   final int diatonicIdx; // 0..6
+  final String? explicitClef; // 'treble', 'bass', or null
 
   const _ParsedStaffNote({
     required this.rawKey,
+    required this.cleanKey,
     required this.letter,
     required this.isSharp,
     required this.octave,
     required this.diatonicIdx,
+    this.explicitClef,
   });
 
-  /// Returns staff step where:
-  /// - Step 0 = 1st ledger line below Line 1 (C4 in Treble Clef, E2 in Bass Clef)
-  /// - Step 2 = Line 1 (bottom line: E4 in Treble, G2 in Bass)
-  /// - Step 4 = Line 2 (G4 in Treble, B2 in Bass)
-  /// - Step 6 = Line 3 (middle line: B4 in Treble, D3 in Bass)
-  /// - Step 8 = Line 4 (D5 in Treble, F3 in Bass)
+  /// Returns staff step where the 5 main lines are ALWAYS steps 2, 4, 6, 8, 10:
+  /// - Step -3 = Space below 2nd lower ledger line (G3 in Treble Clef)
+  /// - Step -2 = 2nd ledger line below Line 1 (A3 in Treble Clef)
+  /// - Step -1 = Space below 1st lower ledger line (B3 in Treble Clef)
+  /// - Step 0  = 1st ledger line below Line 1 (C4 in Treble Clef, E2 in Bass Clef)
+  /// - Step 1  = Space below Line 1 (D4 in Treble Clef)
+  /// - Step 2  = Line 1 (bottom line: E4 in Treble, G2 in Bass)
+  /// - Step 4  = Line 2 (G4 in Treble, B2 in Bass)
+  /// - Step 6  = Line 3 (middle line: B4 in Treble, D3 in Bass)
+  /// - Step 8  = Line 4 (D5 in Treble, F3 in Bass)
   /// - Step 10 = Line 5 (top line: F5 in Treble, A3 in Bass)
+  /// - Step 11 = Space above Line 5 (G5 in Treble, B3 in Bass)
   /// - Step 12 = 1st ledger line above Line 5 (A5 in Treble, C4 in Bass)
+  /// - Step 13 = Space above 1st upper ledger line (B5 in Treble, D4 in Bass)
+  /// - Step 14 = 2nd ledger line above Line 5 (C6 in Treble, E4 in Bass)
   int staffStep({required bool useBassClef}) {
     if (useBassClef) {
-      // In Bass Clef: C3 is Space 2 (step 5), F3 is Line 4 (step 8), A3 is Line 5 (step 10), B3 is step 11, C4 is step 12
       final rawStep = (octave - 3) * 7 + diatonicIdx + 5;
-      return rawStep.clamp(0, 13);
+      return rawStep.clamp(-3, 14);
     } else {
-      // In Treble Clef: C4 is step 0, E4 is Line 1 (step 2), F5 is Line 5 (step 10), B5 is step 13
-      final effectiveOctave = octave < 4 ? 4 : (octave > 5 ? 5 : octave);
-      return (effectiveOctave - 4) * 7 + diatonicIdx;
+      final rawStep = (octave - 4) * 7 + diatonicIdx;
+      return rawStep.clamp(-3, 14);
     }
+  }
+
+  /// Human-readable description of ledger line position when outside the 5 main lines.
+  String? ledgerLineBadgeLabel({required bool useBassClef}) {
+    final step = staffStep(useBassClef: useBassClef);
+    if (step == 0) return 'Dòng kẻ phụ 1 dưới';
+    if (step == -1) return 'Dưới dòng phụ 1 dưới';
+    if (step == -2) return 'Dòng kẻ phụ 2 dưới';
+    if (step <= -3) return 'Dưới dòng phụ 2 dưới';
+    if (step == 12) return 'Dòng kẻ phụ 1 trên';
+    if (step == 13) return 'Trên dòng phụ 1 trên';
+    if (step >= 14) return 'Dòng kẻ phụ 2 trên';
+    return null;
   }
 
   static const Map<String, int> _letterIndex = {
@@ -190,7 +249,15 @@ class _ParsedStaffNote {
 
   static _ParsedStaffNote? tryParse(String? key) {
     if (key == null || key.trim().isEmpty) return null;
-    final cleaned = key.trim().toUpperCase();
+    final upper = key.trim().toUpperCase();
+    String? explicitClef;
+    if (upper.endsWith('_SOL') || upper.endsWith('_TREBLE')) {
+      explicitClef = 'treble';
+    } else if (upper.endsWith('_FA') || upper.endsWith('_BASS')) {
+      explicitClef = 'bass';
+    }
+    final cleaned = NoteFormatter.cleanNoteKey(upper);
+    if (cleaned.isEmpty) return null;
     final letter = cleaned[0];
     if (!_letterIndex.containsKey(letter)) return null;
     final isSharp = cleaned.contains('#');
@@ -199,11 +266,13 @@ class _ParsedStaffNote {
         octaveMatch != null ? (int.tryParse(octaveMatch.group(0)!) ?? 4) : 4;
 
     return _ParsedStaffNote(
-      rawKey: cleaned,
+      rawKey: upper,
+      cleanKey: cleaned,
       letter: letter,
       isSharp: isSharp,
       octave: octave,
       diatonicIdx: _letterIndex[letter]!,
+      explicitClef: explicitClef,
     );
   }
 }
@@ -235,11 +304,15 @@ class _MusicalStaffPainter extends CustomPainter {
       ..strokeWidth = 1.2
       ..style = PaintingStyle.stroke;
 
-    // 5 staff lines: Line 1 (bottom, step 2) to Line 5 (top, step 10)
-    const double lineSpacing = 7.6;
-    const double stepHeight = lineSpacing / 2.0; // 3.8px per diatonic step
-    const double topLineY = 11.0; // Line 5 (step 10)
-    const double bottomLineY = topLineY + 4 * lineSpacing; // Line 1 (step 2) = 41.4
+    // 5 staff lines centered with spacious room for 2 upper & 2 lower ledger lines:
+    // Line 5 (top, step 10) at y = 21.0; Line 1 (bottom, step 2) at y = 49.8
+    // Step 14 (2nd upper ledger line, C6) is at y = 6.6
+    // Step -3 (below 2nd lower ledger line, G3) is at y = 67.8
+    const double lineSpacing = 7.2;
+    const double stepHeight = lineSpacing / 2.0; // 3.6px per diatonic step
+    const double topLineY = 21.0; // Line 5 (step 10)
+    const double bottomLineY =
+        topLineY + 4 * lineSpacing; // Line 1 (step 2) = 49.8
     const double leftX = 6.0;
     final double rightX = size.width - 6.0;
 
@@ -262,17 +335,14 @@ class _MusicalStaffPainter extends CustomPainter {
         ..strokeWidth = 2.4,
     );
 
-    final clefColor = isSightReading
-        ? (isDark ? AppColors.secondary : const Color(0xFF635BFF))
-        : (isDark ? AppColors.secondary : AppColors.primary);
+    final clefColor = isDark ? AppColors.secondary : AppColors.primary;
 
     if (useBassClef) {
-      // Draw Bass Clef (𝄢) + explicit F3 two-dot marker straddling Line 4 (topLineY + lineSpacing)
       final clefPainter = TextPainter(
         text: TextSpan(
           text: '𝄢',
           style: TextStyle(
-            fontSize: 28,
+            fontSize: 27,
             height: 1.0,
             color: clefColor,
             fontWeight: FontWeight.w700,
@@ -282,7 +352,7 @@ class _MusicalStaffPainter extends CustomPainter {
       )..layout();
       clefPainter.paint(canvas, const Offset(leftX + 3, topLineY - 1));
 
-      // Two clear dots above and below Line 4 (F3 line) for unmistakable Bass Clef reading
+      // Two clear dots above and below Line 4 (F3 line)
       const line4Y = topLineY + lineSpacing;
       final dotPaint = Paint()
         ..color = clefColor
@@ -290,12 +360,11 @@ class _MusicalStaffPainter extends CustomPainter {
       canvas.drawCircle(const Offset(leftX + 27, line4Y - 3.2), 1.9, dotPaint);
       canvas.drawCircle(const Offset(leftX + 27, line4Y + 3.2), 1.9, dotPaint);
     } else {
-      // Draw Treble Clef symbol (𝄞) on the left
       final clefPainter = TextPainter(
         text: TextSpan(
           text: '𝄞',
           style: TextStyle(
-            fontSize: 36,
+            fontSize: 34,
             height: 1.0,
             color: clefColor,
             fontWeight: FontWeight.w600,
@@ -349,15 +418,20 @@ class _MusicalStaffPainter extends CustomPainter {
     // Case 2: Sight-Reading before answering -> Plot the target note on the staff with '?' label!
     if (!showNote && isSightReading && targetParsed != null) {
       final step = targetParsed.staffStep(useBassClef: useBassClef);
+      final isLedger = step <= 0 || step >= 12;
+      final String label = isLedger
+          ? (step <= -2 || step >= 14 ? 'Nốt ? (2 phụ)' : 'Nốt ? (1 phụ)')
+          : 'Nốt ?';
       _drawSingleNote(
         canvas: canvas,
         note: targetParsed,
         step: step,
-        centerX: size.width * 0.52,
+        centerX: size.width * 0.50,
         y: yForStep(step),
         yForStep: yForStep,
         color: clefColor,
-        prefixLabel: 'Nốt ?',
+        prefixLabel: label,
+        highlightLedgerLines: true,
       );
       return;
     }
@@ -370,21 +444,23 @@ class _MusicalStaffPainter extends CustomPainter {
         canvas: canvas,
         note: selectedParsed,
         step: selStep,
-        centerX: size.width * 0.36,
+        centerX: size.width * 0.35,
         y: yForStep(selStep),
         yForStep: yForStep,
         color: AppColors.wrong,
-        prefixLabel: '✗ ${selectedParsed.rawKey}',
+        prefixLabel: '✗ ${selectedParsed.cleanKey}',
+        highlightLedgerLines: false,
       );
       _drawSingleNote(
         canvas: canvas,
         note: targetParsed,
         step: tarStep,
-        centerX: size.width * 0.68,
+        centerX: size.width * 0.67,
         y: yForStep(tarStep),
         yForStep: yForStep,
         color: AppColors.correct,
-        prefixLabel: '✓ ${targetParsed.rawKey}',
+        prefixLabel: '✓ ${targetParsed.cleanKey}',
+        highlightLedgerLines: true,
       );
     } else if (targetParsed != null) {
       final tarStep = targetParsed.staffStep(useBassClef: useBassClef);
@@ -396,7 +472,8 @@ class _MusicalStaffPainter extends CustomPainter {
         y: yForStep(tarStep),
         yForStep: yForStep,
         color: AppColors.correct,
-        prefixLabel: '✓ ${targetParsed.rawKey}',
+        prefixLabel: '✓ ${targetParsed.cleanKey}',
+        highlightLedgerLines: true,
       );
     }
   }
@@ -410,26 +487,47 @@ class _MusicalStaffPainter extends CustomPainter {
     required double Function(int) yForStep,
     required Color color,
     required String prefixLabel,
+    required bool highlightLedgerLines,
   }) {
+    final ledgerColor = highlightLedgerLines
+        ? AppColors.accentAmber
+        : color.withOpacity(0.88);
     final ledgerPaint = Paint()
-      ..color = color.withOpacity(0.85)
-      ..strokeWidth = 1.5;
+      ..color = ledgerColor
+      ..strokeWidth = 2.0;
 
-    // Ledger line below Line 1 (step 0)
+    // Lower ledger lines (below Line 1: step 0 = 1st lower ledger line, step -2 = 2nd lower ledger line)
     if (step <= 0) {
-      final lowLedgerY = yForStep(0);
+      final low1Y = yForStep(0);
       canvas.drawLine(
-        Offset(centerX - 10, lowLedgerY),
-        Offset(centerX + 10, lowLedgerY),
+        Offset(centerX - 12, low1Y),
+        Offset(centerX + 12, low1Y),
         ledgerPaint,
       );
     }
-    // Ledger line above Line 5 (step 12 or 13)
-    if (step >= 12) {
-      final highLedgerY = yForStep(12);
+    if (step <= -2) {
+      final low2Y = yForStep(-2);
       canvas.drawLine(
-        Offset(centerX - 10, highLedgerY),
-        Offset(centerX + 10, highLedgerY),
+        Offset(centerX - 12, low2Y),
+        Offset(centerX + 12, low2Y),
+        ledgerPaint,
+      );
+    }
+
+    // Upper ledger lines (above Line 5: step 12 = 1st upper ledger line, step 14 = 2nd upper ledger line)
+    if (step >= 12) {
+      final high1Y = yForStep(12);
+      canvas.drawLine(
+        Offset(centerX - 12, high1Y),
+        Offset(centerX + 12, high1Y),
+        ledgerPaint,
+      );
+    }
+    if (step >= 14) {
+      final high2Y = yForStep(14);
+      canvas.drawLine(
+        Offset(centerX - 12, high2Y),
+        Offset(centerX + 12, high2Y),
         ledgerPaint,
       );
     }
@@ -449,7 +547,7 @@ class _MusicalStaffPainter extends CustomPainter {
       )..layout();
       sharpPainter.paint(
         canvas,
-        Offset(centerX - 16, y - sharpPainter.height / 2),
+        Offset(centerX - 17, y - sharpPainter.height / 2),
       );
     }
 
@@ -461,7 +559,7 @@ class _MusicalStaffPainter extends CustomPainter {
       ..color = color
       ..style = PaintingStyle.fill;
     canvas.drawOval(
-      Rect.fromCenter(center: Offset.zero, width: 10.5, height: 7.4),
+      Rect.fromCenter(center: Offset.zero, width: 10.5, height: 7.2),
       noteHeadPaint,
     );
     canvas.restore();
@@ -474,13 +572,13 @@ class _MusicalStaffPainter extends CustomPainter {
     if (stemUp) {
       canvas.drawLine(
         Offset(centerX + 4.4, y),
-        Offset(centerX + 4.4, y - 20),
+        Offset(centerX + 4.4, y - 19),
         stemPaint,
       );
     } else {
       canvas.drawLine(
         Offset(centerX - 4.4, y),
-        Offset(centerX - 4.4, y + 20),
+        Offset(centerX - 4.4, y + 19),
         stemPaint,
       );
     }
@@ -499,7 +597,7 @@ class _MusicalStaffPainter extends CustomPainter {
     )..layout();
     labelPainter.paint(
       canvas,
-      Offset(centerX + 9, (y - labelPainter.height / 2).clamp(2.0, 38.0)),
+      Offset(centerX + 13, (y - labelPainter.height / 2).clamp(1.0, 66.0)),
     );
   }
 

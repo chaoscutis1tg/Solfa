@@ -21,9 +21,19 @@ class NoteFormatter {
     'B': 'Si',
   };
 
-  /// Returns e.g. "Đô (C4)" from raw note key "C4" or "F#4".
+  /// Strips optional clef suffixes like '_SOL', '_FA', '_TREBLE', '_BASS'.
+  static String cleanNoteKey(String rawNoteKey) {
+    final upper = rawNoteKey.trim().toUpperCase();
+    return upper
+        .replaceAll('_SOL', '')
+        .replaceAll('_FA', '')
+        .replaceAll('_TREBLE', '')
+        .replaceAll('_BASS', '');
+  }
+
+  /// Returns e.g. "Đô (C4)" from raw note key "C4", "F#4", or "G3_SOL".
   static String toVietnameseLabel(String rawNoteKey) {
-    final cleaned = rawNoteKey.trim().toUpperCase();
+    final cleaned = cleanNoteKey(rawNoteKey);
     if (cleaned.isEmpty) return '';
     final pitchClass = cleaned.replaceAll(RegExp(r'[0-9]'), '');
     final vi = solfegeMap[pitchClass] ?? pitchClass;

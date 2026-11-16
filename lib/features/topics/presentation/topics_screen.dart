@@ -67,6 +67,7 @@ class TopicsScreen extends ConsumerWidget {
     final selectedDuration = ref.watch(selectedPracticeDurationProvider);
     final selectedNoteLevelId = ref.watch(selectedNoteLevelIdProvider);
     final selectedStaffLevelId = ref.watch(selectedStaffLevelIdProvider);
+    final staffLedgerOnly = ref.watch(staffLedgerOnlyProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return topicsAsync.when(
@@ -357,6 +358,40 @@ class TopicsScreen extends ConsumerWidget {
                                 );
                               },
                             ),
+                            if (topic.id == 'topic_staff_reading') ...[
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _NoteLevelQuickButton(
+                                      key: const Key('chip_staff_mode_all'),
+                                      title: 'Tất cả nốt',
+                                      subtitle: 'Trong khuông + Phụ',
+                                      isSelected: !staffLedgerOnly,
+                                      isDark: isDark,
+                                      onTap: () => ref
+                                          .read(
+                                              staffLedgerOnlyProvider.notifier)
+                                          .state = false,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: _NoteLevelQuickButton(
+                                      key: const Key('chip_staff_mode_ledger'),
+                                      title: 'Chuyên dòng kẻ phụ',
+                                      subtitle: 'Luyện riêng dòng phụ',
+                                      isSelected: staffLedgerOnly,
+                                      isDark: isDark,
+                                      onTap: () => ref
+                                          .read(
+                                              staffLedgerOnlyProvider.notifier)
+                                          .state = true,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ],
                           const SizedBox(height: 10),
                           ClipRRect(
