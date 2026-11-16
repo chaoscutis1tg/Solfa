@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/theme/app_colors.dart';
 import '../../../app/widgets/solfa_background.dart';
+import '../../../app/widgets/solfa_gem_icon.dart';
 import '../../../core/models/domain_models.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../practice/application/practice_session_controller.dart';
@@ -48,13 +49,21 @@ class _TopicDetailScreenState extends ConsumerState<TopicDetailScreen> {
     final isTest = ref.read(audioServiceProvider).isTestMode;
     final dur = ref.read(selectedPracticeDurationProvider);
 
+    final canProceed = await checkAndSpendGemsForDurationIfNeeded(
+      context,
+      ref,
+      durationSeconds: dur,
+    );
+    if (!canProceed || !mounted) return;
+    final finalDur = ref.read(selectedPracticeDurationProvider);
+
     final ok = await notifier.startSession(
       mode: 'topic',
       topicId: widget.topicId,
       levelId: level.id,
       targetCount: 10,
-      timeLimitSeconds: isTest ? null : (dur == 0 ? null : dur),
-      isUnlimitedMode: isTest ? false : (dur == 0),
+      timeLimitSeconds: isTest ? null : (finalDur == 0 ? null : finalDur),
+      isUnlimitedMode: isTest ? false : (finalDur == 0),
     );
     if (ok && mounted) {
       context.push('/quiz');
@@ -225,7 +234,8 @@ class _TopicDetailScreenState extends ConsumerState<TopicDetailScreen> {
                                 .state = 900,
                           ),
                           ChoiceChip(
-                            label: const Text('1 tiếng'),
+                            avatar: const SolfaGemIcon(size: 13),
+                            label: const Text('1 tiếng (50 Gem)'),
                             selected: selectedDuration == 3600,
                             onSelected: (_) => ref
                                 .read(selectedPracticeDurationProvider.notifier)

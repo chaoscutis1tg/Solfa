@@ -766,6 +766,38 @@ void main() {
         await tester.runAsync(() async {
           await sessionNotifier.abandonSessionIfIncomplete();
         });
+
+        // 9. Kiểm tra Modal chọn Cấp độ & Thời gian (modal_topic_practice_setup) và Pháp lý Gem / Chống hack trên màn 360x680
+        router.go('/topics');
+        await pumpFrames(300);
+        await tester.tap(find.text('Luyện đọc nốt'));
+        await pumpFrames(300);
+        expect(
+          find.byKey(const Key('modal_topic_practice_setup')),
+          findsOneWidget,
+        );
+        expect(find.byKey(const Key('btn_modal_start_practice')), findsOneWidget);
+        expect(tester.takeException(), isNull);
+        Navigator.of(tester.element(find.byKey(const Key('modal_topic_practice_setup')))).pop();
+        await pumpFrames(250);
+
+        router.go('/settings');
+        await pumpFrames(300);
+        await tester.scrollUntilVisible(
+          find.byKey(const Key('tile_anti_tamper_status')),
+          250.0,
+          scrollable: find.byType(Scrollable).last,
+        );
+        await pumpFrames(250);
+        expect(find.byKey(const Key('tile_anti_tamper_status')), findsOneWidget);
+        await tester.tap(find.byKey(const Key('tile_anti_tamper_status')));
+        await pumpFrames(300);
+        expect(find.textContaining('Quy định Đơn vị thưởng ảo (Gem)'), findsOneWidget);
+        expect(find.textContaining('SolfaIntegrityGuard'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+        await tester.tap(find.text('Đã hiểu'));
+        await pumpFrames(250);
+        expect(tester.takeException(), isNull);
       },
     );
 
