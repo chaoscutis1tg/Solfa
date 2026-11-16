@@ -189,6 +189,8 @@ class BattleState {
   // Active Match Combat State
   final List<QuestionModel> questions;
   final int currentRoundIndex;
+  final int p1RoundIndex;
+  final int p2RoundIndex;
   final int player1Hp;
   final int player2Hp;
   final int player1Combo;
@@ -199,7 +201,7 @@ class BattleState {
   final int player2CorrectCount;
   final bool firstBloodTaken;
 
-  // Round Resolution & Game FX
+  // Round Resolution & Game FX (Lightning Strike & Combo Impact)
   final bool isRoundResolved;
   final String? roundWinner; // 'p1', 'p2', 'both_wrong'
   final String? p1SelectedOptionId;
@@ -208,6 +210,9 @@ class BattleState {
   final bool p2LockedOut;
   final int lastDamageDealt;
   final bool lastHitWasCrit;
+  final String? strikeTarget; // 'p1' or 'p2'
+  final int strikeCombo;
+  final int strikeSerial;
   final String? combatBannerText;
   final int roundRemainingDeciseconds; // 80 = 8.0s
   final int starsDeltaLastMatch;
@@ -236,6 +241,8 @@ class BattleState {
     this.player2AvatarIcon = Icons.piano_rounded,
     this.questions = const [],
     this.currentRoundIndex = 0,
+    this.p1RoundIndex = 0,
+    this.p2RoundIndex = 0,
     this.player1Hp = maxHp,
     this.player2Hp = maxHp,
     this.player1Combo = 0,
@@ -253,6 +260,9 @@ class BattleState {
     this.p2LockedOut = false,
     this.lastDamageDealt = 0,
     this.lastHitWasCrit = false,
+    this.strikeTarget,
+    this.strikeCombo = 0,
+    this.strikeSerial = 0,
     this.combatBannerText,
     this.roundRemainingDeciseconds = 80,
     this.starsDeltaLastMatch = 0,
@@ -267,6 +277,21 @@ class BattleState {
       (currentRoundIndex >= 0 && currentRoundIndex < questions.length)
           ? questions[currentRoundIndex]
           : null;
+
+  /// Câu hỏi độc lập dành riêng cho Người chơi 1.
+  QuestionModel? get player1Question {
+    if (questions.isEmpty) return null;
+    final idx = p1RoundIndex.clamp(0, questions.length - 1);
+    return questions[idx];
+  }
+
+  /// Câu hỏi độc lập dành riêng cho Người chơi 2 (lệch pha so với Người chơi 1 để 2 bên đánh riêng không nhìn bài nhau).
+  QuestionModel? get player2Question {
+    if (questions.isEmpty) return null;
+    final offset = questions.length > 1 ? 1 : 0;
+    final idx = (p2RoundIndex + offset) % questions.length;
+    return questions[idx];
+  }
 
   int get totalRounds => questions.length;
 
@@ -308,6 +333,8 @@ class BattleState {
     IconData? player2AvatarIcon,
     List<QuestionModel>? questions,
     int? currentRoundIndex,
+    int? p1RoundIndex,
+    int? p2RoundIndex,
     int? player1Hp,
     int? player2Hp,
     int? player1Combo,
@@ -328,6 +355,9 @@ class BattleState {
     bool? p2LockedOut,
     int? lastDamageDealt,
     bool? lastHitWasCrit,
+    String? strikeTarget,
+    int? strikeCombo,
+    int? strikeSerial,
     String? combatBannerText,
     bool clearCombatBanner = false,
     int? roundRemainingDeciseconds,
@@ -361,6 +391,8 @@ class BattleState {
       player2AvatarIcon: player2AvatarIcon ?? this.player2AvatarIcon,
       questions: questions ?? this.questions,
       currentRoundIndex: currentRoundIndex ?? this.currentRoundIndex,
+      p1RoundIndex: p1RoundIndex ?? this.p1RoundIndex,
+      p2RoundIndex: p2RoundIndex ?? this.p2RoundIndex,
       player1Hp: player1Hp ?? this.player1Hp,
       player2Hp: player2Hp ?? this.player2Hp,
       player1Combo: player1Combo ?? this.player1Combo,
@@ -383,6 +415,9 @@ class BattleState {
       p2LockedOut: p2LockedOut ?? this.p2LockedOut,
       lastDamageDealt: lastDamageDealt ?? this.lastDamageDealt,
       lastHitWasCrit: lastHitWasCrit ?? this.lastHitWasCrit,
+      strikeTarget: strikeTarget ?? this.strikeTarget,
+      strikeCombo: strikeCombo ?? this.strikeCombo,
+      strikeSerial: strikeSerial ?? this.strikeSerial,
       combatBannerText:
           clearCombatBanner ? null : (combatBannerText ?? this.combatBannerText),
       roundRemainingDeciseconds:
@@ -683,6 +718,8 @@ class BattleNotifier extends StateNotifier<BattleState> {
         player2AvatarIcon: p2Icon,
         questions: questions,
         currentRoundIndex: 0,
+        p1RoundIndex: 0,
+        p2RoundIndex: 0,
         player1Hp: BattleState.maxHp,
         player2Hp: BattleState.maxHp,
         player1Combo: 0,
@@ -699,6 +736,9 @@ class BattleNotifier extends StateNotifier<BattleState> {
         p2LockedOut: false,
         lastDamageDealt: 0,
         lastHitWasCrit: false,
+        strikeTarget: null,
+        strikeCombo: 0,
+        strikeSerial: 0,
         clearCombatBanner: true,
         roundRemainingDeciseconds: 80,
         starsDeltaLastMatch: 0,
@@ -736,6 +776,8 @@ class BattleNotifier extends StateNotifier<BattleState> {
     state = state.copyWith(
       phase: BattlePhase.fighting,
       currentRoundIndex: 0,
+      p1RoundIndex: 0,
+      p2RoundIndex: 0,
       isRoundResolved: false,
       clearRoundWinner: true,
       clearP1Selection: true,
@@ -977,7 +1019,7 @@ class BattleNotifier extends StateNotifier<BattleState> {
       }
 
       state = state.copyWith(
-        isRoundResolved: true,
+        isRoundResolved: _audioService.isTestMode ? true : false,
         roundWinner: 'p1',
         p1SelectedOptionId: option.id,
         player2Hp: nextP2Hp,
@@ -988,36 +1030,59 @@ class BattleNotifier extends StateNotifier<BattleState> {
         firstBloodTaken: true,
         lastDamageDealt: dmg,
         lastHitWasCrit: isCrit,
+        strikeTarget: 'p2',
+        strikeCombo: nextCombo,
+        strikeSerial: state.strikeSerial + 1,
         combatBannerText: banner,
       );
 
-      _triggerImpactFeedback(isCorrect: true, isCrit: isCrit, curQ: curQ);
-      _scheduleAutoAdvanceRound();
+      _triggerImpactFeedback(
+        isCorrect: true,
+        isCrit: isCrit,
+        comboCount: nextCombo,
+        curQ: curQ,
+      );
+      if (_audioService.isTestMode) {
+        _scheduleAutoAdvanceRound();
+      } else {
+        _advanceFighterQuestionIndependently(isPlayer1: true);
+      }
     } else {
       // Wrong answer!
       if (state.mode == BattleMode.localSplitScreen) {
-        // In Local 1v1 Split-Screen: P1 takes -12 HP self-recoil and locks out; if P2 already locked out, resolve round
         final nextP1Hp = (state.player1Hp - 12).clamp(0, BattleState.maxHp);
         final bothLocked = state.p2LockedOut || nextP1Hp <= 0;
         state = state.copyWith(
           p1SelectedOptionId: option.id,
-          p1LockedOut: true,
+          p1LockedOut: _audioService.isTestMode ? true : false,
           player1Hp: nextP1Hp,
           player1Combo: 0,
-          isRoundResolved: bothLocked,
+          isRoundResolved: _audioService.isTestMode ? bothLocked : false,
           roundWinner: bothLocked ? 'both_wrong' : null,
           lastDamageDealt: 12,
           lastHitWasCrit: false,
+          strikeTarget: 'p1',
+          strikeCombo: 1,
+          strikeSerial: state.strikeSerial + 1,
           combatBannerText:
               '${state.player1Name} bấm sai! Tự mất -12 HP',
         );
-        _triggerImpactFeedback(isCorrect: false, isCrit: false, curQ: curQ);
-        if (bothLocked) {
-          _roundTimer?.cancel();
-          _scheduleAutoAdvanceRound();
+        _triggerImpactFeedback(
+          isCorrect: false,
+          isCrit: false,
+          comboCount: 0,
+          curQ: curQ,
+        );
+        if (_audioService.isTestMode) {
+          if (bothLocked) {
+            _roundTimer?.cancel();
+            _scheduleAutoAdvanceRound();
+          }
+        } else {
+          _advanceFighterQuestionIndependently(isPlayer1: true);
         }
       } else {
-        // In Bot / Matchmaking mode: P1 wrong -> Opponent immediately counter-attacks!
+        // In Bot / Matchmaking mode: P1 wrong -> Opponent counter-attacks!
         _roundTimer?.cancel();
         _botActionTimer?.cancel();
         final nextP2Combo = state.player2Combo + 1;
@@ -1030,7 +1095,7 @@ class BattleNotifier extends StateNotifier<BattleState> {
             (state.player1Hp - counterDmg).clamp(0, BattleState.maxHp);
 
         state = state.copyWith(
-          isRoundResolved: true,
+          isRoundResolved: _audioService.isTestMode ? true : false,
           roundWinner: 'p2',
           p1SelectedOptionId: option.id,
           p2SelectedOptionId: curQ.correctOption.id,
@@ -1042,14 +1107,26 @@ class BattleNotifier extends StateNotifier<BattleState> {
           firstBloodTaken: true,
           lastDamageDealt: counterDmg,
           lastHitWasCrit: isCrit,
+          strikeTarget: 'p1',
+          strikeCombo: nextP2Combo,
+          strikeSerial: state.strikeSerial + 1,
           combatBannerText: nextP1Hp <= 0
               ? 'K.O.! ${state.player2Name} KẾT LIỄU! -$counterDmg HP'
               : (!state.firstBloodTaken
                   ? 'CHIẾN CÔNG ĐẦU! ${state.player2Name} PHẢN ĐÒN -$counterDmg HP'
                   : '${state.player2Name} PHẢN ĐÒN! -$counterDmg HP'),
         );
-        _triggerImpactFeedback(isCorrect: false, isCrit: isCrit, curQ: curQ);
-        _scheduleAutoAdvanceRound();
+        _triggerImpactFeedback(
+          isCorrect: false,
+          isCrit: isCrit,
+          comboCount: nextP2Combo,
+          curQ: curQ,
+        );
+        if (_audioService.isTestMode) {
+          _scheduleAutoAdvanceRound();
+        } else {
+          _advanceFighterQuestionIndependently(isPlayer1: true);
+        }
       }
     }
   }
@@ -1062,7 +1139,7 @@ class BattleNotifier extends StateNotifier<BattleState> {
         state.p2LockedOut) {
       return;
     }
-    final curQ = state.currentQuestion;
+    final curQ = state.player2Question ?? state.currentQuestion;
     if (curQ == null) return;
 
     final elapsedMs = _roundStartedAt != null
@@ -1070,7 +1147,9 @@ class BattleNotifier extends StateNotifier<BattleState> {
         : 1200;
 
     if (option.isCorrect) {
-      _roundTimer?.cancel();
+      if (_audioService.isTestMode) {
+        _roundTimer?.cancel();
+      }
       final nextCombo = state.player2Combo + 1;
       final nextMaxCombo =
           nextCombo > state.player2MaxCombo ? nextCombo : state.player2MaxCombo;
@@ -1096,7 +1175,7 @@ class BattleNotifier extends StateNotifier<BattleState> {
       }
 
       state = state.copyWith(
-        isRoundResolved: true,
+        isRoundResolved: _audioService.isTestMode ? true : false,
         roundWinner: 'p2',
         p2SelectedOptionId: option.id,
         player1Hp: nextP1Hp,
@@ -1107,44 +1186,111 @@ class BattleNotifier extends StateNotifier<BattleState> {
         firstBloodTaken: true,
         lastDamageDealt: dmg,
         lastHitWasCrit: isCrit,
+        strikeTarget: 'p1',
+        strikeCombo: nextCombo,
+        strikeSerial: state.strikeSerial + 1,
         combatBannerText: banner,
       );
 
-      _triggerImpactFeedback(isCorrect: true, isCrit: isCrit, curQ: curQ);
-      _scheduleAutoAdvanceRound();
+      _triggerImpactFeedback(
+        isCorrect: true,
+        isCrit: isCrit,
+        comboCount: nextCombo,
+        curQ: curQ,
+      );
+      if (_audioService.isTestMode) {
+        _scheduleAutoAdvanceRound();
+      } else {
+        _advanceFighterQuestionIndependently(isPlayer1: false);
+      }
     } else {
       final nextP2Hp = (state.player2Hp - 12).clamp(0, BattleState.maxHp);
       final bothLocked = state.p1LockedOut || nextP2Hp <= 0;
       state = state.copyWith(
         p2SelectedOptionId: option.id,
-        p2LockedOut: true,
+        p2LockedOut: _audioService.isTestMode ? true : false,
         player2Hp: nextP2Hp,
         player2Combo: 0,
-        isRoundResolved: bothLocked,
+        isRoundResolved: _audioService.isTestMode ? bothLocked : false,
         roundWinner: bothLocked ? 'both_wrong' : null,
         lastDamageDealt: 12,
         lastHitWasCrit: false,
+        strikeTarget: 'p2',
+        strikeCombo: 1,
+        strikeSerial: state.strikeSerial + 1,
         combatBannerText:
             '${state.player2Name} bấm sai! Tự mất -12 HP',
       );
-      _triggerImpactFeedback(isCorrect: false, isCrit: false, curQ: curQ);
-      if (bothLocked) {
-        _roundTimer?.cancel();
-        _scheduleAutoAdvanceRound();
+      _triggerImpactFeedback(
+        isCorrect: false,
+        isCrit: false,
+        comboCount: 0,
+        curQ: curQ,
+      );
+      if (_audioService.isTestMode) {
+        if (bothLocked) {
+          _roundTimer?.cancel();
+          _scheduleAutoAdvanceRound();
+        }
+      } else {
+        _advanceFighterQuestionIndependently(isPlayer1: false);
       }
+    }
+  }
+
+  /// Chuyển câu hỏi độc lập cho từng bên (2 bên đánh riêng, không cần chờ đối phương hay bấm Sang hiệp tiếp theo).
+  void _advanceFighterQuestionIndependently({required bool isPlayer1}) {
+    if (state.phase != BattlePhase.fighting) return;
+    if (state.isKnockOut) {
+      unawaited(_finishMatch());
+      return;
+    }
+
+    if (isPlayer1) {
+      final nextP1Idx = state.p1RoundIndex + 1;
+      if (nextP1Idx >= state.questions.length) {
+        unawaited(_finishMatch());
+        return;
+      }
+      state = state.copyWith(
+        currentRoundIndex: nextP1Idx,
+        p1RoundIndex: nextP1Idx,
+        isRoundResolved: false,
+        clearP1Selection: true,
+        p1LockedOut: false,
+        roundRemainingDeciseconds: 80,
+      );
+      _roundStartedAt = DateTime.now();
+      final nextQ = state.player1Question;
+      if (nextQ != null && _ref.read(appSettingsProvider).autoPlayQuestionAudio) {
+        unawaited(_audioService.playAsset(nextQ.audioAsset));
+      }
+      _startRoundCountdownAndBotTimers();
+    } else {
+      final nextP2Idx = state.p2RoundIndex + 1;
+      if (nextP2Idx >= state.questions.length) {
+        unawaited(_finishMatch());
+        return;
+      }
+      state = state.copyWith(
+        p2RoundIndex: nextP2Idx,
+        isRoundResolved: false,
+        clearP2Selection: true,
+        p2LockedOut: false,
+      );
     }
   }
 
   void _triggerOpponentAiStrike() {
     if (state.isRoundResolved || state.phase != BattlePhase.fighting) return;
-    final curQ = state.currentQuestion;
+    final curQ = state.player2Question ?? state.currentQuestion;
     if (curQ == null) return;
 
     final (_, _, acc) = _opponentProfileParams();
     final isOpponentCorrect = _rng.nextDouble() <= acc;
+    final nextP2Idx = (state.p2RoundIndex + 1).clamp(0, state.questions.length);
 
     if (isOpponentCorrect) {
-      _roundTimer?.cancel();
       final nextP2Combo = state.player2Combo + 1;
       final nextP2Max = nextP2Combo > state.player2MaxCombo
           ? nextP2Combo
@@ -1155,8 +1301,7 @@ class BattleNotifier extends StateNotifier<BattleState> {
       final isFirstBlood = !state.firstBloodTaken;
 
       state = state.copyWith(
-        isRoundResolved: true,
-        roundWinner: 'p2',
+        p2RoundIndex: nextP2Idx < state.questions.length ? nextP2Idx : state.p2RoundIndex,
         p2SelectedOptionId: curQ.correctOption.id,
         player1Hp: nextP1Hp,
         player2Combo: nextP2Combo,
@@ -1166,25 +1311,55 @@ class BattleNotifier extends StateNotifier<BattleState> {
         firstBloodTaken: true,
         lastDamageDealt: dmg,
         lastHitWasCrit: isCrit,
+        strikeTarget: 'p1',
+        strikeCombo: nextP2Combo,
+        strikeSerial: state.strikeSerial + 1,
         combatBannerText: nextP1Hp <= 0
             ? 'K.O.! ${state.player2Name} KẾT LIỄU! -$dmg HP'
             : (isFirstBlood
-                ? 'CHIẾN CÔNG ĐẦU! ${state.player2Name} RA ĐÒN TRƯỚC -$dmg HP'
+                ? 'CHIẾN CÔNG ĐẦU! ${state.player2Name} TẤN CÔNG -$dmg HP'
                 : (isCrit
-                    ? '${state.player2Name} TUYỆT KỸ COMBO x$nextP2Combo! -$dmg HP'
-                    : '${state.player2Name} ra đòn trước! -$dmg HP')),
+                    ? '${state.player2Name} DỒN COMBO SÉT ĐÁNH x$nextP2Combo! -$dmg HP'
+                    : '${state.player2Name} tung đòn! -$dmg HP')),
       );
-      _triggerImpactFeedback(isCorrect: false, isCrit: isCrit, curQ: curQ);
-      _scheduleAutoAdvanceRound();
+      _triggerImpactFeedback(
+        isCorrect: false,
+        isCrit: isCrit,
+        comboCount: nextP2Combo,
+        curQ: curQ,
+        playQuestionAudio: false,
+      );
+      if (nextP1Hp <= 0 || nextP2Idx >= state.questions.length) {
+        unawaited(_finishMatch());
+        return;
+      }
     } else {
-      // Opponent missed! Give player a free opening banner
+      // Opponent missed on their own board -> Player 1 keeps playing uninterrupted
       final wrongOpt = curQ.options.firstWhere((o) => !o.isCorrect);
       state = state.copyWith(
+        p2RoundIndex: nextP2Idx < state.questions.length ? nextP2Idx : state.p2RoundIndex,
         p2SelectedOptionId: wrongOpt.id,
         player2Combo: 0,
         combatBannerText:
-            '${state.player2Name} trả lời trượt! Cơ hội tấn công của bạn!',
+            '${state.player2Name} bấm trượt câu ${state.p2RoundIndex + 1}! Thời cơ dồn Combo!',
       );
+    }
+
+    // Schedule next independent attack from Opponent AI
+    if (!_audioService.isTestMode &&
+        !_isAppPaused &&
+        state.phase == BattlePhase.fighting) {
+      final (minMs, maxMs, _) = _opponentProfileParams();
+      final delayMs = minMs + _rng.nextInt(max(100, maxMs - minMs));
+      _botActionTimer?.cancel();
+      _botActionTimer = Timer(Duration(milliseconds: delayMs), () {
+        if (!mounted ||
+            _isAppPaused ||
+            state.phase != BattlePhase.fighting) {
+          return;
+        }
+        _triggerOpponentAiStrike();
+      });
     }
   }
 
@@ -1199,35 +1374,50 @@ class BattleNotifier extends StateNotifier<BattleState> {
         : state.player2Hp;
 
     state = state.copyWith(
-      isRoundResolved: true,
-      roundWinner: state.mode == BattleMode.localSplitScreen ? 'both_wrong' : 'p2',
       player1Hp: nextP1Hp,
       player2Hp: nextP2Hp,
       player1Combo: 0,
       lastDamageDealt: 15,
       lastHitWasCrit: false,
-      combatBannerText: 'Hết giờ! Mất -15 HP',
+      strikeTarget: 'p1',
+      strikeCombo: 1,
+      strikeSerial: state.strikeSerial + 1,
+      combatBannerText: 'Quá 8s câu này! Mất -15 HP & chuyển câu mới',
     );
-    _triggerImpactFeedback(isCorrect: false, isCrit: false, curQ: curQ);
-    _scheduleAutoAdvanceRound();
+    _triggerImpactFeedback(
+      isCorrect: false,
+      isCrit: false,
+      comboCount: 0,
+      curQ: curQ,
+    );
+    _advanceFighterQuestionIndependently(isPlayer1: true);
   }
 
   void _triggerImpactFeedback({
     required bool isCorrect,
     required bool isCrit,
+    required int comboCount,
     required QuestionModel curQ,
+    bool playQuestionAudio = true,
   }) {
     final settings = _ref.read(appSettingsProvider);
-    if (settings.hapticFeedbackEnabled) {
+    if (settings.hapticFeedbackEnabled && !_audioService.isTestMode) {
       try {
-        if (isCrit) {
+        if (isCrit || comboCount >= 3) {
           HapticFeedback.heavyImpact();
-        } else {
+          Future.delayed(const Duration(milliseconds: 90), () {
+            try {
+              HapticFeedback.mediumImpact();
+            } catch (_) {}
+          });
+        } else if (comboCount == 2) {
           HapticFeedback.mediumImpact();
+        } else {
+          HapticFeedback.lightImpact();
         }
       } catch (_) {}
     }
-    if (curQ.isSightReading) {
+    if (playQuestionAudio && curQ.isSightReading) {
       unawaited(_audioService.playAsset(curQ.audioAsset));
     }
     unawaited(_audioService.playFeedbackSfx(isCorrect: isCorrect));
@@ -1236,10 +1426,8 @@ class BattleNotifier extends StateNotifier<BattleState> {
   void _scheduleAutoAdvanceRound() {
     _autoNextRoundTimer?.cancel();
     if (_audioService.isTestMode) return;
-    _autoNextRoundTimer = Timer(const Duration(milliseconds: 1350), () {
-      if (!mounted ||
-          state.phase != BattlePhase.fighting ||
-          !state.isRoundResolved) {
+    _autoNextRoundTimer = Timer(const Duration(milliseconds: 450), () {
+      if (!mounted || state.phase != BattlePhase.fighting) {
         return;
       }
       nextRound();
@@ -1262,6 +1450,8 @@ class BattleNotifier extends StateNotifier<BattleState> {
 
       state = state.copyWith(
         currentRoundIndex: nextIdx,
+        p1RoundIndex: nextIdx,
+        p2RoundIndex: nextIdx,
         isRoundResolved: false,
         clearRoundWinner: true,
         clearP1Selection: true,

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -1357,6 +1359,17 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
     );
   }
 
+  String _shortBattlePrompt(String rawPrompt) {
+    String out = rawPrompt.replaceAll(' (hoặc bấm phím đàn)', '').trim();
+    if (out.startsWith('[')) {
+      final closeIdx = out.indexOf(']');
+      if (closeIdx != -1 && closeIdx + 1 < out.length) {
+        out = out.substring(closeIdx + 1).trim();
+      }
+    }
+    return out;
+  }
+
   Widget _buildFightingArenaView(
     BuildContext context,
     WidgetRef ref,
@@ -1365,303 +1378,351 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
   ) {
     final notifier = ref.read(battleProvider.notifier);
     final audioService = ref.watch(audioServiceProvider);
-    final curQ = state.currentQuestion;
-    if (curQ == null) return const SizedBox.shrink();
+    final p1Q = state.player1Question ?? state.currentQuestion;
+    final p2Q = state.player2Question ?? state.currentQuestion;
+    if (p1Q == null) return const SizedBox.shrink();
 
-    final showStaff = curQ.isSightReading ||
-        (curQ.topicId == 'topic_notes' && state.isRoundResolved);
+    final showStaff = p1Q.isSightReading ||
+        (p1Q.topicId == 'topic_notes' && state.isRoundResolved);
 
-    return ListView(
-      key: const Key('battle_fighting_arena_view'),
-      padding: const EdgeInsets.fromLTRB(14, 6, 14, 20),
-      children: [
-        // 1. Top RPG Dual Fighter Health Bar HUD
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: isDark ? AppColors.surfaceDark : Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: isDark
-                  ? Colors.white.withOpacity(0.14)
-                  : const Color(0xFFD8E4F8),
-            ),
-          ),
-          child: Column(
+    return TweenAnimationBuilder<double>(
+      key: ValueKey('shake_${state.strikeSerial}'),
+      tween: Tween<double>(
+        begin: state.strikeSerial > 0 ? 1.0 : 0.0,
+        end: 0.0,
+      ),
+      duration: const Duration(milliseconds: 340),
+      curve: Curves.easeOutCubic,
+      builder: (context, shakeProgress, child) {
+        final amplitude = state.strikeCombo >= 3
+            ? 8.0
+            : (state.strikeCombo == 2 ? 5.0 : 2.5);
+        final dx = math.sin(shakeProgress * math.pi * 6) *
+            amplitude *
+            shakeProgress;
+        return Transform.translate(
+          offset: Offset(dx, 0),
+          child: child,
+        );
+      },
+      child: ListView(
+        key: const Key('battle_fighting_arena_view'),
+        padding: const EdgeInsets.fromLTRB(14, 6, 14, 20),
+        children: [
+          // 1. Top RPG Dual Fighter Health Bar HUD + Lightning Bolt Strike Overlay
+          Stack(
+            clipBehavior: Clip.none,
             children: [
-              Row(
-                children: [
-                  // Fighter 1 HP
-                  Expanded(
-                    child: _buildFighterHudSide(
-                      name: state.player1Name,
-                      hp: state.player1Hp,
-                      combo: state.player1Combo,
-                      color: const Color(0xFF4F46E5),
-                      alignRight: false,
-                    ),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.surfaceDark : Colors.white,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: state.strikeSerial > 0 && state.strikeCombo >= 2
+                        ? const Color(0xFFF59E0B).withOpacity(0.65)
+                        : (isDark
+                            ? Colors.white.withOpacity(0.14)
+                            : const Color(0xFFD8E4F8)),
+                    width: state.strikeSerial > 0 && state.strikeCombo >= 2
+                        ? 1.6
+                        : 1.0,
                   ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: Column(
+                ),
+                child: Column(
+                  children: [
+                    Row(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF59E0B).withOpacity(0.18),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            'Hiệp ${state.currentRoundIndex + 1}/${state.totalRounds}',
-                            style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w900,
-                              color: Color(0xFFF59E0B),
-                            ),
+                        // Fighter 1 HP & Independent Question Progress
+                        Expanded(
+                          child: _buildFighterHudSide(
+                            name: state.player1Name,
+                            hp: state.player1Hp,
+                            combo: state.player1Combo,
+                            questionStep:
+                                'Câu ${state.p1RoundIndex + 1}/${state.totalRounds}',
+                            color: const Color(0xFF4F46E5),
+                            alignRight: false,
                           ),
                         ),
-                        const SizedBox(height: 3),
-                        Text(
-                          '${(state.roundRemainingDeciseconds / 10).toStringAsFixed(1)}s',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w800,
-                            color: state.roundRemainingDeciseconds <= 25
-                                ? AppColors.wrong
-                                : AppColors.textSecondaryLight,
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          child: Column(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 3,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF59E0B)
+                                      .withOpacity(0.18),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.flash_on_rounded,
+                                      size: 12,
+                                      color: Color(0xFFF59E0B),
+                                    ),
+                                    SizedBox(width: 2),
+                                    Text(
+                                      'ĐỘC LẬP',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w900,
+                                        color: Color(0xFFF59E0B),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                '${(state.roundRemainingDeciseconds / 10).toStringAsFixed(1)}s',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                  color: state.roundRemainingDeciseconds <= 25
+                                      ? AppColors.wrong
+                                      : AppColors.textSecondaryLight,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        // Fighter 2 HP & Independent Question Progress
+                        Expanded(
+                          child: _buildFighterHudSide(
+                            name: state.player2Name,
+                            hp: state.player2Hp,
+                            combo: state.player2Combo,
+                            questionStep:
+                                'Câu ${state.p2RoundIndex + 1}/${state.totalRounds}',
+                            color: const Color(0xFFEC4899),
+                            alignRight: true,
                           ),
                         ),
                       ],
                     ),
-                  ),
-                  // Fighter 2 HP
-                  Expanded(
-                    child: _buildFighterHudSide(
-                      name: state.player2Name,
-                      hp: state.player2Hp,
-                      combo: state.player2Combo,
-                      color: const Color(0xFFEC4899),
-                      alignRight: true,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              // Round countdown bar
-              ClipRRect(
-                borderRadius: BorderRadius.circular(99),
-                child: LinearProgressIndicator(
-                  value: (state.roundRemainingDeciseconds / 80.0).clamp(0.0, 1.0),
-                  minHeight: 5,
-                  backgroundColor:
-                      isDark ? Colors.white12 : Colors.grey.shade200,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    state.roundRemainingDeciseconds <= 25
-                        ? AppColors.wrong
-                        : const Color(0xFF6366F1),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        // 2. Floating Combat Damage / Crit Banner with smooth scale entrance
-        if (state.combatBannerText != null) ...[
-          const SizedBox(height: 8),
-          TweenAnimationBuilder<double>(
-            key: ValueKey('banner_${state.currentRoundIndex}_${state.combatBannerText}'),
-            tween: Tween<double>(begin: 0.92, end: 1.0),
-            duration: const Duration(milliseconds: 220),
-            curve: Curves.easeOutBack,
-            builder: (context, scale, child) => Transform.scale(
-              scale: scale,
-              child: child,
-            ),
-            child: Container(
-              key: const Key('battle_combat_banner'),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: state.lastHitWasCrit
-                      ? [const Color(0xFFF59E0B), const Color(0xFFEF4444)]
-                      : (state.roundWinner == 'p1'
-                          ? [const Color(0xFF10B981), const Color(0xFF059669)]
-                          : [const Color(0xFFEC4899), const Color(0xFFBE185D)]),
-                ),
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: (state.lastHitWasCrit
-                            ? const Color(0xFFF59E0B)
-                            : const Color(0xFF4F46E5))
-                        .withOpacity(0.28),
-                    blurRadius: 10,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    state.lastHitWasCrit
-                        ? Icons.local_fire_department_rounded
-                        : (state.roundWinner == 'p1'
-                            ? Icons.bolt_rounded
-                            : Icons.shield_rounded),
-                    color: Colors.white,
-                    size: 16,
-                  ),
-                  const SizedBox(width: 6),
-                  Flexible(
-                    child: Text(
-                      state.combatBannerText!,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
+                    const SizedBox(height: 8),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(99),
+                      child: LinearProgressIndicator(
+                        value: (state.roundRemainingDeciseconds / 80.0)
+                            .clamp(0.0, 1.0),
+                        minHeight: 5,
+                        backgroundColor:
+                            isDark ? Colors.white12 : Colors.grey.shade200,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          state.roundRemainingDeciseconds <= 25
+                              ? AppColors.wrong
+                              : const Color(0xFF6366F1),
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-        const SizedBox(height: 10),
-
-        // 3. Question Stage (Staff or Audio Orb)
-        Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: isDark ? AppColors.surfaceDark : Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: isDark
-                  ? Colors.white.withOpacity(0.14)
-                  : const Color(0xFFD8E4F8),
-            ),
-          ),
-          child: Column(
-            children: [
-              Text(
-                curQ.prompt.replaceAll(' (hoặc bấm phím đàn)', ''),
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
+                  ],
                 ),
               ),
-              const SizedBox(height: 10),
-              if (showStaff) ...[
-                MusicalStaffWidget(
-                  targetNoteKey: curQ.correctOption.optionKey,
-                  showNote: state.isRoundResolved,
-                  isSightReading: curQ.isSightReading,
-                ),
-                const SizedBox(height: 8),
-              ],
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  key: const Key('btn_battle_play_audio'),
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size(0, 42),
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    side: const BorderSide(
-                      color: Color(0xFF6366F1),
-                      width: 1.5,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  onPressed: () => audioService.playAsset(curQ.audioAsset),
-                  icon: const Icon(
-                    Icons.volume_up_rounded,
-                    color: Color(0xFF6366F1),
-                  ),
-                  label: const Text(
-                    'Nghe lại âm thanh hiệp đấu',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF6366F1),
+              if (state.strikeSerial > 0 && state.strikeTarget != null)
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: TweenAnimationBuilder<double>(
+                      key: ValueKey('lightning_${state.strikeSerial}'),
+                      tween: Tween<double>(begin: 1.0, end: 0.0),
+                      duration: const Duration(milliseconds: 520),
+                      curve: Curves.easeOut,
+                      builder: (context, flashOpacity, _) {
+                        if (flashOpacity <= 0.02) {
+                          return const SizedBox.shrink();
+                        }
+                        return CustomPaint(
+                          painter: _LightningStrikePainter(
+                            strikeRightSide: state.strikeTarget == 'p2',
+                            comboLevel: state.strikeCombo,
+                            opacity: flashOpacity,
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ),
-              ),
             ],
           ),
-        ),
-        const SizedBox(height: 12),
 
-        // 4. Answer Controls (Single Player vs Bot/Online OR Dual Split-Screen 1v1)
-        if (state.mode == BattleMode.localSplitScreen)
-          _buildSplitScreenControls(context, notifier, state, curQ, isDark)
-        else
-          _buildSingleFighterControls(context, notifier, state, curQ, isDark),
-
-        if (state.isRoundResolved) ...[
-          if (curQ.explanation.isNotEmpty) ...[
+          // 2. Floating Combat Damage / Lightning Combo Banner
+          if (state.combatBannerText != null) ...[
             const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-              decoration: BoxDecoration(
-                color: const Color(0xFF4F46E5).withOpacity(0.08),
-                borderRadius: BorderRadius.circular(11),
-                border: Border.all(
-                  color: const Color(0xFF4F46E5).withOpacity(0.25),
-                ),
+            TweenAnimationBuilder<double>(
+              key: ValueKey(
+                  'banner_${state.strikeSerial}_${state.combatBannerText}'),
+              tween: Tween<double>(begin: 0.92, end: 1.0),
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOutBack,
+              builder: (context, scale, child) => Transform.scale(
+                scale: scale,
+                child: child,
               ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Padding(
-                    padding: EdgeInsets.only(top: 1),
-                    child: Icon(
-                      Icons.lightbulb_outline_rounded,
-                      size: 14,
-                      color: Color(0xFF4F46E5),
-                    ),
+              child: Container(
+                key: const Key('battle_combat_banner'),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: state.lastHitWasCrit || state.strikeCombo >= 2
+                        ? [const Color(0xFFF59E0B), const Color(0xFFEC4899)]
+                        : (state.roundWinner == 'p1'
+                            ? [const Color(0xFF10B981), const Color(0xFF059669)]
+                            : [
+                                const Color(0xFFEC4899),
+                                const Color(0xFFBE185D)
+                              ]),
                   ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      curQ.explanation,
-                      style: const TextStyle(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w600,
-                        height: 1.32,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: (state.lastHitWasCrit || state.strikeCombo >= 2
+                              ? const Color(0xFFF59E0B)
+                              : const Color(0xFF4F46E5))
+                          .withOpacity(0.28),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      state.lastHitWasCrit || state.strikeCombo >= 2
+                          ? Icons.flash_on_rounded
+                          : (state.roundWinner == 'p1'
+                              ? Icons.bolt_rounded
+                              : Icons.shield_rounded),
+                      color: Colors.white,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        state.combatBannerText!,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ],
           const SizedBox(height: 10),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              key: const Key('btn_battle_next_round'),
-              onPressed: () => notifier.nextRound(),
-              icon: const Icon(Icons.skip_next_rounded),
-              label: Text(
-                state.isKnockOut ||
-                        state.currentRoundIndex + 1 >= state.totalRounds
-                    ? 'Xem Kết Quả Trận Đấu'
-                    : 'Sang Hiệp Tiếp Theo',
-                style: const TextStyle(fontWeight: FontWeight.w800),
+
+          // 3. Independent Combat Interfaces:
+          // - In Local Split-Screen: 2 independent stations (Player 1 has their own question & options, Player 2 has their own question & options!)
+          // - In 1v1 Bot / Matchmaking: Player 1's own continuous question board (Opponent attacks independently in real time)
+          if (state.mode == BattleMode.localSplitScreen && p2Q != null)
+            _buildSplitScreenControls(
+              context,
+              notifier,
+              audioService,
+              state,
+              p1Q,
+              p2Q,
+              isDark,
+            )
+          else ...[
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.surfaceDark : Colors.white,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: isDark
+                      ? Colors.white.withOpacity(0.14)
+                      : const Color(0xFFD8E4F8),
+                ),
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    _shortBattlePrompt(p1Q.prompt),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  if (showStaff) ...[
+                    MusicalStaffWidget(
+                      targetNoteKey: p1Q.correctOption.optionKey,
+                      showNote: state.isRoundResolved,
+                      isSightReading: p1Q.isSightReading,
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      key: const Key('btn_battle_play_audio'),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(0, 42),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        side: const BorderSide(
+                          color: Color(0xFF6366F1),
+                          width: 1.5,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      onPressed: () => audioService.playAsset(p1Q.audioAsset),
+                      icon: const Icon(
+                        Icons.volume_up_rounded,
+                        color: Color(0xFF6366F1),
+                      ),
+                      label: const Text(
+                        'Nghe lại âm thanh câu này',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF6366F1),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
+            const SizedBox(height: 12),
+            _buildSingleFighterControls(context, notifier, state, p1Q, isDark),
+          ],
+
+          if (state.isRoundResolved) ...[
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                key: const Key('btn_battle_next_round'),
+                onPressed: () => notifier.nextRound(),
+                icon: const Icon(Icons.skip_next_rounded),
+                label: Text(
+                  state.isKnockOut ||
+                          state.currentRoundIndex + 1 >= state.totalRounds
+                      ? 'Xem Kết Quả Trận Đấu'
+                      : 'Sang Hiệp Tiếp Theo',
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+              ),
+            ),
+          ],
         ],
-      ],
+      ),
     );
   }
 
@@ -1669,6 +1730,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
     required String name,
     required int hp,
     required int combo,
+    required String questionStep,
     required Color color,
     required bool alignRight,
   }) {
@@ -1723,13 +1785,23 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
           ),
         ),
         const SizedBox(height: 3),
-        Text(
-          '$hp / ${BattleState.maxHp} HP',
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w800,
-            color: hpColor,
-          ),
+        Row(
+          mainAxisAlignment:
+              alignRight ? MainAxisAlignment.end : MainAxisAlignment.start,
+          children: [
+            Flexible(
+              child: Text(
+                '$hp HP • $questionStep',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 10.8,
+                  fontWeight: FontWeight.w800,
+                  color: hpColor,
+                ),
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -1746,7 +1818,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
         mainAxisSize: MainAxisSize.min,
         children: [
           const Icon(
-            Icons.local_fire_department_rounded,
+            Icons.flash_on_rounded,
             size: 12,
             color: Color(0xFFF59E0B),
           ),
@@ -1790,18 +1862,22 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
     );
   }
 
+  /// Giao diện Chiến đấu 2 Người 1 Máy:
+  /// Mỗi bên có một giao diện câu hỏi, nút nghe và 4 đáp án riêng biệt, đánh độc lập không chờ nhau!
   Widget _buildSplitScreenControls(
     BuildContext context,
     BattleNotifier notifier,
+    dynamic audioService,
     BattleState state,
-    QuestionModel curQ,
+    QuestionModel p1Q,
+    QuestionModel p2Q,
     bool isDark,
   ) {
     const badges = ['A', 'B', 'C', 'D'];
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Player 1 Pad (Left)
+        // Giao diện riêng của Người chơi 1 (Trái)
         Expanded(
           child: Container(
             padding: const EdgeInsets.all(8),
@@ -1814,42 +1890,74 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
             ),
             child: Column(
               children: [
-                const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Icon(
-                      Icons.shield_rounded,
-                      size: 13,
-                      color: Color(0xFF4F46E5),
-                    ),
-                    SizedBox(width: 4),
-                    Flexible(
-                      child: Text(
-                        'NGƯỜI CHƠI 1',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w900,
-                          color: Color(0xFF4F46E5),
-                        ),
+                    const Flexible(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.shield_rounded,
+                            size: 13,
+                            color: Color(0xFF4F46E5),
+                          ),
+                          SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              'NGƯỜI CHƠI 1',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w900,
+                                color: Color(0xFF4F46E5),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
+                    ),
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 26,
+                        minHeight: 26,
+                      ),
+                      icon: const Icon(
+                        Icons.volume_up_rounded,
+                        size: 16,
+                        color: Color(0xFF4F46E5),
+                      ),
+                      onPressed: () => audioService.playAsset(p1Q.audioAsset),
                     ),
                   ],
                 ),
+                const SizedBox(height: 4),
+                Text(
+                  _shortBattlePrompt(p1Q.prompt),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
                 const SizedBox(height: 6),
-                for (int i = 0; i < curQ.options.length; i++) ...[
+                for (int i = 0; i < p1Q.options.length; i++) ...[
                   if (i > 0) const SizedBox(height: 6),
                   _buildBattleOptionTile(
                     key: Key('battle_p1_opt_$i'),
                     badge: badges[i % badges.length],
-                    option: curQ.options[i],
+                    option: p1Q.options[i],
                     isResolved: state.isRoundResolved || state.p1LockedOut,
                     selectedOptionId: state.p1SelectedOptionId,
                     accentColor: const Color(0xFF4F46E5),
                     isDark: isDark,
                     compact: true,
-                    onTap: () => notifier.submitPlayer1Answer(curQ.options[i]),
+                    onTap: () => notifier.submitPlayer1Answer(p1Q.options[i]),
                   ),
                 ],
               ],
@@ -1857,7 +1965,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
           ),
         ),
         const SizedBox(width: 8),
-        // Player 2 Pad (Right)
+        // Giao diện riêng của Người chơi 2 (Phải)
         Expanded(
           child: Container(
             padding: const EdgeInsets.all(8),
@@ -1870,42 +1978,74 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
             ),
             child: Column(
               children: [
-                const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Icon(
-                      Icons.local_fire_department_rounded,
-                      size: 13,
-                      color: Color(0xFFEC4899),
-                    ),
-                    SizedBox(width: 4),
-                    Flexible(
-                      child: Text(
-                        'NGƯỜI CHƠI 2',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w900,
-                          color: Color(0xFFEC4899),
-                        ),
+                    const Flexible(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.local_fire_department_rounded,
+                            size: 13,
+                            color: Color(0xFFEC4899),
+                          ),
+                          SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              'NGƯỜI CHƠI 2',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w900,
+                                color: Color(0xFFEC4899),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
+                    ),
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 26,
+                        minHeight: 26,
+                      ),
+                      icon: const Icon(
+                        Icons.volume_up_rounded,
+                        size: 16,
+                        color: Color(0xFFEC4899),
+                      ),
+                      onPressed: () => audioService.playAsset(p2Q.audioAsset),
                     ),
                   ],
                 ),
+                const SizedBox(height: 4),
+                Text(
+                  _shortBattlePrompt(p2Q.prompt),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
                 const SizedBox(height: 6),
-                for (int i = 0; i < curQ.options.length; i++) ...[
+                for (int i = 0; i < p2Q.options.length; i++) ...[
                   if (i > 0) const SizedBox(height: 6),
                   _buildBattleOptionTile(
                     key: Key('battle_p2_opt_$i'),
                     badge: badges[i % badges.length],
-                    option: curQ.options[i],
+                    option: p2Q.options[i],
                     isResolved: state.isRoundResolved || state.p2LockedOut,
                     selectedOptionId: state.p2SelectedOptionId,
                     accentColor: const Color(0xFFEC4899),
                     isDark: isDark,
                     compact: true,
-                    onTap: () => notifier.submitPlayer2Answer(curQ.options[i]),
+                    onTap: () => notifier.submitPlayer2Answer(p2Q.options[i]),
                   ),
                 ],
               ],
@@ -2381,5 +2521,98 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
         ],
       ),
     );
+  }
+}
+
+/// CustomPainter vẽ hiệu ứng Tia Sét Lôi Điện (Lightning Strike) đánh thẳng vào thanh máu mục tiêu khi tung đòn / dồn Combo.
+class _LightningStrikePainter extends CustomPainter {
+  final bool strikeRightSide;
+  final int comboLevel;
+  final double opacity;
+
+  const _LightningStrikePainter({
+    required this.strikeRightSide,
+    required this.comboLevel,
+    required this.opacity,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final effOpacity = opacity.clamp(0.0, 1.0);
+    if (effOpacity <= 0.01) return;
+
+    final targetX =
+        strikeRightSide ? size.width * 0.78 : size.width * 0.22;
+    final targetY = size.height * 0.55;
+
+    final Color boltColor = comboLevel >= 3
+        ? const Color(0xFFEC4899)
+        : (comboLevel >= 2
+            ? const Color(0xFFF59E0B)
+            : const Color(0xFF38BDF8));
+
+    // Vòng hào quang chấn động tại điểm sét đánh trúng thanh máu
+    final glowPaint = Paint()
+      ..shader = RadialGradient(
+        colors: [
+          boltColor.withOpacity(0.55 * effOpacity),
+          boltColor.withOpacity(0.0),
+        ],
+      ).createShader(
+        Rect.fromCircle(
+          center: Offset(targetX, targetY),
+          radius: comboLevel >= 2 ? 56.0 : 38.0,
+        ),
+      );
+    canvas.drawCircle(
+      Offset(targetX, targetY),
+      comboLevel >= 2 ? 56.0 : 38.0,
+      glowPaint,
+    );
+
+    // Đường tia sét chính zig-zag từ đỉnh xuống điểm nổ
+    final mainPath = Path()
+      ..moveTo(targetX - 10, -6)
+      ..lineTo(targetX + 8, size.height * 0.18)
+      ..lineTo(targetX - 7, size.height * 0.34)
+      ..lineTo(targetX + 6, size.height * 0.46)
+      ..lineTo(targetX, targetY);
+
+    final outerBoltPaint = Paint()
+      ..color = boltColor.withOpacity(0.85 * effOpacity)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = comboLevel >= 2 ? 5.0 : 3.5
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    canvas.drawPath(mainPath, outerBoltPaint);
+
+    final coreBoltPaint = Paint()
+      ..color = Colors.white.withOpacity(0.95 * effOpacity)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    canvas.drawPath(mainPath, coreBoltPaint);
+
+    // Nhánh sét phụ khi dồn Combo (x2, x3+)
+    if (comboLevel >= 2) {
+      final branchPath = Path()
+        ..moveTo(targetX - 7, size.height * 0.34)
+        ..lineTo(targetX - 24, size.height * 0.48)
+        ..lineTo(targetX - 18, size.height * 0.62);
+      final branchPaint = Paint()
+        ..color = const Color(0xFFFFE082).withOpacity(0.85 * effOpacity)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.4
+        ..strokeCap = StrokeCap.round;
+      canvas.drawPath(branchPath, branchPaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _LightningStrikePainter oldDelegate) {
+    return oldDelegate.opacity != opacity ||
+        oldDelegate.strikeRightSide != strikeRightSide ||
+        oldDelegate.comboLevel != comboLevel;
   }
 }

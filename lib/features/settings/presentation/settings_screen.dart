@@ -12,7 +12,7 @@ import '../../metronome/application/metronome_controller.dart';
 import '../../practice/application/practice_session_controller.dart';
 import '../../support_developer/application/rewarded_ad_controller.dart';
 
-/// UI-11: Cài đặt ứng dụng (UC-15 & BR-14)
+/// Màn hình Cài đặt hệ thống
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
@@ -23,7 +23,7 @@ class SettingsScreen extends ConsumerWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('Cảnh báo xóa dữ liệu học tập'),
         content: const Text(
-          'Hành động này sẽ xóa toàn bộ lịch sử phiên học, điểm số, thống kê độ chính xác, chuỗi ngày học và danh sách câu cần ôn tập trên thiết bị này. Dữ liệu đã xóa không thể khôi phục (BR-14). Bạn có chắc chắn muốn tiếp tục?',
+          'Hành động này sẽ xóa toàn bộ lịch sử phiên học, điểm số, thống kê độ chính xác, chuỗi ngày học và danh sách câu cần ôn tập trên thiết bị này. Dữ liệu đã xóa không thể khôi phục. Bạn có chắc chắn muốn tiếp tục?',
         ),
         actions: [
           TextButton(
@@ -189,7 +189,7 @@ class SettingsScreen extends ConsumerWidget {
                             children: [
                               const Expanded(
                                 child: Text(
-                                  'Solfa Studio v1.8.2',
+                                  'Solfa Studio v1.8.3',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
@@ -867,7 +867,7 @@ class SettingsScreen extends ConsumerWidget {
                     onTap: () => showLicensePage(
                       context: context,
                       applicationName: 'Solfa Studio',
-                      applicationVersion: '1.8.2 (Offline-First)',
+                      applicationVersion: '1.8.3 (Offline-First)',
                       applicationIcon: const Padding(
                         padding: EdgeInsets.all(8.0),
                         child: SolfaLogo(size: 56),

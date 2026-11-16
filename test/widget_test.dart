@@ -578,15 +578,21 @@ void main() {
         await pumpFrames(250);
         expect(tester.takeException(), isNull);
 
-        // 2. Phòng luyện tập (TopicsScreen) -> Chọn Mức 1..4
+        // 2. Phòng luyện tập (TopicsScreen) -> Lưới 2 cột thẻ lớn -> Chạm mở Modal chọn Mức 1..4
         router.go('/topics');
         await pumpFrames();
+        expect(find.byKey(const Key('topic_grid_card_topic_notes')), findsOneWidget);
+        expect(find.byKey(const Key('topic_grid_card_topic_staff_reading')), findsOneWidget);
+        await tester.tap(find.byKey(const Key('topic_grid_card_topic_notes')));
+        await pumpFrames(300);
         expect(
           find.byKey(const Key('topic_note_lvl_lvl_notes_basic')),
           findsOneWidget,
         );
         await tester.tap(find.byKey(const Key('topic_note_lvl_lvl_notes_inter')));
         await pumpFrames(200);
+        Navigator.of(tester.element(find.byKey(const Key('modal_topic_practice_setup')))).pop();
+        await pumpFrames(250);
         expect(tester.takeException(), isNull);
 
         // 3. Màn hình làm bài (QuizScreen) với Khuông nhạc Khóa Sol + Đàn Piano + 4 Mức độ
@@ -1282,23 +1288,28 @@ void main() {
         expect(find.byKey(const Key('battle_p2_opt_0')), findsOneWidget);
         expect(tester.takeException(), isNull);
 
-        // Hiệp 1: Người chơi 1 bấm sai (bị khóa và tự mất -12 HP), Người chơi 2 bấm đúng và tung đòn!
+        // Hiệp 1: 2 bên có câu hỏi độc lập (player1Question != player2Question), kèm hiệu ứng Sét đánh (strikeSerial / strikeTarget)
         await tester.runAsync(() async {
-          final q1 = container.read(battleProvider).currentQuestion!;
-          final wrongOpt = q1.options.firstWhere((o) => !o.isCorrect);
+          final p1Q = container.read(battleProvider).player1Question!;
+          final p2Q = container.read(battleProvider).player2Question!;
+          expect(p1Q.id, isNot(equals(p2Q.id)),
+              reason: '2 bên đánh riêng phải có 2 câu hỏi độc lập');
+          final wrongOpt = p1Q.options.firstWhere((o) => !o.isCorrect);
           await battleNotifier.submitPlayer1Answer(wrongOpt);
           expect(container.read(battleProvider).p1LockedOut, isTrue);
           expect(container.read(battleProvider).player1Hp, equals(88));
           expect(container.read(battleProvider).isRoundResolved, isFalse);
 
-          await battleNotifier.submitPlayer2Answer(q1.correctOption);
+          await battleNotifier.submitPlayer2Answer(p2Q.correctOption);
           final hpAfterFirstHit = container.read(battleProvider).player1Hp;
           // Rapid double-tap on already resolved round must be ignored safely
-          await battleNotifier.submitPlayer2Answer(q1.correctOption);
-          await battleNotifier.submitPlayer1Answer(q1.correctOption);
+          await battleNotifier.submitPlayer2Answer(p2Q.correctOption);
+          await battleNotifier.submitPlayer1Answer(p1Q.correctOption);
           expect(container.read(battleProvider).player1Hp, equals(hpAfterFirstHit));
           expect(container.read(battleProvider).isRoundResolved, isTrue);
           expect(container.read(battleProvider).roundWinner, equals('p2'));
+          expect(container.read(battleProvider).strikeTarget, equals('p1'));
+          expect(container.read(battleProvider).strikeSerial, greaterThan(0));
           expect(container.read(battleProvider).player1Hp, lessThan(88));
         });
         await pumpFrames(200);

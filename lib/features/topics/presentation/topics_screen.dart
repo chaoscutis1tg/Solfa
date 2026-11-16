@@ -90,7 +90,7 @@ Future<bool> checkAndSpendGemsForDurationIfNeeded(
   return ok;
 }
 
-/// Mở Modal Bottom Sheet gọn gàng để người dùng chọn Cấp độ luyện tập & Thời gian luyện tập cho chủ đề.
+/// Mở Modal Bottom Sheet gọn gàng để người dùng chọn Độ khó (Cấp độ) & Thời gian luyện tập.
 Future<void> showTopicPracticeSetupModal(
   BuildContext context,
   WidgetRef ref,
@@ -104,42 +104,12 @@ Future<void> showTopicPracticeSetupModal(
   );
 }
 
-/// UI-03: Phòng luyện tập – Thẻ chủ đề tối giản & Modal chọn Cấp độ / Thời gian (Redesigned)
+/// Màn hình Phòng luyện tập:
+/// - Lưới 2 cột (1 hàng 2 thẻ to).
+/// - Ngoài thẻ CHỈ hiển thị Logo/Icon lớn của bài luyện tập + Tên bài luyện tập (ví dụ: Luyện nghe nốt, Luyện đọc nốt...).
+/// - Chạm vào thẻ sẽ mở Modal chọn Chế độ khó/dễ và Thời gian (bao nhiêu phút).
 class TopicsScreen extends ConsumerWidget {
   const TopicsScreen({super.key});
-
-  Future<void> _startForTopic(
-    BuildContext context,
-    WidgetRef ref,
-    TopicModel topic,
-  ) async {
-    final dur = ref.read(selectedPracticeDurationProvider);
-    final canProceed = await checkAndSpendGemsForDurationIfNeeded(
-      context,
-      ref,
-      durationSeconds: dur,
-    );
-    if (!canProceed || !context.mounted) return;
-
-    final notifier = ref.read(practiceSessionProvider.notifier);
-    final isTest = ref.read(audioServiceProvider).isTestMode;
-    final noteLevelId = ref.read(selectedNoteLevelIdProvider);
-    final staffLevelId = ref.read(selectedStaffLevelIdProvider);
-
-    final ok = await notifier.startSession(
-      mode: 'topic',
-      topicId: topic.id,
-      levelId: topic.id == 'topic_notes'
-          ? noteLevelId
-          : (topic.id == 'topic_staff_reading' ? staffLevelId : null),
-      targetCount: 10,
-      timeLimitSeconds: isTest ? null : (dur == 0 ? null : dur),
-      isUnlimitedMode: isTest ? false : (dur == 0),
-    );
-    if (ok && context.mounted) {
-      context.push('/quiz');
-    }
-  }
 
   static String durationLabel(int seconds) {
     switch (seconds) {
@@ -198,53 +168,69 @@ class TopicsScreen extends ConsumerWidget {
     }
   }
 
+  static IconData topicIconForCode(String code) {
+    switch (code) {
+      case 'note_recognition':
+      case 'notes':
+        return Icons.headphones_rounded;
+      case 'staff_reading':
+        return Icons.menu_book_rounded;
+      case 'interval_recognition':
+      case 'intervals':
+        return Icons.compare_arrows_rounded;
+      case 'key_recognition':
+      case 'keys':
+        return Icons.library_music_rounded;
+      case 'chord_recognition':
+      case 'chords':
+        return Icons.piano_rounded;
+      case 'melody_recognition':
+      case 'melody':
+        return Icons.queue_music_rounded;
+      case 'rhythm_recognition':
+      case 'rhythm':
+        return Icons.graphic_eq_rounded;
+      default:
+        return Icons.music_note_rounded;
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final topicsAsync = ref.watch(topicsListProvider);
-    final progressAsync = ref.watch(overallProgressProvider);
-    final selectedNoteLevelId = ref.watch(selectedNoteLevelIdProvider);
-    final selectedStaffLevelId = ref.watch(selectedStaffLevelIdProvider);
-    final staffLedgerOnly = ref.watch(staffLedgerOnlyProvider);
-    final adState = ref.watch(rewardedAdProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return topicsAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(child: Text('Lỗi tải danh sách chủ đề: $e')),
       data: (topics) {
-        final statsMap = <String, TopicAccuracyStat>{};
-        if (progressAsync.hasValue) {
-          for (final s in progressAsync.value!.topicStats) {
-            statsMap[s.topicId] = s;
-          }
-        }
-
         final activeTopics = topics.where((t) => t.isEnabled).toList();
+        // Ghép thành các cặp 2 thẻ trên 1 hàng (thêm thẻ thứ 8 là Đàn C3–C5 để tròn 4 hàng x 2 thẻ)
+        final totalItems = activeTopics.length + 1;
+        final rowCount = (totalItems / 2).ceil();
 
         return ListView(
           physics: const AlwaysScrollableScrollPhysics(
             parent: BouncingScrollPhysics(),
           ),
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 28),
           children: [
-            // Thanh công cụ gọn nhẹ: Chọn chủ đề để mở Modal cấu hình + Mở Đàn C3–C5
             Row(
               children: [
                 const Expanded(
                   child: Text(
-                    'Chọn thẻ chủ đề để bắt đầu',
+                    'Chủ đề luyện tập',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: SolfaTypography.sectionTitle,
+                    style: SolfaTypography.heading,
                   ),
                 ),
-                const SizedBox(width: 8),
                 TextButton.icon(
                   key: const Key('btn_topics_open_free_piano'),
                   style: TextButton.styleFrom(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 10,
-                      vertical: 5,
+                      vertical: 6,
                     ),
                     minimumSize: const Size(0, 32),
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -263,257 +249,141 @@ class TopicsScreen extends ConsumerWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 4),
-            Text(
-              'Chạm vào thẻ chủ đề để chọn Cấp độ & Thời gian • 60s & 15p Miễn phí • 1 tiếng (${RewardedAdState.kOneHourPracticeGemCost} Gem • Hiện có: ${adState.prestigePoints} Gem)',
-              style: TextStyle(
-                fontSize: 11.8,
-                color: isDark
-                    ? AppColors.textSecondaryDark
-                    : AppColors.textSecondaryLight,
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // Danh sách Thẻ Chủ Đề Tối Giản (Minimalist Topic Cards)
-            ...List.generate(activeTopics.length, (i) {
-              final topic = activeTopics[i];
-              final stat = statsMap[topic.id];
-              final sessionsDone = stat?.completedSessions ?? 0;
-              final answered = stat?.totalAnswered ?? 0;
-              final levelCount = (topic.id == 'topic_notes' ||
-                      topic.id == 'topic_staff_reading')
-                  ? 4
-                  : 3;
-              final progressRatio =
-                  (sessionsDone / levelCount).clamp(0.0, 1.0);
-              final statusLabel = sessionsDone >= levelCount
-                  ? 'Hoàn thành'
-                  : (answered > 0 ? 'Đang học' : 'Sẵn sàng');
-
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: Card(
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(18),
-                    onTap: () =>
-                        showTopicPracticeSetupModal(context, ref, topic),
-                    child: Padding(
-                      padding: const EdgeInsets.all(14),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                width: 42,
-                                height: 42,
-                                decoration: BoxDecoration(
-                                  color: AppColors.primary.withOpacity(0.10),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Icon(
-                                  topicIconForCode(topic.code),
-                                  color: AppColors.primary,
-                                  size: 22,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      shortTopicTitle(topic),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        fontSize: 15.5,
-                                        fontWeight: FontWeight.w800,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      '${shortTopicSubtitle(topic)} • $levelCount mức ($statusLabel)',
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: isDark
-                                            ? AppColors.textSecondaryDark
-                                            : AppColors.textSecondaryLight,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  minimumSize: const Size(0, 36),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 8,
-                                  ),
-                                ),
-                                onPressed: () =>
-                                    _startForTopic(context, ref, topic),
-                                child: const Text(
-                                  'Luyện',
-                                  style: TextStyle(
-                                    fontSize: 12.5,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          if (topic.id == 'topic_notes' ||
-                              topic.id == 'topic_staff_reading') ...[
-                            const SizedBox(height: 10),
-                            Builder(
-                              builder: (context) {
-                                final isStaff =
-                                    topic.id == 'topic_staff_reading';
-                                final levelsList = isStaff
-                                    ? kStaffReadingLevels
-                                    : kNoteRecognitionLevels;
-                                final currentSelectedId = isStaff
-                                    ? selectedStaffLevelId
-                                    : selectedNoteLevelId;
-                                final keyPrefix = isStaff
-                                    ? 'topic_staff_lvl_'
-                                    : 'topic_note_lvl_';
-                                return Row(
-                                  children: [
-                                    for (int lvlIdx = 0;
-                                        lvlIdx < levelsList.length;
-                                        lvlIdx++) ...[
-                                      if (lvlIdx > 0)
-                                        const SizedBox(width: 6),
-                                      Expanded(
-                                        child: _CompactLevelChip(
-                                          key: Key(
-                                            '$keyPrefix${levelsList[lvlIdx].$1}',
-                                          ),
-                                          title: levelsList[lvlIdx].$2,
-                                          isSelected: currentSelectedId ==
-                                              levelsList[lvlIdx].$1,
-                                          isDark: isDark,
-                                          onTap: () {
-                                            if (isStaff) {
-                                              ref
-                                                  .read(
-                                                      selectedStaffLevelIdProvider
-                                                          .notifier)
-                                                  .state =
-                                                  levelsList[lvlIdx].$1;
-                                            } else {
-                                              ref
-                                                  .read(
-                                                      selectedNoteLevelIdProvider
-                                                          .notifier)
-                                                  .state =
-                                                  levelsList[lvlIdx].$1;
-                                            }
-                                          },
-                                        ),
-                                      ),
-                                    ],
-                                  ],
-                                );
-                              },
-                            ),
-                            if (topic.id == 'topic_staff_reading') ...[
-                              const SizedBox(height: 6),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _CompactLevelChip(
-                                      key: const Key('chip_staff_mode_all'),
-                                      title: 'Tất cả nốt',
-                                      isSelected: !staffLedgerOnly,
-                                      isDark: isDark,
-                                      onTap: () => ref
-                                          .read(
-                                              staffLedgerOnlyProvider.notifier)
-                                          .state = false,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Expanded(
-                                    child: _CompactLevelChip(
-                                      key: const Key('chip_staff_mode_ledger'),
-                                      title: 'Chuyên dòng kẻ phụ',
-                                      isSelected: staffLedgerOnly,
-                                      isDark: isDark,
-                                      onTap: () => ref
-                                          .read(
-                                              staffLedgerOnlyProvider.notifier)
-                                          .state = true,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ],
-                          const SizedBox(height: 8),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(99),
-                            child: LinearProgressIndicator(
-                              value: progressRatio,
-                              minHeight: 4,
-                              backgroundColor:
-                                  AppColors.primary.withOpacity(0.10),
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                sessionsDone >= levelCount
-                                    ? AppColors.correct
-                                    : AppColors.primary,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+            const SizedBox(height: 14),
+            for (int r = 0; r < rowCount; r++) ...[
+              if (r > 0) const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildGridItem(
+                      context,
+                      ref,
+                      activeTopics,
+                      r * 2,
+                      isDark,
                     ),
                   ),
-                ),
-              );
-            }),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: (r * 2 + 1) < totalItems
+                        ? _buildGridItem(
+                            context,
+                            ref,
+                            activeTopics,
+                            r * 2 + 1,
+                            isDark,
+                          )
+                        : const SizedBox.shrink(),
+                  ),
+                ],
+              ),
+            ],
           ],
         );
       },
     );
   }
 
-  static IconData topicIconForCode(String code) {
-    switch (code) {
-      case 'note_recognition':
-      case 'notes':
-        return Icons.music_note_rounded;
-      case 'staff_reading':
-        return Icons.menu_book_rounded;
-      case 'interval_recognition':
-      case 'intervals':
-        return Icons.swap_vert_circle_outlined;
-      case 'key_recognition':
-      case 'keys':
-        return Icons.library_music_rounded;
-      case 'chord_recognition':
-      case 'chords':
-        return Icons.piano_rounded;
-      case 'melody_recognition':
-      case 'melody':
-        return Icons.queue_music_rounded;
-      case 'rhythm_recognition':
-      case 'rhythm':
-        return Icons.graphic_eq_rounded;
-      default:
-        return Icons.queue_music_rounded;
+  Widget _buildGridItem(
+    BuildContext context,
+    WidgetRef ref,
+    List<TopicModel> activeTopics,
+    int index,
+    bool isDark,
+  ) {
+    if (index < activeTopics.length) {
+      final topic = activeTopics[index];
+      return _BigTopicGridCard(
+        key: Key('topic_grid_card_${topic.id}'),
+        icon: topicIconForCode(topic.code),
+        title: shortTopicTitle(topic),
+        isDark: isDark,
+        onTap: () => showTopicPracticeSetupModal(context, ref, topic),
+      );
     }
+
+    // Thẻ thứ 8 trên lưới 2x4: Tra cứu Đàn & Khuông C3–C5
+    return _BigTopicGridCard(
+      key: const Key('topic_grid_card_free_piano'),
+      icon: Icons.piano_rounded,
+      title: 'Đàn & Khuông',
+      isDark: isDark,
+      onTap: () => showFreePianoExplorerSheet(context),
+    );
   }
 }
 
-/// Modal Bottom Sheet cho phép chọn Cấp độ luyện tập & Thời gian luyện tập (60s/15p Miễn phí, 1h dùng 50 Gem).
+/// Thẻ chủ đề lớn trên lưới 2 cột:
+/// Chỉ hiển thị Logo/Icon lớn + Tên bài luyện tập để giao diện cực kỳ thoáng và trực quan.
+class _BigTopicGridCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final bool isDark;
+  final VoidCallback onTap;
+
+  const _BigTopicGridCard({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.isDark,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: isDark ? AppColors.surfaceDark : Colors.white,
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: onTap,
+        child: Container(
+          height: 132,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isDark ? AppColors.borderDark : AppColors.borderLight,
+              width: 1.2,
+            ),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 54,
+                height: 54,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(isDark ? 0.16 : 0.10),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                alignment: Alignment.center,
+                child: Icon(
+                  icon,
+                  color: AppColors.primary,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Modal Bottom Sheet cho phép chọn Độ khó (Cấp độ) & Thời gian luyện tập (60s/15p Miễn phí, 1h dùng 50 Gem).
 class _TopicPracticeSetupSheet extends ConsumerStatefulWidget {
   final TopicModel topic;
 
@@ -652,9 +522,9 @@ class _TopicPracticeSetupSheetState
               ),
               const SizedBox(height: 16),
 
-              // 1. Chọn cấp độ luyện tập
+              // 1. Chọn chế độ khó / dễ (Cấp độ)
               const Text(
-                '1. Chọn cấp độ luyện tập',
+                '1. Chọn độ khó luyện tập',
                 style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 8),
@@ -678,7 +548,10 @@ class _TopicPracticeSetupSheetState
                             final selected =
                                 (isStaff ? selectedStaffLvl : selectedNoteLvl) ==
                                     item.$1;
+                            final keyPrefix =
+                                isStaff ? 'topic_staff_lvl_' : 'topic_note_lvl_';
                             return _ModalOptionCard(
+                              key: Key('$keyPrefix${item.$1}'),
                               title: item.$2,
                               subtitle: item.$3,
                               isSelected: selected,
@@ -727,6 +600,7 @@ class _TopicPracticeSetupSheetState
                   children: [
                     Expanded(
                       child: _CompactLevelChip(
+                        key: const Key('chip_staff_mode_all'),
                         title: 'Tất cả nốt (Khuông + Phụ)',
                         isSelected: !staffLedgerOnly,
                         isDark: isDark,
@@ -738,6 +612,7 @@ class _TopicPracticeSetupSheetState
                     const SizedBox(width: 8),
                     Expanded(
                       child: _CompactLevelChip(
+                        key: const Key('chip_staff_mode_ledger'),
                         title: 'Chuyên luyện Dòng kẻ phụ',
                         isSelected: staffLedgerOnly,
                         isDark: isDark,
@@ -813,18 +688,112 @@ class _TopicPracticeSetupSheetState
                             isTest ? null : (dur == 0 ? null : dur),
                         isUnlimitedMode: isTest ? false : (dur == 0),
                       );
+                  if (!context.mounted) return;
+                  Navigator.of(context).pop();
                   if (ok && context.mounted) {
-                    Navigator.of(context).pop();
                     context.push('/quiz');
                   }
                 },
-                icon: selectedDuration == 3600
-                    ? const SolfaGemIcon(size: 18)
-                    : const Icon(Icons.play_arrow_rounded, size: 22),
+                icon: const Icon(Icons.play_arrow_rounded, size: 22),
                 label: Text(
                   selectedDuration == 3600
-                      ? 'Mở khóa & Bắt đầu 1 tiếng (${RewardedAdState.kOneHourPracticeGemCost} Gem)'
-                      : 'Bắt đầu học ngay (${TopicsScreen.durationLabel(selectedDuration)})',
+                      ? 'Bắt đầu ngay (1 tiếng • 50 Gem)'
+                      : 'Bắt đầu ngay (${TopicsScreen.durationLabel(selectedDuration)} • Miễn phí)',
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ModalOptionCard extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final bool showGemBadge;
+  final bool isSelected;
+  final bool isDark;
+  final VoidCallback onTap;
+
+  const _ModalOptionCard({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    this.showGemBadge = false,
+    required this.isSelected,
+    required this.isDark,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bgColor = isSelected
+        ? AppColors.primary
+        : (isDark
+            ? Colors.white.withOpacity(0.05)
+            : AppColors.backgroundLight);
+    final fgColor = isSelected
+        ? Colors.white
+        : (isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight);
+    final subColor = isSelected
+        ? Colors.white.withOpacity(0.88)
+        : (showGemBadge
+            ? AppColors.primary
+            : (isDark
+                ? AppColors.textSecondaryDark
+                : AppColors.textSecondaryLight));
+
+    return Material(
+      color: bgColor,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected
+                  ? AppColors.primary
+                  : (isDark ? AppColors.borderDark : AppColors.borderLight),
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w800,
+                    color: fgColor,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 2),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (showGemBadge) ...[
+                      const SolfaGemIcon(size: 11),
+                      const SizedBox(width: 3),
+                    ],
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w700,
+                        color: subColor,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -865,112 +834,20 @@ class _CompactLevelChip extends StatelessWidget {
           height: 32,
           alignment: Alignment.center,
           padding: const EdgeInsets.symmetric(horizontal: 6),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: isSelected
-                  ? AppColors.primary
-                  : (isDark ? AppColors.borderDark : AppColors.borderLight),
-            ),
-          ),
           child: FittedBox(
             fit: BoxFit.scaleDown,
             child: Text(
               title,
               style: TextStyle(
-                fontSize: 11.5,
+                fontSize: 11.8,
                 fontWeight: FontWeight.w700,
-                color: isSelected ? Colors.white : null,
+                color: isSelected
+                    ? Colors.white
+                    : (isDark
+                        ? AppColors.textPrimaryDark
+                        : AppColors.textPrimaryLight),
               ),
             ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ModalOptionCard extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final bool isSelected;
-  final bool isDark;
-  final bool showGemBadge;
-  final VoidCallback onTap;
-
-  const _ModalOptionCard({
-    required this.title,
-    required this.subtitle,
-    required this.isSelected,
-    required this.isDark,
-    this.showGemBadge = false,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: isSelected
-          ? AppColors.primary
-          : (isDark
-              ? Colors.white.withOpacity(0.05)
-              : AppColors.backgroundLight),
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 6),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isSelected
-                  ? AppColors.primary
-                  : (isDark ? AppColors.borderDark : AppColors.borderLight),
-            ),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w800,
-                    color: isSelected ? Colors.white : null,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 2),
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (showGemBadge) ...[
-                      const SolfaGemIcon(size: 11),
-                      const SizedBox(width: 3),
-                    ],
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w600,
-                        color: isSelected
-                            ? Colors.white.withOpacity(0.92)
-                            : (showGemBadge
-                                ? AppColors.primary
-                                : (isDark
-                                    ? AppColors.textSecondaryDark
-                                    : AppColors.textSecondaryLight)),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
           ),
         ),
       ),

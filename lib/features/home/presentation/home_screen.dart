@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/design_system/solfa_design_system.dart';
 import '../../../app/theme/app_colors.dart';
+import '../../../app/widgets/crossed_swords_icon.dart';
 import '../../../app/widgets/solfa_gem_icon.dart';
 import '../../../core/models/domain_models.dart';
 import '../../../core/providers/app_providers.dart';
@@ -12,7 +13,11 @@ import '../../practice/presentation/widgets/free_piano_explorer_sheet.dart';
 import '../../support_developer/application/rewarded_ad_controller.dart';
 import '../../topics/presentation/topics_screen.dart';
 
-/// UI-02: Trang chủ (Redesigned per Section 3.2 — Simplicity First & Clear Hierarchy)
+/// Màn hình Trang chủ tinh gọn 4 khối:
+/// 1. Lời chào & Streak ngày
+/// 2. Thẻ lớn Tiếp tục bài đang học (hoặc bắt đầu hành trình)
+/// 3. Tiện ích nhanh (Đàn Piano C3–C5, Ôn câu sai, Đấu trường)
+/// 4. Mục tiêu hôm nay (+20 Gem) & Nhiệm vụ hàng ngày
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
@@ -82,7 +87,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Chọn mục tiêu luyện tập mỗi ngày',
+                'Chọn mục tiêu mỗi ngày',
                 style: SolfaTypography.sectionTitle,
               ),
               const SizedBox(height: 12),
@@ -112,9 +117,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final progressAsync = ref.watch(overallProgressProvider);
-    final topicsAsync = ref.watch(topicsListProvider);
-    final selectedDuration = ref.watch(selectedPracticeDurationProvider);
-    final selectedNoteLevel = ref.watch(selectedNoteLevelIdProvider);
     final adState = ref.watch(rewardedAdProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final stats = progressAsync.valueOrNull;
@@ -131,11 +133,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
         padding: SolfaSpacing.screenPadding,
         children: [
-          // KHU VỰC 1 – Chào mừng và trạng thái học tập
+          // KHỐI 1 – Lời chào ngắn & Streak ngày
           _buildGreetingHeader(stats, isDark),
           const SizedBox(height: SolfaSpacing.md),
 
-          // KHU VỰC 2 – Tiếp tục học (Khu vực nổi bật nhất)
+          // KHỐI 2 – Thẻ lớn Tiếp tục bài đang học (Hành động chính duy nhất)
           progressAsync.when(
             loading: () => const Center(
               child: Padding(
@@ -146,55 +148,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             error: (e, _) => SolfaSurfaceCard(
               child: Text('Không thể tải tiến trình: $e'),
             ),
-            data: (s) => _buildContinueLearningHero(context, s, isDark),
+            data: (s) => _buildContinueLearningHero(context, s),
           ),
           const SizedBox(height: SolfaSpacing.lg),
 
-          // KHU VỰC 3 – Bắt đầu luyện tập (Chọn thời lượng & Nút chính)
-          _buildQuickPracticeSection(
-            context,
-            selectedDuration,
-            selectedNoteLevel,
-            isDark,
-          ),
-          const SizedBox(height: SolfaSpacing.lg),
-
-          // KHU VỰC 4 – Truy cập nhanh (1 nhóm tiện ích thống nhất)
+          // KHỐI 3 – Tiện ích nhanh (Đàn Piano C3–C5, Ôn câu sai, Đấu trường)
           _buildUnifiedQuickAccessGroup(context, stats, isDark),
           const SizedBox(height: SolfaSpacing.lg),
 
-          // KHU VỰC 5 – Mục tiêu hôm nay (Tối giản: Số câu đã hoàn thành / Mục tiêu + Thanh tiến trình + Thưởng +20 Gem)
+          // KHỐI 4 – Mục tiêu hôm nay (+20 Gem) & Nhiệm vụ ngày
           if (stats != null) ...[
             _buildTodayGoalSection(context, stats, adState, isDark),
             const SizedBox(height: SolfaSpacing.lg),
           ],
-
-          // KHU VỰC 6 – Nhiệm vụ hàng ngày (Danh sách Checklist có thể thu gọn)
           _buildDailyQuestsChecklist(context, stats, adState, isDark),
-          const SizedBox(height: SolfaSpacing.lg),
-
-          // KHU VỰC 7 – Chủ đề học tập (Danh sách 7 chủ đề tối giản)
-          SolfaSectionHeader(
-            title: 'Chủ đề học tập',
-            actionLabel: 'Xem tất cả',
-            onActionTap: () => context.go('/topics'),
-          ),
-          topicsAsync.when(
-            loading: () => const SizedBox.shrink(),
-            error: (_, __) => const SizedBox.shrink(),
-            data: (topics) => _buildMinimalistTopicsList(
-              context,
-              topics.where((t) => t.isEnabled).toList(),
-              stats,
-              isDark,
-            ),
-          ),
         ],
       ),
     );
   }
 
-  /// Khu vực 1: Lời chào ngắn, trạng thái học tập và Streak tinh gọn.
   Widget _buildGreetingHeader(OverallProgressStats? stats, bool isDark) {
     final streak = stats?.currentStreakDays ?? 0;
     final goalMet = stats?.isDailyGoalReached ?? false;
@@ -212,10 +184,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               const SizedBox(height: 2),
               Text(
                 goalMet
-                    ? 'Bạn đã hoàn thành mục tiêu hôm nay'
-                    : 'Dành 5 phút rèn luyện đôi tai âm nhạc của bạn',
+                    ? 'Đã hoàn thành mục tiêu hôm nay'
+                    : 'Chọn bài học tại tab Luyện tập hoặc tiếp tục bên dưới',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 12.8,
+                  fontSize: 12.5,
                   color: isDark
                       ? AppColors.textSecondaryDark
                       : AppColors.textSecondaryLight,
@@ -257,11 +231,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  /// Khu vực 2: Tiếp tục học (Khu vực nổi bật nhất trên Trang chủ).
   Widget _buildContinueLearningHero(
     BuildContext context,
     OverallProgressStats stats,
-    bool isDark,
   ) {
     if (!stats.hasAnyHistory || stats.recentSessions.isEmpty) {
       return SolfaSurfaceCard(
@@ -277,7 +249,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 borderRadius: BorderRadius.circular(SolfaRadius.pill),
               ),
               child: const Text(
-                'KHỞI ĐỘNG ĐẦU TIÊN',
+                'KHỞI ĐỘNG',
                 style: TextStyle(
                   fontSize: 10.5,
                   fontWeight: FontWeight.w800,
@@ -297,32 +269,56 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
             const SizedBox(height: 4),
             Text(
-              'Làm quen 7 nốt tự nhiên (Đô – Si) với âm thanh chuẩn phòng thu 44.1kHz.',
+              'Làm quen 7 nốt nhạc cơ bản hoặc chọn chủ đề bất kỳ tại tab Luyện tập.',
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 12.8,
                 color: Colors.white.withOpacity(0.90),
                 height: 1.35,
               ),
             ),
             const SizedBox(height: 14),
-            ElevatedButton.icon(
-              key: const Key('btn_first_time_notes'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: AppColors.primaryDark,
-                minimumSize: const Size(double.infinity, 46),
-              ),
-              onPressed: () => _startQuickPractice(
-                context,
-                topicId: 'topic_notes',
-                levelId: 'lvl_notes_basic',
-              ),
-              icon: const Icon(Icons.play_arrow_rounded, size: 20),
-              label: const Text(
-                'Tiếp tục học: Nhận biết nốt (Cơ bản)',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    key: const Key('btn_first_time_notes'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: AppColors.primaryDark,
+                      minimumSize: const Size(0, 44),
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                    ),
+                    onPressed: () => _startQuickPractice(
+                      context,
+                      topicId: 'topic_notes',
+                      levelId: 'lvl_notes_basic',
+                    ),
+                    icon: const Icon(Icons.play_arrow_rounded, size: 19),
+                    label: const FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text('Luyện nghe nốt'),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    key: const Key('btn_quick_practice'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      side: BorderSide(color: Colors.white.withOpacity(0.75)),
+                      minimumSize: const Size(0, 44),
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                    ),
+                    onPressed: () => context.go('/topics'),
+                    icon: const Icon(Icons.grid_view_rounded, size: 17),
+                    label: const FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text('Luyện tập ngay'),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -350,7 +346,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   borderRadius: BorderRadius.circular(SolfaRadius.pill),
                 ),
                 child: const Text(
-                  'TIẾP TỤC HỌC',
+                  'TIẾP TỤC BÀI HỌC',
                   style: TextStyle(
                     fontSize: 10.5,
                     fontWeight: FontWeight.w800,
@@ -376,7 +372,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           const SizedBox(height: 10),
           Text(
-            recent.topicName ?? 'Nhận biết nốt',
+            recent.topicName ?? 'Luyện nghe nốt',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
@@ -387,11 +383,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           const SizedBox(height: 3),
           Text(
-            'Cấp độ hiện tại: ${recent.levelName ?? 'Cơ bản'}',
+            recent.levelName ?? 'Cơ bản',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              fontSize: 13,
+              fontSize: 12.8,
               color: Colors.white.withOpacity(0.88),
             ),
           ),
@@ -406,114 +402,48 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ),
           const SizedBox(height: 14),
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: AppColors.primaryDark,
-              minimumSize: const Size(double.infinity, 46),
-            ),
-            onPressed: () => _startQuickPractice(
-              context,
-              topicId: recent.topicId,
-              levelId: recent.levelId,
-            ),
-            icon: const Icon(Icons.play_arrow_rounded, size: 20),
-            label: const Text('Tiếp tục học'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Khu vực 3: Bắt đầu luyện tập (Chọn mức độ Nhận biết nốt, thời lượng 60s / 15p / 1h / Tự do & Nút bắt đầu).
-  Widget _buildQuickPracticeSection(
-    BuildContext context,
-    int selectedDuration,
-    String selectedNoteLevel,
-    bool isDark,
-  ) {
-    const durations = [
-      (60, '60 giây'),
-      (900, '15 phút'),
-      (3600, '1h (50 Gem)'),
-      (0, 'Tự do'),
-    ];
-
-    return SolfaSurfaceCard(
-      padding: const EdgeInsets.all(15),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Luyện tập Nhận biết nốt',
-            style: SolfaTypography.cardTitle,
-          ),
-          const SizedBox(height: 8),
           Row(
             children: [
-              for (int i = 0; i < kNoteRecognitionLevels.length; i++) ...[
-                if (i > 0) const SizedBox(width: 6),
-                Expanded(
-                  child: _DurationSegmentPill(
-                    key: Key('home_note_lvl_${kNoteRecognitionLevels[i].$1}'),
-                    label: kNoteRecognitionLevels[i].$2,
-                    isSelected:
-                        selectedNoteLevel == kNoteRecognitionLevels[i].$1,
-                    isDark: isDark,
-                    onTap: () => ref
-                        .read(selectedNoteLevelIdProvider.notifier)
-                        .state = kNoteRecognitionLevels[i].$1,
+              Expanded(
+                child: ElevatedButton.icon(
+                  key: const Key('btn_quick_practice'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: AppColors.primaryDark,
+                    minimumSize: const Size(0, 44),
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                  ),
+                  onPressed: () => _startQuickPractice(
+                    context,
+                    topicId: recent.topicId,
+                    levelId: recent.levelId,
+                  ),
+                  icon: const Icon(Icons.play_arrow_rounded, size: 19),
+                  label: const FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text('Luyện tập ngay'),
                   ),
                 ),
-              ],
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              for (int i = 0; i < durations.length; i++) ...[
-                if (i > 0) const SizedBox(width: 6),
-                Expanded(
-                  child: _DurationSegmentPill(
-                    label: durations[i].$2,
-                    isSelected: selectedDuration == durations[i].$1,
-                    isDark: isDark,
-                    onTap: () => ref
-                        .read(selectedPracticeDurationProvider.notifier)
-                        .state = durations[i].$1,
-                  ),
-                ),
-              ],
-            ],
-          ),
-          const SizedBox(height: 12),
-          OutlinedButton.icon(
-            key: const Key('btn_quick_practice'),
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size(double.infinity, 46),
-              side: const BorderSide(color: AppColors.primary, width: 1.3),
-              foregroundColor:
-                  isDark ? AppColors.textPrimaryDark : AppColors.primary,
-            ),
-            onPressed: () => _startQuickPractice(
-              context,
-              topicId: 'topic_notes',
-              levelId: selectedNoteLevel,
-            ),
-            icon: const Icon(Icons.headphones_rounded, size: 19),
-            label: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                'Bắt đầu luyện tập • Luyện tập ngay (${TopicsScreen.durationLabel(selectedDuration)})',
               ),
-            ),
+              const SizedBox(width: 8),
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  side: BorderSide(color: Colors.white.withOpacity(0.75)),
+                  minimumSize: const Size(0, 44),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                ),
+                onPressed: () => context.go('/topics'),
+                icon: const Icon(Icons.grid_view_rounded, size: 17),
+                label: const Text('Đổi bài'),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  /// Khu vực 4: Truy cập nhanh (Đàn Piano, Đọc khuông nhạc, Ôn câu sai trong 1 nhóm thống nhất).
   Widget _buildUnifiedQuickAccessGroup(
     BuildContext context,
     OverallProgressStats? stats,
@@ -539,25 +469,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             VerticalDivider(width: 1, thickness: 1, color: dividerColor),
             Expanded(
               child: _QuickAccessItem(
-                key: const Key('btn_quick_staff_reading'),
-                icon: Icons.menu_book_rounded,
-                title: 'Đọc khuông',
-                subtitle: 'Khóa Sol & Fa',
-                onTap: () => _startQuickPractice(
-                  context,
-                  topicId: 'topic_staff_reading',
-                ),
+                icon: Icons.replay_rounded,
+                title: 'Ôn câu sai',
+                subtitle: pendingCount > 0
+                    ? '$pendingCount câu cần ôn'
+                    : 'Đã thuộc hết',
+                accentColor: pendingCount > 0 ? AppColors.wrong : null,
+                onTap: () => context.push('/review'),
               ),
             ),
             VerticalDivider(width: 1, thickness: 1, color: dividerColor),
             Expanded(
               child: _QuickAccessItem(
-                icon: Icons.replay_rounded,
-                title: 'Ôn câu sai',
-                subtitle:
-                    pendingCount > 0 ? '$pendingCount câu cần ôn' : 'Đã thuộc hết',
-                accentColor: pendingCount > 0 ? AppColors.wrong : null,
-                onTap: () => context.push('/review'),
+                key: const Key('btn_home_open_battle'),
+                customIcon: const CrossedSwordsIcon(
+                  size: 21,
+                  color: AppColors.primary,
+                  guardColor: AppColors.primary,
+                ),
+                icon: Icons.sports_mma_rounded,
+                title: 'Đấu trường',
+                subtitle: 'So tài 1v1',
+                onTap: () => context.push('/battle'),
               ),
             ),
           ],
@@ -566,7 +499,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  /// Khu vực 5: Mục tiêu hôm nay (Chỉ hiển thị số câu đã hoàn thành / mục tiêu + thanh tiến trình + thưởng +20 Gem khi hoàn thành).
   Widget _buildTodayGoalSection(
     BuildContext context,
     OverallProgressStats stats,
@@ -677,7 +609,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  /// Khu vực 6: Nhiệm vụ hàng ngày (Checklist có thể thu gọn trong 1 Card duy nhất).
   Widget _buildDailyQuestsChecklist(
     BuildContext context,
     OverallProgressStats? stats,
@@ -751,7 +682,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               isReadyToClaim: practiceReady,
               isClaimed: adState.questPracticeClaimedToday,
               questCode: 'practice',
-              onGoAction: () => _startQuickPractice(context),
+              onGoAction: () => context.go('/topics'),
             ),
             const Divider(height: 14),
             _buildQuestChecklistItem(
@@ -855,9 +786,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           backgroundColor: AppColors.correct,
-                          content: Text(
-                            'Đã nhận +$pts Gem!',
-                          ),
+                          content: Text('Đã nhận +$pts Gem!'),
                         ),
                       );
                     }
@@ -887,209 +816,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ],
     );
   }
-
-  /// Khu vực 7: Danh sách 7 chủ đề tối giản (Icon, Tên, Số cấp độ, Trạng thái).
-  Widget _buildMinimalistTopicsList(
-    BuildContext context,
-    List<TopicModel> topics,
-    OverallProgressStats? stats,
-    bool isDark,
-  ) {
-    final dividerColor = isDark ? AppColors.borderDark : AppColors.borderLight;
-
-    return SolfaSurfaceCard(
-      padding: EdgeInsets.zero,
-      child: Column(
-        children: [
-          for (int i = 0; i < topics.length; i++) ...[
-            if (i > 0) Divider(height: 1, thickness: 1, color: dividerColor),
-            Builder(
-              builder: (context) {
-                final topic = topics[i];
-                final topicStat = stats?.topicStats
-                    .where((s) => s.topicId == topic.id)
-                    .firstOrNull;
-                final totalAnswered = topicStat?.totalAnswered ?? 0;
-                final completedSessions = topicStat?.completedSessions ?? 0;
-                final levelCount = (topic.id == 'topic_notes' ||
-                        topic.id == 'topic_staff_reading')
-                    ? 4
-                    : 3;
-                final statusLabel = completedSessions >= levelCount
-                    ? 'Hoàn thành'
-                    : (totalAnswered > 0 ? 'Đang học' : 'Sẵn sàng');
-                final statusColor = completedSessions >= levelCount
-                    ? AppColors.correct
-                    : (totalAnswered > 0
-                        ? AppColors.primary
-                        : (isDark
-                            ? AppColors.textSecondaryDark
-                            : AppColors.textSecondaryLight));
-
-                return InkWell(
-                  borderRadius: BorderRadius.vertical(
-                    top: i == 0 ? const Radius.circular(SolfaRadius.lg) : Radius.zero,
-                    bottom: i == topics.length - 1
-                        ? const Radius.circular(SolfaRadius.lg)
-                        : Radius.zero,
-                  ),
-                  onTap: () => showTopicPracticeSetupModal(context, ref, topic),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 12,
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 38,
-                          height: 38,
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.10),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Icon(
-                            _iconForTopic(topic.code),
-                            color: AppColors.primary,
-                            size: 20,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                topic.name,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 14.5,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                '$levelCount cấp độ',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: isDark
-                                      ? AppColors.textSecondaryDark
-                                      : AppColors.textSecondaryLight,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Text(
-                          statusLabel,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: statusColor,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Icon(
-                          Icons.chevron_right_rounded,
-                          size: 18,
-                          color: isDark
-                              ? AppColors.textSecondaryDark
-                              : AppColors.textSecondaryLight,
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  IconData _iconForTopic(String code) {
-    switch (code) {
-      case 'note_recognition':
-      case 'notes':
-        return Icons.music_note_rounded;
-      case 'staff_reading':
-        return Icons.menu_book_rounded;
-      case 'interval_recognition':
-      case 'intervals':
-        return Icons.swap_vert_circle_outlined;
-      case 'key_recognition':
-      case 'keys':
-        return Icons.library_music_rounded;
-      case 'chord_recognition':
-      case 'chords':
-        return Icons.piano_rounded;
-      case 'melody_recognition':
-      case 'melody':
-        return Icons.queue_music_rounded;
-      case 'rhythm_recognition':
-      case 'rhythm':
-        return Icons.graphic_eq_rounded;
-      default:
-        return Icons.music_note_rounded;
-    }
-  }
-}
-
-class _DurationSegmentPill extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-  final bool isDark;
-  final VoidCallback onTap;
-
-  const _DurationSegmentPill({
-    super.key,
-    required this.label,
-    required this.isSelected,
-    required this.isDark,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: isSelected
-          ? AppColors.primary
-          : (isDark
-              ? Colors.white.withOpacity(0.05)
-              : AppColors.backgroundLight),
-      borderRadius: BorderRadius.circular(SolfaRadius.sm),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(SolfaRadius.sm),
-        onTap: onTap,
-        child: Container(
-          height: 36,
-          alignment: Alignment.center,
-          padding: const EdgeInsets.symmetric(horizontal: 6),
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w700,
-                color: isSelected
-                    ? Colors.white
-                    : (isDark
-                        ? AppColors.textPrimaryDark
-                        : AppColors.textPrimaryLight),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 class _QuickAccessItem extends StatelessWidget {
   final IconData icon;
+  final Widget? customIcon;
   final String title;
   final String subtitle;
   final Color? accentColor;
@@ -1098,6 +829,7 @@ class _QuickAccessItem extends StatelessWidget {
   const _QuickAccessItem({
     super.key,
     required this.icon,
+    this.customIcon,
     required this.title,
     required this.subtitle,
     this.accentColor,
@@ -1115,7 +847,7 @@ class _QuickAccessItem extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 22, color: effectiveColor),
+            customIcon ?? Icon(icon, size: 22, color: effectiveColor),
             const SizedBox(height: 5),
             FittedBox(
               fit: BoxFit.scaleDown,
