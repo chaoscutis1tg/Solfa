@@ -348,7 +348,7 @@ class HybridQuestionGenerator {
       topicId: q.topicId,
       levelId: q.levelId,
       type: q.type,
-      prompt: q.prompt,
+      prompt: q.prompt.replaceAll(' (hoặc bấm phím đàn)', ''),
       explanation: q.explanation,
       audioAsset: q.audioAsset,
       difficulty: q.difficulty,
@@ -432,7 +432,7 @@ class HybridQuestionGenerator {
       topicId: q.topicId,
       levelId: q.levelId,
       type: q.type,
-      prompt: q.prompt,
+      prompt: q.prompt.replaceAll(' (hoặc bấm phím đàn)', ''),
       explanation: q.explanation,
       audioAsset: q.audioAsset,
       difficulty: q.difficulty,
@@ -823,20 +823,20 @@ class HybridQuestionGenerator {
       final String promptText;
       if (isStaffReading) {
         promptText = isMaster
-            ? '[Đọc nốt • Mức 4 Khóa Sol & Fa đầy đủ #/b] Nhìn vị trí nốt trên khuông nhạc và chọn tên nốt (hoặc bấm phím đàn):'
+            ? '[Đọc nốt • Mức 4 Khóa Sol & Fa đầy đủ #/b] Nhìn vị trí nốt trên khuông nhạc và chọn tên nốt:'
             : (isAdvanced
                 ? '[Đọc nốt • Mức 3 Khóa Sol & Fa C3–C5] Quan sát Khóa nhạc (𝄞/𝄢) cùng vị trí dòng/khe để chọn đúng nốt:'
                 : (isInter
                     ? '[Đọc nốt • Mức 2 Khóa Sol có dấu #/b] Quan sát nốt và dấu hóa (♯) trên khuông nhạc để chọn đáp án:'
-                    : '[Đọc nốt • Mức 1 Khóa Sol C4–B4] Nhìn vị trí nốt trên 5 dòng kẻ nhạc và chọn đáp án đúng (hoặc bấm phím đàn):'));
+                    : '[Đọc nốt • Mức 1 Khóa Sol C4–B4] Nhìn vị trí nốt trên 5 dòng kẻ nhạc và chọn đáp án đúng:'));
       } else {
         promptText = isMaster
             ? '[Mức 4 • C3–C5 Đầy đủ #/b] Nghe âm thanh (không tham chiếu C4) và chọn chính xác tên nốt:'
             : (isAdvanced
                 ? '[Mức 3 • C3–C5 Tự nhiên] Nghe âm thanh (có thể đối chiếu C4) và chọn đúng tên nốt + quãng tám:'
                 : (isInter
-                    ? '[Mức 2 • C4 có dấu #/b] Nghe nốt nhạc trong quãng 4 và chọn đáp án đúng (hoặc bấm phím đàn):'
-                    : '[Mức 1 • C4 Tự nhiên] Nghe nốt nhạc trong quãng C4 và chọn đáp án đúng (hoặc bấm phím đàn):'));
+                    ? '[Mức 2 • C4 có dấu #/b] Nghe nốt nhạc trong quãng 4 và chọn đáp án đúng:'
+                    : '[Mức 1 • C4 Tự nhiên] Nghe nốt nhạc trong quãng C4 và chọn đáp án đúng:'));
       }
 
       final passes = noteDefs.length < 10 ? 2 : 1;

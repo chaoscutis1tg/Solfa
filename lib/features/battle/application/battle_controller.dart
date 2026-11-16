@@ -1080,10 +1080,20 @@ class BattleNotifier extends StateNotifier<BattleState> {
         newCombo: nextCombo,
       );
       final nextP1Hp = (state.player1Hp - dmg).clamp(0, BattleState.maxHp);
+      final isFirstBlood = !state.firstBloodTaken;
 
-      final banner = isCrit
-          ? '${state.player2Name} BẠO KÍCH x$nextCombo! -$dmg HP'
-          : '${state.player2Name} TẤN CÔNG! -$dmg HP';
+      final String banner;
+      if (nextP1Hp <= 0) {
+        banner = 'K.O.! ${state.player2Name} HẠ GỤC TUYỆT ĐỐI! -$dmg HP';
+      } else if (isFirstBlood) {
+        banner = 'CHIẾN CÔNG ĐẦU! ${state.player2Name} -$dmg HP';
+      } else if (isCrit) {
+        banner = '${state.player2Name} TUYỆT KỸ COMBO x$nextCombo! -$dmg HP';
+      } else if (nextCombo == 2) {
+        banner = '${state.player2Name} LIÊN KÍCH x2! -$dmg HP';
+      } else {
+        banner = '${state.player2Name} TẤN CÔNG! -$dmg HP';
+      }
 
       state = state.copyWith(
         isRoundResolved: true,
@@ -1094,6 +1104,7 @@ class BattleNotifier extends StateNotifier<BattleState> {
         player2MaxCombo: nextMaxCombo,
         player1Combo: 0,
         player2CorrectCount: state.player2CorrectCount + 1,
+        firstBloodTaken: true,
         lastDamageDealt: dmg,
         lastHitWasCrit: isCrit,
         combatBannerText: banner,
@@ -1141,6 +1152,7 @@ class BattleNotifier extends StateNotifier<BattleState> {
       final isCrit = nextP2Combo >= 3;
       final dmg = isCrit ? 22 : 16;
       final nextP1Hp = (state.player1Hp - dmg).clamp(0, BattleState.maxHp);
+      final isFirstBlood = !state.firstBloodTaken;
 
       state = state.copyWith(
         isRoundResolved: true,
@@ -1151,10 +1163,16 @@ class BattleNotifier extends StateNotifier<BattleState> {
         player2MaxCombo: nextP2Max,
         player1Combo: 0,
         player2CorrectCount: state.player2CorrectCount + 1,
+        firstBloodTaken: true,
         lastDamageDealt: dmg,
         lastHitWasCrit: isCrit,
-        combatBannerText:
-            '${state.player2Name} ra đòn trước! -$dmg HP',
+        combatBannerText: nextP1Hp <= 0
+            ? 'K.O.! ${state.player2Name} KẾT LIỄU! -$dmg HP'
+            : (isFirstBlood
+                ? 'CHIẾN CÔNG ĐẦU! ${state.player2Name} RA ĐÒN TRƯỚC -$dmg HP'
+                : (isCrit
+                    ? '${state.player2Name} TUYỆT KỸ COMBO x$nextP2Combo! -$dmg HP'
+                    : '${state.player2Name} ra đòn trước! -$dmg HP')),
       );
       _triggerImpactFeedback(isCorrect: false, isCrit: isCrit, curQ: curQ);
       _scheduleAutoAdvanceRound();

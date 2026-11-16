@@ -1184,6 +1184,10 @@ void main() {
         expect(afterMatch1.starsDeltaLastMatch, equals(2));
         expect(afterMatch1.totalStars, equals(2));
         expect(afterMatch1.totalWins, equals(1));
+        expect(afterMatch1.currentWinStreak, equals(1));
+        expect(afterMatch1.firstBloodTaken, isTrue);
+        expect(afterMatch1.player2Title.contains('Nhạc viện'), isFalse);
+        expect(afterMatch1.player2Title.contains('Học viện'), isFalse);
         expect(afterMatch1.remainingBattlesToday, equals(4));
         expect(find.byKey(const Key('battle_result_view')), findsOneWidget);
         expect(tester.takeException(), isNull);
