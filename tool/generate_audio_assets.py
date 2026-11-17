@@ -160,7 +160,7 @@ def write_wav(filepath: str, samples: list[float]) -> None:
 
 def generate_notes() -> None:
     notes_dir = os.path.join(ASSETS_DIR, "audio", "notes")
-    for octave in [3, 4, 5]:
+    for octave in [2, 3, 4, 5]:
         for name in NOTE_OFFSETS:
             midi = note_name_to_midi(name, octave)
             freq = midi_to_freq(midi)
@@ -261,7 +261,7 @@ def generate_keys() -> None:
         seq = concat_samples([chord_i, chord_iv, chord_v, chord_i_end], gap_sec=0.05)
         write_wav(os.path.join(keys_dir, f"{name}.wav"), seq)
 
-    # 3a. Chords for topic_chords (Arpeggio + Full harmonic chord)
+    # 3a. Chords for topic_chords & topic_guitar_chords (Arpeggio + Full harmonic chord)
     chord_defs = {
         "chord_c_maj": [60, 64, 67],
         "chord_a_min": [57, 60, 64],
@@ -269,6 +269,9 @@ def generate_keys() -> None:
         "chord_f_maj": [53, 57, 60],
         "chord_d_min": [62, 65, 69],
         "chord_g_maj": [55, 59, 62],
+        "chord_e_min": [52, 59, 64, 67],
+        "chord_d_maj": [50, 57, 62, 66],
+        "chord_e_maj": [52, 59, 64, 68],
         "chord_c_dim": [60, 63, 66],
         "chord_c_aug": [60, 64, 68],
         "chord_c_sus4": [60, 65, 67],

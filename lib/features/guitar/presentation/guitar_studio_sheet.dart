@@ -40,6 +40,16 @@ class GuitarFretboardData {
     ('B', 'Si', 'b4'),
   ];
 
+  /// Số MIDI chuẩn của 6 dây buông (Dây 1 -> Dây 6: E4=64, B3=59, G3=55, D3=50, A2=45, E2=40)
+  static const List<int> openStringMidi = [
+    64, // Dây 1: E4 (329.63 Hz)
+    59, // Dây 2: B3 (246.94 Hz)
+    55, // Dây 3: G3 (196.00 Hz)
+    50, // Dây 4: D3 (146.83 Hz)
+    45, // Dây 5: A2 (110.00 Hz)
+    40, // Dây 6: E2 (82.41 Hz)
+  ];
+
   /// Chỉ số bán âm (0=C .. 11=B) của 6 dây buông (Dây 1 -> Dây 6: E, B, G, D, A, E)
   static const List<int> openStringSemitoneIndex = [
     4, // Dây 1: E4 (Mi)
@@ -50,37 +60,25 @@ class GuitarFretboardData {
     4, // Dây 6: E2 (Mi)
   ];
 
-  /// Trả về thông tin nốt tại `stringNumber` (1..6) và `fret` (0..12).
+  /// Trả về thông tin nốt chuẩn xác tuyệt đối theo cao độ vật lý tại `stringNumber` (1..6) và `fret` (0..12).
   static ({String noteCode, String vnLabel, String fullLabel, String audioAsset})
       noteAt({
     required int stringNumber,
     required int fret,
   }) {
     final sIdx = (stringNumber - 1).clamp(0, 5);
-    final openSemi = openStringSemitoneIndex[sIdx];
-    final semi = (openSemi + fret) % 12;
+    final midi = openStringMidi[sIdx] + fret.clamp(0, 12);
+    final semi = midi % 12;
+    final octave = ((midi ~/ 12) - 1).clamp(2, 5);
     final info = chromaticNotes[semi];
 
-    // Map sang quãng tám C3–C5 có sẵn trong kho âm thanh DSP 44.1kHz của Solfa
-    int octave = switch (stringNumber) {
-      1 => fret >= 8 ? 5 : 4,
-      2 => fret >= 1 ? 4 : 3,
-      3 => fret >= 5 ? 4 : 3,
-      4 => fret >= 10 ? 4 : 3,
-      _ => 3,
-    };
-    if (octave == 5 && info.$1 != 'C') {
-      octave = 4;
-    }
     final assetPrefix = info.$3.substring(0, info.$3.length - 1);
-    final asset = octave == 5
-        ? 'assets/audio/notes/note_c5.wav'
-        : 'assets/audio/notes/note_$assetPrefix$octave.wav';
+    final asset = 'assets/audio/notes/$assetPrefix$octave.wav';
 
     return (
       noteCode: info.$1,
       vnLabel: info.$2,
-      fullLabel: '${info.$2} (${info.$1})',
+      fullLabel: '${info.$2} (${info.$1}$octave)',
       audioAsset: asset,
     );
   }
@@ -93,7 +91,7 @@ class GuitarFretboardData {
       formula: 'X - 3 - 2 - 0 - 1 - 0',
       fretsByString1To6: [0, 1, 0, 2, 3, -1],
       fingersByString1To6: [0, 1, 0, 2, 3, 0],
-      audioAsset: 'assets/audio/chords/chord_c_major.wav',
+      audioAsset: 'assets/audio/keys/chord_c_maj.wav',
       tip: 'Ngón 1 bấm Dây 2 ngăn 1 • Ngón 2 Dây 4 ngăn 2 • Ngón 3 Dây 5 ngăn 3 (Bỏ dây 6)',
     ),
     GuitarChordShape(
@@ -102,7 +100,7 @@ class GuitarFretboardData {
       formula: '3 - 2 - 0 - 0 - 0 - 3',
       fretsByString1To6: [3, 0, 0, 0, 2, 3],
       fingersByString1To6: [3, 0, 0, 0, 1, 2],
-      audioAsset: 'assets/audio/chords/chord_g_major.wav',
+      audioAsset: 'assets/audio/keys/chord_g_maj.wav',
       tip: 'Ngón 1 Dây 5 ngăn 2 • Ngón 2 Dây 6 ngăn 3 • Ngón 3 Dây 1 ngăn 3 (Vang cả 6 dây)',
     ),
     GuitarChordShape(
@@ -111,7 +109,7 @@ class GuitarFretboardData {
       formula: 'X - 0 - 2 - 2 - 1 - 0',
       fretsByString1To6: [0, 1, 2, 2, 0, -1],
       fingersByString1To6: [0, 1, 3, 2, 0, 0],
-      audioAsset: 'assets/audio/chords/chord_a_minor.wav',
+      audioAsset: 'assets/audio/keys/chord_a_min.wav',
       tip: 'Ngón 1 Dây 2 ngăn 1 • Ngón 2 Dây 4 ngăn 2 • Ngón 3 Dây 3 ngăn 2 (Bass dây 5 La)',
     ),
     GuitarChordShape(
@@ -120,7 +118,7 @@ class GuitarFretboardData {
       formula: '0 - 2 - 2 - 0 - 0 - 0',
       fretsByString1To6: [0, 0, 0, 2, 2, 0],
       fingersByString1To6: [0, 0, 0, 3, 2, 0],
-      audioAsset: 'assets/audio/chords/chord_d_minor.wav',
+      audioAsset: 'assets/audio/keys/chord_e_min.wav',
       tip: 'Hợp âm dễ nhất: Chỉ cần 2 ngón (Ngón 2 Dây 5 ngăn 2 & Ngón 3 Dây 4 ngăn 2)',
     ),
     GuitarChordShape(
@@ -129,7 +127,7 @@ class GuitarFretboardData {
       formula: 'X - X - 0 - 2 - 3 - 1',
       fretsByString1To6: [1, 3, 2, 0, -1, -1],
       fingersByString1To6: [1, 3, 2, 0, 0, 0],
-      audioAsset: 'assets/audio/chords/chord_d_minor.wav',
+      audioAsset: 'assets/audio/keys/chord_d_min.wav',
       tip: 'Ngón 1 Dây 1 ngăn 1 • Ngón 2 Dây 3 ngăn 2 • Ngón 3 Dây 2 ngăn 3 (Bass dây 4 Rê)',
     ),
     GuitarChordShape(
@@ -138,7 +136,7 @@ class GuitarFretboardData {
       formula: 'X - X - 3 - 2 - 1 - 1',
       fretsByString1To6: [1, 1, 2, 3, -1, -1],
       fingersByString1To6: [1, 1, 2, 3, 0, 0],
-      audioAsset: 'assets/audio/chords/chord_f_major.wav',
+      audioAsset: 'assets/audio/keys/chord_f_maj.wav',
       tip: 'Ngón 1 chặn nhẹ Dây 1&2 ngăn 1 • Ngón 2 Dây 3 ngăn 2 • Ngón 3 Dây 4 ngăn 3',
     ),
     GuitarChordShape(
@@ -147,7 +145,7 @@ class GuitarFretboardData {
       formula: 'X - X - 0 - 2 - 3 - 2',
       fretsByString1To6: [2, 3, 2, 0, -1, -1],
       fingersByString1To6: [2, 3, 1, 0, 0, 0],
-      audioAsset: 'assets/audio/chords/chord_g_major.wav',
+      audioAsset: 'assets/audio/keys/chord_d_maj.wav',
       tip: 'Hình tam giác ở 3 dây dưới: Ngón 1 Dây 3 ngăn 2 • Ngón 2 Dây 1 ngăn 2 • Ngón 3 Dây 2 ngăn 3',
     ),
     GuitarChordShape(
@@ -156,7 +154,7 @@ class GuitarFretboardData {
       formula: '0 - 2 - 2 - 1 - 0 - 0',
       fretsByString1To6: [0, 0, 1, 2, 2, 0],
       fingersByString1To6: [0, 0, 1, 3, 2, 0],
-      audioAsset: 'assets/audio/chords/chord_c_major.wav',
+      audioAsset: 'assets/audio/keys/chord_e_maj.wav',
       tip: 'Giống thế bấm Am nhưng dịch toàn bộ lên 1 dây (Ngón 1 Dây 3 ngăn 1)',
     ),
   ];

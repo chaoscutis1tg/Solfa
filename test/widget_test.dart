@@ -1,3 +1,5 @@
+import 'dart:io' show File;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -10,6 +12,7 @@ import 'package:solfa/core/models/domain_models.dart';
 import 'package:solfa/core/providers/app_providers.dart';
 import 'package:solfa/core/security/solfa_integrity_guard.dart';
 import 'package:solfa/features/battle/application/battle_controller.dart';
+import 'package:solfa/features/guitar/presentation/guitar_studio_sheet.dart';
 import 'package:solfa/features/metronome/application/metronome_controller.dart';
 import 'package:solfa/features/practice/application/practice_session_controller.dart';
 import 'package:solfa/features/practice/presentation/widgets/musical_staff_widget.dart';
@@ -1739,9 +1742,65 @@ void main() {
                 isTrue,
                 reason: 'Câu hỏi $gtrTopic phải gắn mã sơ đồ trực quan GTR_',
               );
+              final wavFile = File(q.audioAsset);
+              expect(
+                wavFile.existsSync(),
+                isTrue,
+                reason: 'File âm thanh ${q.audioAsset} của $gtrTopic phải tồn tại thật trên ổ đĩa',
+              );
+              expect(wavFile.lengthSync(), greaterThan(1000));
             }
             await sessionNotifier.abandonSessionIfIncomplete();
           }
+        }
+
+        // Kiểm tra toàn bộ 78 vị trí trên Cần đàn Guitar (6 dây x 13 ngăn 0..12) và 8 hợp âm Guitar đều phát đúng cao độ vật lý & có file WAV thật
+        expect(
+          GuitarFretboardData.noteAt(stringNumber: 6, fret: 0).audioAsset,
+          equals('assets/audio/notes/e2.wav'),
+        );
+        expect(
+          GuitarFretboardData.noteAt(stringNumber: 5, fret: 0).audioAsset,
+          equals('assets/audio/notes/a2.wav'),
+        );
+        expect(
+          GuitarFretboardData.noteAt(stringNumber: 4, fret: 0).audioAsset,
+          equals('assets/audio/notes/d3.wav'),
+        );
+        expect(
+          GuitarFretboardData.noteAt(stringNumber: 3, fret: 0).audioAsset,
+          equals('assets/audio/notes/g3.wav'),
+        );
+        expect(
+          GuitarFretboardData.noteAt(stringNumber: 2, fret: 0).audioAsset,
+          equals('assets/audio/notes/b3.wav'),
+        );
+        expect(
+          GuitarFretboardData.noteAt(stringNumber: 1, fret: 0).audioAsset,
+          equals('assets/audio/notes/e4.wav'),
+        );
+        expect(
+          GuitarFretboardData.noteAt(stringNumber: 1, fret: 12).audioAsset,
+          equals('assets/audio/notes/e5.wav'),
+        );
+        for (int s = 1; s <= 6; s++) {
+          for (int f = 0; f <= 12; f++) {
+            final note = GuitarFretboardData.noteAt(stringNumber: s, fret: f);
+            final file = File(note.audioAsset);
+            expect(
+              file.existsSync(),
+              isTrue,
+              reason: 'Dây $s ngăn $f (${note.fullLabel}) thiếu file ${note.audioAsset}',
+            );
+          }
+        }
+        for (final chord in GuitarFretboardData.commonChords) {
+          final file = File(chord.audioAsset);
+          expect(
+            file.existsSync(),
+            isTrue,
+            reason: 'Hợp âm ${chord.id} thiếu file ${chord.audioAsset}',
+          );
         }
 
         // Hoàn thành 1 phiên Guitar (5 đúng, 1 sai) -> Kiểm tra lưu tên bài trên Trang chủ & Danh sách Ôn câu sai

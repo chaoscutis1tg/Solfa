@@ -7,7 +7,7 @@ import '../../../core/utils/note_formatter.dart';
 import '../presentation/widgets/musical_staff_widget.dart';
 
 class HybridQuestionGenerator {
-  static const int _currentGeneratorVersion = 6;
+  static const int _currentGeneratorVersion = 7;
   static final Random _entropySource = Random();
 
   final AppDatabase _db;
@@ -1854,85 +1854,85 @@ class HybridQuestionGenerator {
       if (topicId == 'topic_guitar_notes') {
         final basicNotes = [
           (
-            'assets/audio/notes/e3.wav',
+            'assets/audio/notes/e2.wav',
             'GTR_S6_F0',
             'Mi trầm (E2 • Dây 6 buông)',
             'Nhìn vị trí (?) trên cần đàn Guitar (Dây 6 buông) và chọn tên nốt:',
-            'Dây 6 buông (dây dày nhất trên cùng khi cầm đàn) là nốt Mi trầm (E2).'
+            'Dây 6 buông (dây dày nhất trên cùng khi cầm đàn) là nốt Mi trầm (E2 - 82.4 Hz).'
           ),
           (
-            'assets/audio/notes/a3.wav',
+            'assets/audio/notes/a2.wav',
             'GTR_S5_F0',
             'La (A2 • Dây 5 buông)',
             'Nhìn vị trí (?) trên cần đàn Guitar (Dây 5 buông) và chọn tên nốt:',
-            'Dây 5 buông là nốt La (A2) — âm Bass chuẩn của hợp âm La Thứ (Am).'
+            'Dây 5 buông là nốt La (A2 - 110.0 Hz) — âm Bass chuẩn của hợp âm La Thứ (Am).'
           ),
           (
             'assets/audio/notes/d3.wav',
             'GTR_S4_F0',
             'Rê (D3 • Dây 4 buông)',
             'Nhìn vị trí (?) trên cần đàn Guitar (Dây 4 buông) và chọn tên nốt:',
-            'Dây 4 buông là nốt Rê (D3) — âm Bass chuẩn của hợp âm Rê Thứ (Dm).'
+            'Dây 4 buông là nốt Rê (D3 - 146.8 Hz) — âm Bass chuẩn của hợp âm Rê Thứ (Dm).'
           ),
           (
             'assets/audio/notes/g3.wav',
             'GTR_S3_F0',
             'Sol (G3 • Dây 3 buông)',
             'Nhìn vị trí (?) trên cần đàn Guitar (Dây 3 buông) và chọn tên nốt:',
-            'Dây 3 buông là nốt Sol (G3).'
+            'Dây 3 buông là nốt Sol (G3 - 196.0 Hz).'
           ),
           (
             'assets/audio/notes/b3.wav',
             'GTR_S2_F0',
             'Si (B3 • Dây 2 buông)',
             'Nhìn vị trí (?) trên cần đàn Guitar (Dây 2 buông) và chọn tên nốt:',
-            'Dây 2 buông là nốt Si (B3).'
+            'Dây 2 buông là nốt Si (B3 - 246.9 Hz).'
           ),
           (
             'assets/audio/notes/e4.wav',
             'GTR_S1_F0',
             'Mi cao (e4 • Dây 1 buông)',
             'Nhìn vị trí (?) trên cần đàn Guitar (Dây 1 buông mỏng nhất) và chọn tên nốt:',
-            'Dây 1 buông (mỏng nhất dưới cùng) là nốt Mi cao (e4).'
+            'Dây 1 buông (mỏng nhất dưới cùng) là nốt Mi cao (E4 - 329.6 Hz).'
           ),
           (
-            'assets/audio/notes/g3.wav',
+            'assets/audio/notes/g2.wav',
             'GTR_S6_F3',
-            'Sol (G • Dây 6 Ngăn 3)',
+            'Sol (G2 • Dây 6 Ngăn 3)',
             'Nhìn vị trí (?) tại Dây 6 • Ngăn 3 (chấm mốc đầu tiên) và chọn tên nốt:',
-            'Dây 6 buông là Mi → Ngăn 1 là Fa → Ngăn 3 là Sol (G).'
+            'Dây 6 buông là Mi (E2) → Ngăn 1 là Fa (F2) → Ngăn 3 là Sol (G2).'
           ),
           (
-            'assets/audio/notes/c4.wav',
+            'assets/audio/notes/c3.wav',
             'GTR_S5_F3',
-            'Đô (C • Dây 5 Ngăn 3)',
+            'Đô (C3 • Dây 5 Ngăn 3)',
             'Nhìn vị trí (?) tại Dây 5 • Ngăn 3 và chọn tên nốt:',
-            'Dây 5 buông là La → Ngăn 2 là Si → Ngăn 3 là Đô (C).'
+            'Dây 5 buông là La (A2) → Ngăn 2 là Si (B2) → Ngăn 3 là Đô trầm (C3).'
           ),
         ];
 
         final interNotes = [
           ...basicNotes,
           (
-            'assets/audio/notes/a3.wav',
+            'assets/audio/notes/a2.wav',
             'GTR_S6_F5',
-            'La (A • Dây 6 Ngăn 5)',
+            'La (A2 • Dây 6 Ngăn 5)',
             'Nhìn vị trí (?) tại Dây 6 • Ngăn 5 và chọn tên nốt:',
-            'Dây 6 Ngăn 5 là nốt La (A), trùng cao độ với Dây 5 buông (mốc so dây ngăn 5).'
+            'Dây 6 Ngăn 5 là nốt La (A2), trùng cao độ với Dây 5 buông (mốc so dây ngăn 5).'
           ),
           (
-            'assets/audio/notes/d4.wav',
+            'assets/audio/notes/d3.wav',
             'GTR_S5_F5',
-            'Rê (D • Dây 5 Ngăn 5)',
+            'Rê (D3 • Dây 5 Ngăn 5)',
             'Nhìn vị trí (?) tại Dây 5 • Ngăn 5 và chọn tên nốt:',
-            'Dây 5 Ngăn 5 là nốt Rê (D), trùng cao độ với Dây 4 buông.'
+            'Dây 5 Ngăn 5 là nốt Rê (D3), trùng cao độ với Dây 4 buông.'
           ),
           (
-            'assets/audio/notes/e4.wav',
+            'assets/audio/notes/e3.wav',
             'GTR_S5_F7',
-            'Mi (E • Dây 5 Ngăn 7)',
+            'Mi (E3 • Dây 5 Ngăn 7)',
             'Nhìn vị trí (?) tại Dây 5 • Ngăn 7 (chấm mốc thứ 3) và chọn tên nốt:',
-            'Từ Rê (Ngăn 5 Dây 5) tiến 1 cung lên Ngăn 7 là nốt Mi (E).'
+            'Từ Rê (Ngăn 5 Dây 5) tiến 1 cung lên Ngăn 7 là nốt Mi (E3).'
           ),
           (
             'assets/audio/notes/c4.wav',
@@ -1946,18 +1946,18 @@ class HybridQuestionGenerator {
         final advNotes = [
           ...interNotes,
           (
-            'assets/audio/notes/fsharp4.wav',
+            'assets/audio/notes/fsharp2.wav',
             'GTR_S6_F2',
-            'Fa# (F# • Dây 6 Ngăn 2)',
+            'Fa# (F#2 • Dây 6 Ngăn 2)',
             'Nhìn vị trí (?) tại Dây 6 • Ngăn 2 và chọn tên nốt có dấu hóa:',
-            'Giữa Fa (Ngăn 1) và Sol (Ngăn 3) trên Dây 6 là nốt Fa thăng (F#).'
+            'Giữa Fa (Ngăn 1) và Sol (Ngăn 3) trên Dây 6 là nốt Fa thăng (F#2).'
           ),
           (
-            'assets/audio/notes/csharp4.wav',
+            'assets/audio/notes/csharp3.wav',
             'GTR_S5_F4',
-            'Đô# (C# • Dây 5 Ngăn 4)',
+            'Đô# (C#3 • Dây 5 Ngăn 4)',
             'Nhìn vị trí (?) tại Dây 5 • Ngăn 4 và chọn tên nốt:',
-            'Từ Đô (Dây 5 Ngăn 3) tiến 1 ngăn lên Ngăn 4 là nốt Đô thăng (C#).'
+            'Từ Đô (Dây 5 Ngăn 3) tiến 1 ngăn lên Ngăn 4 là nốt Đô thăng (C#3).'
           ),
           (
             'assets/audio/notes/c5.wav',
@@ -2001,7 +2001,7 @@ class HybridQuestionGenerator {
             'Hợp âm La Thứ (Am): Ngón 1 Dây 2 ngăn 1 • Ngón 2 Dây 4 ngăn 2 • Ngón 3 Dây 3 ngăn 2.'
           ),
           (
-            'assets/audio/keys/chord_d_min.wav',
+            'assets/audio/keys/chord_e_min.wav',
             'GTR_CHORD_Em',
             'Mi Thứ (Em • 0-2-2-0-0-0)',
             'Quan sát thế bấm chỉ dùng 2 ngón trên Dây 5 & Dây 4 ngăn 2 và chọn hợp âm:',
@@ -2015,7 +2015,7 @@ class HybridQuestionGenerator {
             'Hợp âm Rê Thứ (Dm): Ngón 1 Dây 1 ngăn 1 • Ngón 2 Dây 3 ngăn 2 • Ngón 3 Dây 2 ngăn 3.'
           ),
           (
-            'assets/audio/keys/chord_g_maj.wav',
+            'assets/audio/keys/chord_d_maj.wav',
             'GTR_CHORD_D',
             'Rê Trưởng (D • X-X-0-2-3-2)',
             'Quan sát thế bấm hình tam giác ở 3 dây dưới và chọn tên hợp âm:',
@@ -2033,7 +2033,7 @@ class HybridQuestionGenerator {
             'Hợp âm Fa Trưởng (F): Ngón 1 chặn ngăn 1 • Ngón 2 Dây 3 ngăn 2 • Ngón 3 Dây 4 ngăn 3.'
           ),
           (
-            'assets/audio/keys/chord_c_maj.wav',
+            'assets/audio/keys/chord_e_maj.wav',
             'GTR_CHORD_E',
             'Mi Trưởng (E • 0-2-2-1-0-0)',
             'Quan sát thế bấm giống Am nhưng dịch toàn bộ lên 1 dây và chọn hợp âm:',
@@ -2085,7 +2085,7 @@ class HybridQuestionGenerator {
             'Scale Đô Trưởng gồm 7 nốt tự nhiên không thăng giáng, song song với La Thứ.'
           ),
           (
-            'assets/audio/notes/a3.wav',
+            'assets/audio/notes/a2.wav',
             'GTR_S6_F5',
             'Nốt Chủ âm (Root Note – Nốt Gốc)',
             'Trên Bản đồ Scale Guitar, chấm tròn màu Đỏ nổi bật dùng để chỉ nốt gì?',
@@ -2099,14 +2099,14 @@ class HybridQuestionGenerator {
             'Ngăn 12 chia đôi chiều dài dây đàn, lặp lại đúng 6 nốt E–A–D–G–B–e cao hơn 1 quãng tám.'
           ),
           (
-            'assets/audio/notes/c4.wav',
+            'assets/audio/notes/c3.wav',
             'GTR_S5_F3',
             'Xuống 2 dây + Tiến thêm 2 ngăn (Dây 3 Ngăn 5)',
             'Từ nốt Đô (Dây 5 Ngăn 3), áp dụng Quy tắc Quãng 8 chéo sẽ tìm thấy nốt Đô tiếp theo ở đâu?',
             'Từ Dây 5: Lùi xuống 2 dây (về Dây 3) và tiến thêm 2 ngăn (từ Ngăn 3 lên Ngăn 5).'
           ),
           (
-            'assets/audio/notes/g3.wav',
+            'assets/audio/notes/g2.wav',
             'GTR_S6_F3',
             'Xuống 2 dây + Tiến thêm 2 ngăn (Dây 4 Ngăn 5)',
             'Từ nốt Sol (Dây 6 Ngăn 3), áp dụng Quy tắc Quãng 8 chéo sẽ gặp lại nốt Sol ở vị trí nào?',
@@ -2156,18 +2156,18 @@ class HybridQuestionGenerator {
         // topic_guitar_tabs (Đọc Tab 6 dây & Luyện ngón Spider 1-2-3-4)
         final basicTabs = [
           (
-            'assets/audio/notes/g3.wav',
+            'assets/audio/notes/g2.wav',
             'GTR_TAB_S6_F3',
             'Bấm Dây 6 (dày nhất) tại Ngăn 3',
             'Nhìn ký hiệu số "3" nằm trên dòng kẻ dưới cùng (E|) của khuông Tab Guitar, bạn cần gảy như thế nào?',
-            'Dòng dưới cùng của khuông Tab là Dây 6 (E2), số 3 nghĩa là bấm Ngăn 3 trên Dây 6.'
+            'Dòng dưới cùng của khuông Tab là Dây 6 (E2), số 3 nghĩa là bấm Ngăn 3 trên Dây 6 (Sol G2).'
           ),
           (
-            'assets/audio/notes/c4.wav',
+            'assets/audio/notes/c3.wav',
             'GTR_TAB_S5_F3',
             'Bấm Dây 5 (La) tại Ngăn 3',
             'Nhìn ký hiệu số "3" trên dòng kẻ thứ 2 từ dưới lên (A|) của khuông Tab, bạn bấm ở đâu?',
-            'Dòng A| đại diện cho Dây 5, số 3 nghĩa là bấm vào Ngăn 3 của Dây 5 (nốt Đô C).'
+            'Dòng A| đại diện cho Dây 5, số 3 nghĩa là bấm vào Ngăn 3 của Dây 5 (nốt Đô C3).'
           ),
           (
             'assets/audio/notes/e4.wav',
@@ -2184,7 +2184,7 @@ class HybridQuestionGenerator {
             'Dòng B| là Dây 2; số 3 nghĩa là bấm Ngăn 3 trên Dây 2 (nốt Rê D4).'
           ),
           (
-            'assets/audio/notes/f3.wav',
+            'assets/audio/notes/f2.wav',
             'GTR_TAB_S6_F1',
             'Trỏ (1) – Giữa (2) – Áp út (3) – Út (4) trên 4 ngăn liên tiếp',
             'Trong bài luyện ngón "Bò nhện (Spider Walk 1–2–3–4)", 4 ngón tay trái được phân công như thế nào?',
