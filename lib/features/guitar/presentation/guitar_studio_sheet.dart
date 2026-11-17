@@ -1490,7 +1490,7 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
     bool isDark,
     bool isEn,
   ) {
-    final workouts = GuitarFretboardData.fingerWorkouts;
+    const workouts = GuitarFretboardData.fingerWorkouts;
     final currentWorkout = workouts[_selectedWorkoutIndex % workouts.length];
     final currentStepTuple =
         currentWorkout.steps[_spiderStep % currentWorkout.steps.length];

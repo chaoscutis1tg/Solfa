@@ -809,10 +809,18 @@ void main() {
         expect(find.byKey(const Key('guitar_studio_sheet')), findsOneWidget);
         await tester.tap(find.byKey(const Key('chip_guitar_tab_1')));
         await pumpFrames(250);
+        expect(find.byKey(const Key('chip_chord_cat_barre')), findsOneWidget);
         await tester.tap(find.byKey(const Key('chip_guitar_tab_2')));
         await pumpFrames(250);
-        await tester.tap(find.byKey(const Key('chip_guitar_tab_3')));
+        expect(tester.takeException(), isNull);
+        await tester.tap(find.byKey(const Key('btn_close_guitar_studio')));
         await pumpFrames(250);
+
+        // Mở Trang Luyện Ngón Guitar & Đọc Tab riêng biệt từ thẻ Luyện ngón 1-2-3-4
+        await tester.tap(find.byKey(const Key('topic_grid_card_guitar_spider')));
+        await pumpFrames(300);
+        expect(find.byKey(const Key('card_guitar_workout_spider_1234')), findsOneWidget);
+        expect(find.byKey(const Key('card_guitar_workout_pentatonic_box1')), findsOneWidget);
         expect(tester.takeException(), isNull);
         await tester.tap(find.byKey(const Key('btn_close_guitar_studio')));
         await pumpFrames(250);
