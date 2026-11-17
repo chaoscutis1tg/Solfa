@@ -7,7 +7,7 @@ import '../../../core/utils/note_formatter.dart';
 import '../presentation/widgets/musical_staff_widget.dart';
 
 class HybridQuestionGenerator {
-  static const int _currentGeneratorVersion = 7;
+  static const int _currentGeneratorVersion = 8;
   static final Random _entropySource = Random();
 
   final AppDatabase _db;
@@ -2063,6 +2063,20 @@ class HybridQuestionGenerator {
             'Vòng Canon / Pop: C – G – Am – F (I – V – vi – IV)',
             'Vòng 4 hợp âm kinh điển bậc I – V – vi – IV trong giọng Đô Trưởng dùng cho hàng nghìn bài Pop/Ballad là gì?',
             'Trong giọng Đô Trưởng: Bậc I = C, Bậc V = G, Bậc vi = Am, Bậc IV = F.'
+          ),
+          (
+            'assets/audio/keys/chord_g_dom7.wav',
+            'GTR_CHORD_G',
+            'Vòng Jazz / R&B: Dm7 – G7 – Cmaj7 (ii – V – I)',
+            'Trong giọng Đô Trưởng, tiến trình kết câu kinh điển bậc ii – V – I gồm 3 hợp âm nào?',
+            'Bậc ii (Rê Thứ Dm7) → Bậc V (Sol Bảy Át G7) → giải kết về Bậc I (Đô Trưởng Cmaj7).'
+          ),
+          (
+            'assets/audio/keys/d_major.wav',
+            'GTR_CHORD_D',
+            'Vang thực tế ở giọng Rê Trưởng (D Major • tăng 1 cung)',
+            'Khi kẹp Capo tại Ngăn 2 và bấm thế tay Đô Trưởng (C), âm thanh thực tế vang lên là hợp âm gì?',
+            'Mỗi ngăn Capo tăng 1 bán âm: Kẹp Capo ngăn 2 tăng 2 bán âm (1 cung), biến thế bấm C thành âm thực Rê Trưởng (D).'
           ),
         ];
 

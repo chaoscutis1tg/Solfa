@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 
 import '../../../app/theme/app_colors.dart';
 import '../../../app/widgets/animated_ui.dart';
+import '../../../core/localization/app_locale.dart';
 import '../../../core/models/domain_models.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/utils/note_formatter.dart';
@@ -17,10 +18,13 @@ class ProgressScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final progressAsync = ref.watch(overallProgressProvider);
+    final isEn = ref.watch(appSettingsProvider).isEnglish;
 
     return progressAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('Lỗi tải tiến trình: $e')),
+      error: (e, _) => Center(
+        child: Text(isEn ? 'Failed to load progress: $e' : 'Lỗi tải tiến trình: $e'),
+      ),
       data: (stats) {
         return RefreshIndicator(
           onRefresh: () async {
@@ -68,17 +72,23 @@ class ProgressScreen extends ConsumerWidget {
                                 children: [
                                   Text(
                                     stats.pendingReviewCount > 0
-                                        ? 'Ôn tập câu sai (${stats.pendingReviewCount} câu)'
-                                        : 'Ôn tập câu sai (0 câu cần ôn)',
+                                        ? (isEn
+                                            ? 'Review Mistakes (${stats.pendingReviewCount} pending)'
+                                            : 'Ôn tập câu sai (${stats.pendingReviewCount} câu)')
+                                        : (isEn
+                                            ? 'Review Mistakes (0 pending)'
+                                            : 'Ôn tập câu sai (0 câu cần ôn)'),
                                     style: const TextStyle(
                                       fontWeight: FontWeight.w800,
                                       fontSize: 15.5,
                                     ),
                                   ),
                                   const SizedBox(height: 2),
-                                  const Text(
-                                    'Luyện lại các câu sai cho đến khi thuộc bài',
-                                    style: TextStyle(fontSize: 12.5),
+                                  Text(
+                                    isEn
+                                        ? 'Re-practice missed questions until mastered'
+                                        : 'Luyện lại các câu sai cho đến khi thuộc bài',
+                                    style: const TextStyle(fontSize: 12.5),
                                   ),
                                 ],
                               ),
@@ -93,7 +103,9 @@ class ProgressScreen extends ConsumerWidget {
                           ),
                           onPressed: () => context.push('/review'),
                           icon: const Icon(Icons.replay_rounded, size: 19),
-                          label: const Text('Mở ôn tập câu sai'),
+                          label: Text(
+                            isEn ? 'Open Mistake Review' : 'Mở ôn tập câu sai',
+                          ),
                         ),
                       ],
                     ),
@@ -123,24 +135,28 @@ class ProgressScreen extends ConsumerWidget {
                             ),
                           ),
                           const SizedBox(height: 12),
-                          const Text(
-                            'Chưa có dữ liệu luyện tập',
-                            style: TextStyle(
+                          Text(
+                            isEn ? 'No Practice History Yet' : 'Chưa có dữ liệu luyện tập',
+                            style: const TextStyle(
                               fontSize: 17.5,
                               fontWeight: FontWeight.w800,
                             ),
                           ),
                           const SizedBox(height: 6),
-                          const Text(
-                            'Hoàn thành phiên luyện tập đầu tiên để xem biểu đồ độ chính xác và lịch sử học tập tại đây.',
+                          Text(
+                            isEn
+                                ? 'Complete your first practice session to view accuracy charts and learning history here.'
+                                : 'Hoàn thành phiên luyện tập đầu tiên để xem biểu đồ độ chính xác và lịch sử học tập tại đây.',
                             textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 13.5, height: 1.38),
+                            style: const TextStyle(fontSize: 13.5, height: 1.38),
                           ),
                           const SizedBox(height: 16),
                           ElevatedButton.icon(
                             onPressed: () => context.go('/home'),
                             icon: const Icon(Icons.play_arrow_rounded),
-                            label: const Text('Bắt đầu luyện tập ngay'),
+                            label: Text(
+                              isEn ? 'Start Practicing Now' : 'Bắt đầu luyện tập ngay',
+                            ),
                           ),
                         ],
                       ),
@@ -149,12 +165,14 @@ class ProgressScreen extends ConsumerWidget {
                 )
               else ...[
                 // 1. Tổng quan học tập (Summary KPI Grid including Best Score & Max Combo moved from Home)
-                const FadeSlideIn(
+                FadeSlideIn(
                   index: 1,
                   child: Text(
-                    'Tổng quan học tập',
-                    style:
-                        TextStyle(fontSize: 17.5, fontWeight: FontWeight.w800),
+                    isEn ? 'Learning Overview' : 'Tổng quan học tập',
+                    style: const TextStyle(
+                      fontSize: 17.5,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -169,31 +187,43 @@ class ProgressScreen extends ConsumerWidget {
                     childAspectRatio: 1.62,
                     children: [
                       _KpiTile(
-                        label: 'Tổng câu đã làm',
-                        value: '${stats.totalAnswered} câu',
-                        sub: 'Đúng ${stats.totalCorrect} câu',
+                        label: isEn ? 'Total Answered' : 'Tổng câu đã làm',
+                        value: isEn
+                            ? '${stats.totalAnswered} items'
+                            : '${stats.totalAnswered} câu',
+                        sub: isEn
+                            ? 'Correct ${stats.totalCorrect}'
+                            : 'Đúng ${stats.totalCorrect} câu',
                         icon: Icons.quiz_outlined,
                         color: AppColors.primary,
                       ),
                       _KpiTile(
-                        label: 'Độ chính xác',
+                        label: isEn ? 'Accuracy' : 'Độ chính xác',
                         value:
                             '${stats.overallAccuracyPercent.toStringAsFixed(1)}%',
-                        sub: 'Toàn bộ phiên',
+                        sub: isEn ? 'All sessions' : 'Toàn bộ phiên',
                         icon: Icons.verified_outlined,
                         color: AppColors.correct,
                       ),
                       _KpiTile(
-                        label: 'Kỷ lục điểm cao',
-                        value: '${stats.bestScore} điểm',
-                        sub: 'Combo cao nhất: x${stats.bestComboStreak}',
+                        label: isEn ? 'High Score' : 'Kỷ lục điểm cao',
+                        value: isEn
+                            ? '${stats.bestScore} pts'
+                            : '${stats.bestScore} điểm',
+                        sub: isEn
+                            ? 'Max Combo: x${stats.bestComboStreak}'
+                            : 'Combo cao nhất: x${stats.bestComboStreak}',
                         icon: Icons.emoji_events_outlined,
                         color: AppColors.accentAmber,
                       ),
                       _KpiTile(
-                        label: 'Chuỗi ngày học',
-                        value: '${stats.currentStreakDays} ngày',
-                        sub: 'Thời gian: ${NoteFormatter.formatDurationSeconds(stats.totalDurationSeconds)}',
+                        label: isEn ? 'Daily Streak' : 'Chuỗi ngày học',
+                        value: isEn
+                            ? '${stats.currentStreakDays} days'
+                            : '${stats.currentStreakDays} ngày',
+                        sub: isEn
+                            ? 'Time: ${NoteFormatter.formatDurationSeconds(stats.totalDurationSeconds)}'
+                            : 'Thời gian: ${NoteFormatter.formatDurationSeconds(stats.totalDurationSeconds)}',
                         icon: Icons.local_fire_department_rounded,
                         color: AppColors.accentAmber,
                       ),
@@ -203,11 +233,13 @@ class ProgressScreen extends ConsumerWidget {
 
                 const SizedBox(height: 20),
                 if (stats.noteMasteryStats.isNotEmpty) ...[
-                  const FadeSlideIn(
+                  FadeSlideIn(
                     index: 3,
                     child: Text(
-                      'Bản đồ độ nhạy từng nốt (Note Heatmap)',
-                      style: TextStyle(
+                      isEn
+                          ? 'Note Sensitivity Heatmap'
+                          : 'Bản đồ độ nhạy từng nốt (Note Heatmap)',
+                      style: const TextStyle(
                         fontSize: 17.5,
                         fontWeight: FontWeight.w800,
                       ),
@@ -222,12 +254,14 @@ class ProgressScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 20),
                 ],
-                const FadeSlideIn(
+                FadeSlideIn(
                   index: 3,
                   child: Text(
-                    'Độ chính xác theo chủ đề',
-                    style:
-                        TextStyle(fontSize: 17.5, fontWeight: FontWeight.w800),
+                    isEn ? 'Accuracy by Topic' : 'Độ chính xác theo chủ đề',
+                    style: const TextStyle(
+                      fontSize: 17.5,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -383,7 +417,9 @@ class ProgressScreen extends ConsumerWidget {
                                 children: [
                                   Expanded(
                                     child: Text(
-                                      '${tStat.topicName} (${tStat.totalAnswered} câu)',
+                                      isEn
+                                          ? '${AppLocale.localizeTopicName(tStat.topicId, tStat.topicName, true)} (${tStat.totalAnswered})'
+                                          : '${tStat.topicName} (${tStat.totalAnswered} câu)',
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: const TextStyle(
@@ -405,11 +441,13 @@ class ProgressScreen extends ConsumerWidget {
                                           borderRadius:
                                               BorderRadius.circular(8),
                                         ),
-                                        child: const FittedBox(
+                                        child: FittedBox(
                                           fit: BoxFit.scaleDown,
                                           child: Text(
-                                            'Chưa đủ dữ liệu (< 5 câu)',
-                                            style: TextStyle(
+                                            isEn
+                                                ? 'Need >= 5 items'
+                                                : 'Chưa đủ dữ liệu (< 5 câu)',
+                                            style: const TextStyle(
                                               fontSize: 11.5,
                                               fontWeight: FontWeight.w600,
                                             ),
@@ -438,12 +476,14 @@ class ProgressScreen extends ConsumerWidget {
                 ),
 
                 const SizedBox(height: 20),
-                const FadeSlideIn(
+                FadeSlideIn(
                   index: 5,
                   child: Text(
-                    'Lịch sử phiên gần đây',
-                    style:
-                        TextStyle(fontSize: 17.5, fontWeight: FontWeight.w800),
+                    isEn ? 'Recent Sessions' : 'Lịch sử phiên gần đây',
+                    style: const TextStyle(
+                      fontSize: 17.5,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -452,6 +492,18 @@ class ProgressScreen extends ConsumerWidget {
                   final dateFormatted = DateFormat('dd/MM/yyyy HH:mm')
                       .format(session.startedAt);
                   final acc = session.accuracyPercent;
+                  final tName = AppLocale.localizeTopicName(
+                    session.topicId,
+                    session.topicName ?? 'Luyện tập',
+                    isEn,
+                  );
+                  final lName = session.levelName != null
+                      ? AppLocale.localizeLevelName(
+                          session.levelId ?? '',
+                          session.levelName!,
+                          isEn,
+                        )
+                      : null;
                   return FadeSlideIn(
                     index: 6 + idx,
                     child: Padding(
@@ -485,8 +537,10 @@ class ProgressScreen extends ConsumerWidget {
                           ),
                           title: Text(
                             session.mode == 'review'
-                                ? 'Ôn tập câu sai (${session.topicName ?? 'Tổng hợp'})'
-                                : '${session.topicName ?? 'Luyện tập'}${session.levelName != null ? ' • ${session.levelName}' : ''}',
+                                ? (isEn
+                                    ? 'Mistake Review ($tName)'
+                                    : 'Ôn tập câu sai (${session.topicName ?? 'Tổng hợp'})')
+                                : '$tName${lName != null ? ' • $lName' : ''}',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
@@ -495,7 +549,9 @@ class ProgressScreen extends ConsumerWidget {
                             ),
                           ),
                           subtitle: Text(
-                            '$dateFormatted • Đúng ${session.correctCount}/${session.totalQuestions} (${NoteFormatter.formatDurationSeconds(session.durationSeconds)})',
+                            isEn
+                                ? '$dateFormatted • Correct ${session.correctCount}/${session.totalQuestions} (${NoteFormatter.formatDurationSeconds(session.durationSeconds)})'
+                                : '$dateFormatted • Đúng ${session.correctCount}/${session.totalQuestions} (${NoteFormatter.formatDurationSeconds(session.durationSeconds)})',
                             style: const TextStyle(fontSize: 12.5),
                           ),
                         ),

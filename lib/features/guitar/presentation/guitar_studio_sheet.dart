@@ -216,10 +216,79 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
   Timer? _spiderTimer;
   bool _isSpiderPlaying = false;
 
+  Timer? _strumTimer;
+  int? _activeStrumString;
+  int? _activeStrumFret;
+
   @override
   void dispose() {
     _spiderTimer?.cancel();
+    _strumTimer?.cancel();
     super.dispose();
+  }
+
+  void _startChordStrum(
+    GuitarChordShape chord, {
+    required bool isBallad,
+  }) {
+    _strumTimer?.cancel();
+    final List<(int stringNum, int fretNum)> sequence = [];
+
+    if (!isBallad) {
+      // Quạt / Rải từ dây Bass (dây số lớn nhất không bịt X) xuống dây 1
+      for (int s = 6; s >= 1; s--) {
+        final fret = chord.fretsByString1To6[s - 1];
+        if (fret >= 0) {
+          sequence.add((s, fret));
+        }
+      }
+    } else {
+      // Rải Ballad kinh điển: Bass – 3 – 2 – 3 – 1 – 3 – 2 – 3
+      int bassString = 6;
+      for (int s = 6; s >= 4; s--) {
+        if (chord.fretsByString1To6[s - 1] >= 0) {
+          bassString = s;
+          break;
+        }
+      }
+      final pattern = [bassString, 3, 2, 3, 1, 3, 2, 3];
+      for (final s in pattern) {
+        final fret = chord.fretsByString1To6[s - 1];
+        if (fret >= 0) {
+          sequence.add((s, fret));
+        }
+      }
+    }
+
+    if (sequence.isEmpty) return;
+
+    int step = 0;
+    void playStep() {
+      if (!mounted || step >= sequence.length) {
+        _strumTimer?.cancel();
+        if (mounted) {
+          setState(() {
+            _activeStrumString = null;
+            _activeStrumFret = null;
+          });
+        }
+        return;
+      }
+      final (s, f) = sequence[step];
+      setState(() {
+        _activeStrumString = s;
+        _activeStrumFret = f;
+      });
+      final note = GuitarFretboardData.noteAt(stringNumber: s, fret: f);
+      ref.read(audioServiceProvider).playPolyphonicAsset(note.audioAsset);
+      step++;
+    }
+
+    playStep();
+    _strumTimer = Timer.periodic(
+      Duration(milliseconds: isBallad ? 210 : 115),
+      (_) => playStep(),
+    );
   }
 
   void _toggleSpiderExercise() {
@@ -250,7 +319,7 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
       stringNumber: stringNum,
       fret: fretNum,
     );
-    ref.read(audioServiceProvider).playAsset(note.audioAsset);
+    ref.read(audioServiceProvider).playPolyphonicAsset(note.audioAsset);
   }
 
   @override
@@ -259,6 +328,7 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
     final audioService = ref.watch(audioServiceProvider);
     final adState = ref.watch(rewardedAdProvider);
     final proUnlocked = ref.watch(guitarProUnlockedProvider);
+    final isEn = ref.watch(appSettingsProvider).isEnglish;
 
     return Container(
       key: const Key('guitar_studio_sheet'),
@@ -305,24 +375,28 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
                   ),
                 ),
                 const SizedBox(width: 10),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Phòng Học Guitar & Bản Đồ Cần Đàn',
+                        isEn
+                            ? 'Guitar Studio & Fretboard Map'
+                            : 'Phòng Học Guitar & Bản Đồ Cần Đàn',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
                       Text(
-                        '6 Dây (E–A–D–G–B–e) • Hợp âm • Scale • Đọc Tab & Luyện ngón',
+                        isEn
+                            ? '6 Strings (E–A–D–G–B–e) • Chords • Scales • Tab & Spider'
+                            : '6 Dây (E–A–D–G–B–e) • Hợp âm • Scale • Đọc Tab & Luyện ngón',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 11.5),
+                        style: const TextStyle(fontSize: 11.5),
                       ),
                     ],
                   ),
@@ -339,11 +413,11 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
             // 4 Chế độ học Guitar tách biệt rõ ràng (Hiển thị gọn trên 1 hàng 4 cột, không tràn khung 360px)
             Row(
               children: [
-                for (final (idx, label, icon) in const [
-                  (0, 'Map Cần', Icons.grid_on_rounded),
-                  (1, 'Hợp âm', Icons.pan_tool_alt_rounded),
+                for (final (idx, label, icon) in [
+                  (0, isEn ? 'Fretboard' : 'Map Cần', Icons.grid_on_rounded),
+                  (1, isEn ? 'Chords' : 'Hợp âm', Icons.pan_tool_alt_rounded),
                   (2, 'Scale', Icons.timeline_rounded),
-                  (3, 'Đọc Tab', Icons.queue_music_rounded),
+                  (3, isEn ? 'Tab & 1234' : 'Đọc Tab', Icons.queue_music_rounded),
                 ]) ...[
                   if (idx > 0) const SizedBox(width: 6),
                   Expanded(
@@ -359,8 +433,11 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
                         borderRadius: BorderRadius.circular(11),
                         onTap: () {
                           _spiderTimer?.cancel();
+                          _strumTimer?.cancel();
                           setState(() {
                             _isSpiderPlaying = false;
+                            _activeStrumString = null;
+                            _activeStrumFret = null;
                             _selectedTab = idx;
                           });
                         },
@@ -405,9 +482,9 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
             const SizedBox(height: 12),
 
             if (_selectedTab == 0)
-              _buildFretboardMapTab(audioService, isDark)
+              _buildFretboardMapTab(audioService, isDark, isEn)
             else if (_selectedTab == 1)
-              _buildChordShapesTab(audioService, isDark)
+              _buildChordShapesTab(audioService, isDark, isEn)
             else if (_selectedTab == 2)
               _buildScaleMapTab(
                 context,
@@ -425,7 +502,7 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
   }
 
   /// TAB 1: Bản đồ Cần đàn (Fretboard Map) & Mẹo nhớ nhanh nốt trên 6 dây
-  Widget _buildFretboardMapTab(dynamic audioService, bool isDark) {
+  Widget _buildFretboardMapTab(dynamic audioService, bool isDark, bool isEn) {
     final activeInfo = GuitarFretboardData.noteAt(
       stringNumber: _activeString,
       fret: _activeFret,
@@ -455,7 +532,9 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Đang chọn: Dây $_activeString • Ngăn $_activeFret = ${activeInfo.fullLabel}',
+                  isEn
+                      ? 'Selected: String $_activeString • Fret $_activeFret = ${activeInfo.fullLabel}'
+                      : 'Đang chọn: Dây $_activeString • Ngăn $_activeFret = ${activeInfo.fullLabel}',
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w800,
@@ -469,11 +548,15 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
-                onPressed: () => audioService.playAsset(activeInfo.audioAsset),
+                onPressed: () =>
+                    audioService.playPolyphonicAsset(activeInfo.audioAsset),
                 icon: const Icon(Icons.volume_up_rounded, size: 15),
-                label: const Text(
-                  'Nghe nốt',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                label: Text(
+                  isEn ? 'Play' : 'Nghe nốt',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ],
@@ -486,18 +569,24 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
           children: [
             FilterChip(
               visualDensity: VisualDensity.compact,
-              label: const Text(
-                '7 nốt tự nhiên (Đô–Si)',
-                style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700),
+              label: Text(
+                isEn ? '7 Natural Notes (C–B)' : '7 nốt tự nhiên (Đô–Si)',
+                style: const TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               selected: _showNaturalNotesOnly,
               onSelected: (v) => setState(() => _showNaturalNotesOnly = v),
             ),
             FilterChip(
               visualDensity: VisualDensity.compact,
-              label: const Text(
-                'Mẹo Quãng 8 chéo',
-                style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700),
+              label: Text(
+                isEn ? 'Octave Jump Guide' : 'Mẹo Quãng 8 chéo',
+                style: const TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               selected: _showOctaveJumpGuide,
               onSelected: (v) => setState(() => _showOctaveJumpGuide = v),
@@ -525,7 +614,7 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
               _activeFret = f;
             });
             final info = GuitarFretboardData.noteAt(stringNumber: s, fret: f);
-            audioService.playAsset(info.audioAsset);
+            audioService.playPolyphonicAsset(info.audioAsset);
           },
         ),
         const SizedBox(height: 10),
@@ -538,19 +627,28 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
               color: isDark ? AppColors.borderDark : AppColors.borderLight,
             ),
           ),
-          child: const Column(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '3 Quy tắc Vàng để nhớ hết nốt trên cần đàn:',
-                style: TextStyle(fontSize: 12.8, fontWeight: FontWeight.w800),
+                isEn
+                    ? '3 Golden Rules to Master the Fretboard:'
+                    : '3 Quy tắc Vàng để nhớ hết nốt trên cần đàn:',
+                style: const TextStyle(
+                  fontSize: 12.8,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
-              SizedBox(height: 4),
+              const SizedBox(height: 4),
               Text(
-                '• Bước 1 (Nhớ 6 dây buông Ngăn 0): Từ dây 6 (dày nhất) xuống dây 1: E (Mi) – A (La) – D (Rê) – G (Sol) – B (Si) – e (Mi).\n'
-                '• Bước 2 (Nhớ 3 ngăn mốc trên Dây 6 & Dây 5): Ngăn 3 Dây 6 = Sol (G), Ngăn 5 Dây 6 = La (A), Ngăn 3 Dây 5 = Đô (C).\n'
-                '• Bước 3 (Quy tắc Quãng 8 chéo): Từ Dây 6 hoặc Dây 5, lùi xuống 2 dây + tiến thêm 2 ngăn sẽ gặp lại chính nốt đó cao hơn 1 quãng tám!',
-                style: TextStyle(fontSize: 11.8, height: 1.4),
+                isEn
+                    ? '• Step 1 (6 Open Strings): From String 6 (thickest) to String 1: E2 – A2 – D3 – G3 – B3 – E4.\n'
+                      '• Step 2 (Anchor Frets on Strings 6 & 5): S6 Fret 3 = G2, S6 Fret 5 = A2, S5 Fret 3 = C3.\n'
+                      '• Step 3 (Diagonal Octave Rule): Move down 2 strings + 2 frets (or +3 frets across String 2) to find the same note 1 octave higher!'
+                    : '• Bước 1 (Nhớ 6 dây buông Ngăn 0): Từ dây 6 (dày nhất) xuống dây 1: E (Mi) – A (La) – D (Rê) – G (Sol) – B (Si) – e (Mi).\n'
+                      '• Bước 2 (Nhớ 3 ngăn mốc trên Dây 6 & Dây 5): Ngăn 3 Dây 6 = Sol (G), Ngăn 5 Dây 6 = La (A), Ngăn 3 Dây 5 = Đô (C).\n'
+                      '• Bước 3 (Quy tắc Quãng 8 chéo): Từ Dây 6 hoặc Dây 5, lùi xuống 2 dây + tiến thêm 2 ngăn sẽ gặp lại chính nốt đó cao hơn 1 quãng tám!',
+                style: const TextStyle(fontSize: 11.8, height: 1.4),
               ),
             ],
           ),
@@ -559,8 +657,8 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
     );
   }
 
-  /// TAB 2: Thư viện Thế bấm Hợp âm Guitar (Chord Shapes)
-  Widget _buildChordShapesTab(dynamic audioService, bool isDark) {
+  /// TAB 2: Thư viện Thế bấm Hợp âm Guitar (Chord Shapes) + Rải từng dây sáng đèn
+  Widget _buildChordShapesTab(dynamic audioService, bool isDark, bool isEn) {
     final chord = GuitarFretboardData.commonChords[_selectedChordIndex];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -583,7 +681,12 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
               ),
               selected: selected,
               onSelected: (_) {
-                setState(() => _selectedChordIndex = i);
+                _strumTimer?.cancel();
+                setState(() {
+                  _selectedChordIndex = i;
+                  _activeStrumString = null;
+                  _activeStrumFret = null;
+                });
                 audioService.playAsset(c.audioAsset);
               },
             );
@@ -596,39 +699,98 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
             color: AppColors.primary.withOpacity(0.08),
             borderRadius: BorderRadius.circular(14),
           ),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      chord.name,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w800,
-                      ),
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          chord.name,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          isEn
+                              ? 'Voicing (S6 → S1): ${chord.formula}'
+                              : 'Thế bấm (Dây 6 → Dây 1): ${chord.formula}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Thế bấm (Dây 6 → Dây 1): ${chord.formula}',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.primary,
-                      ),
+                  ),
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size(0, 34),
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
                     ),
-                  ],
-                ),
+                    onPressed: () => audioService.playAsset(chord.audioAsset),
+                    icon: const Icon(Icons.volume_up_rounded, size: 15),
+                    label: Text(isEn ? 'Chord' : 'Gảy hợp âm'),
+                  ),
+                ],
               ),
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  minimumSize: const Size(0, 36),
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                ),
-                onPressed: () => audioService.playAsset(chord.audioAsset),
-                icon: const Icon(Icons.volume_up_rounded, size: 16),
-                label: const Text('Gảy hợp âm'),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      key: const Key('btn_guitar_chord_strum'),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(0, 34),
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                      ),
+                      onPressed: () => _startChordStrum(chord, isBallad: false),
+                      icon: const Icon(Icons.south_rounded, size: 15),
+                      label: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          isEn
+                              ? 'Strum (Bass → S1)'
+                              : 'Rải từ Bass xuống (Strum)',
+                          style: const TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      key: const Key('btn_guitar_chord_ballad_arpeggio'),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(0, 34),
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                      ),
+                      onPressed: () => _startChordStrum(chord, isBallad: true),
+                      icon: const Icon(Icons.waves_rounded, size: 15),
+                      label: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          isEn
+                              ? 'Ballad (Bass-3-2-3-1-3-2-3)'
+                              : 'Rải Ballad (Bass-3-2-3-1-3-2-3)',
+                          style: const TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -637,9 +799,11 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
         InteractiveGuitarFretboard(
           maxFrets: 5,
           chordShape: chord,
+          activeString: _activeStrumString,
+          activeFret: _activeStrumFret,
           onTapFret: (s, f) {
             final info = GuitarFretboardData.noteAt(stringNumber: s, fret: f);
-            audioService.playAsset(info.audioAsset);
+            audioService.playPolyphonicAsset(info.audioAsset);
           },
         ),
         const SizedBox(height: 8),
@@ -994,8 +1158,12 @@ class InteractiveGuitarFretboard extends StatelessWidget {
     String badgeText = note.vnLabel;
 
     if (isTarget) {
-      badgeColor = const Color(0xFFEF4444);
-      badgeText = hideActiveNoteName ? '?' : note.vnLabel;
+      badgeColor = chordShape != null
+          ? const Color(0xFFF59E0B)
+          : const Color(0xFFEF4444);
+      badgeText = hideActiveNoteName
+          ? '?'
+          : (chordShape != null ? '♪ ${note.vnLabel}' : note.vnLabel);
     } else if (isSecondary) {
       badgeColor = const Color(0xFFF59E0B);
       badgeText = '${note.vnLabel} (+8)';

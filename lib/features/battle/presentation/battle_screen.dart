@@ -257,6 +257,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
     final state = ref.watch(battleProvider);
     final notifier = ref.read(battleProvider.notifier);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isEn = ref.watch(appSettingsProvider).isEnglish;
 
     return PopScope(
       canPop: state.phase == BattlePhase.lobby,
@@ -299,12 +300,12 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
                   ),
                 ),
                 const SizedBox(width: 10),
-                const Expanded(
+                Expanded(
                   child: Text(
-                    'Đấu Trường Âm Nhạc 1v1',
+                    isEn ? '1v1 Music Battle Arena' : 'Đấu Trường Âm Nhạc 1v1',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
                     ),
@@ -432,6 +433,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
     bool isDark,
   ) {
     final notifier = ref.read(battleProvider.notifier);
+    final isEn = ref.watch(appSettingsProvider).isEnglish;
     final rank = state.rankInfo;
     final rankColor = Color(rank.colorHex);
     final winRate = state.totalMatches > 0
@@ -484,7 +486,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
                           children: [
                             Flexible(
                               child: Text(
-                                'Hạng ${rank.tierName}',
+                                isEn ? 'Rank ${rank.tierName}' : 'Hạng ${rank.tierName}',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
@@ -516,7 +518,9 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
                         ),
                         const SizedBox(height: 3),
                         Text(
-                          '${state.totalStars} / ${rank.nextTierStars} Sao để thăng hạng tiếp theo',
+                          isEn
+                              ? '${state.totalStars} / ${rank.nextTierStars} Stars to next rank'
+                              : '${state.totalStars} / ${rank.nextTierStars} Sao để thăng hạng tiếp theo',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
@@ -553,9 +557,9 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
         const SizedBox(height: 16),
 
         // 3. Chọn chế độ thi đấu (Đồng nhất 1 tông màu Primary khi chọn)
-        const Text(
-          'Chế độ thi đấu',
-          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+        Text(
+          isEn ? 'Battle Mode' : 'Chế độ thi đấu',
+          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
         ),
         const SizedBox(height: 8),
         Row(
@@ -563,8 +567,8 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
             Expanded(
               child: _buildHorizontalArenaModeCard(
                 key: const Key('btn_battle_mode_matchmaking'),
-                title: 'Đấu Hạng 1v1',
-                subtitle: 'Ghép Rank',
+                title: isEn ? '1v1 Ranked' : 'Đấu Hạng 1v1',
+                subtitle: isEn ? 'Matchmaking' : 'Ghép Rank',
                 icon: Icons.radar_rounded,
                 accent: AppColors.primary,
                 isSelected: state.mode == BattleMode.smartMatchmaking,
@@ -577,8 +581,8 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
             Expanded(
               child: _buildHorizontalArenaModeCard(
                 key: const Key('btn_battle_mode_bot'),
-                title: 'Đấu Máy AI',
-                subtitle: '4 Cấp độ',
+                title: isEn ? 'vs AI Bot' : 'Đấu Máy AI',
+                subtitle: isEn ? '4 Tiers' : '4 Cấp độ',
                 icon: Icons.smart_toy_rounded,
                 accent: AppColors.primary,
                 isSelected: state.mode == BattleMode.botAi,
@@ -590,8 +594,8 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
             Expanded(
               child: _buildHorizontalArenaModeCard(
                 key: const Key('btn_battle_mode_local_pvp'),
-                title: '2 Người 1 Máy',
-                subtitle: 'Chia màn hình',
+                title: isEn ? '2P Split' : '2 Người 1 Máy',
+                subtitle: isEn ? 'Split-Screen' : 'Chia màn hình',
                 icon: Icons.people_alt_rounded,
                 accent: AppColors.primary,
                 isSelected: state.mode == BattleMode.localSplitScreen,

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../app/widgets/animated_ui.dart';
 import '../../../app/widgets/solfa_background.dart';
+import '../../../core/localization/app_locale.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../practice/application/practice_session_controller.dart';
 
@@ -45,12 +46,13 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
         ref.watch(pendingReviewItemsProvider(_selectedTopicId));
     final topicsAsync = ref.watch(topicsListProvider);
     final audioService = ref.watch(audioServiceProvider);
+    final isEn = ref.watch(appSettingsProvider).isEnglish;
 
     return SolfaBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(
-          title: const Text('Ôn tập câu sai'),
+          title: Text(isEn ? 'Review Mistakes' : 'Ôn tập câu sai'),
         ),
         body: Column(
           children: [
@@ -69,7 +71,7 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
                       Padding(
                         padding: const EdgeInsets.only(right: 8),
                         child: ChoiceChip(
-                          label: const Text('Tất cả'),
+                          label: Text(isEn ? 'All' : 'Tất cả'),
                           selected: _selectedTopicId == null,
                           onSelected: (_) =>
                               setState(() => _selectedTopicId = null),
@@ -79,7 +81,9 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
                         return Padding(
                           padding: const EdgeInsets.only(right: 8),
                           child: ChoiceChip(
-                            label: Text(t.name),
+                            label: Text(
+                              AppLocale.localizeTopicName(t.id, t.name, isEn),
+                            ),
                             selected: _selectedTopicId == t.id,
                             onSelected: (_) =>
                                 setState(() => _selectedTopicId = t.id),
@@ -96,8 +100,13 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
               child: reviewAsync.when(
                 loading: () =>
                     const Center(child: CircularProgressIndicator()),
-                error: (e, _) =>
-                    Center(child: Text('Không thể tải danh sách ôn tập: $e')),
+                error: (e, _) => Center(
+                  child: Text(
+                    isEn
+                        ? 'Failed to load review list: $e'
+                        : 'Không thể tải danh sách ôn tập: $e',
+                  ),
+                ),
                 data: (items) {
                   if (items.isEmpty) {
                     return Center(
@@ -123,20 +132,26 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
                                     ),
                                   ),
                                   const SizedBox(height: 14),
-                                  const Text(
-                                    'Không có câu sai nào cần ôn',
+                                  Text(
+                                    isEn
+                                        ? 'No mistakes to review'
+                                        : 'Không có câu sai nào cần ôn',
                                     textAlign: TextAlign.center,
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       fontSize: 17.5,
                                       fontWeight: FontWeight.w800,
                                     ),
                                   ),
                                   const SizedBox(height: 6),
-                                  const Text(
-                                    'Các câu trả lời sai khi luyện tập sẽ được lưu tại đây để bạn ôn lại đến khi đúng 2 lần liên tiếp.',
+                                  Text(
+                                    isEn
+                                        ? 'Questions answered incorrectly during practice will appear here until you answer them right 2 times in a row.'
+                                        : 'Các câu trả lời sai khi luyện tập sẽ được lưu tại đây để bạn ôn lại đến khi đúng 2 lần liên tiếp.',
                                     textAlign: TextAlign.center,
-                                    style:
-                                        TextStyle(fontSize: 13.5, height: 1.38),
+                                    style: const TextStyle(
+                                      fontSize: 13.5,
+                                      height: 1.38,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -182,16 +197,21 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
                                               CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              'Đang có ${items.length} câu cần ôn tập',
+                                              isEn
+                                                  ? '${items.length} questions pending review'
+                                                  : 'Đang có ${items.length} câu cần ôn tập',
                                               style: const TextStyle(
                                                 fontSize: 16,
                                                 fontWeight: FontWeight.w800,
                                               ),
                                             ),
                                             const SizedBox(height: 2),
-                                            const Text(
-                                              'Trả lời đúng 2 lần liên tiếp để đánh dấu thuộc bài.',
-                                              style: TextStyle(fontSize: 12.5),
+                                            Text(
+                                              isEn
+                                                  ? 'Answer right 2 consecutive times to master.'
+                                                  : 'Trả lời đúng 2 lần liên tiếp để đánh dấu thuộc bài.',
+                                              style:
+                                                  const TextStyle(fontSize: 12.5),
                                             ),
                                           ],
                                         ),
@@ -214,7 +234,9 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
                                         size: 20,
                                       ),
                                       label: Text(
-                                        'Bắt đầu ôn tập (${items.length > 10 ? 10 : items.length} câu)',
+                                        isEn
+                                            ? 'Start Review (${items.length > 10 ? 10 : items.length} items)'
+                                            : 'Bắt đầu ôn tập (${items.length > 10 ? 10 : items.length} câu)',
                                       ),
                                     ),
                                   ),
@@ -265,7 +287,11 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
                                                     BorderRadius.circular(99),
                                               ),
                                               child: Text(
-                                                item.topicName ?? 'Chủ đề',
+                                                AppLocale.localizeTopicName(
+                                                  q.topicId,
+                                                  item.topicName ?? 'Chủ đề',
+                                                  isEn,
+                                                ),
                                                 style: const TextStyle(
                                                   fontSize: 11.5,
                                                   fontWeight: FontWeight.w800,
@@ -286,7 +312,9 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
                                                     BorderRadius.circular(99),
                                               ),
                                               child: Text(
-                                                'Sai ${item.wrongCount} lần',
+                                                isEn
+                                                    ? 'Wrong ${item.wrongCount}x'
+                                                    : 'Sai ${item.wrongCount} lần',
                                                 style: const TextStyle(
                                                   fontSize: 11.5,
                                                   color: AppColors.wrong,
@@ -307,7 +335,9 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
                                                     BorderRadius.circular(99),
                                               ),
                                               child: Text(
-                                                'Tiến độ: ${item.correctReviewCount}/2',
+                                                isEn
+                                                    ? 'Mastery: ${item.correctReviewCount}/2'
+                                                    : 'Tiến độ: ${item.correctReviewCount}/2',
                                                 style: const TextStyle(
                                                   fontSize: 11.5,
                                                   color: AppColors.correct,
@@ -319,7 +349,10 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
                                         ),
                                         const SizedBox(height: 8),
                                         Text(
-                                          q.prompt,
+                                          AppLocale.localizeMusicalText(
+                                            q.prompt,
+                                            isEn,
+                                          ),
                                           style: const TextStyle(
                                             fontWeight: FontWeight.w800,
                                             fontSize: 14,
@@ -342,7 +375,9 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
                                                       BorderRadius.circular(10),
                                                 ),
                                                 child: Text(
-                                                  'Đáp án đúng: ${q.correctOption.label}',
+                                                  isEn
+                                                      ? 'Correct: ${AppLocale.localizeMusicalText(q.correctOption.label, true)}'
+                                                      : 'Đáp án đúng: ${q.correctOption.label}',
                                                   style: const TextStyle(
                                                     color: AppColors.correct,
                                                     fontWeight: FontWeight.w700,
@@ -353,7 +388,9 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
                                             ),
                                             const SizedBox(width: 8),
                                             IconButton.filledTonal(
-                                              tooltip: 'Nghe âm thanh câu này',
+                                              tooltip: isEn
+                                                  ? 'Play audio'
+                                                  : 'Nghe âm thanh câu này',
                                               icon: const Icon(
                                                 Icons.volume_up_rounded,
                                                 color: AppColors.primary,
