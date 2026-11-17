@@ -242,7 +242,8 @@ class _TopicDetailScreenState extends ConsumerState<TopicDetailScreen> {
                                 .state = 3600,
                           ),
                           ChoiceChip(
-                            label: const Text('Không giới hạn'),
+                            avatar: const SolfaGemIcon(size: 13),
+                            label: const Text('Tự do (100 Gem)'),
                             selected: selectedDuration == 0,
                             onSelected: (_) => ref
                                 .read(selectedPracticeDurationProvider.notifier)

@@ -664,7 +664,7 @@ class _SupportDeveloperScreenState
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '50 Gem mở khóa phiên 1 tiếng • 100 Gem đổi +1 Lượt Đấu (100% Offline)',
+                        '50 Gem mở phiên 1h • 100 Gem mở chế độ Tự do hoặc +1 Lượt Đấu (100% Offline)',
                         style: TextStyle(
                           fontSize: 11.3,
                           color: isDark ? Colors.white70 : Colors.black54,

@@ -428,7 +428,7 @@ class SettingsScreen extends ConsumerWidget {
                       ),
                       SizedBox(height: 4),
                       Text(
-                        '• "Gem" là đơn vị điểm thưởng nội bộ dùng để mở khóa phiên luyện tập chuyên sâu 1 tiếng (50 Gem), tính năng Studio hoặc đổi lượt Đấu Trường.\n'
+                        '• "Gem" là đơn vị điểm thưởng nội bộ dùng để mở khóa phiên luyện tập chuyên sâu 1 tiếng (50 Gem), chế độ Tự do không giới hạn thời gian (100 Gem), tính năng Studio hoặc đổi lượt Đấu Trường.\n'
                         '• Gem hoàn toàn KHÔNG có giá trị tiền mặt, KHÔNG mua bán bằng tiền thật, KHÔNG chuyển nhượng và KHÔNG quy đổi/rút thành tiền dưới mọi hình thức.',
                         style: TextStyle(fontSize: 12.5, height: 1.42),
                       ),
@@ -861,7 +861,7 @@ class SettingsScreen extends ConsumerWidget {
                             ),
                             const SizedBox(width: 6),
                             _DurationChoiceButton(
-                              label: isEn ? '1 hour' : '1 tiếng',
+                              label: isEn ? '1h (50G)' : '1 tiếng (50G)',
                               isSelected: selectedDuration == 3600,
                               isDark: isDark,
                               onTap: () => ref
@@ -871,7 +871,7 @@ class SettingsScreen extends ConsumerWidget {
                             ),
                             const SizedBox(width: 6),
                             _DurationChoiceButton(
-                              label: isEn ? 'Free' : 'Tự do',
+                              label: isEn ? 'Free (100G)' : 'Tự do (100G)',
                               isSelected: selectedDuration == 0,
                               isDark: isDark,
                               onTap: () => ref

@@ -19,6 +19,9 @@ class RewardedAdState {
   /// Chi phí mở khóa 1 phiên luyện tập chuyên sâu 1 tiếng (3600 giây).
   static const int kOneHourPracticeGemCost = 50;
 
+  /// Chi phí mở khóa 1 phiên luyện tập Tự do không giới hạn thời gian (0 giây).
+  static const int kUnlimitedPracticeGemCost = 100;
+
   /// Phần thưởng Gem khi hoàn thành mục tiêu hàng ngày.
   static const int kDailyGoalBonusGems = 20;
 
@@ -68,6 +71,9 @@ class RewardedAdState {
 
   bool get canAffordOneHourPractice =>
       prestigePoints >= kOneHourPracticeGemCost;
+
+  bool get canAffordUnlimitedPractice =>
+      prestigePoints >= kUnlimitedPracticeGemCost;
 
   int get claimedQuestsCountToday =>
       (questPracticeClaimedToday ? 1 : 0) +
@@ -301,6 +307,11 @@ class RewardedAdNotifier extends StateNotifier<RewardedAdState> {
     );
     try {
       await _db.setSetting('developer_support_count', nextCount.toString());
+      await _persistWalletSignature(
+        supportedCount: nextCount,
+        bonusGems: state.bonusPrestigePoints,
+        spentGems: state.spentPrestigePoints,
+      );
     } catch (_) {}
   }
 
@@ -325,14 +336,20 @@ class RewardedAdNotifier extends StateNotifier<RewardedAdState> {
         'developer_support_points_spent',
         nextSpent.toString(),
       );
+      await _persistWalletSignature(
+        supportedCount: state.supportedCount,
+        bonusGems: state.bonusPrestigePoints,
+        spentGems: nextSpent,
+      );
     } catch (_) {}
     return true;
   }
 
-  /// Mở khóa phiên luyện tập chuyên sâu 1 tiếng (`3600s`) bằng `50 Gem`.
-  /// Các phiên `60 giây`, `15 phút` và `Tự do` hoàn toàn miễn phí (`0 Gem`).
+  /// Mở khóa phiên luyện tập chuyên sâu 1 tiếng (`3600s` = `50 Gem`) hoặc Tự do không giới hạn (`0s` = `100 Gem`).
+  /// Các phiên `60 giây` và `15 phút` hoàn toàn miễn phí (`0 Gem`).
   Future<bool> spendGemsForOneHourSession({
     int gemCost = RewardedAdState.kOneHourPracticeGemCost,
+    bool isUnlimited = false,
   }) async {
     if (!mounted) return false;
     if (gemCost <= 0) return true;
@@ -341,16 +358,30 @@ class RewardedAdNotifier extends StateNotifier<RewardedAdState> {
     final nextSpent = state.spentPrestigePoints + gemCost;
     state = state.copyWith(
       spentPrestigePoints: nextSpent,
-      statusMessage:
-          'Đã mở khóa phiên luyện tập chuyên sâu 1 tiếng (-$gemCost Gem). Chúc bạn luyện tập hiệu quả!',
+      statusMessage: isUnlimited
+          ? 'Đã mở khóa chế độ Luyện tập Tự do không giới hạn thời gian (-$gemCost Gem). Chúc bạn luyện tập hiệu quả!'
+          : 'Đã mở khóa phiên luyện tập chuyên sâu 1 tiếng (-$gemCost Gem). Chúc bạn luyện tập hiệu quả!',
     );
     try {
       await _db.setSetting(
         'developer_support_points_spent',
         nextSpent.toString(),
       );
+      await _persistWalletSignature(
+        supportedCount: state.supportedCount,
+        bonusGems: state.bonusPrestigePoints,
+        spentGems: nextSpent,
+      );
     } catch (_) {}
     return true;
+  }
+
+  /// Mở khóa phiên luyện tập Tự do không giới hạn thời gian (`100 Gem`).
+  Future<bool> spendGemsForUnlimitedSession() {
+    return spendGemsForOneHourSession(
+      gemCost: RewardedAdState.kUnlimitedPracticeGemCost,
+      isUnlimited: true,
+    );
   }
 
   /// Cộng Gem thưởng từ Nhiệm Vụ Hàng Ngày, Đạt Mục Tiêu Ngày hoặc Thăng Hạng Đấu Trường.
@@ -368,6 +399,11 @@ class RewardedAdNotifier extends StateNotifier<RewardedAdState> {
       await _db.setSetting(
         'developer_support_bonus_points',
         nextBonus.toString(),
+      );
+      await _persistWalletSignature(
+        supportedCount: state.supportedCount,
+        bonusGems: nextBonus,
+        spentGems: state.spentPrestigePoints,
       );
     } catch (_) {}
   }
@@ -389,6 +425,11 @@ class RewardedAdNotifier extends StateNotifier<RewardedAdState> {
       await _db.setSetting(
         'developer_support_bonus_points',
         nextBonus.toString(),
+      );
+      await _persistWalletSignature(
+        supportedCount: state.supportedCount,
+        bonusGems: nextBonus,
+        spentGems: state.spentPrestigePoints,
       );
     } catch (_) {}
     return bonus;
@@ -460,6 +501,11 @@ class RewardedAdNotifier extends StateNotifier<RewardedAdState> {
       await _db.setSetting(
         'developer_support_bonus_points',
         state.bonusPrestigePoints.toString(),
+      );
+      await _persistWalletSignature(
+        supportedCount: state.supportedCount,
+        bonusGems: state.bonusPrestigePoints,
+        spentGems: state.spentPrestigePoints,
       );
     } catch (_) {}
     return rewardPoints;

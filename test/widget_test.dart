@@ -1715,6 +1715,13 @@ void main() {
         // Đủ 50 Gem -> mở khóa phiên luyện tập chuyên sâu 1 tiếng thành công, trừ 50 Gem
         expect(await adNotifier.spendGemsForOneHourSession(), isTrue);
         expect(container.read(rewardedAdProvider).prestigePoints, equals(0));
+        // Chế độ Tự do không giới hạn thời gian yêu cầu 100 Gem (cao hơn gói 1 tiếng 50 Gem)
+        expect(RewardedAdState.kUnlimitedPracticeGemCost, equals(100));
+        expect(await adNotifier.spendGemsForUnlimitedSession(), isFalse);
+        await adNotifier.grantBonusPrestigePoints(100);
+        expect(container.read(rewardedAdProvider).prestigePoints, equals(100));
+        expect(await adNotifier.spendGemsForUnlimitedSession(), isTrue);
+        expect(container.read(rewardedAdProvider).prestigePoints, equals(0));
         // 7. Kiểm tra cả 4 bài học Chế độ Guitar từ Cơ bản -> Trung bình -> Nâng cao & Lưu lịch sử / Ôn câu sai
         for (final gtrTopic in const [
           'topic_guitar_notes',

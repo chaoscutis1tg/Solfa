@@ -16,18 +16,23 @@ import '../../support_developer/application/rewarded_ad_controller.dart';
 /// Chế độ phân khu trên trang Luyện tập: 'piano' (Piano & Nhạc lý) hoặc 'guitar' (Học Guitar & Cần đàn).
 final selectedPracticeAreaProvider = StateProvider<String>((ref) => 'piano');
 
-/// Kiểm tra và trừ 50 Gem khi người dùng bắt đầu phiên luyện tập chuyên sâu 1 tiếng (3600 giây).
-/// Các phiên 60 giây, 15 phút và Tự do hoàn toàn miễn phí (0 Gem).
+/// Kiểm tra và trừ Gem khi người dùng bắt đầu phiên luyện tập chuyên sâu 1 tiếng (3600 giây = 50 Gem)
+/// hoặc chế độ Tự do không giới hạn thời gian (0 giây = 100 Gem).
+/// Các phiên 60 giây và 15 phút hoàn toàn miễn phí (0 Gem).
 Future<bool> checkAndSpendGemsForDurationIfNeeded(
   BuildContext context,
   WidgetRef ref, {
   required int durationSeconds,
 }) async {
   final isTest = ref.read(audioServiceProvider).isTestMode;
-  if (isTest || durationSeconds != 3600) {
+  if (isTest || (durationSeconds != 3600 && durationSeconds != 0)) {
     return true;
   }
-  const cost = RewardedAdState.kOneHourPracticeGemCost;
+  final isUnlimited = durationSeconds == 0;
+  final isEn = ref.read(appSettingsProvider).isEnglish;
+  final cost = isUnlimited
+      ? RewardedAdState.kUnlimitedPracticeGemCost
+      : RewardedAdState.kOneHourPracticeGemCost;
   final currentGems = ref.read(rewardedAdProvider).prestigePoints;
   if (currentGems < cost) {
     final missing = cost - currentGems;
@@ -40,7 +45,7 @@ Future<bool> checkAndSpendGemsForDurationIfNeeded(
             borderRadius: BorderRadius.circular(14),
           ),
           action: SnackBarAction(
-            label: 'Nhận Gem',
+            label: isEn ? 'Get Gems' : 'Nhận Gem',
             textColor: Colors.white,
             onPressed: () {
               context.push('/support-developer');
@@ -52,7 +57,13 @@ Future<bool> checkAndSpendGemsForDurationIfNeeded(
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Gói luyện 1 tiếng cần $cost Gem (bạn còn thiếu $missing Gem). Hãy dùng 60s/15p Miễn phí hoặc nhận +100 Gem tại Trạm Gem!',
+                  isUnlimited
+                      ? (isEn
+                          ? 'Unlimited mode requires $cost Gems (you need $missing more). Use Free 60s/15m or earn +100 Gems at Gem Station!'
+                          : 'Chế độ Tự do (Không giới hạn thời gian) cần $cost Gem (bạn còn thiếu $missing Gem). Hãy dùng 60s/15p Miễn phí hoặc nhận +100 Gem tại Trạm Gem!')
+                      : (isEn
+                          ? '1-hour practice requires $cost Gems (you need $missing more). Use Free 60s/15m or earn +100 Gems at Gem Station!'
+                          : 'Gói luyện 1 tiếng cần $cost Gem (bạn còn thiếu $missing Gem). Hãy dùng 60s/15p Miễn phí hoặc nhận +100 Gem tại Trạm Gem!'),
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
               ),
@@ -66,7 +77,10 @@ Future<bool> checkAndSpendGemsForDurationIfNeeded(
 
   final ok = await ref
       .read(rewardedAdProvider.notifier)
-      .spendGemsForOneHourSession(gemCost: cost);
+      .spendGemsForOneHourSession(
+        gemCost: cost,
+        isUnlimited: isUnlimited,
+      );
   if (ok && context.mounted) {
     final remaining = ref.read(rewardedAdProvider).prestigePoints;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -83,7 +97,13 @@ Future<bool> checkAndSpendGemsForDurationIfNeeded(
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                'Đã dùng $cost Gem mở khóa phiên 1 tiếng (Còn lại: $remaining Gem).',
+                isUnlimited
+                    ? (isEn
+                        ? 'Spent $cost Gems to unlock Unlimited mode (Remaining: $remaining Gems).'
+                        : 'Đã dùng $cost Gem mở khóa chế độ Tự do không giới hạn (Còn lại: $remaining Gem).')
+                    : (isEn
+                        ? 'Spent $cost Gems to unlock 1-hour session (Remaining: $remaining Gems).'
+                        : 'Đã dùng $cost Gem mở khóa phiên 1 tiếng (Còn lại: $remaining Gem).'),
                 style: const TextStyle(fontWeight: FontWeight.w700),
               ),
             ),
@@ -671,14 +691,14 @@ class _TopicPracticeSetupSheetState
       (
         3600,
         isEn ? '1 hour' : '1 tiếng',
-        '50 Gem',
+        '${RewardedAdState.kOneHourPracticeGemCost} Gem',
         true,
       ),
       (
         0,
-        isEn ? 'Free Play' : 'Tự do',
-        isEn ? 'Free' : 'Miễn phí',
-        false,
+        isEn ? 'Unlimited' : 'Tự do',
+        '${RewardedAdState.kUnlimitedPracticeGemCost} Gem',
+        true,
       ),
     ];
 
@@ -974,11 +994,15 @@ class _TopicPracticeSetupSheetState
                 label: Text(
                   selectedDuration == 3600
                       ? (isEn
-                          ? 'Start Now (1 hour • 50 Gems)'
-                          : 'Bắt đầu ngay (1 tiếng • 50 Gem)')
-                      : (isEn
-                          ? 'Start Now (${TopicsScreen.durationLabel(selectedDuration, isEn: true)} • Free)'
-                          : 'Bắt đầu ngay (${TopicsScreen.durationLabel(selectedDuration)} • Miễn phí)'),
+                          ? 'Start Now (1 hour • ${RewardedAdState.kOneHourPracticeGemCost} Gems)'
+                          : 'Bắt đầu ngay (1 tiếng • ${RewardedAdState.kOneHourPracticeGemCost} Gem)')
+                      : selectedDuration == 0
+                          ? (isEn
+                              ? 'Start Now (Unlimited • ${RewardedAdState.kUnlimitedPracticeGemCost} Gems)'
+                              : 'Bắt đầu ngay (Tự do • ${RewardedAdState.kUnlimitedPracticeGemCost} Gem)')
+                          : (isEn
+                              ? 'Start Now (${TopicsScreen.durationLabel(selectedDuration, isEn: true)} • Free)'
+                              : 'Bắt đầu ngay (${TopicsScreen.durationLabel(selectedDuration)} • Miễn phí)'),
                 ),
               ),
             ],
