@@ -639,7 +639,7 @@ void main() {
         await pumpFrames(250);
         expect(tester.takeException(), isNull);
 
-        // Chuyển sang chế độ Đọc nốt nhạc (Sight-Reading) và kiểm tra giao diện 360x680 + tự động phát âm thanh
+        // Chuyển sang chế độ Đọc nốt nhạc (Sight-Reading): Trước khi trả lời là câu hỏi Quan sát (ẩn nút nghe âm thanh), sau khi trả lời mới hiện nút nghe cao độ nốt
         await tester.runAsync(() async {
           await sessionNotifier.switchNotePracticeModeInSession(
             'topic_staff_reading',
@@ -647,7 +647,7 @@ void main() {
         });
         await pumpFrames(250);
         expect(
-          find.byKey(const Key('btn_play_question_audio')),
+          find.byKey(const Key('badge_visual_question_hint')),
           findsOneWidget,
         );
         expect(find.byKey(const Key('musical_staff_widget')), findsOneWidget);
@@ -659,6 +659,10 @@ void main() {
           await sessionNotifier.submitAnswer(currentQ.options.first);
         });
         await pumpFrames(250);
+        expect(
+          find.byKey(const Key('btn_play_question_audio')),
+          findsOneWidget,
+        );
         expect(tester.takeException(), isNull);
 
         // Hoàn thành phiên -> Màn hình kết quả (SessionResultScreen)
