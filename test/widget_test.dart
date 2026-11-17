@@ -1711,33 +1711,71 @@ void main() {
         // Đủ 50 Gem -> mở khóa phiên luyện tập chuyên sâu 1 tiếng thành công, trừ 50 Gem
         expect(await adNotifier.spendGemsForOneHourSession(), isTrue);
         expect(container.read(rewardedAdProvider).prestigePoints, equals(0));
-        // 7. Kiểm tra cả 4 bài học Chế độ Guitar (Nhớ nốt Cần đàn, Hợp âm Guitar, Bản đồ Scale, Đọc Tab & Luyện ngón)
+        // 7. Kiểm tra cả 4 bài học Chế độ Guitar từ Cơ bản -> Trung bình -> Nâng cao & Lưu lịch sử / Ôn câu sai
         for (final gtrTopic in const [
           'topic_guitar_notes',
           'topic_guitar_chords',
           'topic_guitar_scales',
           'topic_guitar_tabs',
         ]) {
-          final gtrOk = await sessionNotifier.startSession(
-            mode: 'topic',
-            topicId: gtrTopic,
-            levelId: '${gtrTopic.replaceFirst('topic_', 'lvl_')}_basic',
-            targetCount: 6,
-            seed: 555,
-          );
-          expect(gtrOk, isTrue, reason: 'Khởi tạo $gtrTopic phải thành công');
-          final gtrQuestions = container.read(practiceSessionProvider).questions;
-          expect(gtrQuestions.length, equals(6));
-          for (final q in gtrQuestions) {
-            expect(q.options.length, equals(4));
-            expect(
-              q.correctOption.optionKey.startsWith('GTR_'),
-              isTrue,
-              reason: 'Câu hỏi $gtrTopic phải gắn mã sơ đồ trực quan GTR_',
+          for (final suffix in const ['basic', 'inter', 'adv']) {
+            final gtrOk = await sessionNotifier.startSession(
+              mode: 'topic',
+              topicId: gtrTopic,
+              levelId: '${gtrTopic.replaceFirst('topic_', 'lvl_')}_$suffix',
+              targetCount: 6,
+              seed: 555,
             );
+            expect(gtrOk, isTrue,
+                reason: 'Khởi tạo $gtrTopic ($suffix) phải thành công');
+            final gtrQuestions =
+                container.read(practiceSessionProvider).questions;
+            expect(gtrQuestions.length, equals(6));
+            for (final q in gtrQuestions) {
+              expect(q.options.length, equals(4));
+              expect(
+                q.correctOption.optionKey.startsWith('GTR_'),
+                isTrue,
+                reason: 'Câu hỏi $gtrTopic phải gắn mã sơ đồ trực quan GTR_',
+              );
+            }
+            await sessionNotifier.abandonSessionIfIncomplete();
           }
-          await sessionNotifier.abandonSessionIfIncomplete();
         }
+
+        // Hoàn thành 1 phiên Guitar (5 đúng, 1 sai) -> Kiểm tra lưu tên bài trên Trang chủ & Danh sách Ôn câu sai
+        final gtrPlayOk = await sessionNotifier.startSession(
+          mode: 'topic',
+          topicId: 'topic_guitar_notes',
+          levelId: 'lvl_guitar_notes_adv',
+          targetCount: 6,
+          seed: 999,
+        );
+        expect(gtrPlayOk, isTrue);
+        for (int i = 0; i < 6; i++) {
+          final curQ = container.read(practiceSessionProvider).currentQuestion!;
+          final chosen = i < 5
+              ? curQ.correctOption
+              : curQ.options.firstWhere((o) => !o.isCorrect);
+          await sessionNotifier.submitAnswer(chosen);
+          await sessionNotifier.nextQuestion();
+        }
+        expect(container.read(practiceSessionProvider).isCompleted, isTrue);
+        final afterGtrStats = await db.getOverallProgressStats();
+        expect(
+          afterGtrStats.recentSessions.first.topicName,
+          equals('Nhớ nốt Cần đàn Guitar'),
+        );
+        expect(
+          afterGtrStats.recentSessions.first.levelName,
+          equals('Mức 3: Nâng cao'),
+        );
+        final gtrReviewItems = await db.getPendingReviewItems();
+        expect(gtrReviewItems.length, equals(1));
+        expect(
+          gtrReviewItems.first.topicName,
+          equals('Nhớ nốt Cần đàn Guitar'),
+        );
       },
     );
   });

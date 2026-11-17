@@ -223,9 +223,52 @@ class PracticeSessionModel {
     this.levelName,
   });
 
-  /// BR-06: Accuracy = correct / total * 100%; guard against division by zero
+  /// Accuracy = correct / total * 100%; guard against division by zero
   double get accuracyPercent =>
       totalQuestions <= 0 ? 0.0 : (correctCount / totalQuestions) * 100.0;
+
+  static String fallbackTopicName(String topicId) {
+    switch (topicId) {
+      case 'topic_notes':
+        return 'Nhận biết nốt';
+      case 'topic_staff_reading':
+        return 'Đọc nốt nhạc';
+      case 'topic_intervals':
+        return 'Nhận biết quãng';
+      case 'topic_keys':
+        return 'Nhận biết giọng';
+      case 'topic_chords':
+        return 'Nhận biết hợp âm';
+      case 'topic_melody':
+        return 'Nghe giai điệu';
+      case 'topic_rhythm':
+        return 'Nhận biết nhịp điệu';
+      case 'topic_guitar_notes':
+        return 'Nhớ nốt Cần đàn Guitar';
+      case 'topic_guitar_chords':
+        return 'Hợp âm Guitar';
+      case 'topic_guitar_scales':
+        return 'Bản đồ Scale Guitar';
+      case 'topic_guitar_tabs':
+        return 'Đọc Tab & Luyện ngón Guitar';
+      default:
+        return 'Luyện tập âm nhạc';
+    }
+  }
+
+  static String fallbackLevelName(String? levelId) {
+    if (levelId == null || levelId.isEmpty) return 'Cơ bản';
+    if (levelId.contains('master') || levelId.contains('4')) {
+      return 'Mức 4: Nâng cao';
+    }
+    if (levelId.contains('adv') || levelId.contains('3')) {
+      return 'Mức 3: Nâng cao';
+    }
+    if (levelId.contains('inter') || levelId.contains('2')) {
+      return 'Mức 2: Trung bình';
+    }
+    return 'Mức 1: Cơ bản';
+  }
 
   factory PracticeSessionModel.fromMap(Map<String, dynamic> map) {
     final started = DateTime.tryParse(map['started_at'] as String? ?? '') ??
@@ -236,10 +279,12 @@ class PracticeSessionModel {
     if (duration <= 0 && ended != null) {
       duration = ended.difference(started).inSeconds.clamp(1, 7200);
     }
+    final tId = map['topic_id'] as String? ?? 'topic_notes';
+    final lId = map['level_id'] as String?;
     return PracticeSessionModel(
       id: map['id'] as String,
-      topicId: map['topic_id'] as String,
-      levelId: map['level_id'] as String?,
+      topicId: tId,
+      levelId: lId,
       mode: map['mode'] as String? ?? 'topic',
       startedAt: started,
       endedAt: ended,
@@ -247,8 +292,8 @@ class PracticeSessionModel {
       totalQuestions: (map['total_questions'] as num?)?.toInt() ?? 0,
       correctCount: (map['correct_count'] as num?)?.toInt() ?? 0,
       durationSeconds: duration,
-      topicName: map['topic_name'] as String?,
-      levelName: map['level_name'] as String?,
+      topicName: (map['topic_name'] as String?) ?? fallbackTopicName(tId),
+      levelName: (map['level_name'] as String?) ?? fallbackLevelName(lId),
     );
   }
 }

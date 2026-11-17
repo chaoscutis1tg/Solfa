@@ -672,7 +672,7 @@ class AppDatabase {
       SELECT r.*, q.topic_id, t.name AS topic_name
       FROM review_items r
       INNER JOIN questions q ON q.id = r.question_id
-      INNER JOIN topics t ON t.id = q.topic_id
+      LEFT JOIN topics t ON t.id = q.topic_id
       WHERE r.review_status = 'pending'
       ${topicId != null ? 'AND q.topic_id = ?' : ''}
       ORDER BY r.wrong_count DESC, r.last_wrong_at DESC
@@ -683,11 +683,13 @@ class AppDatabase {
       final qId = row['question_id'] as String;
       final qModel = await getQuestionById(qId);
       if (qModel != null) {
+        final rawTopicName = row['topic_name'] as String?;
         items.add(
           ReviewItemModel.fromMap(
             row,
             question: qModel,
-            topicName: row['topic_name'] as String?,
+            topicName: rawTopicName ??
+                PracticeSessionModel.fallbackTopicName(qModel.topicId),
           ),
         );
       }
