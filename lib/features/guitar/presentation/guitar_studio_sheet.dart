@@ -1512,113 +1512,107 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
           style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
         ),
         const SizedBox(height: 8),
-        // Danh sách 6 bài luyện ngón
-        Column(
-          children: List.generate(workouts.length, (idx) {
-            final w = workouts[idx];
-            final selected = _selectedWorkoutIndex == idx;
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 7),
-              child: Material(
-                color: selected
-                    ? const Color(0xFFD97706).withOpacity(isDark ? 0.22 : 0.12)
-                    : (isDark ? AppColors.surfaceDark : Colors.white),
-                borderRadius: BorderRadius.circular(13),
-                child: InkWell(
-                  key: Key('card_guitar_workout_${w.id}'),
-                  borderRadius: BorderRadius.circular(13),
-                  onTap: () {
-                    _spiderTimer?.cancel();
-                    setState(() {
-                      _isSpiderPlaying = false;
-                      _selectedWorkoutIndex = idx;
-                      _spiderStep = 0;
-                    });
-                    _playCurrentSpiderStep();
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(13),
-                      border: Border.all(
-                        color: selected
-                            ? const Color(0xFFD97706)
-                            : (isDark
-                                ? AppColors.borderDark
-                                : AppColors.borderLight),
-                        width: selected ? 1.6 : 1.0,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 32,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            color: selected
-                                ? const Color(0xFFD97706)
-                                : const Color(0xFFD97706).withOpacity(0.14),
-                            borderRadius: BorderRadius.circular(9),
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            '${idx + 1}',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w900,
-                              color: selected
-                                  ? Colors.white
-                                  : const Color(0xFFD97706),
+        // Lưới 2 cột gọn gàng cho 6 bài luyện ngón (tiết kiệm 50% chiều dọc để Khuông Tab & Cần đàn hiển thị ngay trên màn hình)
+        for (int row = 0; row < (workouts.length / 2).ceil(); row++)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Row(
+              children: [
+                for (int col = 0; col < 2; col++) ...[
+                  if (col > 0) const SizedBox(width: 8),
+                  Expanded(
+                    child: Builder(
+                      builder: (_) {
+                        final idx = row * 2 + col;
+                        if (idx >= workouts.length) {
+                          return const SizedBox.shrink();
+                        }
+                        final w = workouts[idx];
+                        final selected = _selectedWorkoutIndex == idx;
+                        return Material(
+                          color: selected
+                              ? const Color(0xFFD97706)
+                              : (isDark ? AppColors.surfaceDark : Colors.white),
+                          borderRadius: BorderRadius.circular(11),
+                          child: InkWell(
+                            key: Key('card_guitar_workout_${w.id}'),
+                            borderRadius: BorderRadius.circular(11),
+                            onTap: () {
+                              _spiderTimer?.cancel();
+                              setState(() {
+                                _isSpiderPlaying = false;
+                                _selectedWorkoutIndex = idx;
+                                _spiderStep = 0;
+                              });
+                              _playCurrentSpiderStep();
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 9,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(11),
+                                border: Border.all(
+                                  color: selected
+                                      ? const Color(0xFFD97706)
+                                      : (isDark
+                                          ? AppColors.borderDark
+                                          : AppColors.borderLight),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 22,
+                                    height: 22,
+                                    decoration: BoxDecoration(
+                                      color: selected
+                                          ? Colors.white.withOpacity(0.22)
+                                          : const Color(0xFFD97706)
+                                              .withOpacity(0.14),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      '${idx + 1}',
+                                      style: TextStyle(
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.w900,
+                                        color: selected
+                                            ? Colors.white
+                                            : const Color(0xFFD97706),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(
+                                      w.title.replaceFirst(
+                                        RegExp(r'^Bài \d+:\s*'),
+                                        '',
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: 11.8,
+                                        fontWeight: FontWeight.w800,
+                                        color: selected ? Colors.white : null,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            w.title,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: w.levelTag == 'Cơ bản'
-                                ? AppColors.correct.withOpacity(0.15)
-                                : (w.levelTag == 'Trung bình'
-                                    ? AppColors.primary.withOpacity(0.15)
-                                    : const Color(0xFFD97706).withOpacity(0.2)),
-                            borderRadius: BorderRadius.circular(99),
-                          ),
-                          child: Text(
-                            w.levelTag,
-                            style: TextStyle(
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w800,
-                              color: w.levelTag == 'Cơ bản'
-                                  ? AppColors.correct
-                                  : (w.levelTag == 'Trung bình'
-                                      ? AppColors.primary
-                                      : const Color(0xFFD97706)),
-                            ),
-                          ),
-                        ),
-                      ],
+                        );
+                      },
                     ),
                   ),
-                ),
-              ),
-            );
-          }),
-        ),
+                ],
+              ],
+            ),
+          ),
         const SizedBox(height: 6),
         Container(
           padding: const EdgeInsets.all(12),

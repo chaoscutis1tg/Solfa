@@ -11,13 +11,12 @@ import '../../../support_developer/application/rewarded_ad_controller.dart';
 import 'musical_staff_widget.dart';
 import 'piano_keyboard_widget.dart';
 
-/// Opens the interactive "Đàn Piano & Tra cứu Khuông nhạc tự do (C3–C5)" modal bottom sheet.
+/// Opens the interactive "Đàn Piano & Tra cứu Khuông nhạc tự do (C3–C5)" as a full-screen page (no sliding bottom sheet).
 Future<void> showFreePianoExplorerSheet(BuildContext context) {
-  return showModalBottomSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (ctx) => const FreePianoExplorerSheet(),
+  return Navigator.of(context).push<void>(
+    MaterialPageRoute<void>(
+      builder: (ctx) => const FreePianoExplorerSheet(),
+    ),
   );
 }
 
@@ -434,94 +433,40 @@ class _FreePianoExplorerSheetState
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isEn = ref.watch(appSettingsProvider).isEnglish;
     final freq = _frequencyHz(_selectedPitchClass, _selectedOctave);
     final vnName = NoteFormatter.toVietnameseLabel(_activeNoteKey);
     final staffDesc =
         _staffPositionDescription(_selectedPitchClass, _selectedOctave);
 
-    return Container(
+    return Scaffold(
       key: const Key('free_piano_explorer_sheet'),
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.88,
-      ),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border.all(
-          color: AppColors.primary.withOpacity(0.28),
-          width: 1.2,
+      backgroundColor:
+          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      appBar: AppBar(
+        leading: IconButton(
+          key: const Key('btn_close_free_piano_explorer'),
+          onPressed: () => Navigator.of(context).pop(),
+          icon: const Icon(Icons.arrow_back_rounded),
+          tooltip: isEn ? 'Back' : 'Quay lại',
+        ),
+        title: Text(
+          isEn
+              ? 'Piano C3–C5 & Staff Explorer'
+              : 'Đàn Piano & Khuông Nhạc C3–C5',
+          style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.w800),
         ),
       ),
-      child: SafeArea(
-        top: false,
+      body: SafeArea(
         child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(16, 10, 16, 20),
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
+          ),
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Drag handle
-              Center(
-                child: Container(
-                  width: 42,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.withOpacity(0.35),
-                    borderRadius: BorderRadius.circular(99),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-
-              // Header Row
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.14),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.piano_rounded,
-                      color: AppColors.primary,
-                      size: 22,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Đàn Piano & Tra cứu Khuông nhạc',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 16.5,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                        SizedBox(height: 2),
-                        Text(
-                          'Chạm phím bất kỳ (C3–C5) để nghe cao độ & xem vị trí dòng/khe',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(fontSize: 11.5),
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    key: const Key('btn_close_free_piano_explorer'),
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.close_rounded),
-                    tooltip: 'Đóng',
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
 
               // Octave Switcher (C3 Khóa Fa | C4 Khóa Sol | C5 Khóa Sol)
               Row(

@@ -81,10 +81,10 @@ class RewardedAdState {
       (questDictationClaimedToday ? 1 : 0);
 
   String get supporterBadgeTitle {
-    if (supportedCount >= 10) return 'Đại sứ Kim Cương Solfa';
+    if (supportedCount >= 10) return 'Đại sứ Kim Cương ChaoNote';
     if (supportedCount >= 5) return 'Nhà tài trợ Cảm âm';
     if (supportedCount >= 1) return 'Người đồng hành Âm nhạc';
-    return 'Người bạn của Solfa';
+    return 'Người bạn của ChaoNote';
   }
 
   RewardedAdState copyWith({

@@ -13,78 +13,88 @@ import '../../../core/providers/app_providers.dart';
 import '../../battle/application/battle_controller.dart';
 import '../application/rewarded_ad_controller.dart';
 
+bool _isOpeningGlobalAdModal = false;
+
 /// Opens the 15-second Rewarded Video Ad modal and, upon completion,
 /// grants +1 Battle Arena turn AND +100 Developer Supporter Prestige Points.
 Future<bool> showSolfaRewardedVideoAdModal(
   BuildContext context,
   WidgetRef ref,
 ) async {
-  final notifier = ref.read(rewardedAdProvider.notifier);
-  final currentStatus = ref.read(rewardedAdProvider).status;
+  if (_isOpeningGlobalAdModal) return false;
+  _isOpeningGlobalAdModal = true;
+  try {
+    final notifier = ref.read(rewardedAdProvider.notifier);
+    final currentStatus = ref.read(rewardedAdProvider).status;
 
-  if (currentStatus != RewardedAdStatus.ready) {
-    final ok = await notifier.loadRewardedAd();
-    if (!ok) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: AppColors.warning,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
-            ),
-            content: const Row(
-              children: [
-                Icon(Icons.wifi_off_rounded, color: Colors.white),
-                SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    'Chưa có kết nối Internet để tải quảng cáo hồi lượt. Bạn vẫn có thể luyện tập không giới hạn tại Phòng luyện tập!',
-                    style: TextStyle(fontWeight: FontWeight.w700),
+    if (currentStatus != RewardedAdStatus.ready) {
+      final ok = await notifier.loadRewardedAd();
+      if (!ok) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              backgroundColor: AppColors.warning,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+              content: const Row(
+                children: [
+                  Icon(Icons.wifi_off_rounded, color: Colors.white),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Chưa có kết nối Internet để tải quảng cáo hồi lượt. Bạn vẫn có thể luyện tập tại Phòng luyện tập!',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
+          );
+        }
+        return false;
+      }
+    }
+
+    if (!context.mounted) return false;
+    final audioService = ref.read(audioServiceProvider);
+    final completed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => _RewardedVideoAdPlayerDialog(
+        isTestMode: audioService.isTestMode,
+        onPlayPreviewSound: (asset) {
+          audioService.playAsset(asset);
+        },
+        onStopSound: () {
+          audioService.stop();
+        },
+      ),
+    );
+
+    await audioService.stop();
+    await notifier.completeWatchingAd(watchedToEnd: completed == true);
+
+    if (completed == true) {
+      await ref
+          .read(battleProvider.notifier)
+          .restoreTurnFromRewardedAd(turns: 1);
+      await audioService.playSessionCompleteFanfare();
+      if (context.mounted) {
+        showGemRewardAnimation(
+          context,
+          gemsAdded: 100,
+          subtitle: '+1 Lượt Đấu Trường',
+          isTestMode: audioService.isTestMode,
         );
       }
-      return false;
+      return true;
     }
+    return false;
+  } finally {
+    _isOpeningGlobalAdModal = false;
   }
-
-  if (!context.mounted) return false;
-  final audioService = ref.read(audioServiceProvider);
-  final completed = await showDialog<bool>(
-    context: context,
-    barrierDismissible: false,
-    builder: (ctx) => _RewardedVideoAdPlayerDialog(
-      isTestMode: audioService.isTestMode,
-      onPlayPreviewSound: (asset) {
-        audioService.playAsset(asset);
-      },
-      onStopSound: () {
-        audioService.stop();
-      },
-    ),
-  );
-
-  await audioService.stop();
-  await notifier.completeWatchingAd(watchedToEnd: completed == true);
-
-  if (completed == true) {
-    await ref.read(battleProvider.notifier).restoreTurnFromRewardedAd(turns: 1);
-    await audioService.playSessionCompleteFanfare();
-    if (context.mounted) {
-      showGemRewardAnimation(
-        context,
-        gemsAdded: 100,
-        subtitle: '+1 Lượt Đấu Trường',
-        isTestMode: audioService.isTestMode,
-      );
-    }
-    return true;
-  }
-  return false;
 }
 
 /// Exchanges accumulated Developer Supporter Prestige Points (`prestigePoints`)
@@ -192,7 +202,10 @@ class _SupportDeveloperScreenState
     });
   }
 
+  bool _isOpeningAdModal = false;
+
   Future<void> _loadAndWatchVideoAd() async {
+    if (_isOpeningAdModal) return;
     final notifier = ref.read(rewardedAdProvider.notifier);
     final currentStatus = ref.read(rewardedAdProvider).status;
 
@@ -206,36 +219,41 @@ class _SupportDeveloperScreenState
   }
 
   Future<void> _openRewardedVideoPlayerModal() async {
-    final audioService = ref.read(audioServiceProvider);
-    final completed = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => _RewardedVideoAdPlayerDialog(
-        isTestMode: audioService.isTestMode,
-        onPlayPreviewSound: (asset) {
-          audioService.playAsset(asset);
-        },
-        onStopSound: () {
-          audioService.stop();
-        },
-      ),
-    );
-
-    await audioService.stop();
-    await ref
-        .read(rewardedAdProvider.notifier)
-        .completeWatchingAd(watchedToEnd: completed == true);
-
-    if (completed == true && mounted) {
-      await ref.read(battleProvider.notifier).restoreTurnFromRewardedAd(turns: 1);
-      await audioService.playSessionCompleteFanfare();
-      if (!mounted) return;
-      showGemRewardAnimation(
-        context,
-        gemsAdded: 100,
-        subtitle: 'Cảm ơn bạn đã ủng hộ Solfa!',
-        isTestMode: audioService.isTestMode,
+    if (_isOpeningAdModal) return;
+    _isOpeningAdModal = true;
+    try {
+      final audioService = ref.read(audioServiceProvider);
+      final completed = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => _RewardedVideoAdPlayerDialog(
+          isTestMode: audioService.isTestMode,
+          onPlayPreviewSound: (asset) {
+            audioService.playAsset(asset);
+          },
+          onStopSound: () {
+            audioService.stop();
+          },
+        ),
       );
+
+      await audioService.stop();
+      await ref
+          .read(rewardedAdProvider.notifier)
+          .completeWatchingAd(watchedToEnd: completed == true);
+
+      if (completed == true && mounted) {
+        await ref
+            .read(battleProvider.notifier)
+            .restoreTurnFromRewardedAd(turns: 1);
+        await audioService.playSessionCompleteFanfare();
+        if (!mounted) return;
+        showGemRewardAnimation(
+          context,
+          gemsAdded: 100,
+          subtitle: 'Cảm ơn bạn đã ủng hộ ChaoNote!',
+          isTestMode: audioService.isTestMode,
+        );
       final updatedState = ref.read(rewardedAdProvider);
       final count = updatedState.supportedCount;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -326,11 +344,14 @@ class _SupportDeveloperScreenState
                   icon: const SolfaGemIcon(size: 18),
                   label: const Text('Tuyệt vời!'),
                 ),
-              ],
+                ],
+              ),
             ),
-          ),
-        );
+          );
+        }
       }
+    } finally {
+      _isOpeningAdModal = false;
     }
   }
 
@@ -983,10 +1004,11 @@ class _RewardedVideoAdPlayerDialog extends StatefulWidget {
 }
 
 class _RewardedVideoAdPlayerDialogState
-    extends State<_RewardedVideoAdPlayerDialog> {
+    extends State<_RewardedVideoAdPlayerDialog> with WidgetsBindingObserver {
   static const int _totalVideoSeconds = 15;
   int _elapsedSeconds = 0;
   bool _isMuted = false;
+  bool _isPausedInBackground = false;
   Timer? _videoTimer;
 
   static const List<({
@@ -996,9 +1018,9 @@ class _RewardedVideoAdPlayerDialogState
     List<Color> gradient,
   })> _scenes = [
     (
-      title: 'Solfa Studio Pro • Luyện cảm âm mỗi ngày',
+      title: 'ChaoNote Studio • Học Piano, Guitar & Cảm Âm',
       subtitle:
-          'Nhận diện cao độ, quãng nhạc và giọng Trưởng/Thứ trực quan cùng bàn phím Piano.',
+          'Nhận diện cao độ, khuông nhạc, hợp âm Guitar và thi đấu 1v1 trực quan mỗi ngày.',
       icon: Icons.headphones_rounded,
       gradient: [Color(0xFF0A265C), Color(0xFF0D6EFD)],
     ),
@@ -1012,7 +1034,7 @@ class _RewardedVideoAdPlayerDialogState
     (
       title: 'Cảm ơn bạn đã ủng hộ đội ngũ phát triển!',
       subtitle:
-          'Sự đồng hành của bạn giúp Solfa luôn miễn phí và không ngừng hoàn thiện.',
+          'Sự đồng hành của bạn giúp ChaoNote luôn miễn phí và không ngừng hoàn thiện.',
       icon: Icons.favorite_rounded,
       gradient: [Color(0xFF0B3B2E), Color(0xFF12946F)],
     ),
@@ -1021,10 +1043,11 @@ class _RewardedVideoAdPlayerDialogState
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     if (!widget.isTestMode) {
       widget.onPlayPreviewSound('assets/audio/keys/c_major.wav');
       _videoTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-        if (!mounted) return;
+        if (!mounted || _isPausedInBackground) return;
         setState(() {
           _elapsedSeconds++;
         });
@@ -1046,7 +1069,19 @@ class _RewardedVideoAdPlayerDialogState
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
+      _isPausedInBackground = true;
+      widget.onStopSound();
+    } else if (state == AppLifecycleState.resumed) {
+      _isPausedInBackground = false;
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _videoTimer?.cancel();
     super.dispose();
   }
@@ -1289,24 +1324,26 @@ class _RewardedVideoAdPlayerDialogState
                   child: ElevatedButton.icon(
                     key: const Key('btn_ad_complete'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: isRewardUnlocked
+                      backgroundColor: (isRewardUnlocked || widget.isTestMode)
                           ? AppColors.correct
-                          : AppColors.primary,
+                          : AppColors.primary.withOpacity(0.45),
                       minimumSize: const Size(0, 44),
                     ),
-                    onPressed: () => Navigator.of(context).pop(true),
+                    onPressed: (isRewardUnlocked || widget.isTestMode)
+                        ? () => Navigator.of(context).pop(true)
+                        : null,
                     icon: Icon(
                       isRewardUnlocked
                           ? Icons.redeem_rounded
-                          : Icons.fast_forward_rounded,
+                          : Icons.hourglass_bottom_rounded,
                       size: 19,
                     ),
                     label: FittedBox(
                       fit: BoxFit.scaleDown,
                       child: Text(
                         isRewardUnlocked
-                            ? 'Nhận thưởng & Hoàn tất ủng hộ'
-                            : 'Hoàn tất xem ngay',
+                            ? 'Nhận thưởng (+100 Gem & +1 Lượt)'
+                            : 'Đang phát... Còn ${remaining}s',
                       ),
                     ),
                   ),
