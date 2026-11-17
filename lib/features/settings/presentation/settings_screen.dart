@@ -502,7 +502,7 @@ class SettingsScreen extends ConsumerWidget {
                             children: [
                               const Expanded(
                                 child: Text(
-                                  'Solfa Studio v1.8.4',
+                                  'ChaoNote Studio v1.8.4',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
@@ -1445,15 +1445,15 @@ class SettingsScreen extends ConsumerWidget {
                     trailing: const Icon(Icons.chevron_right_rounded),
                     onTap: () => showLicensePage(
                       context: context,
-                      applicationName: 'Solfa Studio',
+                      applicationName: 'ChaoNote Studio',
                       applicationVersion: '1.8.4 (Offline-First)',
                       applicationIcon: const Padding(
                         padding: EdgeInsets.all(8.0),
                         child: SolfaLogo(size: 56),
                       ),
                       applicationLegalese: isEn
-                          ? '© 2026 Solfa Studio. 44.1kHz DSP audio synthesis and music theory content belong to Solfa.'
-                          : '© 2026 Solfa Studio. Bản quyền âm thanh DSP 44.1kHz và nội dung nhạc lý thuộc về Solfa.',
+                          ? '© 2026 ChaoNote Studio (Cháo Nhạc). 44.1kHz DSP audio synthesis and music theory content belong to ChaoNote.'
+                          : '© 2026 ChaoNote Studio (Cháo Nhạc). Bản quyền âm thanh DSP 44.1kHz và nội dung nhạc lý thuộc về ChaoNote.',
                     ),
                   ),
                   const Divider(height: 1),

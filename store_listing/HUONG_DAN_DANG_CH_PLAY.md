@@ -1,6 +1,6 @@
-# Hướng Dẫn Đưa Ứng Dụng Solfa Lên Google Play Store (CH Play) Từ A → Z
+# Hướng Dẫn Đưa Ứng Dụng ChaoNote (Cháo Nhạc) Lên Google Play Store (CH Play) Từ A → Z
 
-Tài liệu này tổng hợp sẵn **toàn bộ tệp cài đặt (`.aab`), hình ảnh chuẩn kích thước và nội dung chữ (Copy-Paste)** để bạn đăng ứng dụng **Solfa** lên [Google Play Console](https://play.google.com/console) nhanh chóng nhất.
+Tài liệu này tổng hợp sẵn **toàn bộ tệp cài đặt (`.aab`), hình ảnh chuẩn kích thước và nội dung chữ (Song ngữ Việt – Anh cho 174+ quốc gia)** để bạn đăng ứng dụng **ChaoNote (`vn.chaonote.app`)** lên [Google Play Console](https://play.google.com/console) không bị trùng tên với bất kỳ ứng dụng nào khác.
 
 ---
 
@@ -8,82 +8,76 @@ Tài liệu này tổng hợp sẵn **toàn bộ tệp cài đặt (`.aab`), hì
 
 | Hạng mục trên CH Play | Đường dẫn tệp trong dự án `D:\Solfa` | Yêu cầu kỹ thuật của Google |
 | :--- | :--- | :--- |
-| **1. Gói ứng dụng sản xuất (`.aab`)** | `D:\Solfa\build\app\outputs\bundle\release\app-release.aab` | Đã ký số bằng khóa `upload-keystore.jks`, `targetSdk = 35` |
+| **1. Gói ứng dụng sản xuất (`.aab`)** | `D:\Solfa\build\app\outputs\bundle\release\app-release.aab` *(và `D:\Solfa\chaonote-release-v1.8.4-b16.aab`)* | Mã gói `vn.chaonote.app`, đã ký số bằng `upload-keystore.jks`, `targetSdk = 36` |
 | **2. Biểu tượng ứng dụng (App Icon)** | `D:\Solfa\store_listing\app_icon_512x512.png` | Chuẩn `512 x 512 px` PNG 32-bit |
 | **3. Ảnh nổi bật (Feature Graphic)** | `D:\Solfa\store_listing\feature_graphic_1024x500.png` | Chuẩn `1024 x 500 px` PNG |
-| **4. Khóa ký số bản quyền (Keystore)** | `D:\Solfa\android\app\upload-keystore.jks` *(Mật khẩu: `Solfa2026!`, Alias: `upload`)* | **Lưu giữ cẩn thận** để dùng cho các bản cập nhật về sau (khi gắn AdMob `v1.0.1`) |
-| **5. Link Chính sách Quyền riêng tư** | `https://github.com/chaoscutis1tg/Solfa/blob/main/PRIVACY_POLICY.md` | Sau khi bạn chạy `git push`, đường link này hoạt động công khai 24/7 |
+| **4. Bộ 4 Ảnh chụp màn hình (Screenshots)** | - `D:\Solfa\store_listing\screenshot_1_bang_diem_sang.png`<br>- `D:\Solfa\store_listing\screenshot_2_cai_dat_am_thanh.png`<br>- `D:\Solfa\store_listing\screenshot_3_che_do_toi_dark_mode.png`<br>- `D:\Solfa\store_listing\screenshot_4_dau_truong_1v1_split.png` | Chuẩn `1080 x 1920 px` Full HD (Tỷ lệ 9:16) |
+| **5. Khóa ký số bản quyền (Keystore)** | `D:\Solfa\android\app\upload-keystore.jks` *(Mật khẩu: `Solfa2026!`, Alias: `upload`)* | Lưu giữ cẩn thận để dùng cho các bản cập nhật về sau |
+| **6. Link Chính sách Quyền riêng tư** | `https://github.com/chaoscutis1tg/Solfa/blob/main/PRIVACY_POLICY.md` | Hoạt động công khai 24/7 (Tuân thủ GDPR, EU 2018/302 & Nghị định 13) |
 
 ---
 
-## 2. Nội dung Copy-Paste vào mục "Trang thông tin chính trên cửa hàng" (Main Store Listing)
+## 2. Nội dung Copy-Paste vào "Trang thông tin chính trên cửa hàng" (Tiếng Việt – `vi-VN`)
 
 ### A. Tên ứng dụng (App name – tối đa 30 ký tự)
 ```text
-Solfa: Luyện Cảm Âm & Nhịp Cơ
+ChaoNote: Học Piano & Guitar
 ```
 
 ### B. Mô tả ngắn (Short description – tối đa 80 ký tự)
 ```text
-Luyện nghe nốt nhạc Piano, phân biệt quãng, hợp âm và máy đếm nhịp cơ học 100%.
+Cháo Nhạc: Học Piano, Guitar, đọc khuông nhạc, đấu trường 1v1 & máy đếm nhịp cơ.
 ```
 
 ### C. Mô tả đầy đủ (Full description – tối đa 4.000 ký tự)
 ```text
-Solfa Studio là ứng dụng luyện cảm âm (Ear Training), trắc nghiệm nhạc lý thực hành và máy đếm nhịp cơ học (Mechanical Metronome) được thiết kế tối ưu cho người học nhạc cụ (Piano, Guitar, Violin, Thanh nhạc) tại Việt Nam.
+ChaoNote (Cháo Nhạc) là ứng dụng học Piano, Guitar, luyện cảm âm (Ear Training), đọc khuông nhạc và máy đếm nhịp cơ học (Mechanical Metronome) từ Cơ bản đến Nâng cao, hoạt động 100% Ngoại tuyến (Offline-First).
 
-🌟 TÍNH NĂNG NỔI BẬT CỦA SOLFA:
+🌟 TÍNH NĂNG NỔI BẬT CỦA CHAONOTE STUDIO:
 
-1. Luyện Cảm Âm Theo Cấp Độ (Cơ bản → Trung bình → Nâng cao)
-• Nhận biết nốt nhạc (Note Recognition): Nghe cao độ thực tế (44.1kHz) từ Đô (C) đến Si (B), bao gồm cả các nốt có dấu hóa (#/b) và đa quãng tám, kết hợp bàn phím Piano trực quan để đối chiếu ngay lập tức.
-• Nhận biết quãng (Interval Recognition): Phân biệt chính xác khoảng cách từ Quãng 2 đến Quãng 8 (cả quãng giai điệu đi lên/đi xuống và quãng hòa thanh vang đồng thời).
-• Nhận biết giọng & Hòa âm (Key & Cadence Recognition): Cảm nhận màu sắc Giọng Trưởng (Major) tươi sáng, Giọng Thứ (Minor) trầm lắng và nắm vững hóa biểu thông qua chuỗi hòa âm I – IV – V – I.
+1. Lộ Trình 7 Chủ Đề Piano & Nhạc Lý (Cơ Bản → Nâng Cao)
+• Nhận biết nốt & Đọc khuông nhạc (Staff & Ledger Lines): Làm chủ Khóa Sol (𝄞), Khóa Fa (𝄢) và toàn bộ Dòng kẻ phụ từ C3 đến C6 kèm nút bật/tắt "Mốc chuẩn" trực quan và đàn Piano C3–C5 đa âm 4 kênh.
+• Cảm âm Quãng, Hợp âm, Giọng, Giai điệu & Nhịp điệu: Luyện nghe mẫu âm thanh phòng thu 44.1kHz PCM cho Quãng 2 đến Quãng 8, Hợp âm Trưởng/Thứ/7/Sus4, vòng hòa thanh I–V–vi–IV, ii–V–I và chép nhạc giai điệu.
 
-2. Phòng Luyện Tập Linh Hoạt & Bảng Điểm Trực Tiếp
-• Chọn chế độ thời gian phù hợp với quỹ thời gian của bạn: 60 giây phản xạ nhanh, 15 phút, 1 tiếng hoặc Luyện tập tự do không giới hạn.
-• Hệ thống chấm điểm nốt Đúng / Sai theo thời gian thực và tự động chuyển câu mượt mà.
+2. Phòng Học Guitar & Bản Đồ Cần Đàn 6 Dây (E2–E5)
+• Bản đồ Cần đàn 6 dây × 12 ngăn: Chuẩn tần số vật lý từ dây 6 buông (E2 - 82.4Hz) đến dây 1 ngăn 12 (E5 - 659.3Hz) kèm mẹo tìm Quãng 8 chéo.
+• Thư viện Hợp âm & Rải dây sáng đèn: Học thế bấm C, G, Am, Em, Dm, F, D, E kèm tính năng "Rải từ Bass xuống (Strum)" và "Rải Ballad (Bass-3-2-3-1-3-2-3)" sáng đèn chạy theo từng dây.
+• Bản đồ Scale Pentatonic, Đọc Tab 6 dây, bài luyện ngón Spider Walk 1–2–3–4 và quy tắc dịch giọng bằng Capo.
 
-3. Cơ Chế Ôn Tập Thông Minh (Spaced Mastery)
-• Tự động ghi nhớ các nốt hoặc quãng bạn từng nghe nhầm vào danh sách "Ôn câu sai".
-• Áp dụng quy tắc "Đúng 2 lần liên tiếp" giúp bạn khắc phục triệt để điểm yếu thính giác.
+3. Đấu Trường Âm Nhạc 1v1 & Chia Đôi Màn Hình 180°
+• Đấu Hạng 1v1, Đấu Máy AI (4 cấp độ) hoặc Đấu 2 Người Trên 1 Máy (hỗ trợ xoay ngược 180° ngồi đối diện qua bàn).
+• Cơ chế giải đề độc lập theo tốc độ riêng của từng người và hiệu ứng Sét Đánh Bạo Kích + Rung Haptic khi dồn chuỗi Combo.
 
-4. Máy Đếm Nhịp Cơ Học Chuẩn Xác (< 10ms Jitter)
-• Âm thanh mô phỏng chân thực tiếng búa gõ hộp gỗ máy đếm nhịp cơ truyền thống, tiếng Phách gỗ trầm ấm và tiếng Chuông đồng ở phách mạnh.
-• Hỗ trợ dải tốc độ rộng từ 30 – 240 BPM, tính năng Chạm dò nhịp (Tap Tempo) lọc nhiễu thông minh và các loại nhịp phổ biến (2/4, 3/4, 4/4, 6/8).
+4. Máy Đếm Nhịp Cơ Học Chuẩn Xác (< 10ms)
+• 4 âm sắc (Tempo Lite, Cơ học, Gỗ trầm, Chuông), dải tốc độ 30–300 BPM, Tap Tempo, Chia nhỏ phách (1x–4x) và Tự động tăng tốc (Speed Trainer).
 
-5. Hoạt Động 100% Ngoại Tuyến (Offline-First) & Không Quảng Cáo Làm Phiền
-• Toàn bộ bài học, âm thanh chất lượng phòng thu và máy đếm nhịp hoạt động hoàn toàn không cần Internet.
-• Không yêu cầu tạo tài khoản, không thu thập dữ liệu cá nhân và tuyệt đối không có quảng cáo tự động bật lên làm gián đoạn lúc bạn đang tập đàn.
+5. Hoạt Động 100% Offline, Đa Ngôn Ngữ (Việt – Anh) & Không Quảng Cáo Làm Phiền
+• Tự động nhận diện quốc gia/vùng thiết bị và hỗ trợ song ngữ Tiếng Việt (Đô–Rê–Mi) & Tiếng Anh Quốc tế (C–D–E–F–G–A–B).
+• Không yêu cầu đăng ký tài khoản, không thu thập dữ liệu cá nhân, tuân thủ Quy định (EU) 2018/302, GDPR và Nghị định 13/2023/NĐ-CP.
 ```
 
 ---
 
-## 3. Hướng dẫn trả lời nhanh mục "Nội dung ứng dụng" (App Content) trên Google Play Console
+## 3. Nội dung Copy-Paste cho Ngôn ngữ Quốc tế (English – `en-US` cho 174+ Quốc gia)
 
-Khi tạo ứng dụng mới, ở menu **Chính sách → Nội dung ứng dụng (App content)**, bạn chọn như sau:
+### A. App name (max 30 chars)
+```text
+ChaoNote: Piano & Guitar Lab
+```
 
-1. **Chính sách quyền riêng tư (Privacy Policy)**:
-   - Dán URL: `https://github.com/chaoscutis1tg/Solfa/blob/main/PRIVACY_POLICY.md`
-2. **Quyền truy cập ứng dụng (App access)**:
-   - Chọn: *"Tất cả chức năng đều dùng được mà không cần quyền truy cập đặc biệt"* (Vì app không bắt đăng nhập).
-3. **Quảng cáo (Ads)**:
-   - Ở bản đầu tiên này (nếu chưa gắn SDK AdMob): Chọn *"Không, ứng dụng của tôi không chứa quảng cáo"* (Hoặc khi gắn AdMob ở bản sau thì đổi thành *"Có, ứng dụng có chứa quảng cáo"*).
-4. **Phân loại nội dung (Content rating / IARC)**:
-   - Danh mục: **Giáo dục / Tham khảo (Reference, News, or Educational)**.
-   - Tích **"Không (No)"** cho tất cả câu hỏi về bạo lực, ngôn từ kích động, cờ bạc, mua hàng... → Ứng dụng sẽ đạt nhãn **3+ (Phù hợp với mọi lứa tuổi)**.
-5. **Đối tượng mục tiêu (Target audience)**:
-   - Chọn các nhóm tuổi từ **13–15, 16–17, 18 trở lên** *(Mẹo quan trọng: Không nên tích dưới 13 tuổi ở lần đầu để tránh phải xét duyệt thêm biểu mẫu Chương trình Gia đình khắt khe của Google)*.
-6. **An toàn dữ liệu (Data safety)**:
-   - Câu hỏi *"Ứng dụng của bạn có thu thập hoặc chia sẻ bất kỳ loại dữ liệu người dùng bắt buộc nào không?"*:
-     - Ở bản đầu tiên (chưa gắn SDK AdMob): Chọn **"Không (No)"** → Bấm Lưu (Xong ngay trong 5 giây!).
+### B. Short description (max 80 chars)
+```text
+Learn Piano, Guitar fretboard, staff sight-reading, 1v1 arena & pro metronome.
+```
 
----
+### C. Full description
+```text
+ChaoNote Studio is a 100% Offline-First Piano, Guitar, Sight-Reading, Ear Training, and Mechanical Metronome app designed to take learners from Basic to Advanced levels.
 
-## 4. Tải gói `.aab` lên CH Play
-
-1. Vào mục **Phát hành (Release) → Sản xuất (Production)** (hoặc **Thử nghiệm nội bộ / Khép kín** nếu tài khoản cá nhân mới lập).
-2. Bấm **"Tạo bản phát hành mới" (Create new release)**.
-3. Tại ô **App bundles**, kéo thả file sau vào:
-   `D:\Solfa\build\app\outputs\bundle\release\app-release.aab`
-4. Đặt tên bản phát hành: `1.0.0 (1)` → Bấm **Tiếp theo** → **Lưu và Xuất bản**!
-
+🌟 KEY FEATURES OF CHAONOTE STUDIO:
+• 7 Piano & Music Theory Topics: Pitch recognition, Treble & Bass Clef sight-reading with Ledger Lines (C3–C6), Intervals, Chords, Key Signatures, Melodic Dictation, and Rhythm with a 4-voice polyphonic Piano studio.
+• Interactive 6-String Guitar Studio: Full E2–E5 fretboard map, Open & Barre chords with real-time visual Strum & Ballad Arpeggio lighting, Am/C Scale maps, 6-line Tab reader, and 1-2-3-4 Spider Walk finger exercises.
+• 1v1 Music Battle Arena: Ranked 1v1, 4-tier AI Bots, and 2-Player 180° Tabletop Split-Screen with independent question streams and Lightning Combo strikes.
+• Precision Mechanical Metronome: 30–300 BPM, Tap Tempo, beat subdivisions, and Auto Speed Trainer.
+• 100% Offline & Privacy-First: Compliant with EU Regulation 2018/302, GDPR, and CCPA across 174+ countries.
+```

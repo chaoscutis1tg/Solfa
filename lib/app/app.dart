@@ -40,7 +40,7 @@ class _SolfaAppState extends ConsumerState<SolfaApp> {
     final settings = ref.watch(appSettingsProvider);
 
     return MaterialApp.router(
-      title: 'Solfa',
+      title: 'ChaoNote',
       debugShowCheckedModeBanner: false,
       scrollBehavior: const SolfaScrollBehavior(),
       theme: AppTheme.lightTheme,

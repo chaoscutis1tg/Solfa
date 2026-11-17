@@ -23,14 +23,14 @@ class MainShell extends ConsumerWidget {
   });
 
   static const List<String> _tabTitlesVi = [
-    'Solfa',
+    'ChaoNote',
     'Phòng luyện tập',
     'Máy đếm nhịp',
     'Tiến trình',
   ];
 
   static const List<String> _tabTitlesEn = [
-    'Solfa',
+    'ChaoNote',
     'Practice Room',
     'Metronome',
     'Progress',
