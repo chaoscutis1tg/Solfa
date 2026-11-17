@@ -1642,47 +1642,55 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
                 style: const TextStyle(fontSize: 12, height: 1.38),
               ),
               const SizedBox(height: 10),
-              // Thanh điều khiển tốc độ & Chạy mẫu / Tập từng bước
-              Row(
+              // Thanh điều khiển tốc độ & Chạy mẫu / Tập từng bước (Không tràn khung 360px)
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   for (final (ms, lbl) in [
                     (680, isEn ? 'Slow' : 'Chậm'),
                     (500, isEn ? 'Normal' : 'Vừa'),
                     (330, isEn ? 'Fast' : 'Nhanh'),
-                  ]) ...[
-                    Padding(
-                      padding: const EdgeInsets.only(right: 6),
-                      child: ChoiceChip(
-                        visualDensity: VisualDensity.compact,
-                        label: Text(
-                          lbl,
-                          style: const TextStyle(
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w700,
-                          ),
+                  ])
+                    ChoiceChip(
+                      visualDensity: VisualDensity.compact,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      labelPadding: const EdgeInsets.symmetric(horizontal: 4),
+                      label: Text(
+                        lbl,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
                         ),
-                        selected: _spiderStepIntervalMs == ms,
-                        onSelected: (_) {
-                          setState(() => _spiderStepIntervalMs = ms);
-                          if (_isSpiderPlaying) {
-                            _spiderTimer?.cancel();
-                            _isSpiderPlaying = false;
-                            _toggleSpiderExercise();
-                          }
-                        },
                       ),
+                      selected: _spiderStepIntervalMs == ms,
+                      onSelected: (_) {
+                        setState(() => _spiderStepIntervalMs = ms);
+                        if (_isSpiderPlaying) {
+                          _spiderTimer?.cancel();
+                          _isSpiderPlaying = false;
+                          _toggleSpiderExercise();
+                        }
+                      },
                     ),
-                  ],
-                  const Spacer(),
-                  IconButton(
-                    tooltip: isEn ? 'Previous Step' : 'Bước trước',
+                  OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(34, 30),
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
                     onPressed: () => _stepWorkoutManually(-1),
-                    icon: const Icon(Icons.skip_previous_rounded),
+                    child: const Icon(Icons.skip_previous_rounded, size: 16),
                   ),
-                  IconButton(
-                    tooltip: isEn ? 'Next Step' : 'Bước tiếp',
+                  OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(34, 30),
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
                     onPressed: () => _stepWorkoutManually(1),
-                    icon: const Icon(Icons.skip_next_rounded),
+                    child: const Icon(Icons.skip_next_rounded, size: 16),
                   ),
                 ],
               ),
