@@ -1044,6 +1044,7 @@ class InteractiveGuitarFretboard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cellWidth = maxFrets <= 5 ? 56.0 : 48.0;
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFF1E1B18),
@@ -1051,78 +1052,97 @@ class InteractiveGuitarFretboard extends StatelessWidget {
         border: Border.all(color: const Color(0xFF78350F), width: 1.5),
       ),
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Hàng đánh số ngăn đàn (Ngăn 0..maxFrets)
-            Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(width: 48),
-                for (int f = 0; f <= maxFrets; f++)
-                  SizedBox(
-                    width: 44,
-                    child: Center(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 5,
-                          vertical: 1,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const {3, 5, 7, 9, 12}.contains(f)
-                              ? const Color(0xFFF59E0B).withOpacity(0.25)
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          f == 0 ? 'Buông' : 'Ng.$f',
-                          style: TextStyle(
-                            fontSize: 9.5,
-                            fontWeight: const {3, 5, 7, 9, 12}.contains(f)
-                                ? FontWeight.w900
-                                : FontWeight.w600,
-                            color: const {3, 5, 7, 9, 12}.contains(f)
-                                ? const Color(0xFFFBBF24)
-                                : Colors.white70,
+                // Hàng đánh số ngăn đàn (Ngăn 0..maxFrets)
+                Row(
+                  children: [
+                    const SizedBox(width: 48),
+                    for (int f = 0; f <= maxFrets; f++)
+                      SizedBox(
+                        width: cellWidth,
+                        child: Center(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 5,
+                              vertical: 1,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const {3, 5, 7, 9, 12}.contains(f)
+                                  ? const Color(0xFFF59E0B).withOpacity(0.25)
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              f == 0 ? 'Buông' : 'Ng.$f',
+                              style: TextStyle(
+                                fontSize: 9.5,
+                                fontWeight: const {3, 5, 7, 9, 12}.contains(f)
+                                    ? FontWeight.w900
+                                    : FontWeight.w600,
+                                color: const {3, 5, 7, 9, 12}.contains(f)
+                                    ? const Color(0xFFFBBF24)
+                                    : Colors.white70,
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                // 6 Dây đàn (Dây 1 ở trên -> Dây 6 ở dưới)
+                for (int s = 1; s <= 6; s++)
+                  Row(
+                    children: [
+                      SizedBox(
+                        width: 48,
+                        height: 30,
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            GuitarFretboardData.stringLabels[s - 1],
+                            style: const TextStyle(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFFFDE68A),
+                            ),
+                          ),
+                        ),
+                      ),
+                      for (int f = 0; f <= maxFrets; f++)
+                        _buildFretCell(s, f, cellWidth),
+                    ],
                   ),
               ],
             ),
-            const SizedBox(height: 4),
-            // 6 Dây đàn (Dây 1 ở trên -> Dây 6 ở dưới)
-            for (int s = 1; s <= 6; s++)
-              Row(
-                children: [
-                  SizedBox(
-                    width: 48,
-                    height: 28,
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        GuitarFretboardData.stringLabels[s - 1],
-                        style: const TextStyle(
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFFFDE68A),
-                        ),
-                      ),
-                    ),
-                  ),
-                  for (int f = 0; f <= maxFrets; f++)
-                    _buildFretCell(s, f),
-                ],
+          ),
+          if (chordShape != null) ...[
+            const SizedBox(height: 6),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Text(
+                'Chú giải: O = Dây buông • X = Bịt dây • Ngón 1: Trỏ • Ngón 2: Giữa • Ngón 3: Áp út • Ngón 4: Út',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white.withOpacity(0.75),
+                ),
               ),
+            ),
           ],
-        ),
+        ],
       ),
     );
   }
 
-  Widget _buildFretCell(int stringNumber, int fret) {
+  Widget _buildFretCell(int stringNumber, int fret, double cellWidth) {
     final note = GuitarFretboardData.noteAt(
       stringNumber: stringNumber,
       fret: fret,
@@ -1189,8 +1209,8 @@ class InteractiveGuitarFretboard extends StatelessWidget {
     return GestureDetector(
       onTap: onTapFret != null ? () => onTapFret!(stringNumber, fret) : null,
       child: Container(
-        width: 44,
-        height: 28,
+        width: cellWidth,
+        height: 30,
         decoration: BoxDecoration(
           border: Border(
             right: BorderSide(
@@ -1214,6 +1234,10 @@ class InteractiveGuitarFretboard extends StatelessWidget {
             ),
             if (shouldShowNoteBadge)
               Container(
+                constraints: BoxConstraints(
+                  minWidth: 22,
+                  maxWidth: cellWidth - 4,
+                ),
                 padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                 decoration: BoxDecoration(
                   color: badgeColor,
@@ -1223,13 +1247,18 @@ class InteractiveGuitarFretboard extends StatelessWidget {
                     width: isTarget || isScaleRoot ? 1.5 : 0.8,
                   ),
                 ),
-                child: Text(
-                  badgeText,
-                  maxLines: 1,
-                  style: const TextStyle(
-                    fontSize: 9.2,
-                    fontWeight: FontWeight.w900,
-                    color: Colors.white,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    badgeText,
+                    maxLines: 1,
+                    softWrap: false,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 9.8,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),
