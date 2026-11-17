@@ -385,76 +385,120 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
                         ),
                         const SizedBox(height: 10),
 
-                        // Audio Studio Replay Bar (Auto-plays on question entry; tap to replay anytime)
-                        ValueListenableBuilder<bool>(
-                          valueListenable: audioService.isPlayingNotifier,
-                          builder: (context, isPlaying, _) {
-                            return Row(
-                              children: [
-                                Expanded(
-                                  child: ElevatedButton.icon(
-                                    key: const Key('btn_play_question_audio'),
-                                    style: ElevatedButton.styleFrom(
-                                      minimumSize: const Size(0, 44),
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 12,
+                        // Audio Studio Replay Bar:
+                        // - Shown before & after answering for Audio / Ear-Training questions (question.hasQuestionAudio)
+                        // - For Visual Note/Tab/Staff questions (question.playsPitchConfirmationOnAnswer), shown AFTER answering so the user can hear the pitch
+                        // - Hidden for pure visual/theory questions (Scale map, Fretboard rules, Key signatures, Chord progressions, Tab techniques)
+                        if (question.hasQuestionAudio ||
+                            (isCurrentAnswered &&
+                                question.playsPitchConfirmationOnAnswer))
+                          ValueListenableBuilder<bool>(
+                            valueListenable: audioService.isPlayingNotifier,
+                            builder: (context, isPlaying, _) {
+                              return Row(
+                                children: [
+                                  Expanded(
+                                    child: ElevatedButton.icon(
+                                      key: const Key('btn_play_question_audio'),
+                                      style: ElevatedButton.styleFrom(
+                                        minimumSize: const Size(0, 44),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                        ),
+                                        backgroundColor: isPlaying
+                                            ? AppColors.primaryDark
+                                            : AppColors.primary,
                                       ),
-                                      backgroundColor: isPlaying
-                                          ? AppColors.primaryDark
-                                          : AppColors.primary,
-                                    ),
-                                    onPressed: () {
-                                      audioService
-                                          .playAsset(question.audioAsset);
-                                    },
-                                    icon: Icon(
-                                      isPlaying
-                                          ? Icons.graphic_eq_rounded
-                                          : Icons.volume_up_rounded,
-                                      size: 20,
-                                    ),
-                                    label: FittedBox(
-                                      fit: BoxFit.scaleDown,
-                                      child: Text(
+                                      onPressed: () {
+                                        audioService
+                                            .playAsset(question.audioAsset);
+                                      },
+                                      icon: Icon(
                                         isPlaying
-                                            ? (isEn
-                                                ? 'Playing... (Replay)'
-                                                : 'Đang phát... (Nghe lại)')
-                                            : (isEn
-                                                ? 'Replay Question Audio'
-                                                : 'Nghe lại âm thanh câu hỏi'),
-                                        style: const TextStyle(fontSize: 14),
+                                            ? Icons.graphic_eq_rounded
+                                            : Icons.volume_up_rounded,
+                                        size: 20,
                                       ),
+                                      label: FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        child: Text(
+                                          isPlaying
+                                              ? (isEn
+                                                  ? 'Playing... (Replay)'
+                                                  : 'Đang phát... (Nghe lại)')
+                                              : (!question.hasQuestionAudio
+                                                  ? (isEn
+                                                      ? 'Listen to Note Pitch'
+                                                      : 'Nghe cao độ nốt này')
+                                                  : (isEn
+                                                      ? 'Replay Question Audio'
+                                                      : 'Nghe lại âm thanh câu hỏi')),
+                                          style: const TextStyle(fontSize: 14),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  if (question.supportsReferencePitch) ...[
+                                    const SizedBox(width: 8),
+                                    OutlinedButton.icon(
+                                      key: const Key('btn_play_reference_c4'),
+                                      style: OutlinedButton.styleFrom(
+                                        minimumSize: const Size(0, 44),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                        ),
+                                      ),
+                                      onPressed: () {
+                                        audioService.playReferenceC4();
+                                      },
+                                      icon: const Icon(
+                                        Icons.music_note_outlined,
+                                        size: 17,
+                                      ),
+                                      label: Text(
+                                        isEn ? 'C4 Ref' : 'Đô C4',
+                                        style: const TextStyle(fontSize: 13),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              );
+                            },
+                          )
+                        else
+                          Container(
+                            key: const Key('badge_visual_question_hint'),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 7,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withOpacity(0.10),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.visibility_rounded,
+                                  size: 16,
+                                  color: AppColors.primary,
+                                ),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    isEn
+                                        ? 'Visual / Theory Question • Observe and choose the correct answer'
+                                        : 'Câu hỏi Quan sát / Nhạc lý • Không cần nghe âm thanh trước',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.primary,
                                     ),
                                   ),
                                 ),
-                                if (question.supportsReferencePitch) ...[
-                                  const SizedBox(width: 8),
-                                  OutlinedButton.icon(
-                                    key: const Key('btn_play_reference_c4'),
-                                    style: OutlinedButton.styleFrom(
-                                      minimumSize: const Size(0, 44),
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 10,
-                                      ),
-                                    ),
-                                    onPressed: () {
-                                      audioService.playReferenceC4();
-                                    },
-                                    icon: const Icon(
-                                      Icons.music_note_outlined,
-                                      size: 17,
-                                    ),
-                                    label: Text(
-                                      isEn ? 'C4 Ref' : 'Đô C4',
-                                      style: const TextStyle(fontSize: 13),
-                                    ),
-                                  ),
-                                ],
                               ],
-                            );
-                          },
-                        ),
+                            ),
+                          ),
 
                         // Visual 5-Line Musical Staff (Piano/Theory) or Interactive Guitar Fretboard/Tab Board (Guitar Mode)
                         if (question.topicId.startsWith('topic_guitar_')) ...[

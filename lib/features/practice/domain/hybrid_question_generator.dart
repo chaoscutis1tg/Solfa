@@ -7,7 +7,7 @@ import '../../../core/utils/note_formatter.dart';
 import '../presentation/widgets/musical_staff_widget.dart';
 
 class HybridQuestionGenerator {
-  static const int _currentGeneratorVersion = 8;
+  static const int _currentGeneratorVersion = 10;
   static final Random _entropySource = Random();
 
   final AppDatabase _db;
@@ -304,6 +304,9 @@ class HybridQuestionGenerator {
     if (topicId == 'topic_notes' && q.type == 'compare_pitch') {
       return false;
     }
+    if (q.id.startsWith('dyn_') && q.version < _currentGeneratorVersion) {
+      return false;
+    }
     final isMaster = levelId.contains('master') || levelId.contains('4');
     final isAdvanced = levelId.contains('adv') || levelId.contains('3');
     final isInter = levelId.contains('inter') || levelId.contains('2');
@@ -393,7 +396,11 @@ class HybridQuestionGenerator {
     final wrongSlotOpts = q.options.where((o) => !o.isCorrect).toList();
 
     List<QuestionOptionModel> assembledOptions;
-    if (q.options.length >= 4 && wrongSlotOpts.isNotEmpty) {
+    if (q.topicId.startsWith('topic_guitar_')) {
+      // Guitar questions have curated homogeneous 4-option sets per question subtype;
+      // preserve the exact 4 options and only shuffle their A/B/C/D slot positions.
+      assembledOptions = [...q.options];
+    } else if (q.options.length >= 4 && wrongSlotOpts.isNotEmpty) {
       final isNoteQuestion =
           q.type == 'listen_note' || q.type == 'read_staff_note';
       final correctPitchClass = NoteFormatter.cleanNoteKey(correctOpt.optionKey)
@@ -1399,7 +1406,7 @@ class HybridQuestionGenerator {
             levelId: levelId,
             type: 'key_signature',
             prompt:
-                'Nghe chuỗi hòa âm giọng $keyLabel. Hóa biểu của giọng này có bao nhiêu dấu hóa?',
+                'Trên khuông nhạc, hóa biểu của giọng $keyLabel gồm bao nhiêu dấu hóa?',
             explanation: '$keyLabel có hóa biểu: $sigLabel. $desc',
             audioAsset: 'assets/audio/keys/$fileKey.wav',
             difficulty: diff,
@@ -1848,177 +1855,318 @@ class HybridQuestionGenerator {
       final isInter = levelId.contains('inter');
       final diff = isAdvanced ? 3 : (isInter ? 2 : 1);
 
-      List<(String audioAsset, String optKey, String label, String prompt, String desc)>
-          guitarPool = [];
+      // Mỗi câu hỏi Guitar có kiểu riêng (qType) và bộ 4 đáp án đồng nhất cùng loại (1 đáp án đúng + 3 đáp án nhiễu cùng bản chất)
+      List<
+          (
+            String qType,
+            String audioAsset,
+            String optKey,
+            String correctLabel,
+            List<(String, String)> wrongOptions,
+            String prompt,
+            String desc,
+          )> guitarSpecs = [];
 
       if (topicId == 'topic_guitar_notes') {
         final basicNotes = [
           (
+            'guitar_fret_note',
             'assets/audio/notes/e2.wav',
             'GTR_S6_F0',
-            'Mi trầm (E2 • Dây 6 buông)',
-            'Nhìn vị trí (?) trên cần đàn Guitar (Dây 6 buông) và chọn tên nốt:',
-            'Dây 6 buông (dây dày nhất trên cùng khi cầm đàn) là nốt Mi trầm (E2 - 82.4 Hz).'
+            'Mi trầm (E2)',
+            [
+              ('GTR_S5_F0', 'La trầm (A2)'),
+              ('GTR_S4_F0', 'Rê trầm (D3)'),
+              ('GTR_S3_F0', 'Sol trầm (G3)'),
+            ],
+            'Nhìn vị trí (?) trên cần đàn Guitar (Dây 6 buông dày nhất) và chọn tên nốt:',
+            'Dây 6 buông là nốt Mi trầm (E2 – 82.4 Hz). Sau khi chọn đáp án, hệ thống phát vang đúng cao độ E2.'
           ),
           (
+            'guitar_fret_note',
             'assets/audio/notes/a2.wav',
             'GTR_S5_F0',
-            'La (A2 • Dây 5 buông)',
+            'La trầm (A2)',
+            [
+              ('GTR_S6_F0', 'Mi trầm (E2)'),
+              ('GTR_S4_F0', 'Rê trầm (D3)'),
+              ('GTR_S2_F0', 'Si trầm (B3)'),
+            ],
             'Nhìn vị trí (?) trên cần đàn Guitar (Dây 5 buông) và chọn tên nốt:',
-            'Dây 5 buông là nốt La (A2 - 110.0 Hz) — âm Bass chuẩn của hợp âm La Thứ (Am).'
+            'Dây 5 buông là nốt La trầm (A2 – 110.0 Hz) — âm Bass gốc của hợp âm La Thứ (Am).'
           ),
           (
+            'guitar_fret_note',
             'assets/audio/notes/d3.wav',
             'GTR_S4_F0',
-            'Rê (D3 • Dây 4 buông)',
+            'Rê trầm (D3)',
+            [
+              ('GTR_S5_F0', 'La trầm (A2)'),
+              ('GTR_S3_F0', 'Sol trầm (G3)'),
+              ('GTR_S5_F3', 'Đô trầm (C3)'),
+            ],
             'Nhìn vị trí (?) trên cần đàn Guitar (Dây 4 buông) và chọn tên nốt:',
-            'Dây 4 buông là nốt Rê (D3 - 146.8 Hz) — âm Bass chuẩn của hợp âm Rê Thứ (Dm).'
+            'Dây 4 buông là nốt Rê trầm (D3 – 146.8 Hz) — âm Bass gốc của hợp âm Rê Trưởng (D) và Rê Thứ (Dm).'
           ),
           (
+            'guitar_fret_note',
             'assets/audio/notes/g3.wav',
             'GTR_S3_F0',
-            'Sol (G3 • Dây 3 buông)',
+            'Sol trầm (G3)',
+            [
+              ('GTR_S4_F0', 'Rê trầm (D3)'),
+              ('GTR_S2_F0', 'Si trầm (B3)'),
+              ('GTR_S1_F0', 'Mi chuẩn (E4)'),
+            ],
             'Nhìn vị trí (?) trên cần đàn Guitar (Dây 3 buông) và chọn tên nốt:',
-            'Dây 3 buông là nốt Sol (G3 - 196.0 Hz).'
+            'Dây 3 buông là nốt Sol trầm (G3 – 196.0 Hz).'
           ),
           (
+            'guitar_fret_note',
             'assets/audio/notes/b3.wav',
             'GTR_S2_F0',
-            'Si (B3 • Dây 2 buông)',
+            'Si trầm (B3)',
+            [
+              ('GTR_S3_F0', 'Sol trầm (G3)'),
+              ('GTR_S1_F0', 'Mi chuẩn (E4)'),
+              ('GTR_S2_F1', 'Đô chuẩn (C4)'),
+            ],
             'Nhìn vị trí (?) trên cần đàn Guitar (Dây 2 buông) và chọn tên nốt:',
-            'Dây 2 buông là nốt Si (B3 - 246.9 Hz).'
+            'Dây 2 buông là nốt Si trầm (B3 – 246.9 Hz), nằm ngay dưới Đô chuẩn (C4) nửa cung.'
           ),
           (
+            'guitar_fret_note',
             'assets/audio/notes/e4.wav',
             'GTR_S1_F0',
-            'Mi cao (e4 • Dây 1 buông)',
+            'Mi chuẩn (E4)',
+            [
+              ('GTR_S2_F0', 'Si trầm (B3)'),
+              ('GTR_S3_F0', 'Sol trầm (G3)'),
+              ('GTR_S1_F3', 'Sol chuẩn (G4)'),
+            ],
             'Nhìn vị trí (?) trên cần đàn Guitar (Dây 1 buông mỏng nhất) và chọn tên nốt:',
-            'Dây 1 buông (mỏng nhất dưới cùng) là nốt Mi cao (E4 - 329.6 Hz).'
+            'Dây 1 buông (mỏng nhất dưới cùng) là nốt Mi chuẩn (E4 – 329.6 Hz), cao hơn Dây 6 buông 2 quãng tám.'
           ),
           (
+            'guitar_fret_note',
             'assets/audio/notes/g2.wav',
             'GTR_S6_F3',
-            'Sol (G2 • Dây 6 Ngăn 3)',
+            'Sol rất trầm (G2)',
+            [
+              ('GTR_S6_F1', 'Fa rất trầm (F2)'),
+              ('GTR_S5_F3', 'Đô trầm (C3)'),
+              ('GTR_S5_F0', 'La trầm (A2)'),
+            ],
             'Nhìn vị trí (?) tại Dây 6 • Ngăn 3 (chấm mốc đầu tiên) và chọn tên nốt:',
-            'Dây 6 buông là Mi (E2) → Ngăn 1 là Fa (F2) → Ngăn 3 là Sol (G2).'
+            'Dây 6 buông là Mi (E2) → Ngăn 1 là Fa (F2) → Ngăn 3 là Sol rất trầm (G2 – 98.0 Hz).'
           ),
           (
+            'guitar_fret_note',
             'assets/audio/notes/c3.wav',
             'GTR_S5_F3',
-            'Đô (C3 • Dây 5 Ngăn 3)',
-            'Nhìn vị trí (?) tại Dây 5 • Ngăn 3 và chọn tên nốt:',
-            'Dây 5 buông là La (A2) → Ngăn 2 là Si (B2) → Ngăn 3 là Đô trầm (C3).'
+            'Đô trầm (C3)',
+            [
+              ('GTR_S5_F2', 'Si rất trầm (B2)'),
+              ('GTR_S6_F3', 'Sol rất trầm (G2)'),
+              ('GTR_S4_F0', 'Rê trầm (D3)'),
+            ],
+            'Nhìn vị trí (?) tại Dây 5 • Ngăn 3 (nốt Bass của hợp âm Đô Trưởng) và chọn tên nốt:',
+            'Dây 5 buông là La (A2) → Ngăn 2 là Si (B2) → Ngăn 3 là Đô trầm (C3 – 130.8 Hz).'
           ),
         ];
 
         final interNotes = [
           ...basicNotes,
           (
+            'guitar_fret_note',
             'assets/audio/notes/a2.wav',
             'GTR_S6_F5',
-            'La (A2 • Dây 6 Ngăn 5)',
-            'Nhìn vị trí (?) tại Dây 6 • Ngăn 5 và chọn tên nốt:',
-            'Dây 6 Ngăn 5 là nốt La (A2), trùng cao độ với Dây 5 buông (mốc so dây ngăn 5).'
+            'La trầm (A2)',
+            [
+              ('GTR_S6_F3', 'Sol rất trầm (G2)'),
+              ('GTR_S5_F3', 'Đô trầm (C3)'),
+              ('GTR_S4_F0', 'Rê trầm (D3)'),
+            ],
+            'Nhìn vị trí (?) tại Dây 6 • Ngăn 5 (mốc so dây ngăn 5) và chọn tên nốt:',
+            'Dây 6 Ngăn 5 là nốt La trầm (A2), trùng đúng cao độ với Dây 5 buông.'
           ),
           (
+            'guitar_fret_note',
             'assets/audio/notes/d3.wav',
             'GTR_S5_F5',
-            'Rê (D3 • Dây 5 Ngăn 5)',
+            'Rê trầm (D3)',
+            [
+              ('GTR_S5_F3', 'Đô trầm (C3)'),
+              ('GTR_S5_F7', 'Mi trầm (E3)'),
+              ('GTR_S3_F0', 'Sol trầm (G3)'),
+            ],
             'Nhìn vị trí (?) tại Dây 5 • Ngăn 5 và chọn tên nốt:',
-            'Dây 5 Ngăn 5 là nốt Rê (D3), trùng cao độ với Dây 4 buông.'
+            'Dây 5 Ngăn 5 là nốt Rê trầm (D3), trùng đúng cao độ với Dây 4 buông.'
           ),
           (
+            'guitar_fret_note',
             'assets/audio/notes/e3.wav',
             'GTR_S5_F7',
-            'Mi (E3 • Dây 5 Ngăn 7)',
+            'Mi trầm (E3)',
+            [
+              ('GTR_S5_F5', 'Rê trầm (D3)'),
+              ('GTR_S4_F3', 'Fa trầm (F3)'),
+              ('GTR_S3_F0', 'Sol trầm (G3)'),
+            ],
             'Nhìn vị trí (?) tại Dây 5 • Ngăn 7 (chấm mốc thứ 3) và chọn tên nốt:',
-            'Từ Rê (Ngăn 5 Dây 5) tiến 1 cung lên Ngăn 7 là nốt Mi (E3).'
+            'Từ Rê (Dây 5 Ngăn 5) tiến 1 cung (2 ngăn) lên Ngăn 7 là nốt Mi trầm (E3).'
           ),
           (
+            'guitar_fret_note',
             'assets/audio/notes/c4.wav',
             'GTR_S2_F1',
-            'Đô (C4 • Dây 2 Ngăn 1)',
+            'Đô chuẩn (C4)',
+            [
+              ('GTR_S2_F0', 'Si trầm (B3)'),
+              ('GTR_S2_F3', 'Rê chuẩn (D4)'),
+              ('GTR_S1_F0', 'Mi chuẩn (E4)'),
+            ],
             'Nhìn vị trí (?) tại Dây 2 • Ngăn 1 và chọn tên nốt:',
-            'Dây 2 buông là Si (B3), tiến nửa cung vào Ngăn 1 là nốt Đô chuẩn (C4).'
+            'Dây 2 buông là Si (B3), tiến nửa cung vào Ngăn 1 là nốt Đô chuẩn (C4 – 261.6 Hz).'
           ),
         ];
 
         final advNotes = [
           ...interNotes,
           (
+            'guitar_fret_note',
             'assets/audio/notes/fsharp2.wav',
             'GTR_S6_F2',
-            'Fa# (F#2 • Dây 6 Ngăn 2)',
+            'Fa# rất trầm (F#2)',
+            [
+              ('GTR_S6_F1', 'Fa rất trầm (F2)'),
+              ('GTR_S6_F4', 'Sol# rất trầm (G#2)'),
+              ('GTR_S5_F1', 'La# rất trầm (A#2)'),
+            ],
             'Nhìn vị trí (?) tại Dây 6 • Ngăn 2 và chọn tên nốt có dấu hóa:',
             'Giữa Fa (Ngăn 1) và Sol (Ngăn 3) trên Dây 6 là nốt Fa thăng (F#2).'
           ),
           (
+            'guitar_fret_note',
             'assets/audio/notes/csharp3.wav',
             'GTR_S5_F4',
-            'Đô# (C#3 • Dây 5 Ngăn 4)',
-            'Nhìn vị trí (?) tại Dây 5 • Ngăn 4 và chọn tên nốt:',
+            'Đô# trầm (C#3)',
+            [
+              ('GTR_S5_F3', 'Đô trầm (C3)'),
+              ('GTR_S5_F6', 'Rê# trầm (D#3)'),
+              ('GTR_S4_F4', 'Fa# trầm (F#3)'),
+            ],
+            'Nhìn vị trí (?) tại Dây 5 • Ngăn 4 và chọn tên nốt có dấu hóa:',
             'Từ Đô (Dây 5 Ngăn 3) tiến 1 ngăn lên Ngăn 4 là nốt Đô thăng (C#3).'
           ),
           (
+            'guitar_fret_note',
             'assets/audio/notes/c5.wav',
             'GTR_S1_F8',
-            'Đô cao (C5 • Dây 1 Ngăn 8)',
+            'Đô cao (C5)',
+            [
+              ('GTR_S1_F7', 'Si chuẩn (B4)'),
+              ('GTR_S1_F5', 'La chuẩn (A4)'),
+              ('GTR_S1_F10', 'Rê cao (D5)'),
+            ],
             'Nhìn vị trí (?) tại Dây 1 • Ngăn 8 và chọn tên nốt:',
             'Trên Dây 1 (e4): Ngăn 5 là La (A4) → Ngăn 7 là Si (B4) → Ngăn 8 là Đô cao (C5).'
           ),
           (
+            'guitar_fret_note',
             'assets/audio/notes/a4.wav',
             'GTR_S2_F10',
-            'La cao (A4 • Dây 2 Ngăn 10)',
+            'La chuẩn (A4)',
+            [
+              ('GTR_S2_F8', 'Sol chuẩn (G4)'),
+              ('GTR_S2_F12', 'Si chuẩn (B4)'),
+              ('GTR_S1_F8', 'Đô cao (C5)'),
+            ],
             'Nhìn vị trí (?) tại Dây 2 • Ngăn 10 và chọn tên nốt:',
-            'Trên Dây 2: Ngăn 8 là Sol (G4), tiến 2 ngăn lên Ngăn 10 là nốt La chuẩn (A4).'
+            'Trên Dây 2: Ngăn 8 là Sol (G4), tiến 2 ngăn lên Ngăn 10 là nốt La chuẩn (A4 – 440 Hz).'
           ),
         ];
 
-        guitarPool =
+        guitarSpecs =
             isAdvanced ? advNotes : (isInter ? interNotes : basicNotes);
       } else if (topicId == 'topic_guitar_chords') {
         final basicChords = [
           (
+            'guitar_chord_shape',
             'assets/audio/keys/chord_c_maj.wav',
             'GTR_CHORD_C',
             'Đô Trưởng (C • X-3-2-0-1-0)',
-            'Quan sát thế bấm ngón tay trên cần đàn Guitar và chọn đúng hợp âm:',
+            [
+              ('GTR_CHORD_Am', 'La Thứ (Am • X-0-2-2-1-0)'),
+              ('GTR_CHORD_G', 'Sol Trưởng (G • 3-2-0-0-0-3)'),
+              ('GTR_CHORD_F', 'Fa Trưởng (F • Chặn ngăn 1)'),
+            ],
+            'Nghe âm thanh & quan sát thế bấm trên cần đàn Guitar để chọn đúng hợp âm:',
             'Hợp âm Đô Trưởng (C): Ngón 1 Dây 2 ngăn 1 • Ngón 2 Dây 4 ngăn 2 • Ngón 3 Dây 5 ngăn 3.'
           ),
           (
+            'guitar_chord_shape',
             'assets/audio/keys/chord_g_maj.wav',
             'GTR_CHORD_G',
             'Sol Trưởng (G • 3-2-0-0-0-3)',
-            'Quan sát thế bấm 6 dây trên cần đàn Guitar và chọn tên hợp âm:',
+            [
+              ('GTR_CHORD_C', 'Đô Trưởng (C • X-3-2-0-1-0)'),
+              ('GTR_CHORD_Em', 'Mi Thứ (Em • 0-2-2-0-0-0)'),
+              ('GTR_CHORD_D', 'Rê Trưởng (D • X-X-0-2-3-2)'),
+            ],
+            'Nghe âm thanh & quan sát thế bấm 6 dây trên cần đàn để chọn tên hợp âm:',
             'Hợp âm Sol Trưởng (G): Ngón 1 Dây 5 ngăn 2 • Ngón 2 Dây 6 ngăn 3 • Ngón 3 Dây 1 ngăn 3.'
           ),
           (
+            'guitar_chord_shape',
             'assets/audio/keys/chord_a_min.wav',
             'GTR_CHORD_Am',
             'La Thứ (Am • X-0-2-2-1-0)',
-            'Quan sát thế bấm trên cần đàn Guitar (Bass dây 5 buông) và chọn đúng hợp âm:',
+            [
+              ('GTR_CHORD_C', 'Đô Trưởng (C • X-3-2-0-1-0)'),
+              ('GTR_CHORD_E', 'Mi Trưởng (E • 0-2-2-1-0-0)'),
+              ('GTR_CHORD_Dm', 'Rê Thứ (Dm • X-X-0-2-3-1)'),
+            ],
+            'Nghe âm thanh & quan sát thế bấm (Bass dây 5 buông) để chọn đúng hợp âm:',
             'Hợp âm La Thứ (Am): Ngón 1 Dây 2 ngăn 1 • Ngón 2 Dây 4 ngăn 2 • Ngón 3 Dây 3 ngăn 2.'
           ),
           (
+            'guitar_chord_shape',
             'assets/audio/keys/chord_e_min.wav',
             'GTR_CHORD_Em',
             'Mi Thứ (Em • 0-2-2-0-0-0)',
-            'Quan sát thế bấm chỉ dùng 2 ngón trên Dây 5 & Dây 4 ngăn 2 và chọn hợp âm:',
-            'Hợp âm Mi Thứ (Em): Bấm Dây 5 ngăn 2 và Dây 4 ngăn 2, rải vang cả 6 dây.'
+            [
+              ('GTR_CHORD_Am', 'La Thứ (Am • X-0-2-2-1-0)'),
+              ('GTR_CHORD_E', 'Mi Trưởng (E • 0-2-2-1-0-0)'),
+              ('GTR_CHORD_G', 'Sol Trưởng (G • 3-2-0-0-0-3)'),
+            ],
+            'Nghe âm thanh & quan sát thế bấm 2 ngón trên Dây 5 & Dây 4 ngăn 2 để chọn hợp âm:',
+            'Hợp âm Mi Thứ (Em): Bấm Dây 5 ngăn 2 (Ngón 2) và Dây 4 ngăn 2 (Ngón 3), rải cả 6 dây.'
           ),
           (
+            'guitar_chord_shape',
             'assets/audio/keys/chord_d_min.wav',
             'GTR_CHORD_Dm',
             'Rê Thứ (Dm • X-X-0-2-3-1)',
-            'Quan sát thế bấm ở 3 dây dưới (Bass dây 4 buông) và chọn tên hợp âm:',
+            [
+              ('GTR_CHORD_D', 'Rê Trưởng (D • X-X-0-2-3-2)'),
+              ('GTR_CHORD_Am', 'La Thứ (Am • X-0-2-2-1-0)'),
+              ('GTR_CHORD_C', 'Đô Trưởng (C • X-3-2-0-1-0)'),
+            ],
+            'Nghe âm thanh & quan sát thế bấm ở 3 dây dưới (Bass dây 4 buông) để chọn hợp âm:',
             'Hợp âm Rê Thứ (Dm): Ngón 1 Dây 1 ngăn 1 • Ngón 2 Dây 3 ngăn 2 • Ngón 3 Dây 2 ngăn 3.'
           ),
           (
+            'guitar_chord_shape',
             'assets/audio/keys/chord_d_maj.wav',
             'GTR_CHORD_D',
             'Rê Trưởng (D • X-X-0-2-3-2)',
-            'Quan sát thế bấm hình tam giác ở 3 dây dưới và chọn tên hợp âm:',
+            [
+              ('GTR_CHORD_Dm', 'Rê Thứ (Dm • X-X-0-2-3-1)'),
+              ('GTR_CHORD_G', 'Sol Trưởng (G • 3-2-0-0-0-3)'),
+              ('GTR_CHORD_E', 'Mi Trưởng (E • 0-2-2-1-0-0)'),
+            ],
+            'Nghe âm thanh & quan sát thế bấm hình tam giác ở 3 dây dưới để chọn tên hợp âm:',
             'Hợp âm Rê Trưởng (D): Ngón 1 Dây 3 ngăn 2 • Ngón 2 Dây 1 ngăn 2 • Ngón 3 Dây 2 ngăn 3.'
           ),
         ];
@@ -2026,17 +2174,29 @@ class HybridQuestionGenerator {
         final interChords = [
           ...basicChords,
           (
+            'guitar_chord_shape',
             'assets/audio/keys/chord_f_maj.wav',
             'GTR_CHORD_F',
             'Fa Trưởng (F • Chặn ngăn 1)',
-            'Quan sát thế bấm chặn ngăn 1 trên cần đàn và chọn tên hợp âm:',
+            [
+              ('GTR_CHORD_C', 'Đô Trưởng (C • X-3-2-0-1-0)'),
+              ('GTR_CHORD_Dm', 'Rê Thứ (Dm • X-X-0-2-3-1)'),
+              ('GTR_CHORD_G', 'Sol Trưởng (G • 3-2-0-0-0-3)'),
+            ],
+            'Nghe âm thanh & quan sát thế bấm chặn ngăn 1 trên cần đàn để chọn tên hợp âm:',
             'Hợp âm Fa Trưởng (F): Ngón 1 chặn ngăn 1 • Ngón 2 Dây 3 ngăn 2 • Ngón 3 Dây 4 ngăn 3.'
           ),
           (
+            'guitar_chord_shape',
             'assets/audio/keys/chord_e_maj.wav',
             'GTR_CHORD_E',
             'Mi Trưởng (E • 0-2-2-1-0-0)',
-            'Quan sát thế bấm giống Am nhưng dịch toàn bộ lên 1 dây và chọn hợp âm:',
+            [
+              ('GTR_CHORD_Em', 'Mi Thứ (Em • 0-2-2-0-0-0)'),
+              ('GTR_CHORD_Am', 'La Thứ (Am • X-0-2-2-1-0)'),
+              ('GTR_CHORD_D', 'Rê Trưởng (D • X-X-0-2-3-2)'),
+            ],
+            'Nghe âm thanh & quan sát thế bấm (dịch dáng Am lên 1 dây) để chọn tên hợp âm:',
             'Hợp âm Mi Trưởng (E): Ngón 1 Dây 3 ngăn 1 • Ngón 2 Dây 5 ngăn 2 • Ngón 3 Dây 4 ngăn 2.'
           ),
         ];
@@ -2044,252 +2204,402 @@ class HybridQuestionGenerator {
         final advChords = [
           ...interChords,
           (
+            'guitar_chord_shape',
             'assets/audio/keys/chord_c_maj7.wav',
             'GTR_CHORD_C',
-            'Đô Bảy Trưởng (Cmaj7 • Bỏ ngón trỏ khỏi Dây 2)',
-            'Khi đang bấm Đô Trưởng (C), nếu nhấc ngón trỏ (Dây 2 ngăn 1) ra thành Dây 2 buông (Si B) ta được hợp âm màu gì?',
-            'Thêm nốt Si (B - bậc 7 trưởng) vào C tạo thành hợp âm Cmaj7 (X-3-2-0-0-0) rất êm dịu.'
+            'Đô Bảy Trưởng (Cmaj7 • X-3-2-0-0-0)',
+            [
+              ('GTR_CHORD_Am7', 'La Bảy Thứ (Am7 • X-0-2-0-1-0)'),
+              ('GTR_CHORD_G7', 'Sol Bảy Át (G7 • 3-2-0-0-0-1)'),
+              ('GTR_CHORD_Csus4', 'Đô Treo Bậc 4 (Csus4 • X-3-3-0-1-1)'),
+            ],
+            'Nghe hợp âm & cho biết: khi bấm Đô Trưởng (C) rồi nhấc ngón trỏ khỏi Dây 2 ngăn 1 để vang Dây 2 buông (Si), ta được hợp âm gì?',
+            'Thêm nốt Si (B – bậc 7 trưởng) vào hợp âm C tạo thành Đô Bảy Trưởng (Cmaj7) mang màu sắc sâu lắng.'
           ),
           (
+            'guitar_chord_shape',
             'assets/audio/keys/chord_a_min7.wav',
             'GTR_CHORD_Am',
             'La Bảy Thứ (Am7 • X-0-2-0-1-0)',
-            'Khi đang bấm La Thứ (Am), nhấc ngón áp út khỏi Dây 3 ngăn 2 để vang Dây 3 buông (Sol G) tạo thành hợp âm gì?',
-            'Dây 3 buông là Sol (bậc 7 thứ của La), tạo thành hợp âm Am7 (X-0-2-0-1-0).'
+            [
+              ('GTR_CHORD_Cmaj7', 'Đô Bảy Trưởng (Cmaj7 • X-3-2-0-0-0)'),
+              ('GTR_CHORD_G7', 'Sol Bảy Át (G7 • 3-2-0-0-0-1)'),
+              ('GTR_CHORD_Em7', 'Mi Bảy Thứ (Em7 • 0-2-0-0-0-0)'),
+            ],
+            'Nghe hợp âm & cho biết: khi bấm La Thứ (Am) rồi nhấc ngón áp út khỏi Dây 3 ngăn 2 để vang Dây 3 buông (Sol), ta được hợp âm gì?',
+            'Dây 3 buông là nốt Sol (bậc 7 thứ của La), kết hợp với La – Đô – Mi tạo thành hợp âm La Bảy Thứ (Am7).'
           ),
           (
+            'guitar_chord_theory',
             'assets/audio/keys/c_major.wav',
-            'GTR_CHORD_C',
-            'Vòng Canon / Pop: C – G – Am – F (I – V – vi – IV)',
-            'Vòng 4 hợp âm kinh điển bậc I – V – vi – IV trong giọng Đô Trưởng dùng cho hàng nghìn bài Pop/Ballad là gì?',
+            'GTR_THEORY_PROG_POP',
+            'C – G – Am – F (Bậc I – V – vi – IV)',
+            [
+              ('GTR_THEORY_PROG_JAZZ', 'Dm7 – G7 – Cmaj7 (Bậc ii – V – I)'),
+              ('GTR_THEORY_PROG_BLUES', 'C7 – F7 – G7 (Bậc I7 – IV7 – V7)'),
+              ('GTR_THEORY_PROG_MIN', 'Am – Dm – E7 – Am (Bậc i – iv – V7 – i)'),
+            ],
+            'Vòng 4 hợp âm kinh điển bậc I – V – vi – IV trong giọng Đô Trưởng (vòng Canon / Pop Ballad) gồm những hợp âm nào?',
             'Trong giọng Đô Trưởng: Bậc I = C, Bậc V = G, Bậc vi = Am, Bậc IV = F.'
           ),
           (
+            'guitar_chord_theory',
             'assets/audio/keys/chord_g_dom7.wav',
-            'GTR_CHORD_G',
-            'Vòng Jazz / R&B: Dm7 – G7 – Cmaj7 (ii – V – I)',
-            'Trong giọng Đô Trưởng, tiến trình kết câu kinh điển bậc ii – V – I gồm 3 hợp âm nào?',
-            'Bậc ii (Rê Thứ Dm7) → Bậc V (Sol Bảy Át G7) → giải kết về Bậc I (Đô Trưởng Cmaj7).'
+            'GTR_THEORY_PROG_JAZZ',
+            'Dm7 – G7 – Cmaj7 (Bậc ii – V – I)',
+            [
+              ('GTR_THEORY_PROG_POP', 'C – G – Am – F (Bậc I – V – vi – IV)'),
+              ('GTR_THEORY_PROG_ROCK', 'C – F – G – C (Bậc I – IV – V – I)'),
+              ('GTR_THEORY_PROG_BALLAD', 'Am – F – C – G (Bậc vi – IV – I – V)'),
+            ],
+            'Trong giọng Đô Trưởng, tiến trình hòa thanh Jazz / R&B kinh điển bậc ii – V – I gồm 3 hợp âm nào?',
+            'Bậc ii (Rê Bảy Thứ Dm7) → Bậc V (Sol Bảy Át G7) → giải kết về Bậc I (Đô Bảy Trưởng Cmaj7).'
           ),
           (
+            'guitar_chord_theory',
             'assets/audio/keys/d_major.wav',
-            'GTR_CHORD_D',
-            'Vang thực tế ở giọng Rê Trưởng (D Major • tăng 1 cung)',
-            'Khi kẹp Capo tại Ngăn 2 và bấm thế tay Đô Trưởng (C), âm thanh thực tế vang lên là hợp âm gì?',
-            'Mỗi ngăn Capo tăng 1 bán âm: Kẹp Capo ngăn 2 tăng 2 bán âm (1 cung), biến thế bấm C thành âm thực Rê Trưởng (D).'
+            'GTR_THEORY_CAPO_D',
+            'Hợp âm Rê Trưởng (D Major – tăng 1 cung)',
+            [
+              ('GTR_THEORY_CAPO_E', 'Hợp âm Mi Trưởng (E Major – tăng 2 cung)'),
+              ('GTR_THEORY_CAPO_F', 'Hợp âm Fa Trưởng (F Major – tăng 2,5 cung)'),
+              ('GTR_THEORY_CAPO_G', 'Hợp âm Sol Trưởng (G Major – tăng 3,5 cung)'),
+            ],
+            'Khi kẹp Capo tại Ngăn 2 và bấm thế tay Đô Trưởng (C), cao độ thực tế vang lên là hợp âm nào?',
+            'Mỗi ngăn Capo nâng cao độ lên 1 bán âm: Kẹp Capo ngăn 2 tăng 2 bán âm (1 cung), biến thế bấm C thành Rê Trưởng (D).'
           ),
         ];
 
-        guitarPool =
+        guitarSpecs =
             isAdvanced ? advChords : (isInter ? interChords : basicChords);
       } else if (topicId == 'topic_guitar_scales') {
         final basicScales = [
           (
-            'assets/audio/keys/a_minor.wav',
+            'guitar_scale_map',
+            'assets/audio/notes/a2.wav',
             'GTR_SCALE_AM',
             'Ngũ cung La Thứ (Am Pentatonic: A–C–D–E–G)',
-            'Quan sát Bản đồ Scale trên cần đàn (5 nốt mỗi quãng tám, gốc La A) và chọn tên Scale:',
-            'Am Pentatonic gồm 5 nốt (La – Đô – Rê – Mi – Sol), là bản đồ số 1 để chạy ngón Solo Guitar.'
+            [
+              ('GTR_SCALE_C', 'Âm giai Đô Trưởng (C Major: C–D–E–F–G–A–B)'),
+              ('GTR_SCALE_EM', 'Ngũ cung Mi Thứ (Em Pentatonic: E–G–A–B–D)'),
+              ('GTR_SCALE_G', 'Âm giai Sol Trưởng (G Major: G–A–B–C–D–E–F#)'),
+            ],
+            'Quan sát Bản đồ Scale trên cần đàn (gồm 5 nốt La – Đô – Rê – Mi – Sol, Nốt Gốc màu Đỏ là La) và chọn tên Scale:',
+            'Ngũ cung La Thứ (Am Pentatonic: A–C–D–E–G) gồm 5 nốt mỗi quãng tám, là bản đồ nền tảng số 1 để Solo Guitar.'
           ),
           (
-            'assets/audio/keys/c_major.wav',
+            'guitar_scale_map',
+            'assets/audio/notes/c3.wav',
             'GTR_SCALE_C',
             'Âm giai Đô Trưởng (C Major: C–D–E–F–G–A–B)',
-            'Quan sát Bản đồ Scale 7 nốt tự nhiên (gốc Đô C tại Dây 5 Ngăn 3) và chọn đáp án:',
-            'Scale Đô Trưởng gồm 7 nốt tự nhiên không thăng giáng, song song với La Thứ.'
+            [
+              ('GTR_SCALE_AM', 'Ngũ cung La Thứ (Am Pentatonic: A–C–D–E–G)'),
+              ('GTR_SCALE_EM', 'Ngũ cung Mi Thứ (Em Pentatonic: E–G–A–B–D)'),
+              ('GTR_SCALE_F', 'Âm giai Fa Trưởng (F Major: F–G–A–Bb–C–D–E)'),
+            ],
+            'Quan sát Bản đồ Scale 7 nốt tự nhiên trên cần đàn (Nốt Gốc màu Đỏ là Đô tại Dây 5 Ngăn 3) và chọn tên Scale:',
+            'Âm giai Đô Trưởng (C Major) gồm 7 nốt tự nhiên (Đô–Rê–Mi–Fa–Sol–La–Si), có giọng Thứ song song là La Thứ.'
           ),
           (
+            'guitar_scale_theory',
             'assets/audio/notes/a2.wav',
-            'GTR_S6_F5',
-            'Nốt Chủ âm (Root Note – Nốt Gốc)',
-            'Trên Bản đồ Scale Guitar, chấm tròn màu Đỏ nổi bật dùng để chỉ nốt gì?',
-            'Nốt Gốc (Root Note) là điểm tựa bắt đầu và kết thúc câu Solo đúng giọng.'
+            'GTR_SCALE_AM',
+            'Nốt Chủ âm (Root Note – Nốt Gốc của giọng)',
+            [
+              ('GTR_ROLE_DOM', 'Nốt Bậc 5 (Dominant – Nốt Át của giọng)'),
+              ('GTR_ROLE_LEAD', 'Nốt Cảm âm (Leading Tone – Nốt dẫn bậc 7)'),
+              ('GTR_ROLE_BLUE', 'Nốt Hoa mỹ (Blue Note – Nốt lướt nửa cung)'),
+            ],
+            'Trên Bản đồ Scale Guitar, các chấm màu Đỏ nổi bật (ghi chữ "Gốc") dùng để đánh dấu nốt nào?',
+            'Nốt Chủ âm (Root Note / Nốt Gốc) là trung tâm điệu tính để mở đầu và kết câu Solo đúng giọng.'
           ),
           (
+            'guitar_scale_theory',
             'assets/audio/notes/e4.wav',
-            'GTR_S1_F0',
-            'Ngăn 12 (Chấm đôi Inlay trên cần đàn)',
-            'Trên cần đàn Guitar, ở ngăn thứ mấy thì toàn bộ 6 dây lặp lại đúng tên nốt của 6 dây buông?',
-            'Ngăn 12 chia đôi chiều dài dây đàn, lặp lại đúng 6 nốt E–A–D–G–B–e cao hơn 1 quãng tám.'
+            'GTR_S1_F12',
+            'Ngăn 12 (Chấm đôi Inlay – cao hơn dây buông 1 quãng tám)',
+            [
+              ('GTR_FRET_5', 'Ngăn 5 (Chấm đơn thứ 2 – mốc so dây quãng 4)'),
+              ('GTR_FRET_7', 'Ngăn 7 (Chấm đơn thứ 3 – mốc quãng 5 đúng)'),
+              ('GTR_FRET_9', 'Ngăn 9 (Chấm đơn thứ 4 trên cần đàn)'),
+            ],
+            'Trên cần đàn Guitar, tại ngăn thứ mấy thì cả 6 dây lặp lại đúng tên nốt của 6 dây buông (E–A–D–G–B–e) cao hơn 1 quãng tám?',
+            'Ngăn 12 chia đôi chiều dài dây đàn, nơi toàn bộ 6 dây lặp lại tên nốt dây buông ở quãng tám cao hơn.'
           ),
           (
-            'assets/audio/notes/c3.wav',
+            'guitar_scale_theory',
+            'assets/audio/notes/c4.wav',
             'GTR_S5_F3',
-            'Xuống 2 dây + Tiến thêm 2 ngăn (Dây 3 Ngăn 5)',
-            'Từ nốt Đô (Dây 5 Ngăn 3), áp dụng Quy tắc Quãng 8 chéo sẽ tìm thấy nốt Đô tiếp theo ở đâu?',
-            'Từ Dây 5: Lùi xuống 2 dây (về Dây 3) và tiến thêm 2 ngăn (từ Ngăn 3 lên Ngăn 5).'
+            'Dây 3 • Ngăn 5 (nốt Đô chuẩn C4)',
+            [
+              ('GTR_POS_S4_F5', 'Dây 4 • Ngăn 5 (nốt Sol trầm G3)'),
+              ('GTR_POS_S2_F3', 'Dây 2 • Ngăn 3 (nốt Rê chuẩn D4)'),
+              ('GTR_POS_S3_F2', 'Dây 3 • Ngăn 2 (nốt La trầm A3)'),
+            ],
+            'Từ nốt Đô tại Dây 5 • Ngăn 3, áp dụng Quy tắc Quãng 8 chéo (xuống 2 dây + tiến 2 ngăn) sẽ tìm thấy nốt Đô tiếp theo ở đâu?',
+            'Từ Dây 5 Ngăn 3: xuống 2 dây (về Dây 3) và tiến 2 ngăn (lên Ngăn 5) chính là nốt Đô chuẩn (C4).'
           ),
           (
-            'assets/audio/notes/g2.wav',
+            'guitar_scale_theory',
+            'assets/audio/notes/g3.wav',
             'GTR_S6_F3',
-            'Xuống 2 dây + Tiến thêm 2 ngăn (Dây 4 Ngăn 5)',
-            'Từ nốt Sol (Dây 6 Ngăn 3), áp dụng Quy tắc Quãng 8 chéo sẽ gặp lại nốt Sol ở vị trí nào?',
-            'Từ Dây 6 Ngăn 3: Xuống 2 dây (Dây 4) + tiến 2 ngăn (Ngăn 5) chính là nốt Sol cao hơn 1 quãng tám.'
+            'Dây 4 • Ngăn 5 (nốt Sol trầm G3)',
+            [
+              ('GTR_POS_S3_F5', 'Dây 3 • Ngăn 5 (nốt Đô chuẩn C4)'),
+              ('GTR_POS_S5_F5', 'Dây 5 • Ngăn 5 (nốt Rê trầm D3)'),
+              ('GTR_POS_S4_F3', 'Dây 4 • Ngăn 3 (nốt Fa trầm F3)'),
+            ],
+            'Từ nốt Sol tại Dây 6 • Ngăn 3, áp dụng Quy tắc Quãng 8 chéo (xuống 2 dây + tiến 2 ngăn) sẽ gặp lại nốt Sol ở vị trí nào?',
+            'Từ Dây 6 Ngăn 3: xuống 2 dây (về Dây 4) và tiến 2 ngăn (lên Ngăn 5) chính là nốt Sol trầm (G3).'
           ),
         ];
 
         final interScales = [
           ...basicScales,
           (
-            'assets/audio/notes/c4.wav',
-            'GTR_S4_F10',
-            'Xuống 2 dây + Tiến thêm 3 ngăn (do bù dây 2 Si)',
-            'Từ Dây 4 hoặc Dây 3 lùi xuống 2 dây để tìm Quãng 8, ta cần tiến mấy ngăn (do đi qua Dây 2)?',
-            'Vì khoảng cách Dây 3 sang Dây 2 là quãng 3 trưởng (thay vì quãng 4 đúng), khi đi qua Dây 2 cần cộng thêm 1 ngăn = Tiến 3 ngăn.'
+            'guitar_scale_map',
+            'assets/audio/notes/e2.wav',
+            'GTR_SCALE_EM',
+            'Ngũ cung Mi Thứ (Em Pentatonic: E–G–A–B–D)',
+            [
+              ('GTR_SCALE_AM', 'Ngũ cung La Thứ (Am Pentatonic: A–C–D–E–G)'),
+              ('GTR_SCALE_C', 'Âm giai Đô Trưởng (C Major: C–D–E–F–G–A–B)'),
+              ('GTR_SCALE_DM', 'Ngũ cung Rê Thứ (Dm Pentatonic: D–F–G–A–C)'),
+            ],
+            'Quan sát Bản đồ Scale trên cần đàn (Nốt Gốc màu Đỏ là Mi: Mi – Sol – La – Si – Rê, tận dụng cả 5 dây buông) và chọn tên Scale:',
+            'Ngũ cung Mi Thứ (Em Pentatonic: E–G–A–B–D) chứa trọn 5 dây buông của Guitar.'
           ),
           (
-            'assets/audio/keys/e_minor.wav',
-            'GTR_SCALE_AM',
-            'Mi Thứ Ngũ Cung (Em Pentatonic: E–G–A–B–D)',
-            'Scale Ngũ cung nào tận dụng được toàn bộ 5 dây buông (E, A, D, G, B) trên cần đàn Guitar?',
-            'Em Pentatonic (E–G–A–B–D) chứa toàn bộ các nốt dây buông của Guitar.'
+            'guitar_scale_theory',
+            'assets/audio/notes/c4.wav',
+            'GTR_S4_F3',
+            'Tiến 3 ngăn (do khoảng cách Dây 3 sang Dây 2 chỉ là Quãng 3 trưởng)',
+            [
+              ('GTR_OCT_2', 'Tiến 2 ngăn (giống hệt như từ Dây 6 xuống Dây 4)'),
+              ('GTR_OCT_1', 'Chỉ tiến 1 ngăn (do Dây 1 và Dây 2 là dây thép trơn)'),
+              ('GTR_OCT_4', 'Tiến 4 ngăn (tương đương 2 cung nguyên trên cần đàn)'),
+            ],
+            'Khi tìm Quãng 8 chéo từ Dây 4 xuống Dây 2 (hoặc từ Dây 3 xuống Dây 1), ta cần tiến thêm mấy ngăn?',
+            'Vì khoảng cách từ Dây 3 (G) sang Dây 2 (B) là Quãng 3 trưởng (hẹp hơn 1 ngăn so với Quãng 4 đúng), nên phải cộng bù thêm 1 ngăn = Tiến 3 ngăn.'
           ),
         ];
 
         final advScales = [
           ...interScales,
           (
-            'assets/audio/keys/a_minor.wav',
+            'guitar_scale_theory',
+            'assets/audio/notes/b2.wav',
             'GTR_SCALE_AM',
-            'Dịch toàn bộ thế bấm lên 2 ngăn (bắt đầu từ Ngăn 7)',
-            'Đang đánh mẫu Am Pentatonic ở Ngăn 5 (Gốc La), muốn chuyển (Transpose) sang giọng Si Thứ (Bm Pentatonic) ta làm thế nào?',
-            'Trên Guitar, các mẫu Scale giữ nguyên hình dạng: từ La (Ngăn 5) tăng 1 cung lên Si (Ngăn 7) chỉ cần trượt cả bàn tay lên 2 ngăn!'
+            'Giữ nguyên hình dáng thế bấm và trượt cả bàn tay lên 2 ngăn (bắt đầu từ Ngăn 7)',
+            [
+              ('GTR_TRANS_DOWN2', 'Giữ nguyên thế bấm và lùi bàn tay về 2 ngăn (bắt đầu từ Ngăn 3)'),
+              ('GTR_TRANS_REV', 'Đảo ngược thứ tự 4 ngón tay trái từ 1–2–3–4 thành 4–3–2–1 tại Ngăn 5'),
+              ('GTR_TRANS_OPEN', 'Chỉ gảy trên 6 dây buông mà không bấm phím nào'),
+            ],
+            'Khi đã thuộc thế bấm Am Pentatonic ở Ngăn 5 (nốt gốc La), muốn dịch (Transpose) sang giọng Si Thứ (Bm Pentatonic) bạn làm thế nào?',
+            'Từ La (Ngăn 5) lên Si (Ngăn 7) cách nhau 1 cung (2 ngăn): trên Guitar chỉ cần giữ nguyên hình thế bấm và trượt lên 2 ngăn!'
           ),
           (
-            'assets/audio/keys/c_major.wav',
+            'guitar_scale_theory',
+            'assets/audio/notes/c3.wav',
             'GTR_SCALE_C',
-            'Hệ thống 5 thế bấm C – A – G – E – D nối liền 12 ngăn',
-            'Phương pháp chia cần đàn thành 5 hộp thế bấm nối tiếp nhau theo 5 dáng hợp âm mở gọi là gì?',
-            'Hệ thống CAGED giúp liên kết hợp âm và Scale xuyên suốt từ ngăn 0 đến ngăn 12.'
+            'Hệ thống CAGED (5 thế bấm theo 5 dáng hợp âm C – A – G – E – D)',
+            [
+              ('GTR_SYS_SPIDER', 'Hệ thống Bò nhện Spider Walk 1–2–3–4'),
+              ('GTR_SYS_PIMA', 'Hệ thống P – i – m – a (phân công 4 ngón tay phải)'),
+              ('GTR_SYS_GRAND', 'Hệ thống Khóa Sol – Khóa Fa kép (Grand Staff)'),
+            ],
+            'Phương pháp chia toàn bộ cần đàn Guitar thành 5 khu vực nối tiếp nhau dựa theo 5 dáng hợp âm mở cơ bản gọi là gì?',
+            'Hệ thống CAGED giúp người chơi nối liền hợp âm và Scale xuyên suốt từ Ngăn 0 lên Ngăn 12.'
           ),
         ];
 
-        guitarPool =
+        guitarSpecs =
             isAdvanced ? advScales : (isInter ? interScales : basicScales);
       } else {
         // topic_guitar_tabs (Đọc Tab 6 dây & Luyện ngón Spider 1-2-3-4)
         final basicTabs = [
           (
+            'guitar_tab_read',
             'assets/audio/notes/g2.wav',
             'GTR_TAB_S6_F3',
             'Bấm Dây 6 (dày nhất) tại Ngăn 3',
-            'Nhìn ký hiệu số "3" nằm trên dòng kẻ dưới cùng (E|) của khuông Tab Guitar, bạn cần gảy như thế nào?',
-            'Dòng dưới cùng của khuông Tab là Dây 6 (E2), số 3 nghĩa là bấm Ngăn 3 trên Dây 6 (Sol G2).'
+            [
+              ('GTR_TAB_S1_F3', 'Bấm Dây 1 (mỏng nhất) tại Ngăn 3'),
+              ('GTR_TAB_S3_F6', 'Bấm Dây 3 tại Ngăn 6'),
+              ('GTR_TAB_S6_F0', 'Gảy Dây 6 buông 3 lần liên tiếp'),
+            ],
+            'Quan sát số "3" nằm trên dòng kẻ dưới cùng (E|) của khuông Tab Guitar bên dưới, bạn thực hiện thao tác nào?',
+            'Dòng dưới cùng (E|) của khuông Tab là Dây 6 trầm nhất; số 3 nghĩa là bấm Ngăn 3 trên Dây 6 (nốt Sol G2).'
           ),
           (
+            'guitar_tab_read',
             'assets/audio/notes/c3.wav',
             'GTR_TAB_S5_F3',
-            'Bấm Dây 5 (La) tại Ngăn 3',
-            'Nhìn ký hiệu số "3" trên dòng kẻ thứ 2 từ dưới lên (A|) của khuông Tab, bạn bấm ở đâu?',
-            'Dòng A| đại diện cho Dây 5, số 3 nghĩa là bấm vào Ngăn 3 của Dây 5 (nốt Đô C3).'
+            'Bấm Dây 5 (dây La) tại Ngăn 3',
+            [
+              ('GTR_TAB_S2_F3', 'Bấm Dây 2 (dây Si) tại Ngăn 3'),
+              ('GTR_TAB_S3_F5', 'Bấm Dây 3 tại Ngăn 5'),
+              ('GTR_TAB_S5_F0', 'Gảy Dây 5 buông không bấm phím'),
+            ],
+            'Quan sát số "3" nằm trên dòng kẻ A| (dòng thứ 2 từ dưới lên) của khuông Tab Guitar, bạn bấm ở đâu?',
+            'Dòng A| đại diện cho Dây 5; số 3 nghĩa là bấm vào Ngăn 3 của Dây 5 (nốt Đô trầm C3).'
           ),
           (
+            'guitar_tab_read',
             'assets/audio/notes/e4.wav',
             'GTR_TAB_S1_F0',
-            'Gảy Dây 1 (mỏng nhất) buông không bấm',
-            'Ký hiệu số "0" nằm trên dòng kẻ trên cùng (e|) của khuông Tab có ý nghĩa gì?',
-            'Dòng trên cùng (e|) là Dây 1 mỏng nhất; số 0 nghĩa là gảy dây buông không bấm ngón tay trái.'
+            'Gảy Dây 1 (mỏng nhất) buông không bấm phím',
+            [
+              ('GTR_TAB_S6_F0', 'Gảy Dây 6 (dày nhất) buông không bấm phím'),
+              ('GTR_TAB_MUTE', 'Bịt tắt tiếng Dây 1 không được gảy'),
+              ('GTR_TAB_S1_F1', 'Bấm Dây 1 tại Ngăn 1 bằng ngón trỏ'),
+            ],
+            'Quan sát số "0" nằm trên dòng kẻ trên cùng (e|) của khuông Tab Guitar, ký hiệu này hướng dẫn gì?',
+            'Dòng trên cùng (e|) là Dây 1 mỏng nhất; số 0 nghĩa là gảy dây buông (nốt Mi E4) không bấm tay trái.'
           ),
           (
+            'guitar_tab_read',
             'assets/audio/notes/d4.wav',
             'GTR_TAB_S2_F3',
-            'Bấm Dây 2 (Si) tại Ngăn 3',
-            'Nhìn số "3" trên dòng B| (dòng thứ 2 từ trên xuống) của khuông Tab, bạn thực hiện thế bấm nào?',
-            'Dòng B| là Dây 2; số 3 nghĩa là bấm Ngăn 3 trên Dây 2 (nốt Rê D4).'
+            'Bấm Dây 2 (dây Si) tại Ngăn 3',
+            [
+              ('GTR_TAB_S5_F3', 'Bấm Dây 5 (dây La) tại Ngăn 3'),
+              ('GTR_TAB_S3_F2', 'Bấm Dây 3 (dây Sol) tại Ngăn 2'),
+              ('GTR_TAB_S2_F0', 'Gảy Dây 2 buông không bấm phím'),
+            ],
+            'Quan sát số "3" nằm trên dòng B| (dòng thứ 2 từ trên xuống) của khuông Tab Guitar, bạn thực hiện thế bấm nào?',
+            'Dòng B| là Dây 2; số 3 nghĩa là bấm Ngăn 3 trên Dây 2 (nốt Rê chuẩn D4).'
           ),
           (
+            'guitar_tab_theory',
             'assets/audio/notes/f2.wav',
-            'GTR_TAB_S6_F1',
-            'Trỏ (1) – Giữa (2) – Áp út (3) – Út (4) trên 4 ngăn liên tiếp',
-            'Trong bài luyện ngón "Bò nhện (Spider Walk 1–2–3–4)", 4 ngón tay trái được phân công như thế nào?',
-            'Mỗi ngón phụ trách 1 ngăn liên tiếp (1–2–3–4) giúp mở rộng sải tay và độc lập ngón.'
+            'GTR_TAB_SPIDER',
+            'Ngón Trỏ (1) – Giữa (2) – Áp út (3) – Út (4) lần lượt trên 4 ngăn liên tiếp',
+            [
+              ('GTR_SPIDER_1', 'Chỉ dùng duy nhất 1 ngón trỏ trượt qua cả 4 ngăn liên tiếp'),
+              ('GTR_SPIDER_THUMB', 'Dùng ngón cái tay trái bấm toàn bộ 6 dây đàn'),
+              ('GTR_SPIDER_OPEN', 'Chỉ gảy các dây buông mà không cần bấm ngón tay trái'),
+            ],
+            'Trong bài tập luyện ngón "Bò nhện (Spider Walk 1–2–3–4)", 4 ngón tay trái được phân công như thế nào?',
+            'Mỗi ngón tay trái phụ trách cố định 1 ngăn liên tiếp (Ngón 1 – 2 – 3 – 4) giúp độc lập ngón và mở rộng sải tay.'
           ),
           (
+            'guitar_tab_theory',
             'assets/audio/keys/chord_c_maj.wav',
-            'GTR_CHORD_C',
-            'Bass – 3 – 2 – 3 – 1 – 3 – 2 – 3',
-            'Công thức rải dây tay phải phổ biến nhất cho điệu Ballad / Canon ở nhịp 4/4 là gì?',
-            'Ngón cái gảy dây Bass, tiếp theo lần lượt gảy Dây 3 – 2 – 3 – 1 – 3 – 2 – 3.'
+            'GTR_TAB_BALLAD_44',
+            'Bass – 3 – 2 – 3 – 1 – 3 – 2 – 3 (8 nốt móc đơn đều đặn)',
+            [
+              ('GTR_RHY_VALSE', 'Bass – (321) – (321) theo chu kỳ 3 phách nhịp 3/4'),
+              ('GTR_RHY_ALL6', 'Chỉ gảy lặp đi lặp lại duy nhất Dây 6 trầm'),
+              ('GTR_RHY_MUTE', 'Đập tắt tiếng toàn bộ 6 dây trong suốt bài hát'),
+            ],
+            'Công thức rải dây tay phải kinh điển nhất cho điệu Ballad / Canon ở nhịp 4/4 trên Guitar là gì?',
+            'Ở nhịp 4/4 Ballad: Ngón cái (P) gảy dây Bass, tiếp theo lần lượt rải Dây 3 – 2 – 3 – 1 – 3 – 2 – 3.'
           ),
         ];
 
         final interTabs = [
           ...basicTabs,
           (
+            'guitar_tab_theory',
             'assets/audio/keys/chord_a_min.wav',
-            'GTR_CHORD_Am',
-            'Ngón Cái (P: dây 4,5,6) • Trỏ (i: dây 3) • Giữa (m: dây 2) • Áp út (a: dây 1)',
+            'GTR_TAB_PIMA',
+            'Ngón Cái (P: dây 4, 5, 6) • Trỏ (i: dây 3) • Giữa (m: dây 2) • Áp út (a: dây 1)',
+            [
+              ('GTR_PIMA_W1', 'Ngón Cái gảy dây 1 • Ngón Út gảy 3 dây Bass 4, 5, 6'),
+              ('GTR_PIMA_W2', 'Chỉ dùng duy nhất ngón Trỏ gảy tất cả 6 dây từ trên xuống'),
+              ('GTR_PIMA_W3', 'Ngón Áp út gảy dây 6 • Ngón Giữa gảy dây 5 • Ngón Trỏ gảy dây 4'),
+            ],
             'Nguyên tắc chuẩn phân công 4 ngón tay phải (P – i – m – a) khi rải hợp âm Guitar là gì?',
-            'Ngón cái (P) phụ trách 3 dây Bass (4, 5, 6); Trỏ (i) gảy dây 3; Giữa (m) gảy dây 2; Áp út (a) gảy dây 1.'
+            'Ngón cái (P) phụ trách 3 dây Bass (4, 5, 6); Ngón trỏ (i) gảy dây 3; Ngón giữa (m) gảy dây 2; Ngón áp út (a) gảy dây 1.'
           ),
           (
+            'guitar_tab_theory',
             'assets/audio/keys/rhy_waltz_3_4.wav',
-            'GTR_CHORD_G',
-            'Bass – (321) – (321) hoặc Bass – 3 – (21) – 3',
-            'Công thức rải tay phải đặc trưng cho nhịp 3/4 (Điệu Valse / Boston) trên Guitar là gì?',
-            'Nhịp 3/4 có 3 phách (Bùm – Chát – Chát): Phách 1 gảy Bass, phách 2 và 3 móc đồng thời 3 dây dưới (3-2-1).'
+            'GTR_TAB_VALSE_34',
+            'Bass – (321) – (321) hoặc Bass – 3 – (21) theo chu kỳ 3 phách',
+            [
+              ('GTR_VALSE_W1', 'Bass – 3 – 2 – 3 – 1 – 3 – 2 – 3 (8 nốt móc đơn nhịp 4/4)'),
+              ('GTR_VALSE_W2', 'Gảy liên tiếp 4 dây Bass trong 4 phách đều nhau'),
+              ('GTR_VALSE_W3', 'Chỉ quạt xuống 1 cái duy nhất rồi nghỉ hết bài'),
+            ],
+            'Công thức đệm tay phải đặc trưng cho nhịp 3/4 (Điệu Valse / Boston) trên Guitar là gì?',
+            'Nhịp 3/4 có 3 phách (Bùm – Chát – Chát): Phách 1 gảy dây Bass, phách 2 và phách 3 móc đồng thời 3 dây treble (3-2-1).'
           ),
         ];
 
         final advTabs = [
           ...interTabs,
           (
+            'guitar_tab_theory',
             'assets/audio/notes/g4.wav',
-            'GTR_TAB_S1_F3',
-            'Hammer-on (Gảy ngăn 5 rồi đập ngón xuống ngăn 7)',
-            'Trên bản Tab Guitar, ký hiệu "5h7" có ý nghĩa kỹ thuật là gì?',
-            'Chữ "h" là Hammer-on (Luyến lên / Đập ngón): Gảy nốt ở ngăn 5 rồi dùng ngón tay trái đập mạnh vào ngăn 7.'
+            'GTR_TECH_HAMMER',
+            'Hammer-on (Luyến lên: Gảy nốt ngăn 5 rồi đập ngón tay trái xuống ngăn 7)',
+            [
+              ('GTR_TECH_PULL', 'Pull-off (Luyến xuống: Gảy ngăn 7 rồi kéo ngón nhả về ngăn 5)'),
+              ('GTR_TECH_SLIDE', 'Slide (Trượt dọc ngón tay trên dây từ ngăn 5 lên ngăn 7)'),
+              ('GTR_TECH_HARM', 'Harmonic (Chạm nhẹ ngón tay tạo âm bồi chuông ở ngăn 12)'),
+            ],
+            'Trên bản Tab Guitar, ký hiệu "5h7" hướng dẫn kỹ thuật diễn tấu nào?',
+            'Chữ "h" là Hammer-on (Đập ngón luyến lên): Gảy vang ngăn 5 rồi đập nhanh ngón tay trái xuống ngăn 7.'
           ),
           (
+            'guitar_tab_theory',
             'assets/audio/notes/e4.wav',
-            'GTR_TAB_S1_F0',
-            'Pull-off (Kéo ngón từ ngăn 7 nhả về ngăn 5)',
-            'Trên bản Tab Guitar, ký hiệu "7p5" hướng dẫn kỹ thuật gì?',
-            'Chữ "p" là Pull-off (Luyến xuống / Kéo ngón): Từ ngăn 7 bật nhẹ ngón tay trái nhả về ngăn 5 đang giữ sẵn.'
+            'GTR_TECH_PULL',
+            'Pull-off (Luyến xuống: Gảy ngăn 7 rồi bật nhẹ ngón nhả về ngăn 5)',
+            [
+              ('GTR_TECH_HAMMER', 'Hammer-on (Luyến lên: Gảy ngăn 5 rồi đập ngón xuống ngăn 7)'),
+              ('GTR_TECH_SLIDE', 'Slide (Trượt ngón tay dọc dây từ ngăn 7 lên ngăn 9)'),
+              ('GTR_TECH_BEND', 'Bend (Đẩy căng dây đàn lên phía trên để tăng cao độ)'),
+            ],
+            'Trên bản Tab Guitar, ký hiệu "7p5" hướng dẫn kỹ thuật diễn tấu nào?',
+            'Chữ "p" là Pull-off (Kéo ngón luyến xuống): Gảy ngăn 7 rồi móc nhẹ ngón tay trái nhả về ngăn 5 đang giữ sẵn.'
           ),
           (
+            'guitar_tab_theory',
             'assets/audio/notes/a4.wav',
-            'GTR_TAB_S2_F5',
-            'Slide (Trượt ngón tay trên dây từ ngăn 5 lên ngăn 7)',
-            'Trên bản Tab Guitar, ký hiệu "5/7" hoặc "5s7" biểu thị kỹ thuật nào?',
-            'Dấu "/" hoặc "s" là Slide (Trượt ngón): Giữ lực bấm từ ngăn 5 và miết dọc dây đàn tới ngăn 7.'
+            'GTR_TECH_SLIDE',
+            'Slide (Trượt ngón: Gảy ngăn 5 và giữ lực miết dọc dây đàn tới ngăn 7)',
+            [
+              ('GTR_TECH_HAMMER', 'Hammer-on (Đập ngón tay trái không miết dây)'),
+              ('GTR_TECH_PULL', 'Pull-off (Kéo ngón tay trái nhả về dây buông)'),
+              ('GTR_TECH_MUTE', 'Palm Mute (Dùng cạnh bàn tay phải bịt nhẹ lên ngựa đàn)'),
+            ],
+            'Trên bản Tab Guitar, ký hiệu "5/7" (hoặc "5s7") biểu thị kỹ thuật nào?',
+            'Dấu "/" hoặc "s" là Slide (Trượt ngón): Giữ nguyên lực bấm sau khi gảy ngăn 5 và trượt dọc dây đến ngăn 7.'
           ),
         ];
 
-        guitarPool =
+        guitarSpecs =
             isAdvanced ? advTabs : (isInter ? interTabs : basicTabs);
       }
 
-      final passes = guitarPool.length < 10 ? 2 : 1;
+      final passes = guitarSpecs.length < 10 ? 2 : 1;
       for (int pass = 0; pass < passes; pass++) {
-        for (int i = 0; i < guitarPool.length; i++) {
-          final (audioAsset, optKey, label, prompt, desc) = guitarPool[i];
+        for (int i = 0; i < guitarSpecs.length; i++) {
+          final (qType, audioAsset, optKey, correctLabel, wrongOpts, prompt, desc) =
+              guitarSpecs[i];
           final qId = 'dyn_gtr_${topicId}_${levelId}_${i}_p$pass';
-          final step1 = pass == 0 ? 1 : 2;
-          final step2 = pass == 0 ? 2 : 3;
-          final step3 = pass == 0 ? 3 : 4;
-          final distractors = <int>{
-            (i + step1) % guitarPool.length,
-            (i + step2) % guitarPool.length,
-            (i + step3) % guitarPool.length,
-          };
-          int fb = 1;
-          while (distractors.length < 3) {
-            final cand = (i + fb) % guitarPool.length;
-            if (cand != i) distractors.add(cand);
-            fb++;
-          }
-          final allIdx = [i, ...distractors];
 
           final options = <QuestionOptionModel>[
-            for (int idx = 0; idx < allIdx.length; idx++)
+            QuestionOptionModel(
+              id: '${qId}_o1',
+              questionId: qId,
+              optionKey: optKey,
+              label: correctLabel,
+              isCorrect: true,
+              sortOrder: 1,
+            ),
+            for (int w = 0; w < wrongOpts.length; w++)
               QuestionOptionModel(
-                id: '${qId}_o${idx + 1}',
+                id: '${qId}_o${w + 2}',
                 questionId: qId,
-                optionKey: guitarPool[allIdx[idx]].$2,
-                label: guitarPool[allIdx[idx]].$3,
-                isCorrect: allIdx[idx] == i,
-                sortOrder: idx + 1,
+                optionKey: wrongOpts[w].$1,
+                label: wrongOpts[w].$2,
+                isCorrect: false,
+                sortOrder: w + 2,
               ),
           ];
 
@@ -2298,7 +2608,7 @@ class HybridQuestionGenerator {
               id: qId,
               topicId: topicId,
               levelId: levelId,
-              type: 'guitar_practice',
+              type: qType,
               prompt: prompt,
               explanation: desc,
               audioAsset: audioAsset,

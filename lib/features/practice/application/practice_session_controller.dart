@@ -392,9 +392,11 @@ class PracticeSessionNotifier extends StateNotifier<PracticeSessionState> {
 
       _startTimerIfNeeded();
 
-      // Auto-play first question across ALL modes when autoPlayQuestionAudio is enabled
+      // Auto-play first question only when it is an Audio / Ear-Training question (hasQuestionAudio)
       final settings = _ref.read(appSettingsProvider);
-      if (settings.autoPlayQuestionAudio && state.currentQuestion != null) {
+      if (settings.autoPlayQuestionAudio &&
+          state.currentQuestion != null &&
+          state.currentQuestion!.hasQuestionAudio) {
         await _audioService.playAsset(state.currentQuestion!.audioAsset);
       }
 
@@ -473,7 +475,9 @@ class PracticeSessionNotifier extends StateNotifier<PracticeSessionState> {
       );
 
       final settings = _ref.read(appSettingsProvider);
-      if (settings.autoPlayQuestionAudio && state.currentQuestion != null) {
+      if (settings.autoPlayQuestionAudio &&
+          state.currentQuestion != null &&
+          state.currentQuestion!.hasQuestionAudio) {
         await _audioService.playAsset(state.currentQuestion!.audioAsset);
       }
     } catch (_) {
@@ -550,7 +554,9 @@ class PracticeSessionNotifier extends StateNotifier<PracticeSessionState> {
       );
 
       final settings = _ref.read(appSettingsProvider);
-      if (settings.autoPlayQuestionAudio && state.currentQuestion != null) {
+      if (settings.autoPlayQuestionAudio &&
+          state.currentQuestion != null &&
+          state.currentQuestion!.hasQuestionAudio) {
         await _audioService.playAsset(state.currentQuestion!.audioAsset);
       }
     } catch (_) {
@@ -656,8 +662,8 @@ class PracticeSessionNotifier extends StateNotifier<PracticeSessionState> {
         HapticFeedback.lightImpact();
       } catch (_) {}
     }
-    if (currentQ.isSightReading) {
-      // In Sight-Reading mode, play the true piano pitch after the user answers so they connect eye & ear!
+    if (currentQ.playsPitchConfirmationOnAnswer) {
+      // For visual note/tab/staff questions, play the true pitch AFTER the user answers so they connect eye & ear!
       unawaited(_audioService.playAsset(currentQ.audioAsset));
     }
     await _audioService.playFeedbackSfx(isCorrect: option.isCorrect);
@@ -696,7 +702,9 @@ class PracticeSessionNotifier extends StateNotifier<PracticeSessionState> {
             clearSelectedOption: true,
           );
           final settings = _ref.read(appSettingsProvider);
-          if (settings.autoPlayQuestionAudio && state.currentQuestion != null) {
+          if (settings.autoPlayQuestionAudio &&
+              state.currentQuestion != null &&
+              state.currentQuestion!.hasQuestionAudio) {
             await _audioService.playAsset(state.currentQuestion!.audioAsset);
           }
           return false;
@@ -710,7 +718,9 @@ class PracticeSessionNotifier extends StateNotifier<PracticeSessionState> {
           clearSelectedOption: true,
         );
         final settings = _ref.read(appSettingsProvider);
-        if (settings.autoPlayQuestionAudio && state.currentQuestion != null) {
+        if (settings.autoPlayQuestionAudio &&
+            state.currentQuestion != null &&
+            state.currentQuestion!.hasQuestionAudio) {
           await _audioService.playAsset(state.currentQuestion!.audioAsset);
         }
         return false; // Not finished yet

@@ -147,6 +147,35 @@ class QuestionModel {
   bool get isSightReading =>
       type == 'read_staff_note' || topicId == 'topic_staff_reading';
 
+  /// Whether this question is an Audio / Ear-Training question that plays sound BEFORE answering
+  /// and displays the "Replay Question Audio" button.
+  /// Visual/Theory questions (Staff reading, Fretboard note lookup, Scale maps, Guitar Tab, Key Signatures, Chord Progressions)
+  /// do NOT play audio before answering so the learner solves from the visual notation/diagram without misleading sounds.
+  bool get hasQuestionAudio {
+    if (isSightReading) return false;
+    switch (type) {
+      case 'read_staff_note':
+      case 'key_signature':
+      case 'guitar_fret_note':
+      case 'guitar_scale_map':
+      case 'guitar_scale_theory':
+      case 'guitar_tab_read':
+      case 'guitar_tab_theory':
+      case 'guitar_chord_theory':
+        return false;
+      default:
+        return true;
+    }
+  }
+
+  /// Whether the app should play the target note/chord audio AFTER the user submits an answer
+  /// (so visual note/tab/staff questions let the learner hear the true pitch once revealed).
+  bool get playsPitchConfirmationOnAnswer =>
+      isSightReading ||
+      type == 'read_staff_note' ||
+      type == 'guitar_fret_note' ||
+      type == 'guitar_tab_read';
+
   /// Whether this question can show reference pitch C4 (Topic notes ear training, difficulty 1..3)
   bool get supportsReferencePitch =>
       topicId == 'topic_notes' &&

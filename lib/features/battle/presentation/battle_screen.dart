@@ -1672,35 +1672,36 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
                     ),
                     const SizedBox(height: 8),
                   ],
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      key: const Key('btn_battle_play_audio'),
-                      style: OutlinedButton.styleFrom(
-                        minimumSize: const Size(0, 42),
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        side: const BorderSide(
-                          color: Color(0xFF6366F1),
-                          width: 1.5,
+                  if (p1Q.hasQuestionAudio)
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        key: const Key('btn_battle_play_audio'),
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size(0, 42),
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          side: const BorderSide(
+                            color: Color(0xFF6366F1),
+                            width: 1.5,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
                         ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                      onPressed: () => audioService.playAsset(p1Q.audioAsset),
-                      icon: const Icon(
-                        Icons.volume_up_rounded,
-                        color: Color(0xFF6366F1),
-                      ),
-                      label: const Text(
-                        'Nghe lại âm thanh câu này',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w800,
+                        onPressed: () => audioService.playAsset(p1Q.audioAsset),
+                        icon: const Icon(
+                          Icons.volume_up_rounded,
                           color: Color(0xFF6366F1),
+                        ),
+                        label: const Text(
+                          'Nghe lại âm thanh câu này',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF6366F1),
+                          ),
                         ),
                       ),
                     ),
-                  ),
                 ],
               ),
             ),

@@ -1745,10 +1745,28 @@ void main() {
             for (final q in gtrQuestions) {
               expect(q.options.length, equals(4));
               expect(
+                q.options.map((o) => o.label).toSet().length,
+                equals(4),
+                reason: '4 đáp án của câu hỏi $gtrTopic không được trùng nhãn',
+              );
+              expect(
                 q.correctOption.optionKey.startsWith('GTR_'),
                 isTrue,
                 reason: 'Câu hỏi $gtrTopic phải gắn mã sơ đồ trực quan GTR_',
               );
+              if (q.type == 'guitar_scale_map') {
+                expect(
+                  q.options.every((o) => o.optionKey.startsWith('GTR_SCALE_')),
+                  isTrue,
+                  reason:
+                      'Câu hỏi nhận diện Bản đồ Scale chỉ được chứa 4 đáp án là tên Scale, không trộn lẫn câu Quãng 8 chéo',
+                );
+                expect(q.hasQuestionAudio, isFalse);
+              } else if (q.type == 'guitar_chord_shape') {
+                expect(q.hasQuestionAudio, isTrue);
+              } else {
+                expect(q.hasQuestionAudio, isFalse);
+              }
               final wavFile = File(q.audioAsset);
               expect(
                 wavFile.existsSync(),

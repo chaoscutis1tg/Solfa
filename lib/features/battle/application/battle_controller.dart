@@ -928,7 +928,7 @@ class BattleNotifier extends StateNotifier<BattleState> {
     if (curQ == null) return;
 
     final settings = _ref.read(appSettingsProvider);
-    if (settings.autoPlayQuestionAudio) {
+    if (settings.autoPlayQuestionAudio && curQ.hasQuestionAudio) {
       try {
         await _audioService.playAsset(curQ.audioAsset);
       } catch (_) {}
@@ -1262,7 +1262,9 @@ class BattleNotifier extends StateNotifier<BattleState> {
       );
       _roundStartedAt = DateTime.now();
       final nextQ = state.player1Question;
-      if (nextQ != null && _ref.read(appSettingsProvider).autoPlayQuestionAudio) {
+      if (nextQ != null &&
+          nextQ.hasQuestionAudio &&
+          _ref.read(appSettingsProvider).autoPlayQuestionAudio) {
         unawaited(_audioService.playAsset(nextQ.audioAsset));
       }
       _startRoundCountdownAndBotTimers();

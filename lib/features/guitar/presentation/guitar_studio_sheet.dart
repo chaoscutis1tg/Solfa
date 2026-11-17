@@ -1421,6 +1421,22 @@ class GuitarQuestionBoardWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    // Các câu hỏi thuần lý thuyết vòng hợp âm / Capo / công thức tay phải / ký hiệu kỹ thuật không cần vẽ bảng cần đàn thừa
+    if (optionKey.startsWith('GTR_THEORY_') ||
+        optionKey.startsWith('GTR_TECH_') ||
+        optionKey == 'GTR_TAB_BALLAD_44' ||
+        optionKey == 'GTR_TAB_PIMA' ||
+        optionKey == 'GTR_TAB_VALSE_34') {
+      return const SizedBox.shrink(key: Key('guitar_question_board'));
+    }
+
+    if (optionKey == 'GTR_TAB_SPIDER') {
+      return GuitarTabViewerWidget(
+        key: const Key('guitar_question_board'),
+        isDark: isDark,
+      );
+    }
+
     // Format optionKey: e.g. 'GTR_S5_F3' (Dây 5 Ngăn 3), 'GTR_CHORD_Am', 'GTR_TAB_S6_F3'
     if (optionKey.startsWith('GTR_CHORD_')) {
       final chordId = optionKey.replaceFirst('GTR_CHORD_', '');
@@ -1452,13 +1468,19 @@ class GuitarQuestionBoardWidget extends StatelessWidget {
     }
 
     if (optionKey.startsWith('GTR_SCALE_')) {
+      final isEm = optionKey.contains('EM');
       final isAm = optionKey.contains('AM');
+      final Set<String> pitchSet = isEm
+          ? const {'E', 'G', 'A', 'B', 'D'}
+          : (isAm
+              ? const {'A', 'C', 'D', 'E', 'G'}
+              : const {'C', 'D', 'E', 'F', 'G', 'A', 'B'});
+      final String rootPitch = isEm ? 'E' : (isAm ? 'A' : 'C');
       return InteractiveGuitarFretboard(
         key: const Key('guitar_question_board'),
         maxFrets: 5,
-        scalePitchSet:
-            isAm ? const {'A', 'C', 'D', 'E', 'G'} : const {'C', 'D', 'E', 'F', 'G', 'A', 'B'},
-        scaleRootPitch: isAm ? 'A' : 'C',
+        scalePitchSet: pitchSet,
+        scaleRootPitch: rootPitch,
       );
     }
 
