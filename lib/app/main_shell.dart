@@ -22,11 +22,18 @@ class MainShell extends ConsumerWidget {
     required this.navigationShell,
   });
 
-  static const List<String> _tabTitles = [
+  static const List<String> _tabTitlesVi = [
     'Solfa',
     'Phòng luyện tập',
     'Máy đếm nhịp',
     'Tiến trình',
+  ];
+
+  static const List<String> _tabTitlesEn = [
+    'Solfa',
+    'Practice Room',
+    'Metronome',
+    'Progress',
   ];
 
   void _onSelectTab(WidgetRef ref, int currentIndex, int targetIndex) {
@@ -56,6 +63,7 @@ class MainShell extends ConsumerWidget {
     final progressAsync = ref.watch(overallProgressProvider);
     final streakDays = progressAsync.valueOrNull?.currentStreakDays ?? 0;
     final adState = ref.watch(rewardedAdProvider);
+    final isEn = ref.watch(appSettingsProvider).isEnglish;
 
     return SolfaBackground(
       child: Scaffold(
@@ -70,7 +78,7 @@ class MainShell extends ConsumerWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  _tabTitles[currentIndex],
+                  (isEn ? _tabTitlesEn : _tabTitlesVi)[currentIndex],
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -152,7 +160,7 @@ class MainShell extends ConsumerWidget {
             const SizedBox(width: 2),
             IconButton(
               key: const Key('btn_open_settings'),
-              tooltip: 'Cài đặt',
+              tooltip: isEn ? 'Settings' : 'Cài đặt',
               visualDensity: VisualDensity.compact,
               icon: const Icon(Icons.settings_outlined, size: 21),
               onPressed: () {
@@ -165,6 +173,7 @@ class MainShell extends ConsumerWidget {
         body: navigationShell,
         bottomNavigationBar: _DiamondBottomNavBar(
           selectedIndex: currentIndex,
+          isEn: isEn,
           onSelectTab: (idx) => _onSelectTab(ref, currentIndex, idx),
           onTapDiamondBattle: () =>
               _onOpenBattleArena(context, ref, currentIndex),
@@ -178,11 +187,13 @@ class MainShell extends ConsumerWidget {
 /// matching the user's reference design ("w/ diamond CTA button") and Solfa's pastel indigo palette.
 class _DiamondBottomNavBar extends StatelessWidget {
   final int selectedIndex;
+  final bool isEn;
   final ValueChanged<int> onSelectTab;
   final VoidCallback onTapDiamondBattle;
 
   const _DiamondBottomNavBar({
     required this.selectedIndex,
+    required this.isEn,
     required this.onSelectTab,
     required this.onTapDiamondBattle,
   });
@@ -231,7 +242,7 @@ class _DiamondBottomNavBar extends StatelessWidget {
                     key: const Key('nav_tab_home'),
                     icon: Icons.home_outlined,
                     selectedIcon: Icons.home_rounded,
-                    label: 'Trang chủ',
+                    label: isEn ? 'Home' : 'Trang chủ',
                     isSelected: selectedIndex == 0,
                     onTap: () => onSelectTab(0),
                   ),
@@ -241,7 +252,7 @@ class _DiamondBottomNavBar extends StatelessWidget {
                     key: const Key('nav_tab_topics'),
                     icon: Icons.headphones_outlined,
                     selectedIcon: Icons.headphones_rounded,
-                    label: 'Luyện tập',
+                    label: isEn ? 'Practice' : 'Luyện tập',
                     isSelected: selectedIndex == 1,
                     onTap: () => onSelectTab(1),
                   ),
@@ -256,7 +267,7 @@ class _DiamondBottomNavBar extends StatelessWidget {
                     key: const Key('nav_tab_metronome'),
                     icon: Icons.av_timer_outlined,
                     selectedIcon: Icons.av_timer_rounded,
-                    label: 'Công cụ',
+                    label: isEn ? 'Tools' : 'Công cụ',
                     isSelected: selectedIndex == 2,
                     onTap: () => onSelectTab(2),
                   ),
@@ -266,7 +277,7 @@ class _DiamondBottomNavBar extends StatelessWidget {
                     key: const Key('nav_tab_progress'),
                     icon: Icons.insights_outlined,
                     selectedIcon: Icons.insights_rounded,
-                    label: 'Tiến trình',
+                    label: isEn ? 'Progress' : 'Tiến trình',
                     isSelected: selectedIndex == 3,
                     onTap: () => onSelectTab(3),
                   ),

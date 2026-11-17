@@ -6,6 +6,7 @@ import '../../../app/design_system/solfa_design_system.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../app/widgets/crossed_swords_icon.dart';
 import '../../../app/widgets/solfa_gem_icon.dart';
+import '../../../core/localization/app_locale.dart';
 import '../../../core/models/domain_models.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../guitar/presentation/guitar_studio_sheet.dart';
@@ -171,6 +172,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget _buildGreetingHeader(OverallProgressStats? stats, bool isDark) {
     final streak = stats?.currentStreakDays ?? 0;
     final goalMet = stats?.isDailyGoalReached ?? false;
+    final isEn = ref.watch(appSettingsProvider).isEnglish;
 
     return Row(
       children: [
@@ -178,15 +180,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Học cảm âm mỗi ngày',
+              Text(
+                isEn ? 'Daily Ear & Music Training' : 'Học cảm âm mỗi ngày',
                 style: SolfaTypography.heading,
               ),
               const SizedBox(height: 2),
               Text(
                 goalMet
-                    ? 'Đã hoàn thành mục tiêu hôm nay'
-                    : 'Chọn bài học tại tab Luyện tập hoặc tiếp tục bên dưới',
+                    ? (isEn
+                        ? 'Daily goal completed!'
+                        : 'Đã hoàn thành mục tiêu hôm nay')
+                    : (isEn
+                        ? 'Choose a lesson in Practice or continue below'
+                        : 'Chọn bài học tại tab Luyện tập hoặc tiếp tục bên dưới'),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -219,7 +225,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
               const SizedBox(width: 4),
               Text(
-                '$streak ngày',
+                isEn ? '$streak days' : '$streak ngày',
                 style: const TextStyle(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w700,
@@ -236,6 +242,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     BuildContext context,
     OverallProgressStats stats,
   ) {
+    final isEn = ref.watch(appSettingsProvider).isEnglish;
     if (!stats.hasAnyHistory || stats.recentSessions.isEmpty) {
       return SolfaSurfaceCard(
         isPrimaryHighlight: true,
@@ -249,9 +256,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 color: Colors.white.withOpacity(0.18),
                 borderRadius: BorderRadius.circular(SolfaRadius.pill),
               ),
-              child: const Text(
-                'KHỞI ĐỘNG',
-                style: TextStyle(
+              child: Text(
+                isEn ? 'GET STARTED' : 'KHỞI ĐỘNG',
+                style: const TextStyle(
                   fontSize: 10.5,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
@@ -260,9 +267,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
             ),
             const SizedBox(height: 10),
-            const Text(
-              'Bắt đầu hành trình đầu tiên',
-              style: TextStyle(
+            Text(
+              isEn ? 'Start Your Musical Journey' : 'Bắt đầu hành trình đầu tiên',
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
                 color: Colors.white,
@@ -270,7 +277,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
             const SizedBox(height: 4),
             Text(
-              'Làm quen 7 nốt nhạc cơ bản hoặc chọn chủ đề bất kỳ tại tab Luyện tập.',
+              isEn
+                  ? 'Master the 7 basic notes (C–D–E–F–G–A–B) or pick any Piano & Guitar topic.'
+                  : 'Làm quen 7 nốt nhạc cơ bản hoặc chọn chủ đề bất kỳ tại tab Luyện tập.',
               style: TextStyle(
                 fontSize: 12.8,
                 color: Colors.white.withOpacity(0.90),
@@ -295,9 +304,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       levelId: 'lvl_notes_basic',
                     ),
                     icon: const Icon(Icons.play_arrow_rounded, size: 19),
-                    label: const FittedBox(
+                    label: FittedBox(
                       fit: BoxFit.scaleDown,
-                      child: Text('Luyện nghe nốt'),
+                      child: Text(isEn ? 'Pitch Practice' : 'Luyện nghe nốt'),
                     ),
                   ),
                 ),
@@ -313,9 +322,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                     onPressed: () => context.go('/topics'),
                     icon: const Icon(Icons.grid_view_rounded, size: 17),
-                    label: const FittedBox(
+                    label: FittedBox(
                       fit: BoxFit.scaleDown,
-                      child: Text('Luyện tập ngay'),
+                      child: Text(isEn ? 'Practice Now' : 'Luyện tập ngay'),
                     ),
                   ),
                 ),
@@ -346,9 +355,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   color: Colors.white.withOpacity(0.18),
                   borderRadius: BorderRadius.circular(SolfaRadius.pill),
                 ),
-                child: const Text(
-                  'TIẾP TỤC BÀI HỌC',
-                  style: TextStyle(
+                child: Text(
+                  isEn ? 'CONTINUE LESSON' : 'TIẾP TỤC BÀI HỌC',
+                  style: const TextStyle(
                     fontSize: 10.5,
                     fontWeight: FontWeight.w800,
                     color: Colors.white,
@@ -359,7 +368,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               const SizedBox(width: 8),
               Flexible(
                 child: Text(
-                  'Đúng ${recent.correctCount}/${recent.totalQuestions} câu',
+                  isEn
+                      ? 'Correct ${recent.correctCount}/${recent.totalQuestions}'
+                      : 'Đúng ${recent.correctCount}/${recent.totalQuestions} câu',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -373,7 +384,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           const SizedBox(height: 10),
           Text(
-            recent.topicName ?? 'Luyện nghe nốt',
+            AppLocale.localizeTopicName(
+              recent.topicId,
+              recent.topicName ?? 'Luyện nghe nốt',
+              isEn,
+            ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
@@ -384,7 +399,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           const SizedBox(height: 3),
           Text(
-            recent.levelName ?? 'Cơ bản',
+            AppLocale.localizeLevelName(
+              recent.levelId ?? 'level_notes_basic',
+              recent.levelName ?? 'Cơ bản',
+              isEn,
+            ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
@@ -420,9 +439,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     levelId: recent.levelId,
                   ),
                   icon: const Icon(Icons.play_arrow_rounded, size: 19),
-                  label: const FittedBox(
+                  label: FittedBox(
                     fit: BoxFit.scaleDown,
-                    child: Text('Luyện tập ngay'),
+                    child: Text(isEn ? 'Practice Now' : 'Luyện tập ngay'),
                   ),
                 ),
               ),
@@ -436,7 +455,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
                 onPressed: () => context.go('/topics'),
                 icon: const Icon(Icons.grid_view_rounded, size: 17),
-                label: const Text('Đổi bài'),
+                label: Text(isEn ? 'Topics' : 'Đổi bài'),
               ),
             ],
           ),
@@ -452,6 +471,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   ) {
     final pendingCount = stats?.pendingReviewCount ?? 0;
     final dividerColor = isDark ? AppColors.borderDark : AppColors.borderLight;
+    final isEn = ref.watch(appSettingsProvider).isEnglish;
 
     return SolfaSurfaceCard(
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
@@ -462,8 +482,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: _QuickAccessItem(
                 key: const Key('btn_open_free_piano_explorer'),
                 icon: Icons.piano_rounded,
-                title: 'Đàn Piano',
-                subtitle: 'Khuông C3–C5',
+                title: isEn ? 'Piano' : 'Đàn Piano',
+                subtitle: isEn ? 'Staff C3–C5' : 'Khuông C3–C5',
                 onTap: () => showFreePianoExplorerSheet(context),
               ),
             ),
@@ -472,7 +492,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: _QuickAccessItem(
                 key: const Key('btn_open_guitar_studio'),
                 icon: Icons.grid_on_rounded,
-                title: 'Đàn Guitar',
+                title: isEn ? 'Guitar' : 'Đàn Guitar',
                 subtitle: 'Map & Tab',
                 accentColor: const Color(0xFFD97706),
                 onTap: () => showGuitarStudioSheet(context),
@@ -482,10 +502,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             Expanded(
               child: _QuickAccessItem(
                 icon: Icons.replay_rounded,
-                title: 'Ôn câu sai',
+                title: isEn ? 'Review' : 'Ôn câu sai',
                 subtitle: pendingCount > 0
-                    ? '$pendingCount câu'
-                    : 'Thuộc hết',
+                    ? (isEn ? '$pendingCount left' : '$pendingCount câu')
+                    : (isEn ? 'All clear' : 'Thuộc hết'),
                 accentColor: pendingCount > 0 ? AppColors.wrong : null,
                 onTap: () => context.push('/review'),
               ),
@@ -500,8 +520,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   guardColor: AppColors.primary,
                 ),
                 icon: Icons.sports_mma_rounded,
-                title: 'Đấu trường',
-                subtitle: 'So tài 1v1',
+                title: isEn ? 'Arena' : 'Đấu trường',
+                subtitle: isEn ? '1v1 Match' : 'So tài 1v1',
                 onTap: () => context.push('/battle'),
               ),
             ),
@@ -519,6 +539,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   ) {
     final canClaimGoalGem =
         stats.isDailyGoalReached && !adState.dailyGoalGemClaimedToday;
+    final isEn = ref.watch(appSettingsProvider).isEnglish;
 
     return SolfaSurfaceCard(
       padding: const EdgeInsets.all(15),
@@ -539,7 +560,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Mục tiêu hôm nay: ${stats.todayAnsweredCount} / ${stats.dailyGoalTarget} câu',
+                  isEn
+                      ? 'Today\'s Goal: ${stats.todayAnsweredCount} / ${stats.dailyGoalTarget}'
+                      : 'Mục tiêu hôm nay: ${stats.todayAnsweredCount} / ${stats.dailyGoalTarget} câu',
                   style: SolfaTypography.cardTitle,
                 ),
               ),
@@ -563,23 +586,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       showGemRewardAnimation(
                         context,
                         gemsAdded: bonus,
-                        subtitle: 'Hoàn thành mục tiêu hôm nay!',
+                        subtitle: isEn
+                            ? 'Daily goal completed!'
+                            : 'Hoàn thành mục tiêu hôm nay!',
                         isTestMode: isTest,
                       );
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           backgroundColor: AppColors.correct,
                           content: Text(
-                            'Chúc mừng! Bạn vừa nhận +$bonus Gem hoàn thành mục tiêu hôm nay.',
+                            isEn
+                                ? 'Congratulations! You earned +$bonus Gems for reaching today\'s goal.'
+                                : 'Chúc mừng! Bạn vừa nhận +$bonus Gem hoàn thành mục tiêu hôm nay.',
                           ),
                         ),
                       );
                     }
                   },
                   icon: const SolfaGemIcon(size: 13),
-                  label: const Text(
-                    'Nhận +20 Gem',
-                    style: TextStyle(
+                  label: Text(
+                    isEn ? 'Claim +20 Gems' : 'Nhận +20 Gem',
+                    style: const TextStyle(
                       fontSize: 11.5,
                       fontWeight: FontWeight.w800,
                     ),
@@ -595,9 +622,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                   onPressed: () =>
                       _showDailyGoalPicker(context, stats.dailyGoalTarget),
-                  child: const Text(
-                    'Đổi mục tiêu',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                  child: Text(
+                    isEn ? 'Change' : 'Đổi mục tiêu',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
             ],
@@ -631,6 +661,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final practiceReady = todayAnswered >= 10;
     final battleReady = adState.dailyBattlesPlayed >= 1;
     final dictationReady = adState.dailyDictationCompletedCount >= 1;
+    final isEn = ref.watch(appSettingsProvider).isEnglish;
 
     return SolfaSurfaceCard(
       key: const Key('card_daily_quests'),
@@ -649,9 +680,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   color: AppColors.primary,
                 ),
                 const SizedBox(width: 8),
-                const Expanded(
+                Expanded(
                   child: Text(
-                    'Nhiệm vụ hàng ngày',
+                    isEn ? 'Daily Quests' : 'Nhiệm vụ hàng ngày',
                     style: SolfaTypography.cardTitle,
                   ),
                 ),
@@ -665,7 +696,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     borderRadius: BorderRadius.circular(SolfaRadius.pill),
                   ),
                   child: Text(
-                    '${adState.claimedQuestsCountToday}/3 hoàn thành',
+                    isEn
+                        ? '${adState.claimedQuestsCountToday}/3 done'
+                        : '${adState.claimedQuestsCountToday}/3 hoàn thành',
                     style: const TextStyle(
                       fontSize: 11.5,
                       fontWeight: FontWeight.w700,
@@ -688,7 +721,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             _buildQuestChecklistItem(
               context: context,
               buttonKey: const Key('btn_claim_quest_practice'),
-              title: 'Luyện cảm âm 10 câu',
+              title: isEn
+                  ? 'Practice 10 ear-training questions'
+                  : 'Luyện cảm âm 10 câu',
               progressText: '${todayAnswered.clamp(0, 10)}/10',
               rewardPoints: 30,
               isReadyToClaim: practiceReady,
@@ -700,7 +735,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             _buildQuestChecklistItem(
               context: context,
               buttonKey: const Key('btn_claim_quest_battle'),
-              title: 'Thi đấu 1 trận Đấu Trường',
+              title: isEn
+                  ? 'Play 1 Battle Arena match'
+                  : 'Thi đấu 1 trận Đấu Trường',
               progressText: '${adState.dailyBattlesPlayed.clamp(0, 1)}/1',
               rewardPoints: 40,
               isReadyToClaim: battleReady,
@@ -712,7 +749,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             _buildQuestChecklistItem(
               context: context,
               buttonKey: const Key('btn_claim_quest_dictation'),
-              title: 'Chép nhạc 1 câu giai điệu',
+              title: isEn
+                  ? 'Complete 1 melodic dictation'
+                  : 'Chép nhạc 1 câu giai điệu',
               progressText:
                   '${adState.dailyDictationCompletedCount.clamp(0, 1)}/1',
               rewardPoints: 30,

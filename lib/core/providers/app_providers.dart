@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../audio/asset_validator.dart';
 import '../audio/audio_service.dart';
 import '../database/app_database.dart';
+import '../localization/app_locale.dart';
 import '../models/domain_models.dart';
 
 final appDatabaseProvider = Provider<AppDatabase>((ref) {
@@ -32,6 +33,8 @@ class AppSettingsState {
   final bool keepScreenAwakeOnMetronome;
   final bool unlockAllLevels;
   final int dailyGoalTarget;
+  final String languageMode; // 'auto' | 'vi' | 'en'
+  final String countryCodeOverride; // '' (auto) | 'VN' | 'US' | 'DE' | ...
   final bool isLoaded;
 
   const AppSettingsState({
@@ -44,8 +47,23 @@ class AppSettingsState {
     this.keepScreenAwakeOnMetronome = true,
     this.unlockAllLevels = true,
     this.dailyGoalTarget = 20,
+    this.languageMode = 'auto',
+    this.countryCodeOverride = '',
     this.isLoaded = false,
   });
+
+  DetectedCountryInfo get detectedCountry => AppLocale.detectCountry(
+        overrideCountryCode:
+            countryCodeOverride.isEmpty ? null : countryCodeOverride,
+      );
+
+  String get effectiveLanguageCode => AppLocale.resolveLanguageCode(
+        languageMode: languageMode,
+        countryCodeOverride:
+            countryCodeOverride.isEmpty ? null : countryCodeOverride,
+      );
+
+  bool get isEnglish => effectiveLanguageCode == 'en';
 
   AppSettingsState copyWith({
     ThemeMode? themeMode,
@@ -57,6 +75,8 @@ class AppSettingsState {
     bool? keepScreenAwakeOnMetronome,
     bool? unlockAllLevels,
     int? dailyGoalTarget,
+    String? languageMode,
+    String? countryCodeOverride,
     bool? isLoaded,
   }) {
     return AppSettingsState(
@@ -70,6 +90,8 @@ class AppSettingsState {
           keepScreenAwakeOnMetronome ?? this.keepScreenAwakeOnMetronome,
       unlockAllLevels: unlockAllLevels ?? this.unlockAllLevels,
       dailyGoalTarget: dailyGoalTarget ?? this.dailyGoalTarget,
+      languageMode: languageMode ?? this.languageMode,
+      countryCodeOverride: countryCodeOverride ?? this.countryCodeOverride,
       isLoaded: isLoaded ?? this.isLoaded,
     );
   }
@@ -103,6 +125,10 @@ class AppSettingsNotifier extends StateNotifier<AppSettingsState> {
     final unlockAll = (map['unlock_all_levels'] ?? 'true') == 'true';
     final dailyGoal =
         (int.tryParse(map['daily_goal_target'] ?? '') ?? 20).clamp(5, 200);
+    final rawLang = map['language_mode'] ?? 'auto';
+    final langMode =
+        (rawLang == 'vi' || rawLang == 'en') ? rawLang : 'auto';
+    final countryOverride = map['country_code_override'] ?? '';
 
     _audioService.updateConfig(lessonVolume: volume, sfxEnabled: sfx);
 
@@ -116,6 +142,8 @@ class AppSettingsNotifier extends StateNotifier<AppSettingsState> {
       keepScreenAwakeOnMetronome: keepAwake,
       unlockAllLevels: unlockAll,
       dailyGoalTarget: dailyGoal,
+      languageMode: langMode,
+      countryCodeOverride: countryOverride,
       isLoaded: true,
     );
   }
@@ -189,6 +217,22 @@ class AppSettingsNotifier extends StateNotifier<AppSettingsState> {
     state = state.copyWith(dailyGoalTarget: clamped);
     try {
       await _db.setSetting('daily_goal_target', clamped.toString());
+    } catch (_) {}
+  }
+
+  Future<void> setLanguageMode(String mode) async {
+    final normalized = (mode == 'vi' || mode == 'en') ? mode : 'auto';
+    state = state.copyWith(languageMode: normalized);
+    try {
+      await _db.setSetting('language_mode', normalized);
+    } catch (_) {}
+  }
+
+  Future<void> setCountryCodeOverride(String code) async {
+    final normalized = code.trim().toUpperCase();
+    state = state.copyWith(countryCodeOverride: normalized);
+    try {
+      await _db.setSetting('country_code_override', normalized);
     } catch (_) {}
   }
 }

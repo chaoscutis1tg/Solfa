@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../app/design_system/solfa_design_system.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../app/widgets/solfa_gem_icon.dart';
+import '../../../core/localization/app_locale.dart';
 import '../../../core/models/domain_models.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../guitar/presentation/guitar_studio_sheet.dart';
@@ -115,22 +116,25 @@ Future<void> showTopicPracticeSetupModal(
 class TopicsScreen extends ConsumerWidget {
   const TopicsScreen({super.key});
 
-  static String durationLabel(int seconds) {
+  static String durationLabel(int seconds, {bool isEn = false}) {
     switch (seconds) {
       case 60:
-        return '60 giây';
+        return isEn ? '60s' : '60 giây';
       case 900:
-        return '15 phút';
+        return isEn ? '15 min' : '15 phút';
       case 3600:
-        return '1 tiếng';
+        return isEn ? '1 hour' : '1 tiếng';
       case 0:
-        return 'Không giới hạn';
+        return isEn ? 'Free Play' : 'Không giới hạn';
       default:
         return '${seconds}s';
     }
   }
 
-  static String shortTopicTitle(TopicModel topic) {
+  static String shortTopicTitle(TopicModel topic, {bool isEn = false}) {
+    if (isEn) {
+      return AppLocale.localizeTopicName(topic.id, topic.name, true);
+    }
     switch (topic.id) {
       case 'topic_notes':
         return 'Luyện nghe nốt';
@@ -159,7 +163,10 @@ class TopicsScreen extends ConsumerWidget {
     }
   }
 
-  static String shortTopicSubtitle(TopicModel topic) {
+  static String shortTopicSubtitle(TopicModel topic, {bool isEn = false}) {
+    if (isEn) {
+      return AppLocale.localizeTopicSubtitle(topic.id, topic.description, true);
+    }
     switch (topic.id) {
       case 'topic_notes':
         return 'Cảm âm cao độ C3–C5';
@@ -264,10 +271,15 @@ class TopicsScreen extends ConsumerWidget {
     final selectedArea = ref.watch(selectedPracticeAreaProvider);
     final isGuitarArea = selectedArea == 'guitar';
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isEn = ref.watch(appSettingsProvider).isEnglish;
 
     return topicsAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('Lỗi tải danh sách chủ đề: $e')),
+      error: (e, _) => Center(
+        child: Text(
+          isEn ? 'Failed to load topics: $e' : 'Lỗi tải danh sách chủ đề: $e',
+        ),
+      ),
       data: (topics) {
         final activeTopics =
             isGuitarArea ? guitarTopics : topics.where((t) => t.isEnabled).toList();
@@ -282,9 +294,9 @@ class TopicsScreen extends ConsumerWidget {
           children: [
             Row(
               children: [
-                const Expanded(
+                Expanded(
                   child: Text(
-                    'Chủ đề luyện tập',
+                    isEn ? 'Practice Topics' : 'Chủ đề luyện tập',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: SolfaTypography.heading,
@@ -317,7 +329,9 @@ class TopicsScreen extends ConsumerWidget {
                     size: 16,
                   ),
                   label: Text(
-                    isGuitarArea ? 'Map Cần đàn' : 'Đàn Piano',
+                    isGuitarArea
+                        ? (isEn ? 'Fretboard Map' : 'Map Cần đàn')
+                        : (isEn ? 'Piano C3–C5' : 'Đàn Piano'),
                     style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w800,
@@ -344,7 +358,7 @@ class TopicsScreen extends ConsumerWidget {
                     child: _AreaSwitchButton(
                       key: const Key('tab_practice_area_piano'),
                       icon: Icons.piano_rounded,
-                      label: 'Piano & Nhạc lý',
+                      label: isEn ? 'Piano & Theory' : 'Piano & Nhạc lý',
                       isSelected: !isGuitarArea,
                       accentColor: AppColors.primary,
                       onTap: () => ref
@@ -357,7 +371,9 @@ class TopicsScreen extends ConsumerWidget {
                     child: _AreaSwitchButton(
                       key: const Key('tab_practice_area_guitar'),
                       icon: Icons.grid_on_rounded,
-                      label: 'Học Guitar & Cần đàn',
+                      label: isEn
+                          ? 'Guitar & Fretboard'
+                          : 'Học Guitar & Cần đàn',
                       isSelected: isGuitarArea,
                       accentColor: const Color(0xFFD97706),
                       onTap: () => ref
@@ -382,6 +398,7 @@ class TopicsScreen extends ConsumerWidget {
                       r * 2,
                       isGuitarArea,
                       isDark,
+                      isEn,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -394,6 +411,7 @@ class TopicsScreen extends ConsumerWidget {
                             r * 2 + 1,
                             isGuitarArea,
                             isDark,
+                            isEn,
                           )
                         : const SizedBox.shrink(),
                   ),
@@ -413,13 +431,14 @@ class TopicsScreen extends ConsumerWidget {
     int index,
     bool isGuitarArea,
     bool isDark,
+    bool isEn,
   ) {
     if (index < activeTopics.length) {
       final topic = activeTopics[index];
       return _BigTopicGridCard(
         key: Key('topic_grid_card_${topic.id}'),
         icon: topicIconForCode(topic.code),
-        title: shortTopicTitle(topic),
+        title: shortTopicTitle(topic, isEn: isEn),
         accentColor: isGuitarArea ? const Color(0xFFD97706) : AppColors.primary,
         isDark: isDark,
         onTap: () => showTopicPracticeSetupModal(context, ref, topic),
@@ -431,7 +450,7 @@ class TopicsScreen extends ConsumerWidget {
         return _BigTopicGridCard(
           key: const Key('topic_grid_card_guitar_studio'),
           icon: Icons.explore_rounded,
-          title: 'Map Cần đàn 6 dây',
+          title: isEn ? '6-String Fretboard' : 'Map Cần đàn 6 dây',
           accentColor: const Color(0xFFD97706),
           isDark: isDark,
           onTap: () => showGuitarStudioSheet(context),
@@ -440,7 +459,7 @@ class TopicsScreen extends ConsumerWidget {
       return _BigTopicGridCard(
         key: const Key('topic_grid_card_guitar_spider'),
         icon: Icons.touch_app_rounded,
-        title: 'Luyện ngón 1-2-3-4',
+        title: isEn ? 'Spider 1-2-3-4' : 'Luyện ngón 1-2-3-4',
         accentColor: const Color(0xFFD97706),
         isDark: isDark,
         onTap: () => showGuitarStudioSheet(context),
@@ -451,7 +470,7 @@ class TopicsScreen extends ConsumerWidget {
     return _BigTopicGridCard(
       key: const Key('topic_grid_card_free_piano'),
       icon: Icons.piano_rounded,
-      title: 'Đàn Piano C3–C5',
+      title: isEn ? 'Piano C3–C5 Studio' : 'Đàn Piano C3–C5',
       accentColor: AppColors.primary,
       isDark: isDark,
       onTap: () => showFreePianoExplorerSheet(context),
@@ -610,6 +629,7 @@ class _TopicPracticeSetupSheetState
     final selectedStaffLvl = ref.watch(selectedStaffLevelIdProvider);
     final staffLedgerOnly = ref.watch(staffLedgerOnlyProvider);
     final adState = ref.watch(rewardedAdProvider);
+    final isEn = ref.watch(appSettingsProvider).isEnglish;
 
     final topicId = widget.topic.id;
     final isNotes = topicId == 'topic_notes';
@@ -617,17 +637,49 @@ class _TopicPracticeSetupSheetState
 
     final prefix = topicId.replaceFirst('topic_', 'lvl_');
     final otherLevels = [
-      ('${prefix}_basic', 'Mức 1', 'Cơ bản'),
-      ('${prefix}_inter', 'Mức 2', 'Trung bình'),
-      ('${prefix}_adv', 'Mức 3', 'Nâng cao'),
+      (
+        '${prefix}_basic',
+        isEn ? 'Level 1' : 'Mức 1',
+        isEn ? 'Basic' : 'Cơ bản',
+      ),
+      (
+        '${prefix}_inter',
+        isEn ? 'Level 2' : 'Mức 2',
+        isEn ? 'Inter' : 'Trung bình',
+      ),
+      (
+        '${prefix}_adv',
+        isEn ? 'Level 3' : 'Mức 3',
+        isEn ? 'Advanced' : 'Nâng cao',
+      ),
     ];
     final currentOtherLvl = _selectedOtherLevelId ?? otherLevels.first.$1;
 
-    const durations = [
-      (60, '60 giây', 'Miễn phí', false),
-      (900, '15 phút', 'Miễn phí', false),
-      (3600, '1 tiếng', '50 Gem', true),
-      (0, 'Tự do', 'Miễn phí', false),
+    final durations = [
+      (
+        60,
+        isEn ? '60s' : '60 giây',
+        isEn ? 'Free' : 'Miễn phí',
+        false,
+      ),
+      (
+        900,
+        isEn ? '15 min' : '15 phút',
+        isEn ? 'Free' : 'Miễn phí',
+        false,
+      ),
+      (
+        3600,
+        isEn ? '1 hour' : '1 tiếng',
+        '50 Gem',
+        true,
+      ),
+      (
+        0,
+        isEn ? 'Free Play' : 'Tự do',
+        isEn ? 'Free' : 'Miễn phí',
+        false,
+      ),
     ];
 
     return Container(
@@ -679,14 +731,20 @@ class _TopicPracticeSetupSheetState
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          TopicsScreen.shortTopicTitle(widget.topic),
+                          TopicsScreen.shortTopicTitle(
+                            widget.topic,
+                            isEn: isEn,
+                          ),
                           style: const TextStyle(
                             fontSize: 17,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
                         Text(
-                          TopicsScreen.shortTopicSubtitle(widget.topic),
+                          TopicsScreen.shortTopicSubtitle(
+                            widget.topic,
+                            isEn: isEn,
+                          ),
                           style: TextStyle(
                             fontSize: 12,
                             color: isDark
@@ -727,9 +785,14 @@ class _TopicPracticeSetupSheetState
               const SizedBox(height: 16),
 
               // 1. Chọn chế độ khó / dễ (Cấp độ)
-              const Text(
-                '1. Chọn độ khó luyện tập',
-                style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800),
+              Text(
+                isEn
+                    ? '1. Select Difficulty Level'
+                    : '1. Chọn độ khó luyện tập',
+                style: const TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
               const SizedBox(height: 8),
               if (isNotes || isStaff)
@@ -756,7 +819,7 @@ class _TopicPracticeSetupSheetState
                                 isStaff ? 'topic_staff_lvl_' : 'topic_note_lvl_';
                             return _ModalOptionCard(
                               key: Key('$keyPrefix${item.$1}'),
-                              title: item.$2,
+                              title: isEn ? 'Level ${i + 1}' : item.$2,
                               subtitle: item.$3,
                               isSelected: selected,
                               isDark: isDark,
@@ -805,7 +868,9 @@ class _TopicPracticeSetupSheetState
                     Expanded(
                       child: _CompactLevelChip(
                         key: const Key('chip_staff_mode_all'),
-                        title: 'Tất cả nốt (Khuông + Phụ)',
+                        title: isEn
+                            ? 'All Notes (Staff + Ledger)'
+                            : 'Tất cả nốt (Khuông + Phụ)',
                         isSelected: !staffLedgerOnly,
                         isDark: isDark,
                         onTap: () => ref
@@ -817,7 +882,9 @@ class _TopicPracticeSetupSheetState
                     Expanded(
                       child: _CompactLevelChip(
                         key: const Key('chip_staff_mode_ledger'),
-                        title: 'Chuyên luyện Dòng kẻ phụ',
+                        title: isEn
+                            ? 'Ledger Lines Focus'
+                            : 'Chuyên luyện Dòng kẻ phụ',
                         isSelected: staffLedgerOnly,
                         isDark: isDark,
                         onTap: () => ref
@@ -832,9 +899,14 @@ class _TopicPracticeSetupSheetState
               const SizedBox(height: 16),
 
               // 2. Chọn thời gian luyện tập
-              const Text(
-                '2. Chọn thời gian luyện tập',
-                style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800),
+              Text(
+                isEn
+                    ? '2. Select Practice Duration'
+                    : '2. Chọn thời gian luyện tập',
+                style: const TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
               const SizedBox(height: 8),
               Row(
@@ -901,8 +973,12 @@ class _TopicPracticeSetupSheetState
                 icon: const Icon(Icons.play_arrow_rounded, size: 22),
                 label: Text(
                   selectedDuration == 3600
-                      ? 'Bắt đầu ngay (1 tiếng • 50 Gem)'
-                      : 'Bắt đầu ngay (${TopicsScreen.durationLabel(selectedDuration)} • Miễn phí)',
+                      ? (isEn
+                          ? 'Start Now (1 hour • 50 Gems)'
+                          : 'Bắt đầu ngay (1 tiếng • 50 Gem)')
+                      : (isEn
+                          ? 'Start Now (${TopicsScreen.durationLabel(selectedDuration, isEn: true)} • Free)'
+                          : 'Bắt đầu ngay (${TopicsScreen.durationLabel(selectedDuration)} • Miễn phí)'),
                 ),
               ),
             ],

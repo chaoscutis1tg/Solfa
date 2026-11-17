@@ -5,6 +5,7 @@ import 'package:solfa/app/app.dart';
 import 'package:solfa/app/router.dart';
 import 'package:solfa/core/audio/audio_service.dart';
 import 'package:solfa/core/database/app_database.dart';
+import 'package:solfa/core/localization/app_locale.dart';
 import 'package:solfa/core/models/domain_models.dart';
 import 'package:solfa/core/providers/app_providers.dart';
 import 'package:solfa/core/security/solfa_integrity_guard.dart';
@@ -1776,6 +1777,48 @@ void main() {
           gtrReviewItems.first.topicName,
           equals('Nhớ nốt Cần đàn Guitar'),
         );
+
+        // 8. Kiểm tra Nhận diện Quốc gia/Khu vực (EU 2018/302 & 174+ Quốc gia), Chuyển đổi Ngôn ngữ (VI <-> EN) & Ký hiệu Nhạc lý
+        final vnInfo = AppLocale.detectCountry(overrideCountryCode: 'VN');
+        expect(vnInfo.countryCode, equals('VN'));
+        expect(vnInfo.defaultLanguageCode, equals('vi'));
+        expect(vnInfo.isEuMember, isFalse);
+
+        final deInfo = AppLocale.detectCountry(overrideCountryCode: 'DE');
+        expect(deInfo.countryCode, equals('DE'));
+        expect(deInfo.defaultLanguageCode, equals('en'));
+        expect(deInfo.isEuMember, isTrue);
+        expect(deInfo.regulatoryRegion, contains('EU 2018/302'));
+
+        final egInfo = AppLocale.detectCountry(overrideCountryCode: 'EG');
+        expect(egInfo.countryCode, equals('EG'));
+        expect(egInfo.defaultLanguageCode, equals('en'));
+
+        final settingsNotifier = container.read(appSettingsProvider.notifier);
+        await settingsNotifier.loadSettings();
+        expect(container.read(appSettingsProvider).isEnglish, isFalse);
+
+        // Khi chọn quốc gia Đức (EU) ở chế độ Auto -> Ngôn ngữ tự động chuyển sang Tiếng Anh ('en')
+        await settingsNotifier.setCountryCodeOverride('DE');
+        expect(container.read(appSettingsProvider).detectedCountry.countryCode,
+            equals('DE'));
+        expect(container.read(appSettingsProvider).isEnglish, isTrue);
+
+        // Dịch tự động thuật ngữ nhạc lý sang chuẩn Quốc tế C-D-E khi ở chế độ Tiếng Anh
+        final translatedNote = AppLocale.localizeMusicalText(
+          'Khóa Sol • Dòng kẻ phụ • Đô Trưởng',
+          true,
+        );
+        expect(translatedNote, contains('Treble Clef'));
+        expect(translatedNote, contains('Ledger Line'));
+        expect(translatedNote, contains('C Major'));
+
+        // Người dùng vẫn có thể chủ động chuyển về Tiếng Việt ('vi') hoặc Tiếng Anh ('en')
+        await settingsNotifier.setLanguageMode('vi');
+        expect(container.read(appSettingsProvider).isEnglish, isFalse);
+        await settingsNotifier.setCountryCodeOverride('');
+        await settingsNotifier.setLanguageMode('auto');
+        expect(container.read(appSettingsProvider).isEnglish, isFalse);
       },
     );
   });

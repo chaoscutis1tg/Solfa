@@ -7,6 +7,7 @@ import '../../../app/widgets/pulsing_red_heart.dart';
 import '../../../app/widgets/solfa_background.dart';
 import '../../../app/widgets/solfa_gem_icon.dart';
 import '../../../app/widgets/solfa_logo.dart';
+import '../../../core/localization/app_locale.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../metronome/application/metronome_controller.dart';
 import '../../practice/application/practice_session_controller.dart';
@@ -16,19 +17,169 @@ import '../../support_developer/application/rewarded_ad_controller.dart';
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
+  Future<void> _showCountrySelectorModal(
+    BuildContext context,
+    AppSettingsState settings,
+    AppSettingsNotifier notifier,
+  ) async {
+    final isEn = settings.isEnglish;
+    final countries = AppLocale.selectableCountries;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final isDark = Theme.of(ctx).brightness == Brightness.dark;
+        return Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(ctx).size.height * 0.72,
+          ),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF151926) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withOpacity(0.35),
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.public_rounded,
+                    color: AppColors.primary,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      isEn
+                          ? 'Select Country / Region (174+ Global Regions)'
+                          : 'Chọn Quốc gia / Khu vực (174+ Quốc gia)',
+                      style: const TextStyle(
+                        fontSize: 15.5,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                isEn
+                    ? 'Offline detection via device locale (no GPS/tracking). Compliant with EU Regulation 2018/302.'
+                    : 'Nhận diện cục bộ qua vùng thiết bị (không dùng GPS). Tuân thủ Quy định (EU) 2018/302.',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(ctx).textTheme.bodySmall?.color,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Expanded(
+                child: ListView(
+                  children: [
+                    ListTile(
+                      key: const Key('tile_country_auto'),
+                      dense: true,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      leading: const Text('🧭', style: TextStyle(fontSize: 20)),
+                      title: Text(
+                        isEn
+                            ? 'Auto-detect from Device Locale'
+                            : 'Tự động nhận diện theo thiết bị',
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                      subtitle: Text(
+                        isEn
+                            ? 'Default recommended setting'
+                            : 'Khuyên dùng (mặc định)',
+                        style: const TextStyle(fontSize: 11.5),
+                      ),
+                      trailing: settings.countryCodeOverride.isEmpty
+                          ? const Icon(
+                              Icons.check_circle_rounded,
+                              color: AppColors.correct,
+                            )
+                          : null,
+                      onTap: () {
+                        notifier.setCountryCodeOverride('');
+                        Navigator.of(ctx).pop();
+                      },
+                    ),
+                    const Divider(height: 8),
+                    for (final c in countries)
+                      ListTile(
+                        key: Key('tile_country_${c.countryCode}'),
+                        dense: true,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        leading: Text(
+                          c.flagEmoji,
+                          style: const TextStyle(fontSize: 20),
+                        ),
+                        title: Text(
+                          '${c.displayName(isEn)} (${c.countryCode})',
+                          style: const TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                        subtitle: Text(
+                          '${c.regulatoryRegion} • ${c.defaultLanguageCode == 'vi' ? 'Tiếng Việt' : 'English'}',
+                          style: const TextStyle(fontSize: 11.5),
+                        ),
+                        trailing: settings.countryCodeOverride == c.countryCode
+                            ? const Icon(
+                                Icons.check_circle_rounded,
+                                color: AppColors.correct,
+                              )
+                            : null,
+                        onTap: () {
+                          notifier.setCountryCodeOverride(c.countryCode);
+                          Navigator.of(ctx).pop();
+                        },
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _confirmClearData(BuildContext context, WidgetRef ref) async {
+    final isEn = ref.read(appSettingsProvider).isEnglish;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Cảnh báo xóa dữ liệu học tập'),
-        content: const Text(
-          'Hành động này sẽ xóa toàn bộ lịch sử phiên học, điểm số, thống kê độ chính xác, chuỗi ngày học và danh sách câu cần ôn tập trên thiết bị này. Dữ liệu đã xóa không thể khôi phục. Bạn có chắc chắn muốn tiếp tục?',
+        title: Text(
+          isEn
+              ? 'Clear Learning History Warning'
+              : 'Cảnh báo xóa dữ liệu học tập',
+        ),
+        content: Text(
+          isEn
+              ? 'This action will permanently delete all local practice sessions, scores, accuracy stats, daily streaks, and pending review questions on this device. Deleted data cannot be recovered. Are you sure you want to continue?'
+              : 'Hành động này sẽ xóa toàn bộ lịch sử phiên học, điểm số, thống kê độ chính xác, chuỗi ngày học và danh sách câu cần ôn tập trên thiết bị này. Dữ liệu đã xóa không thể khôi phục. Bạn có chắc chắn muốn tiếp tục?',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Hủy'),
+            child: Text(isEn ? 'Cancel' : 'Hủy'),
           ),
           ElevatedButton(
             key: const Key('btn_confirm_clear_data'),
@@ -37,7 +188,7 @@ class SettingsScreen extends ConsumerWidget {
               minimumSize: const Size(120, 42),
             ),
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Xóa dữ liệu'),
+            child: Text(isEn ? 'Delete Data' : 'Xóa dữ liệu'),
           ),
         ],
       ),
@@ -50,104 +201,264 @@ class SettingsScreen extends ConsumerWidget {
       ref.invalidate(pendingReviewItemsProvider);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Đã xóa toàn bộ lịch sử học tập cục bộ.'),
+          SnackBar(
+            content: Text(
+              isEn
+                  ? 'All local learning history has been cleared.'
+                  : 'Đã xóa toàn bộ lịch sử học tập cục bộ.',
+            ),
           ),
         );
       }
     }
   }
 
-  Future<void> _showPrivacyAndLegalDialog(BuildContext context) async {
+  Future<void> _showPrivacyAndLegalDialog(
+    BuildContext context, {
+    bool initialEnglish = false,
+  }) async {
+    bool showEn = initialEnglish;
     await showDialog<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Row(
-          children: [
-            Icon(Icons.verified_user_rounded, color: AppColors.primary, size: 22),
-            SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                'Quyền riêng tư & Pháp lý',
-                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
-              ),
-            ),
-          ],
-        ),
-        content: const SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
             children: [
-              Text(
-                '1. Bảo vệ dữ liệu cá nhân (Offline-First)',
-                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5),
+              const Icon(
+                Icons.verified_user_rounded,
+                color: AppColors.primary,
+                size: 22,
               ),
-              SizedBox(height: 4),
-              Text(
-                '• Solfa hoạt động 100% ngoại tuyến (Offline-first) cho toàn bộ tính năng học tập và máy đếm nhịp.\n'
-                '• Ứng dụng KHÔNG yêu cầu đăng ký tài khoản, KHÔNG thu thập họ tên, email, vị trí, danh bạ hay microphone.\n'
-                '• Lịch sử học tập và cài đặt chỉ lưu cục bộ trên thiết bị của bạn (SQLite) và có thể xóa vĩnh viễn bất kỳ lúc nào tại mục "Xóa dữ liệu lịch sử học tập" (tuân thủ Nghị định 13/2023/NĐ-CP & Google Play Data Safety).',
-                style: TextStyle(fontSize: 12.5, height: 1.42),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  showEn
+                      ? 'Privacy & Legal Compliance'
+                      : 'Quyền riêng tư & Pháp lý',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
               ),
-              SizedBox(height: 12),
-              Text(
-                '2. Bản quyền âm thanh & Nội dung học thuật',
-                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5),
-              ),
-              SizedBox(height: 4),
-              Text(
-                '• Toàn bộ mẫu âm thanh nốt nhạc Piano, quãng, vòng hòa âm và tiếng máy đếm nhịp cơ học (44.1kHz PCM WAV) được tổng hợp độc quyền bằng thuật toán xử lý tín hiệu số (DSP) của Solfa.\n'
-                '• Nội dung nhạc lý thuộc phạm vi kiến thức âm nhạc phổ quát, không sử dụng bản ghi âm hoặc tác phẩm có bản quyền của bên thứ ba.',
-                style: TextStyle(fontSize: 12.5, height: 1.42),
-              ),
-              SizedBox(height: 12),
-              Text(
-                '3. Chính sách Quảng cáo tự nguyện',
-                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5),
-              ),
-              SizedBox(height: 4),
-              Text(
-                '• Solfa cam kết không hiển thị quảng cáo tự động gây gián đoạn bài học.\n'
-                '• Quyền kết nối Internet chỉ được sử dụng khi bạn chủ động bấm xem video tại mục "Hỗ trợ nhà phát triển".',
-                style: TextStyle(fontSize: 12.5, height: 1.42),
-              ),
-              SizedBox(height: 12),
-              Text(
-                '4. Quy định Đơn vị thưởng ảo (Gem)',
-                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5),
-              ),
-              SizedBox(height: 4),
-              Text(
-                '• "Gem" là đơn vị điểm thưởng nội bộ dùng để mở khóa phiên luyện tập chuyên sâu 1 tiếng (50 Gem) hoặc đổi lượt Đấu Trường.\n'
-                '• Gem được nhận miễn phí thông qua nhiệm vụ học tập hàng ngày, thăng hạng Đấu Trường hoặc xem video ủng hộ tự nguyện.\n'
-                '• Gem hoàn toàn KHÔNG có giá trị tiền mặt, KHÔNG mua bán bằng tiền thật, KHÔNG chuyển nhượng và KHÔNG quy đổi/rút thành tiền dưới mọi hình thức.',
-                style: TextStyle(fontSize: 12.5, height: 1.42),
-              ),
-              SizedBox(height: 12),
-              Text(
-                '5. Cơ chế Chống gian lận & Bảo vệ toàn vẹn (SolfaIntegrityGuard)',
-                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5),
-              ),
-              SizedBox(height: 4),
-              Text(
-                '• Ứng dụng tích hợp chữ ký băm (Salted Checksum Signature) bảo vệ số dư Gem, Sao xếp hạng và tiến độ nhiệm vụ cục bộ.\n'
-                '• Hệ thống kiểm tra đồng hồ đơn điệu (Monotonic Clock Guard) tự động phát hiện hành vi tua ngược hoặc chỉnh lùi giờ thiết bị nhằm trục lợi nhiệm vụ hàng ngày. Nếu phát hiện can thiệp trái phép, dữ liệu gian lận sẽ tự động khôi phục về trạng thái hợp lệ.',
-                style: TextStyle(fontSize: 12.5, height: 1.42),
+              InkWell(
+                key: const Key('btn_toggle_legal_language'),
+                borderRadius: BorderRadius.circular(99),
+                onTap: () => setDialogState(() => showEn = !showEn),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(99),
+                    border: Border.all(
+                      color: AppColors.primary.withOpacity(0.35),
+                    ),
+                  ),
+                  child: Text(
+                    showEn ? '🇻🇳 VI' : '🇬🇧 EN',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
-        ),
-        actions: [
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              minimumSize: const Size(110, 40),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: showEn
+                  ? const [
+                      Text(
+                        '1. Personal Data Protection (100% Offline-First, GDPR & CCPA)',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13.5,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        '• Solfa operates 100% offline for all music learning, ear training, Piano/Guitar studios, and metronome features.\n'
+                        '• The app does NOT require user registration and does NOT collect names, emails, GPS location, contacts, or microphone data.\n'
+                        '• All learning progress and settings are stored strictly locally on your device (SQLite) and can be permanently erased at any time via "Clear Learning History" (compliant with EU GDPR, US CCPA, VN Decree 13/2023/ND-CP & Google Play Data Safety).',
+                        style: TextStyle(fontSize: 12.5, height: 1.42),
+                      ),
+                      SizedBox(height: 12),
+                      Text(
+                        '2. EU Geo-blocking Regulation (EU) 2018/302 & Global Distribution (174+ Countries)',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13.5,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        '• In compliance with Regulation (EU) 2018/302 of the European Parliament and of the Council on addressing unjustified geo-blocking, Solfa provides equal, non-discriminatory access across all 27 EU/EEA Member States and 174+ countries worldwide.\n'
+                        '• Solfa applies zero regional restrictions, zero nationality/residence discrimination, and automatically adapts interface language (Vietnamese / English) solely via local device locale settings.',
+                        style: TextStyle(fontSize: 12.5, height: 1.42),
+                      ),
+                      SizedBox(height: 12),
+                      Text(
+                        '3. Audio DSP & Educational Content Copyright',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13.5,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        '• All Piano notes, Guitar acoustic plucked strings, intervals, chord progressions, and mechanical metronome clicks (44.1kHz PCM WAV) are synthesized in-house via Solfa DSP algorithms.\n'
+                        '• All music theory curricula and melodic exercises belong to universal music theory and Public Domain works.',
+                        style: TextStyle(fontSize: 12.5, height: 1.42),
+                      ),
+                      SizedBox(height: 12),
+                      Text(
+                        '4. Voluntary Rewarded Ads Policy',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13.5,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        '• Solfa never displays forced pop-up or interstitial ads that interrupt lessons.\n'
+                        '• Internet access is only used when you voluntarily choose to watch a short video in "Support Developer".',
+                        style: TextStyle(fontSize: 12.5, height: 1.42),
+                      ),
+                      SizedBox(height: 12),
+                      Text(
+                        '5. Virtual Reward Unit (Gem) Terms',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13.5,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        '• "Gem" is a free in-app reward unit earned via daily goals, Battle Arena ranks, or voluntary support videos.\n'
+                        '• Gems have NO real-world monetary value, cannot be purchased with real money, and cannot be cashed out or transferred.',
+                        style: TextStyle(fontSize: 12.5, height: 1.42),
+                      ),
+                      SizedBox(height: 12),
+                      Text(
+                        '6. Anti-Tamper & Integrity Guard (SolfaIntegrityGuard)',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13.5,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        '• Protected by SHA-256 salted checksum signatures and Monotonic Clock Guard against device clock rollback.',
+                        style: TextStyle(fontSize: 12.5, height: 1.42),
+                      ),
+                    ]
+                  : const [
+                      Text(
+                        '1. Bảo vệ dữ liệu cá nhân (Offline-First, GDPR & Nghị định 13)',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13.5,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        '• Solfa hoạt động 100% ngoại tuyến (Offline-first) cho toàn bộ tính năng học tập Piano, Guitar và máy đếm nhịp.\n'
+                        '• Ứng dụng KHÔNG yêu cầu đăng ký tài khoản, KHÔNG thu thập họ tên, email, vị trí GPS, danh bạ hay microphone.\n'
+                        '• Lịch sử học tập và cài đặt chỉ lưu cục bộ trên thiết bị của bạn (SQLite) và có thể xóa vĩnh viễn bất kỳ lúc nào tại mục "Xóa dữ liệu lịch sử học tập" (tuân thủ Nghị định 13/2023/NĐ-CP, GDPR Châu Âu, CCPA Hoa Kỳ & Google Play Data Safety).',
+                        style: TextStyle(fontSize: 12.5, height: 1.42),
+                      ),
+                      SizedBox(height: 12),
+                      Text(
+                        '2. Quy định Chống chặn khu vực địa lý (EU) 2018/302 & Phân phối 174+ Quốc gia',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13.5,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        '• Tuân thủ Quy định (EU) 2018/302 của Nghị viện và Hội đồng Châu Âu về chống chặn theo khu vực địa lý (Geo-blocking Regulation), Solfa cung cấp quyền truy cập bình đẳng, không phân biệt quốc tịch hay nơi cư trú tại toàn bộ 27 quốc gia Liên minh Châu Âu (EU/EEA) và hơn 174 quốc gia/vùng lãnh thổ trên Google Play.\n'
+                        '• Ứng dụng không giới hạn tính năng theo lãnh thổ và tự động hỗ trợ đa ngôn ngữ (Tiếng Việt & Tiếng Anh Quốc tế) dựa trên cài đặt vùng cục bộ của thiết bị.',
+                        style: TextStyle(fontSize: 12.5, height: 1.42),
+                      ),
+                      SizedBox(height: 12),
+                      Text(
+                        '3. Bản quyền âm thanh & Nội dung học thuật',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13.5,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        '• Toàn bộ mẫu âm thanh nốt nhạc Piano, dây đàn Guitar Acoustic, quãng, vòng hòa âm và tiếng máy đếm nhịp cơ học (44.1kHz PCM WAV) được tổng hợp độc quyền bằng thuật toán xử lý tín hiệu số (DSP) của Solfa.\n'
+                        '• Nội dung nhạc lý thuộc phạm vi kiến thức âm nhạc phổ quát và tác phẩm Public Domain, không sử dụng bản ghi âm có bản quyền của bên thứ ba.',
+                        style: TextStyle(fontSize: 12.5, height: 1.42),
+                      ),
+                      SizedBox(height: 12),
+                      Text(
+                        '4. Chính sách Quảng cáo tự nguyện',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13.5,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        '• Solfa cam kết không hiển thị quảng cáo tự động gây gián đoạn bài học.\n'
+                        '• Quyền kết nối Internet chỉ được sử dụng khi bạn chủ động bấm xem video tại mục "Hỗ trợ nhà phát triển".',
+                        style: TextStyle(fontSize: 12.5, height: 1.42),
+                      ),
+                      SizedBox(height: 12),
+                      Text(
+                        '5. Quy định Đơn vị thưởng ảo (Gem)',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13.5,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        '• "Gem" là đơn vị điểm thưởng nội bộ dùng để mở khóa phiên luyện tập chuyên sâu 1 tiếng (50 Gem), tính năng Studio hoặc đổi lượt Đấu Trường.\n'
+                        '• Gem hoàn toàn KHÔNG có giá trị tiền mặt, KHÔNG mua bán bằng tiền thật, KHÔNG chuyển nhượng và KHÔNG quy đổi/rút thành tiền dưới mọi hình thức.',
+                        style: TextStyle(fontSize: 12.5, height: 1.42),
+                      ),
+                      SizedBox(height: 12),
+                      Text(
+                        '6. Cơ chế Chống gian lận & Bảo vệ toàn vẹn (SolfaIntegrityGuard)',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13.5,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        '• Ứng dụng tích hợp chữ ký băm (Salted Checksum Signature) bảo vệ số dư Gem, Sao xếp hạng và tiến độ nhiệm vụ cục bộ.\n'
+                        '• Hệ thống kiểm tra đồng hồ đơn điệu (Monotonic Clock Guard) tự động phát hiện hành vi chỉnh lùi giờ thiết bị nhằm trục lợi nhiệm vụ hàng ngày.',
+                        style: TextStyle(fontSize: 12.5, height: 1.42),
+                      ),
+                    ],
             ),
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Đã hiểu'),
           ),
-        ],
+          actions: [
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size(110, 40),
+              ),
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text(showEn ? 'Got it' : 'Đã hiểu'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -160,12 +471,14 @@ class SettingsScreen extends ConsumerWidget {
     final selectedDuration = ref.watch(selectedPracticeDurationProvider);
     final adState = ref.watch(rewardedAdProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isEn = settings.isEnglish;
+    final country = settings.detectedCountry;
 
     return SolfaBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(
-          title: const Text('Cài đặt hệ thống'),
+          title: Text(isEn ? 'System Settings' : 'Cài đặt hệ thống'),
         ),
         body: ListView(
           physics: const AlwaysScrollableScrollPhysics(
@@ -220,7 +533,9 @@ class SettingsScreen extends ConsumerWidget {
                           ),
                           const SizedBox(height: 3),
                           Text(
-                            '7 chủ đề cảm âm & đọc khuông nhạc • Đàn C3–C5 • Metronome',
+                            isEn
+                                ? 'Piano & Guitar Studio • 11 Topics • 174+ Countries'
+                                : '7 chủ đề cảm âm & đọc khuông nhạc • Đàn C3–C5 • Guitar',
                             style: TextStyle(
                               fontSize: 12.5,
                               color:
@@ -236,10 +551,202 @@ class SettingsScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
 
+            // 0.5 Quốc gia & Ngôn ngữ (Region & Language + EU 2018/302)
+            _SectionHeader(
+              icon: Icons.public_rounded,
+              title: isEn
+                  ? 'Country, Region & Language'
+                  : 'Quốc gia, Khu vực & Ngôn ngữ',
+            ),
+            const SizedBox(height: 8),
+            Card(
+              key: const Key('card_region_language'),
+              child: Padding(
+                padding: const EdgeInsets.all(14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 38,
+                          height: 38,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(11),
+                          ),
+                          child: Text(
+                            country.flagEmoji,
+                            style: const TextStyle(fontSize: 20),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      '${country.displayName(isEn)} (${country.countryCode})',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 1.5,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.correct.withOpacity(0.14),
+                                      borderRadius: BorderRadius.circular(99),
+                                    ),
+                                    child: Text(
+                                      settings.countryCodeOverride.isEmpty
+                                          ? (isEn ? 'Auto Locale' : 'Tự động')
+                                          : (isEn ? 'Selected' : 'Đã chọn'),
+                                      style: const TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w800,
+                                        color: AppColors.correct,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                '${country.regulatoryRegion} • EU 2018/302 Ready',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  color: Theme.of(context)
+                                      .textTheme
+                                      .bodySmall
+                                      ?.color,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        TextButton.icon(
+                          key: const Key('btn_select_country'),
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            minimumSize: const Size(0, 32),
+                          ),
+                          onPressed: () => _showCountrySelectorModal(
+                            context,
+                            settings,
+                            notifier,
+                          ),
+                          icon: const Icon(Icons.edit_location_alt_outlined,
+                              size: 15),
+                          label: Text(
+                            isEn ? 'Region' : 'Đổi vùng',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      isEn
+                          ? 'Display Language & Music Notation'
+                          : 'Ngôn ngữ hiển thị & Ký hiệu nhạc lý',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      key: const Key('segmented_language_mode'),
+                      children: [
+                        _DurationChoiceButton(
+                          key: const Key('btn_lang_auto'),
+                          label: isEn ? 'Auto (${country.countryCode})' : 'Tự động (${country.countryCode})',
+                          isSelected: settings.languageMode == 'auto',
+                          isDark: isDark,
+                          onTap: () => notifier.setLanguageMode('auto'),
+                        ),
+                        const SizedBox(width: 6),
+                        _DurationChoiceButton(
+                          key: const Key('btn_lang_vi'),
+                          label: '🇻🇳 Tiếng Việt',
+                          isSelected: settings.languageMode == 'vi',
+                          isDark: isDark,
+                          onTap: () => notifier.setLanguageMode('vi'),
+                        ),
+                        const SizedBox(width: 6),
+                        _DurationChoiceButton(
+                          key: const Key('btn_lang_en'),
+                          label: '🇬🇧 English',
+                          isSelected: settings.languageMode == 'en',
+                          isDark: isDark,
+                          onTap: () => notifier.setLanguageMode('en'),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 7,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.music_note_rounded,
+                            size: 15,
+                            color: AppColors.primary,
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              isEn
+                                  ? 'Notation: Standard C - D - E - F - G - A - B (Solfège Do - Re - Mi)'
+                                  : 'Ký hiệu: Song ngữ Đô - Rê - Mi - Fa - Sol - La - Si (C - D - E)',
+                              style: const TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
             // 1. Giao diện nền Sáng / Tối
-            const _SectionHeader(
+            _SectionHeader(
               icon: Icons.palette_outlined,
-              title: 'Giao diện & Nền hiển thị',
+              title: isEn
+                  ? 'Theme & Appearance'
+                  : 'Giao diện & Nền hiển thị',
             ),
             const SizedBox(height: 8),
             Card(
@@ -248,9 +755,11 @@ class SettingsScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Chọn chế độ hình nền âm nhạc (Sáng / Tối)',
-                      style: TextStyle(
+                    Text(
+                      isEn
+                          ? 'Choose display mode (Light / Dark / System)'
+                          : 'Chọn chế độ hình nền âm nhạc (Sáng / Tối)',
+                      style: const TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 13.5,
                       ),
@@ -260,7 +769,7 @@ class SettingsScreen extends ConsumerWidget {
                       key: const Key('segmented_theme_mode'),
                       children: [
                         _ThemeModeCardButton(
-                          label: 'Nền Sáng',
+                          label: isEn ? 'Light' : 'Nền Sáng',
                           icon: Icons.wb_sunny_rounded,
                           isSelected: settings.themeMode == ThemeMode.light,
                           isDark: isDark,
@@ -268,7 +777,7 @@ class SettingsScreen extends ConsumerWidget {
                         ),
                         const SizedBox(width: 8),
                         _ThemeModeCardButton(
-                          label: 'Nền Tối',
+                          label: isEn ? 'Dark' : 'Nền Tối',
                           icon: Icons.nightlight_round,
                           isSelected: settings.themeMode == ThemeMode.dark,
                           isDark: isDark,
@@ -276,7 +785,7 @@ class SettingsScreen extends ConsumerWidget {
                         ),
                         const SizedBox(width: 8),
                         _ThemeModeCardButton(
-                          label: 'Tự động',
+                          label: isEn ? 'System' : 'Tự động',
                           icon: Icons.brightness_auto_rounded,
                           isSelected: settings.themeMode == ThemeMode.system,
                           isDark: isDark,
@@ -292,9 +801,11 @@ class SettingsScreen extends ConsumerWidget {
             const SizedBox(height: 16),
 
             // 2. Cấu hình Phòng luyện tập
-            const _SectionHeader(
+            _SectionHeader(
               icon: Icons.headset_rounded,
-              title: 'Cấu hình Phòng luyện tập',
+              title: isEn
+                  ? 'Practice Room Configuration'
+                  : 'Cấu hình Phòng luyện tập',
             ),
             const SizedBox(height: 8),
             Card(
@@ -306,16 +817,20 @@ class SettingsScreen extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Thời gian luyện tập mặc định',
-                          style: TextStyle(
+                        Text(
+                          isEn
+                              ? 'Default practice duration'
+                              : 'Thời gian luyện tập mặc định',
+                          style: const TextStyle(
                             fontWeight: FontWeight.w700,
                             fontSize: 14,
                           ),
                         ),
                         const SizedBox(height: 3),
                         Text(
-                          'Áp dụng khi bắt đầu phiên luyện và tính điểm nốt đúng/sai',
+                          isEn
+                              ? 'Applied when starting a practice session'
+                              : 'Áp dụng khi bắt đầu phiên luyện và tính điểm nốt đúng/sai',
                           style: TextStyle(
                             fontSize: 12,
                             color:
@@ -326,7 +841,7 @@ class SettingsScreen extends ConsumerWidget {
                         Row(
                           children: [
                             _DurationChoiceButton(
-                              label: '60 giây',
+                              label: isEn ? '60s' : '60 giây',
                               isSelected: selectedDuration == 60,
                               isDark: isDark,
                               onTap: () => ref
@@ -336,7 +851,7 @@ class SettingsScreen extends ConsumerWidget {
                             ),
                             const SizedBox(width: 6),
                             _DurationChoiceButton(
-                              label: '15 phút',
+                              label: isEn ? '15 min' : '15 phút',
                               isSelected: selectedDuration == 900,
                               isDark: isDark,
                               onTap: () => ref
@@ -346,7 +861,7 @@ class SettingsScreen extends ConsumerWidget {
                             ),
                             const SizedBox(width: 6),
                             _DurationChoiceButton(
-                              label: '1 tiếng',
+                              label: isEn ? '1 hour' : '1 tiếng',
                               isSelected: selectedDuration == 3600,
                               isDark: isDark,
                               onTap: () => ref
@@ -356,7 +871,7 @@ class SettingsScreen extends ConsumerWidget {
                             ),
                             const SizedBox(width: 6),
                             _DurationChoiceButton(
-                              label: 'Tự do',
+                              label: isEn ? 'Free' : 'Tự do',
                               isSelected: selectedDuration == 0,
                               isDark: isDark,
                               onTap: () => ref
@@ -375,16 +890,20 @@ class SettingsScreen extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Mục tiêu luyện tập hàng ngày',
-                          style: TextStyle(
+                        Text(
+                          isEn
+                              ? 'Daily learning goal'
+                              : 'Mục tiêu luyện tập hàng ngày',
+                          style: const TextStyle(
                             fontWeight: FontWeight.w700,
                             fontSize: 14,
                           ),
                         ),
                         const SizedBox(height: 3),
                         Text(
-                          'Số nốt/câu trả lời mỗi ngày để hoàn thành mục tiêu',
+                          isEn
+                              ? 'Number of questions per day to earn +20 Gems'
+                              : 'Số nốt/câu trả lời mỗi ngày để hoàn thành mục tiêu',
                           style: TextStyle(
                             fontSize: 12,
                             color:
@@ -398,7 +917,7 @@ class SettingsScreen extends ConsumerWidget {
                             for (final goal in const [10, 20, 30, 50]) ...[
                               if (goal != 10) const SizedBox(width: 6),
                               _DurationChoiceButton(
-                                label: '$goal nốt',
+                                label: isEn ? '$goal notes' : '$goal nốt',
                                 isSelected: settings.dailyGoalTarget == goal,
                                 isDark: isDark,
                                 onTap: () async {
@@ -415,14 +934,20 @@ class SettingsScreen extends ConsumerWidget {
                   const Divider(height: 1),
                   SwitchListTile(
                     key: const Key('switch_unlock_all_levels'),
-                    title: const Text(
-                      'Mở khóa sẵn mọi cấp độ',
-                      style:
-                          TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                    title: Text(
+                      isEn
+                          ? 'Unlock all difficulty levels'
+                          : 'Mở khóa sẵn mọi cấp độ',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                      ),
                     ),
-                    subtitle: const Text(
-                      'Cho phép vào ngay cấp Trung bình & Nâng cao',
-                      style: TextStyle(fontSize: 12),
+                    subtitle: Text(
+                      isEn
+                          ? 'Allow immediate access to Intermediate & Advanced levels'
+                          : 'Cho phép vào ngay cấp Trung bình & Nâng cao',
+                      style: const TextStyle(fontSize: 12),
                     ),
                     value: settings.unlockAllLevels,
                     onChanged: (v) => notifier.setUnlockAllLevels(v),
@@ -430,14 +955,20 @@ class SettingsScreen extends ConsumerWidget {
                   const Divider(height: 1),
                   SwitchListTile(
                     key: const Key('switch_auto_play'),
-                    title: const Text(
-                      'Tự động phát âm thanh câu hỏi',
-                      style:
-                          TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                    title: Text(
+                      isEn
+                          ? 'Auto-play question audio'
+                          : 'Tự động phát âm thanh câu hỏi',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                      ),
                     ),
-                    subtitle: const Text(
-                      'Tự phát nốt nhạc ngay khi chuyển sang câu hỏi mới',
-                      style: TextStyle(fontSize: 12),
+                    subtitle: Text(
+                      isEn
+                          ? 'Automatically play the note when a new question appears'
+                          : 'Tự phát nốt nhạc ngay khi chuyển sang câu hỏi mới',
+                      style: const TextStyle(fontSize: 12),
                     ),
                     value: settings.autoPlayQuestionAudio,
                     onChanged: (v) => notifier.setAutoPlayAudio(v),
@@ -449,9 +980,11 @@ class SettingsScreen extends ConsumerWidget {
             const SizedBox(height: 16),
 
             // 3. Âm thanh & Máy đếm nhịp
-            const _SectionHeader(
+            _SectionHeader(
               icon: Icons.volume_up_rounded,
-              title: 'Âm thanh & Máy đếm nhịp cơ',
+              title: isEn
+                  ? 'Audio & Mechanical Metronome'
+                  : 'Âm thanh & Máy đếm nhịp cơ',
             ),
             const SizedBox(height: 8),
             Card(
@@ -465,12 +998,14 @@ class SettingsScreen extends ConsumerWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Expanded(
+                            Expanded(
                               child: Text(
-                                'Âm lượng bài học & Phản hồi',
+                                isEn
+                                    ? 'Lesson & Feedback Volume'
+                                    : 'Âm lượng bài học & Phản hồi',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontWeight: FontWeight.w700,
                                   fontSize: 14,
                                 ),
@@ -521,9 +1056,11 @@ class SettingsScreen extends ConsumerWidget {
                                   size: 17,
                                   color: AppColors.correct,
                                 ),
-                                label: const FittedBox(
+                                label: FittedBox(
                                   fit: BoxFit.scaleDown,
-                                  child: Text('Thử âm Đúng'),
+                                  child: Text(
+                                    isEn ? 'Test Correct' : 'Thử âm Đúng',
+                                  ),
                                 ),
                               ),
                             ),
@@ -544,9 +1081,11 @@ class SettingsScreen extends ConsumerWidget {
                                   size: 17,
                                   color: AppColors.primary,
                                 ),
-                                label: const FittedBox(
+                                label: FittedBox(
                                   fit: BoxFit.scaleDown,
-                                  child: Text('Thử nốt Đô (C4)'),
+                                  child: Text(
+                                    isEn ? 'Test C4 (Do)' : 'Thử nốt Đô (C4)',
+                                  ),
                                 ),
                               ),
                             ),
@@ -557,24 +1096,34 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                   const Divider(height: 1),
                   SwitchListTile(
-                    title: const Text(
-                      'Âm báo phản hồi Đúng / Sai',
-                      style:
-                          TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                    title: Text(
+                      isEn
+                          ? 'Correct / Wrong sound effects'
+                          : 'Âm báo phản hồi Đúng / Sai',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                      ),
                     ),
-                    subtitle: const Text(
-                      'Phát chuông khi trả lời đúng và âm trầm khi sai',
-                      style: TextStyle(fontSize: 12),
+                    subtitle: Text(
+                      isEn
+                          ? 'Play chime on correct answer and low tone on mistake'
+                          : 'Phát chuông khi trả lời đúng và âm trầm khi sai',
+                      style: const TextStyle(fontSize: 12),
                     ),
                     value: settings.feedbackSoundEnabled,
                     onChanged: (v) => notifier.setFeedbackSound(v),
                   ),
                   const Divider(height: 1),
                   SwitchListTile(
-                    title: const Text(
-                      'Rung phản hồi nhẹ (Haptic)',
-                      style:
-                          TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                    title: Text(
+                      isEn
+                          ? 'Haptic vibration feedback'
+                          : 'Rung phản hồi nhẹ (Haptic)',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                      ),
                     ),
                     value: settings.hapticFeedbackEnabled,
                     onChanged: (v) => notifier.setHapticFeedback(v),
@@ -585,9 +1134,11 @@ class SettingsScreen extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Âm sắc Metronome mặc định',
-                          style: TextStyle(
+                        Text(
+                          isEn
+                              ? 'Default Metronome timbre'
+                              : 'Âm sắc Metronome mặc định',
+                          style: const TextStyle(
                             fontWeight: FontWeight.w700,
                             fontSize: 14,
                           ),
@@ -595,11 +1146,11 @@ class SettingsScreen extends ConsumerWidget {
                         const SizedBox(height: 8),
                         Row(
                           children: [
-                            for (final item in const [
+                            for (final item in [
                               ('tempo', 'Tempo Lite'),
-                              ('click', 'Cơ học'),
-                              ('woodblock', 'Gỗ trầm'),
-                              ('bell', 'Chuông'),
+                              ('click', isEn ? 'Mechanical' : 'Cơ học'),
+                              ('woodblock', isEn ? 'Woodblock' : 'Gỗ trầm'),
+                              ('bell', isEn ? 'Bell' : 'Chuông'),
                             ]) ...[
                               if (item.$1 != 'tempo') const SizedBox(width: 6),
                               _DurationChoiceButton(
@@ -622,14 +1173,20 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                   const Divider(height: 1),
                   SwitchListTile(
-                    title: const Text(
-                      'Giữ màn hình luôn sáng khi bật Metronome',
-                      style:
-                          TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                    title: Text(
+                      isEn
+                          ? 'Keep screen awake during Metronome'
+                          : 'Giữ màn hình luôn sáng khi bật Metronome',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                      ),
                     ),
-                    subtitle: const Text(
-                      'Ngăn điện thoại tự tắt màn hình khi đang giữ nhịp',
-                      style: TextStyle(fontSize: 12),
+                    subtitle: Text(
+                      isEn
+                          ? 'Prevent screen sleep while practicing rhythm'
+                          : 'Ngăn điện thoại tự tắt màn hình khi đang giữ nhịp',
+                      style: const TextStyle(fontSize: 12),
                     ),
                     value: settings.keepScreenAwakeOnMetronome,
                     onChanged: (v) => notifier.setKeepScreenAwake(v),
@@ -641,9 +1198,11 @@ class SettingsScreen extends ConsumerWidget {
             const SizedBox(height: 16),
 
             // 4. Hỗ trợ, Quản lý dữ liệu & Pháp lý
-            const _SectionHeader(
+            _SectionHeader(
               icon: Icons.favorite_rounded,
-              title: 'Hỗ trợ Nhà phát triển & Pháp lý',
+              title: isEn
+                  ? 'Support Developer & Legal Compliance'
+                  : 'Hỗ trợ Nhà phát triển & Pháp lý',
             ),
             const SizedBox(height: 8),
 
@@ -693,10 +1252,10 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                   title: Row(
                     children: [
-                      const Expanded(
+                      Expanded(
                         child: Text(
-                          'Hỗ trợ nhà phát triển',
-                          style: TextStyle(
+                          isEn ? 'Support Developer' : 'Hỗ trợ nhà phát triển',
+                          style: const TextStyle(
                             fontWeight: FontWeight.w800,
                             fontSize: 15,
                           ),
@@ -721,7 +1280,7 @@ class SettingsScreen extends ConsumerWidget {
                             const SizedBox(width: 4),
                             Text(
                               adState.supportedCount > 0
-                                  ? '${adState.supportedCount} lần • ${adState.prestigePoints} Gem'
+                                  ? '${adState.supportedCount}x • ${adState.prestigePoints} Gem'
                                   : '${adState.prestigePoints} Gem',
                               style: const TextStyle(
                                 fontSize: 11,
@@ -737,9 +1296,11 @@ class SettingsScreen extends ConsumerWidget {
                   subtitle: Padding(
                     padding: const EdgeInsets.only(top: 4),
                     child: Text(
-                      adState.supportedCount > 0
-                          ? 'Danh hiệu: ${adState.supporterBadgeTitle} • Bấm để nhận thêm Gem'
-                          : 'Xem video ngắn 15s tự nguyện để nhận +100 Gem & Huy hiệu Tri Ân',
+                      isEn
+                          ? 'Watch a short 15s voluntary video to earn +100 Gems & Supporter Badge'
+                          : (adState.supportedCount > 0
+                              ? 'Danh hiệu: ${adState.supporterBadgeTitle} • Bấm để nhận thêm Gem'
+                              : 'Xem video ngắn 15s tự nguyện để nhận +100 Gem & Huy hiệu Tri Ân'),
                       style: const TextStyle(
                         fontSize: 12,
                         height: 1.32,
@@ -775,16 +1336,20 @@ class SettingsScreen extends ConsumerWidget {
                         size: 20,
                       ),
                     ),
-                    title: const Text(
-                      'Bảo vệ chống gian lận & toàn vẹn Gem',
-                      style: TextStyle(
+                    title: Text(
+                      isEn
+                          ? 'Anti-Tamper & Gem Integrity Guard'
+                          : 'Bảo vệ chống gian lận & toàn vẹn Gem',
+                      style: const TextStyle(
                         fontWeight: FontWeight.w800,
                         fontSize: 14.5,
                       ),
                     ),
-                    subtitle: const Text(
-                      'Chữ ký số SHA-Salt & kiểm tra đồng hồ chống chỉnh giờ: Đang bật',
-                      style: TextStyle(fontSize: 12),
+                    subtitle: Text(
+                      isEn
+                          ? 'SHA-256 salted signature & Monotonic Clock Guard: Active'
+                          : 'Chữ ký số SHA-Salt & kiểm tra đồng hồ chống chỉnh giờ: Đang bật',
+                      style: const TextStyle(fontSize: 12),
                     ),
                     trailing: Container(
                       padding: const EdgeInsets.symmetric(
@@ -795,16 +1360,19 @@ class SettingsScreen extends ConsumerWidget {
                         color: AppColors.correct.withOpacity(0.14),
                         borderRadius: BorderRadius.circular(99),
                       ),
-                      child: const Text(
-                        'An toàn',
-                        style: TextStyle(
+                      child: Text(
+                        isEn ? 'Secure' : 'An toàn',
+                        style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w800,
                           color: AppColors.correct,
                         ),
                       ),
                     ),
-                    onTap: () => _showPrivacyAndLegalDialog(context),
+                    onTap: () => _showPrivacyAndLegalDialog(
+                      context,
+                      initialEnglish: isEn,
+                    ),
                   ),
                   const Divider(height: 1),
                   ListTile(
@@ -822,19 +1390,26 @@ class SettingsScreen extends ConsumerWidget {
                         size: 20,
                       ),
                     ),
-                    title: const Text(
-                      'Chính sách Quyền riêng tư & Pháp lý',
-                      style: TextStyle(
+                    title: Text(
+                      isEn
+                          ? 'Privacy Policy & EU 2018/302 Legal Terms'
+                          : 'Chính sách Quyền riêng tư & Pháp lý (EU 2018/302)',
+                      style: const TextStyle(
                         fontWeight: FontWeight.w800,
                         fontSize: 14.5,
                       ),
                     ),
-                    subtitle: const Text(
-                      'Bảo vệ dữ liệu cá nhân, quy định Gem, chống gian lận & bản quyền',
-                      style: TextStyle(fontSize: 12),
+                    subtitle: Text(
+                      isEn
+                          ? 'GDPR, EU Geo-blocking 2018/302, Offline Data Safety & Gem Terms'
+                          : 'Bảo vệ dữ liệu, Quy định EU 2018/302 (174+ quốc gia), Gem & bản quyền',
+                      style: const TextStyle(fontSize: 12),
                     ),
                     trailing: const Icon(Icons.chevron_right_rounded),
-                    onTap: () => _showPrivacyAndLegalDialog(context),
+                    onTap: () => _showPrivacyAndLegalDialog(
+                      context,
+                      initialEnglish: isEn,
+                    ),
                   ),
                   const Divider(height: 1),
                   ListTile(
@@ -852,16 +1427,20 @@ class SettingsScreen extends ConsumerWidget {
                         size: 20,
                       ),
                     ),
-                    title: const Text(
-                      'Giấy phép mã nguồn mở',
-                      style: TextStyle(
+                    title: Text(
+                      isEn
+                          ? 'Open Source Licenses'
+                          : 'Giấy phép mã nguồn mở',
+                      style: const TextStyle(
                         fontWeight: FontWeight.w800,
                         fontSize: 14.5,
                       ),
                     ),
-                    subtitle: const Text(
-                      'Danh mục thư viện phần mềm nguồn mở (MIT / BSD / Apache)',
-                      style: TextStyle(fontSize: 12),
+                    subtitle: Text(
+                      isEn
+                          ? 'Open source software libraries (MIT / BSD / Apache)'
+                          : 'Danh mục thư viện phần mềm nguồn mở (MIT / BSD / Apache)',
+                      style: const TextStyle(fontSize: 12),
                     ),
                     trailing: const Icon(Icons.chevron_right_rounded),
                     onTap: () => showLicensePage(
@@ -872,8 +1451,9 @@ class SettingsScreen extends ConsumerWidget {
                         padding: EdgeInsets.all(8.0),
                         child: SolfaLogo(size: 56),
                       ),
-                      applicationLegalese:
-                          '© 2026 Solfa Studio. Bản quyền âm thanh DSP 44.1kHz và nội dung nhạc lý thuộc về Solfa.',
+                      applicationLegalese: isEn
+                          ? '© 2026 Solfa Studio. 44.1kHz DSP audio synthesis and music theory content belong to Solfa.'
+                          : '© 2026 Solfa Studio. Bản quyền âm thanh DSP 44.1kHz và nội dung nhạc lý thuộc về Solfa.',
                     ),
                   ),
                   const Divider(height: 1),
@@ -892,17 +1472,21 @@ class SettingsScreen extends ConsumerWidget {
                         size: 21,
                       ),
                     ),
-                    title: const Text(
-                      'Xóa dữ liệu lịch sử học tập',
-                      style: TextStyle(
+                    title: Text(
+                      isEn
+                          ? 'Clear Learning History'
+                          : 'Xóa dữ liệu lịch sử học tập',
+                      style: const TextStyle(
                         fontWeight: FontWeight.w800,
                         fontSize: 14.5,
                         color: AppColors.wrong,
                       ),
                     ),
-                    subtitle: const Text(
-                      'Đặt lại toàn bộ điểm số, thống kê và câu ôn tập',
-                      style: TextStyle(fontSize: 12),
+                    subtitle: Text(
+                      isEn
+                          ? 'Reset all local scores, statistics, and review items'
+                          : 'Đặt lại toàn bộ điểm số, thống kê và câu ôn tập',
+                      style: const TextStyle(fontSize: 12),
                     ),
                     onTap: () => _confirmClearData(context, ref),
                   ),
@@ -1022,6 +1606,7 @@ class _DurationChoiceButton extends StatelessWidget {
   final VoidCallback onTap;
 
   const _DurationChoiceButton({
+    super.key,
     required this.label,
     required this.isSelected,
     required this.isDark,

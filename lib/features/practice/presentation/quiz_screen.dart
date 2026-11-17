@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/theme/app_colors.dart';
 import '../../../app/widgets/solfa_background.dart';
+import '../../../core/localization/app_locale.dart';
 import '../../../core/models/domain_models.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/utils/note_formatter.dart';
@@ -229,6 +230,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
 
     final audioService = ref.watch(audioServiceProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isEn = ref.watch(appSettingsProvider).isEnglish;
 
     if (viewState.isLoading) {
       return const SolfaBackground(
@@ -244,7 +246,9 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
       return SolfaBackground(
         child: Scaffold(
           backgroundColor: Colors.transparent,
-          appBar: AppBar(title: const Text('Phòng luyện tập')),
+          appBar: AppBar(
+            title: Text(isEn ? 'Practice Room' : 'Phòng luyện tập'),
+          ),
           body: Center(
             child: Padding(
               padding: const EdgeInsets.all(24.0),
@@ -252,13 +256,16 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    viewState.errorMessage ?? 'Không có câu hỏi khả dụng.',
+                    viewState.errorMessage ??
+                        (isEn
+                            ? 'No questions available.'
+                            : 'Không có câu hỏi khả dụng.'),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: _safeLeaveQuiz,
-                    child: const Text('Quay lại'),
+                    child: Text(isEn ? 'Back' : 'Quay lại'),
                   ),
                 ],
               ),
@@ -288,7 +295,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
           appBar: AppBar(
             leading: IconButton(
               icon: const Icon(Icons.close_rounded),
-              tooltip: 'Thoát phiên',
+              tooltip: isEn ? 'Exit session' : 'Thoát phiên',
               onPressed: () async {
                 final canLeave = await _confirmExitSession();
                 if (canLeave && context.mounted) {
@@ -298,8 +305,12 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
             ),
             title: Text(
               viewState.isContinuousScoringMode
-                  ? 'Phòng luyện tập • Nốt #${viewState.currentIndex + 1}'
-                  : 'Câu ${viewState.currentIndex + 1} / ${viewState.questionsLength}',
+                  ? (isEn
+                      ? 'Practice Room • Note #${viewState.currentIndex + 1}'
+                      : 'Phòng luyện tập • Nốt #${viewState.currentIndex + 1}')
+                  : (isEn
+                      ? 'Question ${viewState.currentIndex + 1} / ${viewState.questionsLength}'
+                      : 'Câu ${viewState.currentIndex + 1} / ${viewState.questionsLength}'),
               style:
                   const TextStyle(fontSize: 16.5, fontWeight: FontWeight.w800),
             ),
@@ -327,10 +338,12 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
                     _goToResultOnce();
                   },
                   icon: const Icon(Icons.emoji_events_outlined, size: 16),
-                  label: const Text(
-                    'Tính điểm',
-                    style:
-                        TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800),
+                  label: Text(
+                    isEn ? 'Finish' : 'Tính điểm',
+                    style: const TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
               ),
@@ -358,7 +371,10 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Text(
-                          _concisePrompt(question.prompt),
+                          AppLocale.localizeMusicalText(
+                            _concisePrompt(question.prompt),
+                            isEn,
+                          ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
@@ -401,8 +417,12 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
                                       fit: BoxFit.scaleDown,
                                       child: Text(
                                         isPlaying
-                                            ? 'Đang phát... (Nghe lại)'
-                                            : 'Nghe lại âm thanh câu hỏi',
+                                            ? (isEn
+                                                ? 'Playing... (Replay)'
+                                                : 'Đang phát... (Nghe lại)')
+                                            : (isEn
+                                                ? 'Replay Question Audio'
+                                                : 'Nghe lại âm thanh câu hỏi'),
                                         style: const TextStyle(fontSize: 14),
                                       ),
                                     ),
@@ -425,9 +445,9 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
                                       Icons.music_note_outlined,
                                       size: 17,
                                     ),
-                                    label: const Text(
-                                      'Đô C4',
-                                      style: TextStyle(fontSize: 13),
+                                    label: Text(
+                                      isEn ? 'C4 Ref' : 'Đô C4',
+                                      style: const TextStyle(fontSize: 13),
                                     ),
                                   ),
                                 ],
@@ -460,11 +480,11 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
                 ),
 
                 const SizedBox(height: 8),
-                const Padding(
-                  padding: EdgeInsets.only(left: 4, bottom: 5),
+                Padding(
+                  padding: const EdgeInsets.only(left: 4, bottom: 5),
                   child: Text(
-                    'Chọn đáp án:',
-                    style: TextStyle(
+                    isEn ? 'Select answer:' : 'Chọn đáp án:',
+                    style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w800,
                     ),
@@ -477,6 +497,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
                   isAnswered: isCurrentAnswered,
                   selectedOptionId: viewState.selectedOption?.id,
                   isDark: isDark,
+                  isEn: isEn,
                 ),
 
                 // 3. Instant Feedback Card (UI-06)
@@ -486,10 +507,17 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
                     padding: const EdgeInsets.only(top: 6),
                     child: _FeedbackBanner(
                       isCorrect: isCurrentCorrect,
-                      correctLabel: question.correctOption.label,
-                      explanation: question.explanation,
+                      correctLabel: AppLocale.localizeMusicalText(
+                        question.correctOption.label,
+                        isEn,
+                      ),
+                      explanation: AppLocale.localizeMusicalText(
+                        question.explanation,
+                        isEn,
+                      ),
                       isLastQuestion: isLastFixedQuestion,
                       isDark: isDark,
+                      isEn: isEn,
                       onReplayAudio: () {
                         audioService.playAsset(question.audioAsset);
                       },
@@ -518,6 +546,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
     required bool isAnswered,
     required String? selectedOptionId,
     required bool isDark,
+    required bool isEn,
   }) {
     const badges = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
     final rows = <Widget>[];
@@ -537,6 +566,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
               isAnswered: isAnswered,
               isSelected: selectedOptionId == opt.id,
               isDark: isDark,
+              isEn: isEn,
               onTap: () => _handleSelectOption(opt),
             ),
           ),
@@ -564,6 +594,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
                     isAnswered: isAnswered,
                     isSelected: selectedOptionId == first.id,
                     isDark: isDark,
+                    isEn: isEn,
                     onTap: () => _handleSelectOption(first),
                   ),
                 ),
@@ -575,6 +606,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
                     isAnswered: isAnswered,
                     isSelected: selectedOptionId == second.id,
                     isDark: isDark,
+                    isEn: isEn,
                     onTap: () => _handleSelectOption(second),
                   ),
                 ),
@@ -592,6 +624,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
               isAnswered: isAnswered,
               isSelected: selectedOptionId == first.id,
               isDark: isDark,
+              isEn: isEn,
               onTap: () => _handleSelectOption(first),
             ),
           ),
@@ -743,6 +776,7 @@ class _OptionButton extends StatelessWidget {
   final bool isAnswered;
   final bool isSelected;
   final bool isDark;
+  final bool isEn;
   final VoidCallback onTap;
 
   const _OptionButton({
@@ -751,11 +785,13 @@ class _OptionButton extends StatelessWidget {
     required this.isAnswered,
     required this.isSelected,
     required this.isDark,
+    this.isEn = false,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final displayLabel = AppLocale.localizeMusicalText(option.label, isEn);
     Color borderColor = AppColors.primary.withOpacity(0.24);
     Color? bgColor;
     Color badgeBgColor = AppColors.primary.withOpacity(0.12);
@@ -821,11 +857,11 @@ class _OptionButton extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  option.label,
+                  displayLabel,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: option.label.length > 26 ? 13.0 : 14.0,
+                    fontSize: displayLabel.length > 26 ? 13.0 : 14.0,
                     fontWeight: FontWeight.w700,
                     height: 1.22,
                   ),
@@ -847,6 +883,7 @@ class _FeedbackBanner extends StatelessWidget {
   final String explanation;
   final bool isLastQuestion;
   final bool isDark;
+  final bool isEn;
   final VoidCallback onReplayAudio;
   final VoidCallback onContinue;
 
@@ -856,6 +893,7 @@ class _FeedbackBanner extends StatelessWidget {
     required this.explanation,
     required this.isLastQuestion,
     required this.isDark,
+    this.isEn = false,
     required this.onReplayAudio,
     required this.onContinue,
   });
@@ -885,10 +923,12 @@ class _FeedbackBanner extends StatelessWidget {
               size: 22,
             ),
             const SizedBox(width: 8),
-            const Expanded(
+            Expanded(
               child: Text(
-                'Chính xác! +10 điểm • Tự chuyển nốt...',
-                style: TextStyle(
+                isEn
+                    ? 'Correct! +10 pts • Next note...'
+                    : 'Chính xác! +10 điểm • Tự chuyển nốt...',
+                style: const TextStyle(
                   fontSize: 14.5,
                   fontWeight: FontWeight.w800,
                   color: AppColors.correct,
@@ -909,7 +949,9 @@ class _FeedbackBanner extends StatelessWidget {
               ),
               onPressed: onContinue,
               child: Text(
-                isLastQuestion ? 'Kết quả' : 'Tiếp ngay',
+                isLastQuestion
+                    ? (isEn ? 'Results' : 'Kết quả')
+                    : (isEn ? 'Next' : 'Tiếp ngay'),
                 style: const TextStyle(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w800,
@@ -943,7 +985,9 @@ class _FeedbackBanner extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Chưa chính xác • Đáp án: $correctLabel',
+                  isEn
+                      ? 'Not quite • Correct: $correctLabel'
+                      : 'Chưa chính xác • Đáp án: $correctLabel',
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w800,
@@ -958,7 +1002,7 @@ class _FeedbackBanner extends StatelessWidget {
                 ),
                 onPressed: onReplayAudio,
                 icon: const Icon(Icons.replay_rounded, size: 16),
-                label: const Text('Nghe lại'),
+                label: Text(isEn ? 'Replay' : 'Nghe lại'),
               ),
             ],
           ),
@@ -983,7 +1027,9 @@ class _FeedbackBanner extends StatelessWidget {
               size: 19,
             ),
             label: Text(
-              isLastQuestion ? 'Xem kết quả phiên' : 'Đã hiểu • Nốt tiếp theo',
+              isLastQuestion
+                  ? (isEn ? 'View Session Results' : 'Xem kết quả phiên')
+                  : (isEn ? 'Got it • Next Note' : 'Đã hiểu • Nốt tiếp theo'),
             ),
           ),
         ],
