@@ -28,7 +28,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "vn.chaonote.app"
+        applicationId = "vn.solfa.app.solfa"
         minSdk = 24
         targetSdk = 36
         versionCode = flutter.versionCode

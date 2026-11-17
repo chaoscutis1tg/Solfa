@@ -59,125 +59,39 @@ def draw_crossed_swords(draw: ImageDraw.ImageDraw, cx: int, cy: int, r: int) -> 
 
 
 def draw_chaonote_emblem(size: int = 512, include_badge: bool = True) -> Image.Image:
-    """Draws the Modern Minimalist ChaoNote icon (Indigo/Cyan/Amber Studio Emblem)."""
-    canvas = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    """Loads the official ChaoNote mascot logo (assets/images/chaonote_logo_source.jpg) with clean transparent rounded corners."""
+    src_path = os.path.join(ASSETS_IMG_DIR, "chaonote_logo_source.jpg")
+    src = Image.open(src_path).convert("RGBA")
+    sw, sh = src.size
 
-    pad = int(size * 0.04)
-    radius = int(size * 0.23)
-
-    # Base gradient squircle
-    bg = make_vertical_gradient(size, size, (23, 21, 58), (67, 56, 202))
-    mask = Image.new("L", (size, size), 0)
+    # Create anti-aliased rounded-rectangle alpha mask + remove any dark corner pixels
+    mask = Image.new("L", (sw, sh), 0)
     mdraw = ImageDraw.Draw(mask)
-    mdraw.rounded_rectangle([pad, pad, size - pad, size - pad], radius=radius, fill=255)
-    canvas.paste(bg, (0, 0), mask)
+    pad = 4
+    radius = int(sw * 0.218)
+    mdraw.rounded_rectangle([pad, pad, sw - pad - 1, sh - pad - 1], radius=radius, fill=255)
 
-    # Subtle ambient glow circle inside
-    glow = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    gdraw = ImageDraw.Draw(glow)
-    gdraw.ellipse(
-        [int(size * 0.16), int(size * 0.10), int(size * 0.84), int(size * 0.76)],
-        fill=(56, 189, 248, 60),
-    )
-    glow = glow.filter(ImageFilter.GaussianBlur(radius=int(size * 0.06)))
-    canvas = Image.alpha_composite(canvas, glow)
-    draw = ImageDraw.Draw(canvas)
+    px = src.load()
+    mpx = mask.load()
+    corner_limit = int(sw * 0.23)
+    for y in range(sh):
+        for x in range(sw):
+            in_corner_box = (x < corner_limit or x >= sw - corner_limit) and (
+                y < corner_limit or y >= sh - corner_limit
+            )
+            if in_corner_box:
+                r, g, b, _ = px[x, y]
+                if r < 35 and g < 45 and b < 65:
+                    mpx[x, y] = 0
+                elif mpx[x, y] > 0 and r < 60 and g < 85 and b < 110:
+                    # Soften outer anti-aliased dark edge
+                    mpx[x, y] = min(mpx[x, y], int((r + g + b) * 1.1))
 
-    # Outer border rim
-    draw.rounded_rectangle(
-        [pad, pad, size - pad, size - pad],
-        radius=radius,
-        outline=(129, 140, 248, 200),
-        width=max(2, int(size * 0.015)),
-    )
-
-    # 5-line subtle staff across middle
-    for i in range(5):
-        ly = int(size * (0.29 + i * 0.046))
-        draw.line(
-            [(int(size * 0.14), ly), (int(size * 0.86), ly)],
-            fill=(148, 163, 184, 90),
-            width=max(1, int(size * 0.005)),
-        )
-
-    # Mini Piano Keys motif at bottom-left of emblem
-    pk_top = int(size * 0.51)
-    pk_bot = int(size * 0.67)
-    pk_left = int(size * 0.18)
-    key_w = int(size * 0.055)
-    for k in range(5):
-        kx0 = pk_left + k * (key_w + int(size * 0.008))
-        draw.rounded_rectangle(
-            [kx0, pk_top, kx0 + key_w, pk_bot],
-            radius=int(size * 0.012),
-            fill=(248, 250, 252, 245),
-        )
-    for bk in [0, 1, 3]:
-        bx0 = pk_left + (bk + 1) * (key_w + int(size * 0.008)) - int(key_w * 0.38)
-        draw.rounded_rectangle(
-            [bx0, pk_top, bx0 + int(key_w * 0.65), pk_top + int((pk_bot - pk_top) * 0.60)],
-            radius=int(size * 0.008),
-            fill=(15, 23, 42, 255),
-        )
-
-    # Stylized Golden-Cyan Eighth Note in center-right
-    note_cx = int(size * 0.52)
-    note_cy = int(size * 0.50)
-    rx = int(size * 0.112)
-    ry = int(size * 0.085)
-    stem_x = note_cx + rx - int(size * 0.022)
-    stem_top = int(size * 0.17)
-    stem_w = max(4, int(size * 0.044))
-
-    # Stem
-    draw.rounded_rectangle(
-        [stem_x - stem_w // 2, stem_top, stem_x + stem_w // 2, note_cy],
-        radius=stem_w // 2,
-        fill=(56, 189, 248, 255),
-    )
-    # Flag
-    flag_pts = [
-        (stem_x, stem_top),
-        (stem_x + int(size * 0.19), stem_top + int(size * 0.08)),
-        (stem_x + int(size * 0.16), stem_top + int(size * 0.20)),
-        (stem_x, stem_top + int(size * 0.11)),
-    ]
-    draw.polygon(flag_pts, fill=(251, 191, 36, 255))
-
-    # Notehead
-    draw.ellipse(
-        [note_cx - rx, note_cy - ry, note_cx + rx, note_cy + ry],
-        fill=(56, 189, 248, 255),
-        outline=(255, 255, 255, 240),
-        width=max(2, int(size * 0.012)),
-    )
-    draw.ellipse(
-        [note_cx - int(rx * 0.52), note_cy - int(ry * 0.52), note_cx, note_cy],
-        fill=(224, 242, 254, 210),
-    )
-
-    if include_badge and size >= 128:
-        badge_font = load_font(int(size * 0.118), bold=True)
-        pill_top = int(size * 0.72)
-        pill_bot = int(size * 0.89)
-        pill_left = int(size * 0.12)
-        pill_right = int(size * 0.88)
-        draw.rounded_rectangle(
-            [pill_left, pill_top, pill_right, pill_bot],
-            radius=int(size * 0.065),
-            fill=(15, 23, 42, 245),
-            outline=(251, 191, 36, 235),
-            width=max(2, int(size * 0.011)),
-        )
-        draw.text(
-            ((pill_left + pill_right) // 2, (pill_top + pill_bot) // 2),
-            "ChaoNote",
-            font=badge_font,
-            fill=(255, 255, 255, 255),
-            anchor="mm",
-        )
-
-    return canvas
+    out = Image.new("RGBA", (sw, sh), (0, 0, 0, 0))
+    out.paste(src, (0, 0), mask)
+    if size != sw:
+        out = out.resize((size, size), Image.Resampling.LANCZOS)
+    return out
 
 
 def generate_icons() -> None:
@@ -188,7 +102,7 @@ def generate_icons() -> None:
     icon_512.save(os.path.join(STORE_DIR, "app_icon_512x512.png"), "PNG")
     icon_512.save(os.path.join(STORE_DIR, "image.png"), "PNG")
 
-    logo_256 = draw_chaonote_emblem(256, include_badge=False)
+    logo_256 = draw_chaonote_emblem(256, include_badge=True)
     logo_256.save(os.path.join(ASSETS_IMG_DIR, "solfa_logo.png"), "PNG")
 
     mipmap_sizes = {
@@ -204,97 +118,85 @@ def generate_icons() -> None:
         resized = icon_512.resize((px_size, px_size), Image.Resampling.LANCZOS)
         resized.save(os.path.join(out_dir, "ic_launcher.png"), "PNG")
 
+    web_icons_dir = os.path.join(BASE_DIR, "web", "icons")
+    if os.path.exists(web_icons_dir):
+        for fname, px_size in [
+            ("Icon-192.png", 192),
+            ("Icon-512.png", 512),
+            ("Icon-maskable-192.png", 192),
+            ("Icon-maskable-512.png", 512),
+        ]:
+            icon_512.resize((px_size, px_size), Image.Resampling.LANCZOS).save(
+                os.path.join(web_icons_dir, fname), "PNG"
+            )
+    web_favicon = os.path.join(BASE_DIR, "web", "favicon.png")
+    if os.path.exists(os.path.join(BASE_DIR, "web")):
+        icon_512.resize((64, 64), Image.Resampling.LANCZOS).save(web_favicon, "PNG")
+
 
 def generate_feature_graphic() -> None:
-    """Generates store_listing/feature_graphic_1024x500.png (1024x500)."""
-    w, h = 1024, 500
-    banner = make_vertical_gradient(w, h, (15, 23, 42), (30, 27, 75))
+    """Uses the user's 3D illustrated ChaoNote Studio banner (chaonote_banner_source.jpg) standardized to exact 1024x500 PNG for Google Play Console."""
+    src_banner = os.path.join(ASSETS_IMG_DIR, "chaonote_banner_source.jpg")
+    if os.path.exists(src_banner):
+        im = Image.open(src_banner).convert("RGB")
+        # Crop 6px top and 6px bottom from 1024x512 so 1024x500 has zero aspect ratio distortion
+        if im.size == (1024, 512):
+            im = im.crop((0, 6, 1024, 506))
+        else:
+            im = im.resize((1024, 500), Image.Resampling.LANCZOS)
+        im.save(os.path.join(STORE_DIR, "feature_graphic_1024x500.png"), "PNG")
+        return
 
-    # Add soft indigo & amber studio spotlights
-    glow = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-    gdraw = ImageDraw.Draw(glow)
-    gdraw.ellipse([-80, -60, 460, 480], fill=(79, 70, 229, 95))
-    gdraw.ellipse([620, 40, 1080, 520], fill=(217, 119, 6, 70))
-    # Subtle 5-line staff on the glow layer so it stays behind cards
-    for i in range(5):
-        y = 360 + i * 18
-        gdraw.line([(0, y), (w, y)], fill=(148, 163, 184, 32), width=2)
-    glow = glow.filter(ImageFilter.GaussianBlur(radius=1))
-    banner = Image.alpha_composite(banner, glow)
-    draw = ImageDraw.Draw(banner)
 
-    # Left: ChaoNote 268x268 Emblem
-    emblem = draw_chaonote_emblem(268, include_badge=True)
-    banner.alpha_composite(emblem, (48, 86))
+def generate_poster_screenshot() -> None:
+    """Fixes the Vietnamese diacritics on chaonote_poster_source.jpg and exports a crisp 1080x1920 PNG poster screenshot."""
+    src_poster = os.path.join(ASSETS_IMG_DIR, "chaonote_poster_source.jpg")
+    if not os.path.exists(src_poster):
+        return
+    im = Image.open(src_poster).convert("RGBA")
+    px = im.load()
 
-    # Pill under emblem
-    f_badge = load_font(15, bold=True)
-    draw.rounded_rectangle(
-        [48, 376, 316, 416],
-        radius=20,
-        fill=(16, 185, 129, 255),
-    )
-    draw.text(
-        (182, 396),
-        "100% OFFLINE • MIỄN PHÍ",
-        font=f_badge,
-        fill=(255, 255, 255, 255),
-        anchor="mm",
-    )
+    # 1. Flip grave accent on 'À' in 'CHÀO NHẠC' (x=166..175, y=38..44) -> acute 'Á' ('CHÁO NHẠC')
+    accent_box = im.crop((166, 38, 176, 45)).transpose(Image.Transpose.FLIP_LEFT_RIGHT)
+    im.paste(accent_box, (166, 38))
 
-    # Right Content Column
-    x0 = 352
-    f_tag = load_font(15, bold=True)
-    f_title = load_font(44, bold=True)
-    f_sub = load_font(21, bold=True)
-    f_item = load_font(16, bold=True)
+    # 2. Fix subtitle 'Khương Nhạc' -> 'Khuông Nhạc' (around x=255..279, y=180..202)
+    # Remove tiny horn on 'ư' (x=259..264, y=184..191) and horn/grave above 'ơ' (x=265..280, y=179..190)
+    for y in range(178, 191):
+        bg_col = px[256, 181]
+        for x in range(259, 280):
+            if y < 189 or x >= 260:
+                r, g, b, a = px[x, y]
+                # Erase only above the main x-height (y < 189) or the horn on 'u' (x=260..263, y=186..190)
+                if y <= 187 or (260 <= x <= 264 and y <= 190) or (273 <= x <= 279 and y <= 191):
+                    px[x, y] = bg_col
+    # Draw crisp white circumflex '^' above 'o' in 'Khuông' centered at (269, 184)
+    pdraw = ImageDraw.Draw(im)
+    pdraw.line([(265, 186), (269, 181), (273, 186)], fill=(255, 255, 255, 255), width=2)
 
-    # Top Tag Pill
-    draw.rounded_rectangle(
-        [x0, 44, x0 + 388, 80],
-        radius=18,
-        fill=(67, 56, 202, 255),
-        outline=(129, 140, 248, 220),
-        width=2,
-    )
-    draw.text(
-        (x0 + 194, 62),
-        "CHÁO NHẠC • PIANO, GUITAR & NHẠC LÝ",
-        font=f_tag,
-        fill=(224, 231, 255, 255),
-        anchor="mm",
-    )
+    # 3. Fix Card 1 'Khương nhạc' -> 'Khuông nhạc' (around x=399..415, y=276..287)
+    for y in range(276, 286):
+        bg_c1 = px[398, 278]
+        for x in range(400, 415):
+            if y <= 282 or (401 <= x <= 404 and y <= 285) or (411 <= x <= 415 and y <= 286):
+                px[x, y] = bg_c1
+    pdraw.line([(405, 281), (408, 278), (411, 281)], fill=(255, 255, 255, 255), width=2)
 
-    # Main Brand Title
-    draw.text((x0, 94), "CHAONOTE STUDIO", font=f_title, fill=(255, 255, 255, 255))
-    draw.text(
-        (x0, 150),
-        "Học Piano, Guitar, Khuông Nhạc & Đấu Trường 1v1",
-        font=f_sub,
-        fill=(251, 191, 36, 255),
-    )
+    # 4. Fix Card 2 'Cặn đàn' -> 'Cần đàn' (around x=383..393, y=357..375)
+    # Erase dot below 'a' (y=371..375) and breve above 'a' (y=357..362)
+    bg_c2 = px[383, 359]
+    for y in range(371, 376):
+        for x in range(384, 392):
+            px[x, y] = px[383, y]
+    for y in range(356, 363):
+        for x in range(384, 393):
+            px[x, y] = bg_c2
+    # Draw circumflex '^' + grave accent above 'a' -> 'ầ'
+    pdraw.line([(385, 362), (388, 359), (391, 362)], fill=(235, 245, 255, 255), width=1)
+    pdraw.line([(387, 356), (390, 358)], fill=(235, 245, 255, 255), width=1)
 
-    # 4 Feature cards
-    features = [
-        ("7 Chủ đề Piano & Khuông nhạc (Khóa Sol, Fa & Dòng kẻ phụ C3–C6)", (56, 189, 248)),
-        ("Guitar Studio: Cần đàn 6 dây, Hợp âm, Scale, Tab & Rải Ballad sáng đèn", (251, 191, 36)),
-        ("Đấu Trường Âm Nhạc 1v1: Đấu Độc lập, Combo Sét Đánh & Chia đôi 180°", (244, 114, 182)),
-        ("Máy đếm nhịp cơ học chuẩn xác (<10ms) • Đa ngôn ngữ Việt – Anh", (52, 211, 153)),
-    ]
-
-    for idx, (text, accent) in enumerate(features):
-        cy = 204 + idx * 58
-        draw.rounded_rectangle(
-            [x0, cy, 988, cy + 46],
-            radius=12,
-            fill=(30, 41, 59, 245),
-            outline=(accent[0], accent[1], accent[2], 200),
-            width=2,
-        )
-        draw.ellipse([x0 + 14, cy + 15, x0 + 30, cy + 31], fill=(accent[0], accent[1], accent[2], 255))
-        draw.text((x0 + 42, cy + 23), text, font=f_item, fill=(248, 250, 252, 255), anchor="lm")
-
-    banner.convert("RGB").save(os.path.join(STORE_DIR, "feature_graphic_1024x500.png"), "PNG")
+    poster_1080 = im.convert("RGB").resize((1080, 1920), Image.Resampling.LANCZOS)
+    poster_1080.save(os.path.join(STORE_DIR, "screenshot_0_poster_gioi_thieu.png"), "PNG")
 
 
 def _draw_phone_frame(
@@ -347,9 +249,11 @@ def _draw_phone_frame(
 
     # App Top Bar inside phone
     draw.rounded_rectangle([px0 + 28, py0 + 24, px1 - 28, py0 + 96], radius=20, fill=(30, 41, 59, 255))
+    mini_logo = draw_chaonote_emblem(48, include_badge=True)
+    poster.alpha_composite(mini_logo, (px0 + 44, py0 + 36))
     f_app = load_font(28, bold=True)
     f_pill = load_font(19, bold=True)
-    draw.text((px0 + 52, py0 + 60), "ChaoNote", font=f_app, fill=(255, 255, 255, 255), anchor="lm")
+    draw.text((px0 + 104, py0 + 60), "ChaoNote", font=f_app, fill=(255, 255, 255, 255), anchor="lm")
 
     # Gem pill with vector diamond
     draw.rounded_rectangle([px1 - 335, py0 + 38, px1 - 175, py0 + 82], radius=22, fill=(49, 46, 129, 255), outline=(129, 140, 248, 220), width=2)
@@ -602,5 +506,6 @@ def generate_store_screenshots() -> None:
 if __name__ == "__main__":
     generate_icons()
     generate_feature_graphic()
+    generate_poster_screenshot()
     generate_store_screenshots()
-    print("Refined ChaoNote icons, feature graphic (1024x500), and 4 Full-HD store screenshots successfully!")
+    print("Refined ChaoNote icons, feature graphic (1024x500), and 5 Full-HD store screenshots successfully!")
