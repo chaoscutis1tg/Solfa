@@ -1823,13 +1823,24 @@ void main() {
             );
           }
         }
+        expect(GuitarFretboardData.commonChords.length, equals(36));
         for (final chord in GuitarFretboardData.commonChords) {
+          expect(chord.fretsByString1To6.length, equals(6));
+          expect(chord.fingersByString1To6.length, equals(6));
           final file = File(chord.audioAsset);
           expect(
             file.existsSync(),
             isTrue,
             reason: 'Hợp âm ${chord.id} thiếu file ${chord.audioAsset}',
           );
+        }
+        expect(GuitarFretboardData.fingerWorkouts.length, equals(6));
+        for (final w in GuitarFretboardData.fingerWorkouts) {
+          expect(w.steps.length, equals(8));
+          for (final st in w.steps) {
+            expect(st.$1, inInclusiveRange(1, 6));
+            expect(st.$2, inInclusiveRange(0, 12));
+          }
         }
 
         // Hoàn thành 1 phiên Guitar (5 đúng, 1 sai) -> Kiểm tra lưu tên bài trên Trang chủ & Danh sách Ôn câu sai

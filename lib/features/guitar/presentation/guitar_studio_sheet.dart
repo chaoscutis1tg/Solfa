@@ -83,10 +83,16 @@ class GuitarFretboardData {
     );
   }
 
-  /// Danh sách 8 hợp âm Guitar thông dụng nhất (kèm vị trí bấm trên 6 dây: -1 = X bịt, 0 = buông, >0 = ngăn bấm)
+  /// Thư viện 36 Hợp âm Guitar thực tế phân theo 4 nhóm:
+  /// - 'open': Hợp âm Trưởng & Thứ mở cơ bản (C, D, E, G, A, Am, Dm, Em)
+  /// - 'barre': Hợp âm Chặn (F, Fm, Bm, B, F#m, Gm, Cm, Bb)
+  /// - 'seventh': Hợp âm Bảy (C7, D7, E7, G7, A7, B7, Am7, Dm7, Em7, Cmaj7, Fmaj7, Gmaj7)
+  /// - 'color': Hợp âm Màu (Csus4, Dsus2, Dsus4, Esus4, Asus2, Asus4, Cadd9, G/B)
   static const List<GuitarChordShape> commonChords = [
+    // ================= 1. HỢP ÂM MỞ (TRƯỞNG & THỨ) =================
     GuitarChordShape(
       id: 'C',
+      category: 'open',
       name: 'Đô Trưởng (C)',
       formula: 'X - 3 - 2 - 0 - 1 - 0',
       fretsByString1To6: [0, 1, 0, 2, 3, -1],
@@ -95,52 +101,8 @@ class GuitarFretboardData {
       tip: 'Ngón 1 bấm Dây 2 ngăn 1 • Ngón 2 Dây 4 ngăn 2 • Ngón 3 Dây 5 ngăn 3 (Bỏ dây 6)',
     ),
     GuitarChordShape(
-      id: 'G',
-      name: 'Sol Trưởng (G)',
-      formula: '3 - 2 - 0 - 0 - 0 - 3',
-      fretsByString1To6: [3, 0, 0, 0, 2, 3],
-      fingersByString1To6: [3, 0, 0, 0, 1, 2],
-      audioAsset: 'assets/audio/keys/chord_g_maj.wav',
-      tip: 'Ngón 1 Dây 5 ngăn 2 • Ngón 2 Dây 6 ngăn 3 • Ngón 3 Dây 1 ngăn 3 (Vang cả 6 dây)',
-    ),
-    GuitarChordShape(
-      id: 'Am',
-      name: 'La Thứ (Am)',
-      formula: 'X - 0 - 2 - 2 - 1 - 0',
-      fretsByString1To6: [0, 1, 2, 2, 0, -1],
-      fingersByString1To6: [0, 1, 3, 2, 0, 0],
-      audioAsset: 'assets/audio/keys/chord_a_min.wav',
-      tip: 'Ngón 1 Dây 2 ngăn 1 • Ngón 2 Dây 4 ngăn 2 • Ngón 3 Dây 3 ngăn 2 (Bass dây 5 La)',
-    ),
-    GuitarChordShape(
-      id: 'Em',
-      name: 'Mi Thứ (Em)',
-      formula: '0 - 2 - 2 - 0 - 0 - 0',
-      fretsByString1To6: [0, 0, 0, 2, 2, 0],
-      fingersByString1To6: [0, 0, 0, 3, 2, 0],
-      audioAsset: 'assets/audio/keys/chord_e_min.wav',
-      tip: 'Hợp âm dễ nhất: Chỉ cần 2 ngón (Ngón 2 Dây 5 ngăn 2 & Ngón 3 Dây 4 ngăn 2)',
-    ),
-    GuitarChordShape(
-      id: 'Dm',
-      name: 'Rê Thứ (Dm)',
-      formula: 'X - X - 0 - 2 - 3 - 1',
-      fretsByString1To6: [1, 3, 2, 0, -1, -1],
-      fingersByString1To6: [1, 3, 2, 0, 0, 0],
-      audioAsset: 'assets/audio/keys/chord_d_min.wav',
-      tip: 'Ngón 1 Dây 1 ngăn 1 • Ngón 2 Dây 3 ngăn 2 • Ngón 3 Dây 2 ngăn 3 (Bass dây 4 Rê)',
-    ),
-    GuitarChordShape(
-      id: 'F',
-      name: 'Fa Trưởng (F)',
-      formula: 'X - X - 3 - 2 - 1 - 1',
-      fretsByString1To6: [1, 1, 2, 3, -1, -1],
-      fingersByString1To6: [1, 1, 2, 3, 0, 0],
-      audioAsset: 'assets/audio/keys/chord_f_maj.wav',
-      tip: 'Ngón 1 chặn nhẹ Dây 1&2 ngăn 1 • Ngón 2 Dây 3 ngăn 2 • Ngón 3 Dây 4 ngăn 3',
-    ),
-    GuitarChordShape(
       id: 'D',
+      category: 'open',
       name: 'Rê Trưởng (D)',
       formula: 'X - X - 0 - 2 - 3 - 2',
       fretsByString1To6: [2, 3, 2, 0, -1, -1],
@@ -150,18 +112,462 @@ class GuitarFretboardData {
     ),
     GuitarChordShape(
       id: 'E',
+      category: 'open',
       name: 'Mi Trưởng (E)',
       formula: '0 - 2 - 2 - 1 - 0 - 0',
       fretsByString1To6: [0, 0, 1, 2, 2, 0],
       fingersByString1To6: [0, 0, 1, 3, 2, 0],
       audioAsset: 'assets/audio/keys/chord_e_maj.wav',
-      tip: 'Giống thế bấm Am nhưng dịch toàn bộ lên 1 dây (Ngón 1 Dây 3 ngăn 1)',
+      tip: 'Giống thế bấm Am nhưng dịch toàn bộ lên 1 dây (Ngón 1 Dây 3 ngăn 1 • Ngón 2&3 Dây 5&4 ngăn 2)',
+    ),
+    GuitarChordShape(
+      id: 'G',
+      category: 'open',
+      name: 'Sol Trưởng (G)',
+      formula: '3 - 2 - 0 - 0 - 0 - 3',
+      fretsByString1To6: [3, 0, 0, 0, 2, 3],
+      fingersByString1To6: [3, 0, 0, 0, 1, 2],
+      audioAsset: 'assets/audio/keys/chord_g_maj.wav',
+      tip: 'Ngón 1 Dây 5 ngăn 2 • Ngón 2 Dây 6 ngăn 3 • Ngón 3 Dây 1 ngăn 3 (Vang cả 6 dây)',
+    ),
+    GuitarChordShape(
+      id: 'A',
+      category: 'open',
+      name: 'La Trưởng (A)',
+      formula: 'X - 0 - 2 - 2 - 2 - 0',
+      fretsByString1To6: [0, 2, 2, 2, 0, -1],
+      fingersByString1To6: [0, 3, 2, 1, 0, 0],
+      audioAsset: 'assets/audio/keys/chord_c_maj.wav',
+      tip: 'Ngón 1, 2, 3 xếp dọc trên Dây 4, Dây 3, Dây 2 tại ngăn 2 (Bass dây 5 buông)',
+    ),
+    GuitarChordShape(
+      id: 'Am',
+      category: 'open',
+      name: 'La Thứ (Am)',
+      formula: 'X - 0 - 2 - 2 - 1 - 0',
+      fretsByString1To6: [0, 1, 2, 2, 0, -1],
+      fingersByString1To6: [0, 1, 3, 2, 0, 0],
+      audioAsset: 'assets/audio/keys/chord_a_min.wav',
+      tip: 'Ngón 1 Dây 2 ngăn 1 • Ngón 2 Dây 4 ngăn 2 • Ngón 3 Dây 3 ngăn 2 (Bass dây 5 La)',
+    ),
+    GuitarChordShape(
+      id: 'Dm',
+      category: 'open',
+      name: 'Rê Thứ (Dm)',
+      formula: 'X - X - 0 - 2 - 3 - 1',
+      fretsByString1To6: [1, 3, 2, 0, -1, -1],
+      fingersByString1To6: [1, 3, 2, 0, 0, 0],
+      audioAsset: 'assets/audio/keys/chord_d_min.wav',
+      tip: 'Ngón 1 Dây 1 ngăn 1 • Ngón 2 Dây 3 ngăn 2 • Ngón 3 Dây 2 ngăn 3 (Bass dây 4 Rê)',
+    ),
+    GuitarChordShape(
+      id: 'Em',
+      category: 'open',
+      name: 'Mi Thứ (Em)',
+      formula: '0 - 2 - 2 - 0 - 0 - 0',
+      fretsByString1To6: [0, 0, 0, 2, 2, 0],
+      fingersByString1To6: [0, 0, 0, 3, 2, 0],
+      audioAsset: 'assets/audio/keys/chord_e_min.wav',
+      tip: 'Hợp âm dễ nhất: Chỉ cần 2 ngón (Ngón 2 Dây 5 ngăn 2 & Ngón 3 Dây 4 ngăn 2)',
+    ),
+
+    // ================= 2. HỢP ÂM CHẶN (BARRE CHORDS) =================
+    GuitarChordShape(
+      id: 'F',
+      category: 'barre',
+      name: 'Fa Trưởng Chặn (F)',
+      formula: '1 - 3 - 3 - 2 - 1 - 1',
+      fretsByString1To6: [1, 1, 2, 3, 3, 1],
+      fingersByString1To6: [1, 1, 2, 4, 3, 1],
+      audioAsset: 'assets/audio/keys/chord_f_maj.wav',
+      tip: 'Ngón 1 chặn cả 6 dây ngăn 1 • Ngón 2 Dây 3 ngăn 2 • Ngón 3 Dây 5 ngăn 3 • Ngón 4 Dây 4 ngăn 3',
+    ),
+    GuitarChordShape(
+      id: 'Fm',
+      category: 'barre',
+      name: 'Fa Thứ Chặn (Fm)',
+      formula: '1 - 3 - 3 - 1 - 1 - 1',
+      fretsByString1To6: [1, 1, 1, 3, 3, 1],
+      fingersByString1To6: [1, 1, 1, 4, 3, 1],
+      audioAsset: 'assets/audio/keys/chord_d_min.wav',
+      tip: 'Ngón 1 chặn 6 dây ngăn 1 (nhấc ngón 2 ra) • Ngón 3 Dây 5 ngăn 3 • Ngón 4 Dây 4 ngăn 3',
+    ),
+    GuitarChordShape(
+      id: 'Bm',
+      category: 'barre',
+      name: 'Si Thứ Chặn (Bm)',
+      formula: 'X - 2 - 4 - 4 - 3 - 2',
+      fretsByString1To6: [2, 3, 4, 4, 2, -1],
+      fingersByString1To6: [1, 2, 4, 3, 1, 0],
+      audioAsset: 'assets/audio/keys/chord_a_min.wav',
+      tip: 'Ngón 1 chặn 5 dây dưới tại ngăn 2 • Ngón 2 Dây 2 ngăn 3 • Ngón 3 Dây 4 ngăn 4 • Ngón 4 Dây 3 ngăn 4',
+    ),
+    GuitarChordShape(
+      id: 'B',
+      category: 'barre',
+      name: 'Si Trưởng Chặn (B)',
+      formula: 'X - 2 - 4 - 4 - 4 - 2',
+      fretsByString1To6: [2, 4, 4, 4, 2, -1],
+      fingersByString1To6: [1, 4, 3, 2, 1, 0],
+      audioAsset: 'assets/audio/keys/chord_g_maj.wav',
+      tip: 'Ngón 1 chặn 5 dây ngăn 2 • Ngón 2, 3, 4 bấm Dây 4, 3, 2 tại ngăn 4',
+    ),
+    GuitarChordShape(
+      id: 'F#m',
+      category: 'barre',
+      name: 'Fa Thăng Thứ (F#m)',
+      formula: '2 - 4 - 4 - 2 - 2 - 2',
+      fretsByString1To6: [2, 2, 2, 4, 4, 2],
+      fingersByString1To6: [1, 1, 1, 4, 3, 1],
+      audioAsset: 'assets/audio/keys/chord_e_min.wav',
+      tip: 'Dịch dáng Fm lên ngăn 2: Ngón 1 chặn 6 dây ngăn 2 • Ngón 3 Dây 5 ngăn 4 • Ngón 4 Dây 4 ngăn 4',
+    ),
+    GuitarChordShape(
+      id: 'Gm',
+      category: 'barre',
+      name: 'Sol Thứ Chặn (Gm)',
+      formula: '3 - 5 - 5 - 3 - 3 - 3',
+      fretsByString1To6: [3, 3, 3, 5, 5, 3],
+      fingersByString1To6: [1, 1, 1, 4, 3, 1],
+      audioAsset: 'assets/audio/keys/chord_d_min.wav',
+      tip: 'Ngón 1 chặn 6 dây tại ngăn 3 • Ngón 3 Dây 5 ngăn 5 • Ngón 4 Dây 4 ngăn 5',
+    ),
+    GuitarChordShape(
+      id: 'Cm',
+      category: 'barre',
+      name: 'Đô Thứ Chặn (Cm)',
+      formula: 'X - 3 - 5 - 5 - 4 - 3',
+      fretsByString1To6: [3, 4, 5, 5, 3, -1],
+      fingersByString1To6: [1, 2, 4, 3, 1, 0],
+      audioAsset: 'assets/audio/keys/chord_c_min.wav',
+      tip: 'Dịch dáng Bm lên ngăn 3: Ngón 1 chặn 5 dây ngăn 3 • Ngón 2 Dây 2 ngăn 4 • Ngón 3&4 Dây 4&3 ngăn 5',
+    ),
+    GuitarChordShape(
+      id: 'Bb',
+      category: 'barre',
+      name: 'Si Giáng Trưởng (Bb)',
+      formula: 'X - 1 - 3 - 3 - 3 - 1',
+      fretsByString1To6: [1, 3, 3, 3, 1, -1],
+      fingersByString1To6: [1, 4, 3, 2, 1, 0],
+      audioAsset: 'assets/audio/keys/chord_f_maj.wav',
+      tip: 'Ngón 1 chặn 5 dây tại ngăn 1 • Ngón 2, 3, 4 bấm Dây 4, 3, 2 tại ngăn 3',
+    ),
+
+    // ================= 3. HỢP ÂM BẢY (7TH: DOM7, MIN7, MAJ7) =================
+    GuitarChordShape(
+      id: 'C7',
+      category: 'seventh',
+      name: 'Đô Bảy Át (C7)',
+      formula: 'X - 3 - 2 - 3 - 1 - 0',
+      fretsByString1To6: [0, 1, 3, 2, 3, -1],
+      fingersByString1To6: [0, 1, 4, 2, 3, 0],
+      audioAsset: 'assets/audio/keys/chord_g_dom7.wav',
+      tip: 'Giữ Đô Trưởng (C) và đặt thêm Ngón 4 (Út) vào Dây 3 ngăn 3 (nốt Sib)',
+    ),
+    GuitarChordShape(
+      id: 'D7',
+      category: 'seventh',
+      name: 'Rê Bảy Át (D7)',
+      formula: 'X - X - 0 - 2 - 1 - 2',
+      fretsByString1To6: [2, 1, 2, 0, -1, -1],
+      fingersByString1To6: [3, 1, 2, 0, 0, 0],
+      audioAsset: 'assets/audio/keys/chord_g_dom7.wav',
+      tip: 'Tam giác ngược ở 3 dây dưới: Ngón 1 Dây 2 ngăn 1 • Ngón 2 Dây 3 ngăn 2 • Ngón 3 Dây 1 ngăn 2',
+    ),
+    GuitarChordShape(
+      id: 'E7',
+      category: 'seventh',
+      name: 'Mi Bảy Át (E7)',
+      formula: '0 - 2 - 0 - 1 - 0 - 0',
+      fretsByString1To6: [0, 0, 1, 0, 2, 0],
+      fingersByString1To6: [0, 0, 1, 0, 2, 0],
+      audioAsset: 'assets/audio/keys/chord_g_dom7.wav',
+      tip: 'Từ Mi Trưởng (E) nhấc ngón áp út khỏi Dây 4 để vang Dây 4 buông (Rê D3)',
+    ),
+    GuitarChordShape(
+      id: 'G7',
+      category: 'seventh',
+      name: 'Sol Bảy Át (G7)',
+      formula: '3 - 2 - 0 - 0 - 0 - 1',
+      fretsByString1To6: [1, 0, 0, 0, 2, 3],
+      fingersByString1To6: [1, 0, 0, 0, 2, 3],
+      audioAsset: 'assets/audio/keys/chord_g_dom7.wav',
+      tip: 'Ngón 1 Dây 1 ngăn 1 (Fa) • Ngón 2 Dây 5 ngăn 2 (Si) • Ngón 3 Dây 6 ngăn 3 (Sol)',
+    ),
+    GuitarChordShape(
+      id: 'A7',
+      category: 'seventh',
+      name: 'La Bảy Át (A7)',
+      formula: 'X - 0 - 2 - 0 - 2 - 0',
+      fretsByString1To6: [0, 2, 0, 2, 0, -1],
+      fingersByString1To6: [0, 3, 0, 2, 0, 0],
+      audioAsset: 'assets/audio/keys/chord_g_dom7.wav',
+      tip: 'Từ La Trưởng (A) nhấc ngón giữa ở Dây 3 ra để vang Dây 3 buông (Sol G3)',
+    ),
+    GuitarChordShape(
+      id: 'B7',
+      category: 'seventh',
+      name: 'Si Bảy Át (B7)',
+      formula: 'X - 2 - 1 - 2 - 0 - 2',
+      fretsByString1To6: [2, 0, 2, 1, 2, -1],
+      fingersByString1To6: [4, 0, 3, 1, 2, 0],
+      audioAsset: 'assets/audio/keys/chord_g_dom7.wav',
+      tip: 'Ngón 1 Dây 4 ngăn 1 • Ngón 2 Dây 5 ngăn 2 • Ngón 3 Dây 3 ngăn 2 • Ngón 4 Dây 1 ngăn 2',
+    ),
+    GuitarChordShape(
+      id: 'Am7',
+      category: 'seventh',
+      name: 'La Bảy Thứ (Am7)',
+      formula: 'X - 0 - 2 - 0 - 1 - 0',
+      fretsByString1To6: [0, 1, 0, 2, 0, -1],
+      fingersByString1To6: [0, 1, 0, 2, 0, 0],
+      audioAsset: 'assets/audio/keys/chord_a_min7.wav',
+      tip: 'Từ La Thứ (Am) nhấc ngón áp út khỏi Dây 3 ngăn 2, chỉ còn 2 ngón cực kỳ êm dịu',
+    ),
+    GuitarChordShape(
+      id: 'Dm7',
+      category: 'seventh',
+      name: 'Rê Bảy Thứ (Dm7)',
+      formula: 'X - X - 0 - 2 - 1 - 1',
+      fretsByString1To6: [1, 1, 2, 0, -1, -1],
+      fingersByString1To6: [1, 1, 2, 0, 0, 0],
+      audioAsset: 'assets/audio/keys/chord_a_min7.wav',
+      tip: 'Ngón 1 chặn nhẹ Dây 1 & Dây 2 ngăn 1 • Ngón 2 bấm Dây 3 ngăn 2 (Bass dây 4 buông)',
+    ),
+    GuitarChordShape(
+      id: 'Em7',
+      category: 'seventh',
+      name: 'Mi Bảy Thứ (Em7)',
+      formula: '0 - 2 - 2 - 0 - 3 - 0',
+      fretsByString1To6: [0, 3, 0, 2, 2, 0],
+      fingersByString1To6: [0, 4, 0, 3, 2, 0],
+      audioAsset: 'assets/audio/keys/chord_a_min7.wav',
+      tip: 'Giữ Mi Thứ (Em) và đặt thêm Ngón 4 vào Dây 2 ngăn 3 (nốt Rê D4)',
+    ),
+    GuitarChordShape(
+      id: 'Cmaj7',
+      category: 'seventh',
+      name: 'Đô Bảy Trưởng (Cmaj7)',
+      formula: 'X - 3 - 2 - 0 - 0 - 0',
+      fretsByString1To6: [0, 0, 0, 2, 3, -1],
+      fingersByString1To6: [0, 0, 0, 2, 3, 0],
+      audioAsset: 'assets/audio/keys/chord_c_maj7.wav',
+      tip: 'Từ Đô Trưởng (C) nhấc ngón trỏ khỏi Dây 2 ngăn 1 để vang Dây 2 buông (Si B3)',
+    ),
+    GuitarChordShape(
+      id: 'Fmaj7',
+      category: 'seventh',
+      name: 'Fa Bảy Trưởng (Fmaj7)',
+      formula: 'X - X - 3 - 2 - 1 - 0',
+      fretsByString1To6: [0, 1, 2, 3, -1, -1],
+      fingersByString1To6: [0, 1, 2, 3, 0, 0],
+      audioAsset: 'assets/audio/keys/chord_c_maj7.wav',
+      tip: 'Thế bấm Fa mở cực dễ: Ngón 1 Dây 2 ngăn 1 • Ngón 2 Dây 3 ngăn 2 • Ngón 3 Dây 4 ngăn 3 • Dây 1 buông',
+    ),
+    GuitarChordShape(
+      id: 'Gmaj7',
+      category: 'seventh',
+      name: 'Sol Bảy Trưởng (Gmaj7)',
+      formula: '3 - 2 - 0 - 0 - 0 - 2',
+      fretsByString1To6: [2, 0, 0, 0, 2, 3],
+      fingersByString1To6: [1, 0, 0, 0, 2, 3],
+      audioAsset: 'assets/audio/keys/chord_c_maj7.wav',
+      tip: 'Ngón 1 Dây 1 ngăn 2 (Fa#) • Ngón 2 Dây 5 ngăn 2 (Si) • Ngón 3 Dây 6 ngăn 3 (Sol)',
+    ),
+
+    // ================= 4. HỢP ÂM MÀU (SUS2, SUS4, ADD9, SLASH) =================
+    GuitarChordShape(
+      id: 'Csus4',
+      category: 'color',
+      name: 'Đô Treo Bậc 4 (Csus4)',
+      formula: 'X - 3 - 3 - 0 - 1 - 0',
+      fretsByString1To6: [0, 1, 0, 3, 3, -1],
+      fingersByString1To6: [0, 1, 0, 4, 3, 0],
+      audioAsset: 'assets/audio/keys/chord_c_sus4.wav',
+      tip: 'Từ Đô Trưởng (C) đặt thêm Ngón 4 vào Dây 4 ngăn 3 (nốt Fa) rồi nhả về C',
+    ),
+    GuitarChordShape(
+      id: 'Dsus2',
+      category: 'color',
+      name: 'Rê Treo Bậc 2 (Dsus2)',
+      formula: 'X - X - 0 - 2 - 3 - 0',
+      fretsByString1To6: [0, 3, 2, 0, -1, -1],
+      fingersByString1To6: [0, 3, 1, 0, 0, 0],
+      audioAsset: 'assets/audio/keys/chord_c_sus4.wav',
+      tip: 'Từ Rê Trưởng (D) nhấc ngón giữa khỏi Dây 1 để vang Dây 1 buông (Mi E4) trong trẻo',
+    ),
+    GuitarChordShape(
+      id: 'Dsus4',
+      category: 'color',
+      name: 'Rê Treo Bậc 4 (Dsus4)',
+      formula: 'X - X - 0 - 2 - 3 - 3',
+      fretsByString1To6: [3, 3, 2, 0, -1, -1],
+      fingersByString1To6: [4, 3, 1, 0, 0, 0],
+      audioAsset: 'assets/audio/keys/chord_c_sus4.wav',
+      tip: 'Từ Rê Trưởng (D) đặt thêm Ngón 4 vào Dây 1 ngăn 3 (nốt Sol G4)',
+    ),
+    GuitarChordShape(
+      id: 'Esus4',
+      category: 'color',
+      name: 'Mi Treo Bậc 4 (Esus4)',
+      formula: '0 - 2 - 2 - 2 - 0 - 0',
+      fretsByString1To6: [0, 0, 2, 2, 2, 0],
+      fingersByString1To6: [0, 0, 4, 3, 2, 0],
+      audioAsset: 'assets/audio/keys/chord_c_sus4.wav',
+      tip: 'Từ Mi Trưởng (E) đặt thêm Ngón 4 vào Dây 3 ngăn 2 (nốt La A3) rồi giải về E',
+    ),
+    GuitarChordShape(
+      id: 'Asus2',
+      category: 'color',
+      name: 'La Treo Bậc 2 (Asus2)',
+      formula: 'X - 0 - 2 - 2 - 0 - 0',
+      fretsByString1To6: [0, 0, 2, 2, 0, -1],
+      fingersByString1To6: [0, 0, 3, 2, 0, 0],
+      audioAsset: 'assets/audio/keys/chord_c_sus4.wav',
+      tip: 'Từ La Thứ (Am) nhấc ngón trỏ khỏi Dây 2 để vang cả Dây 2 buông (Si) và Dây 1 buông (Mi)',
+    ),
+    GuitarChordShape(
+      id: 'Asus4',
+      category: 'color',
+      name: 'La Treo Bậc 4 (Asus4)',
+      formula: 'X - 0 - 2 - 2 - 3 - 0',
+      fretsByString1To6: [0, 3, 2, 2, 0, -1],
+      fingersByString1To6: [0, 4, 3, 2, 0, 0],
+      audioAsset: 'assets/audio/keys/chord_c_sus4.wav',
+      tip: 'Từ La Thứ (Am) đặt Ngón 4 vào Dây 2 ngăn 3 (nốt Rê D4)',
+    ),
+    GuitarChordShape(
+      id: 'Cadd9',
+      category: 'color',
+      name: 'Đô Cộng 9 (Cadd9)',
+      formula: 'X - 3 - 2 - 0 - 3 - 3',
+      fretsByString1To6: [3, 3, 0, 2, 3, -1],
+      fingersByString1To6: [4, 3, 0, 1, 2, 0],
+      audioAsset: 'assets/audio/keys/chord_c_maj7.wav',
+      tip: 'Hợp âm màu Acoustic: Ngón 1 Dây 4 ngăn 2 • Ngón 2 Dây 5 ngăn 3 • Ngón 3 Dây 2 ngăn 3 • Ngón 4 Dây 1 ngăn 3',
+    ),
+    GuitarChordShape(
+      id: 'G/B',
+      category: 'color',
+      name: 'Sol Bass Si (G/B)',
+      formula: 'X - 2 - 0 - 0 - 3 - 3',
+      fretsByString1To6: [3, 3, 0, 0, 2, -1],
+      fingersByString1To6: [4, 3, 0, 0, 1, 0],
+      audioAsset: 'assets/audio/keys/chord_g_maj.wav',
+      tip: 'Hợp âm cầu nối Bass đi bộ mượt mà giữa Đô Trưởng (C) và La Thứ (Am)',
+    ),
+  ];
+
+  /// 6 Bài luyện ngón Guitar thực tế từ Cơ bản đến Nâng cao (Tay trái Spider, Đảo ngón, Nhảy dây, Rải tay phải P-i-m-a, Solo Pentatonic)
+  static const List<GuitarWorkoutExercise> fingerWorkouts = [
+    GuitarWorkoutExercise(
+      id: 'spider_1234',
+      title: 'Bài 1: Bò Nhện Cơ Bản (1–2–3–4)',
+      levelTag: 'Cơ bản',
+      description:
+          'Mỗi ngón tay trái phụ trách 1 ngăn liên tiếp (Trỏ 1 – Giữa 2 – Áp út 3 – Út 4) leo từ Dây 6 sang Dây 5. Giữ đầu ngón tay vuông góc và bấm sát thanh sắt ngăn đàn.',
+      steps: [
+        (6, 1, 'Ngón 1 (Trỏ)'),
+        (6, 2, 'Ngón 2 (Giữa)'),
+        (6, 3, 'Ngón 3 (Áp út)'),
+        (6, 4, 'Ngón 4 (Út)'),
+        (5, 1, 'Ngón 1 (Trỏ)'),
+        (5, 2, 'Ngón 2 (Giữa)'),
+        (5, 3, 'Ngón 3 (Áp út)'),
+        (5, 4, 'Ngón 4 (Út)'),
+      ],
+    ),
+    GuitarWorkoutExercise(
+      id: 'spider_4321',
+      title: 'Bài 2: Bò Nhện Ngược (4–3–2–1 • Khỏe Ngón Út)',
+      levelTag: 'Cơ bản',
+      description:
+          'Đánh ngược từ Ngăn 4 lùi về Ngăn 1 (Út 4 → Áp út 3 → Giữa 2 → Trỏ 1) trên Dây 1 & Dây 2 để rèn sức mạnh và độ chính xác cho ngón Út và Áp út.',
+      steps: [
+        (1, 4, 'Ngón 4 (Út)'),
+        (1, 3, 'Ngón 3 (Áp út)'),
+        (1, 2, 'Ngón 2 (Giữa)'),
+        (1, 1, 'Ngón 1 (Trỏ)'),
+        (2, 4, 'Ngón 4 (Út)'),
+        (2, 3, 'Ngón 3 (Áp út)'),
+        (2, 2, 'Ngón 2 (Giữa)'),
+        (2, 1, 'Ngón 1 (Trỏ)'),
+      ],
+    ),
+    GuitarWorkoutExercise(
+      id: 'perm_1324',
+      title: 'Bài 3: Đảo Ngón Chéo (1–3–2–4 • Tách Ngón)',
+      levelTag: 'Trung bình',
+      description:
+          'Bài tập tách gân ngón tay kinh điển: đánh xen kẽ Trỏ (1) → Áp út (3) → Giữa (2) → Út (4) trên Dây 4 & Dây 3 giúp chuyển hợp âm cực nhanh.',
+      steps: [
+        (4, 1, 'Ngón 1 (Trỏ)'),
+        (4, 3, 'Ngón 3 (Áp út)'),
+        (4, 2, 'Ngón 2 (Giữa)'),
+        (4, 4, 'Ngón 4 (Út)'),
+        (3, 1, 'Ngón 1 (Trỏ)'),
+        (3, 3, 'Ngón 3 (Áp út)'),
+        (3, 2, 'Ngón 2 (Giữa)'),
+        (3, 4, 'Ngón 4 (Út)'),
+      ],
+    ),
+    GuitarWorkoutExercise(
+      id: 'string_skip',
+      title: 'Bài 4: Nhảy Dây Cách Quãng (String Skipping)',
+      levelTag: 'Trung bình',
+      description:
+          'Nhảy cách qua 1 dây đàn (Dây 6 → Dây 4 → Dây 5 → Dây 3) để luyện sự chính xác đồng bộ giữa tay phải gảy dây và tay trái bấm phím.',
+      steps: [
+        (6, 1, 'Ngón 1 (Dây 6)'),
+        (6, 2, 'Ngón 2 (Dây 6)'),
+        (4, 1, 'Ngón 1 (Dây 4)'),
+        (4, 2, 'Ngón 2 (Dây 4)'),
+        (5, 3, 'Ngón 3 (Dây 5)'),
+        (5, 4, 'Ngón 4 (Dây 5)'),
+        (3, 3, 'Ngón 3 (Dây 3)'),
+        (3, 4, 'Ngón 4 (Dây 3)'),
+      ],
+    ),
+    GuitarWorkoutExercise(
+      id: 'arpeggio_ballad',
+      title: 'Bài 5: Rải Tay Phải P–i–m–a (Ballad 4/4 • Đô Trưởng)',
+      levelTag: 'Trung bình',
+      description:
+          'Giữ thế bấm Đô Trưởng (C) bằng tay trái, tay phải rải công thức Ballad kinh điển: Cái P (Dây 5) – Trỏ i (3) – Giữa m (2) – Trỏ i (3) – Áp út a (1) – Trỏ i (3) – Giữa m (2) – Trỏ i (3).',
+      steps: [
+        (5, 3, 'Cái P (Bass Đô)'),
+        (3, 0, 'Trỏ i (Dây 3)'),
+        (2, 1, 'Giữa m (Dây 2)'),
+        (3, 0, 'Trỏ i (Dây 3)'),
+        (1, 0, 'Áp út a (Dây 1)'),
+        (3, 0, 'Trỏ i (Dây 3)'),
+        (2, 1, 'Giữa m (Dây 2)'),
+        (3, 0, 'Trỏ i (Dây 3)'),
+      ],
+    ),
+    GuitarWorkoutExercise(
+      id: 'pentatonic_box1',
+      title: 'Bài 6: Chạy Ngón Solo Am Pentatonic (Ngăn 5–8)',
+      levelTag: 'Nâng cao',
+      description:
+          'Chạy mẫu Solo Ngũ cung La Thứ (Box 1 tại Ngăn 5–8): Dây 6 (5–8) → Dây 5 (5–7) → Dây 4 (5–7) → Dây 3 (5–7). Ngón 1 giữ trụ ở Ngăn 5, Ngón 3 bấm Ngăn 7, Ngón 4 bấm Ngăn 8.',
+      steps: [
+        (6, 5, 'Ngón 1 (La A2)'),
+        (6, 8, 'Ngón 4 (Đô C3)'),
+        (5, 5, 'Ngón 1 (Rê D3)'),
+        (5, 7, 'Ngón 3 (Mi E3)'),
+        (4, 5, 'Ngón 1 (Sol G3)'),
+        (4, 7, 'Ngón 3 (La A3)'),
+        (3, 5, 'Ngón 1 (Đô C4)'),
+        (3, 7, 'Ngón 3 (Rê D4)'),
+      ],
     ),
   ];
 }
 
 class GuitarChordShape {
   final String id;
+  final String category; // 'open', 'barre', 'seventh', 'color'
   final String name;
   final String formula;
   final List<int> fretsByString1To6;
@@ -171,6 +577,7 @@ class GuitarChordShape {
 
   const GuitarChordShape({
     required this.id,
+    this.category = 'open',
     required this.name,
     required this.formula,
     required this.fretsByString1To6,
@@ -178,20 +585,77 @@ class GuitarChordShape {
     required this.audioAsset,
     required this.tip,
   });
+
+  int get maxFret {
+    int m = 4;
+    for (final f in fretsByString1To6) {
+      if (f > m) m = f;
+    }
+    return m;
+  }
 }
 
-/// Mở Bảng Công Cụ & Bản Đồ Cần Đàn Guitar Tương Tác (Tách biệt hoàn toàn với Piano).
-Future<void> showGuitarStudioSheet(BuildContext context) async {
-  await showModalBottomSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (ctx) => const GuitarStudioSheet(),
+class GuitarWorkoutExercise {
+  final String id;
+  final String title;
+  final String levelTag;
+  final String description;
+  final List<(int stringNum, int fretNum, String fingerLabel)> steps;
+
+  const GuitarWorkoutExercise({
+    required this.id,
+    required this.title,
+    required this.levelTag,
+    required this.description,
+    required this.steps,
+  });
+
+  int get maxFret {
+    int m = 5;
+    for (final s in steps) {
+      if (s.$2 > m) m = s.$2;
+    }
+    return m;
+  }
+}
+
+/// Mở Trang Bản Đồ Cần Đàn 6 Dây, Thư Viện 36 Hợp Âm & Bản Đồ Scale (Full-screen Page, KHÔNG dùng Bottom Sheet trượt lên).
+Future<void> showGuitarStudioSheet(
+  BuildContext context, {
+  int initialTab = 0,
+  bool isWorkoutOnlyPage = false,
+}) async {
+  await Navigator.of(context).push<void>(
+    MaterialPageRoute<void>(
+      builder: (ctx) => GuitarStudioSheet(
+        initialTab: initialTab,
+        isWorkoutOnlyPage: isWorkoutOnlyPage,
+      ),
+    ),
+  );
+}
+
+/// Mở Trang Luyện Ngón Guitar & Thực Hành Tab Chuyên Sâu tách biệt hoàn toàn với Map Cần Đàn.
+Future<void> showGuitarFingerWorkoutPage(BuildContext context) async {
+  await Navigator.of(context).push<void>(
+    MaterialPageRoute<void>(
+      builder: (ctx) => const GuitarStudioSheet(
+        initialTab: 3,
+        isWorkoutOnlyPage: true,
+      ),
+    ),
   );
 }
 
 class GuitarStudioSheet extends ConsumerStatefulWidget {
-  const GuitarStudioSheet({super.key});
+  final int initialTab;
+  final bool isWorkoutOnlyPage;
+
+  const GuitarStudioSheet({
+    super.key,
+    this.initialTab = 0,
+    this.isWorkoutOnlyPage = false,
+  });
 
   @override
   ConsumerState<GuitarStudioSheet> createState() => _GuitarStudioSheetState();
@@ -199,20 +663,23 @@ class GuitarStudioSheet extends ConsumerStatefulWidget {
 
 class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
   /// 0: Bản đồ Cần đàn (Fretboard Map)
-  /// 1: Hợp âm Guitar (Chord Shapes)
+  /// 1: Hợp âm Guitar (Chord Shapes - 36 hợp âm)
   /// 2: Bản đồ Scale (Pentatonic & Trưởng/Thứ)
-  /// 3: Đọc Tab & Luyện ngón (Spider 1-2-3-4)
-  int _selectedTab = 0;
+  /// 3: Luyện ngón & Đọc Tab (6 bài tập từ Cơ bản đến Nâng cao)
+  late int _selectedTab;
 
   int _activeString = 5; // Dây 5
   int _activeFret = 3; // Ngăn 3 (Đô C3)
   bool _showNaturalNotesOnly = true;
   bool _showOctaveJumpGuide = false;
 
-  int _selectedChordIndex = 0;
+  String _selectedChordCategory = 'all'; // 'all', 'open', 'barre', 'seventh', 'color'
+  String _selectedChordId = 'C';
   String _selectedScaleId = 'am_pentatonic';
 
+  int _selectedWorkoutIndex = 0;
   int _spiderStep = 0;
+  int _spiderStepIntervalMs = 520; // 650ms (Chậm), 520ms (Vừa), 360ms (Nhanh)
   Timer? _spiderTimer;
   bool _isSpiderPlaying = false;
 
@@ -221,10 +688,46 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
   int? _activeStrumFret;
 
   @override
+  void initState() {
+    super.initState();
+    _selectedTab = widget.isWorkoutOnlyPage ? 3 : widget.initialTab;
+  }
+
+  @override
   void dispose() {
     _spiderTimer?.cancel();
     _strumTimer?.cancel();
     super.dispose();
+  }
+
+  /// Phát hợp âm chuẩn xác 100% theo cao độ thực tế của 6 dây trên cần đàn (quét nhanh 35ms như gảy phím thật).
+  void _playChordRealVoicing(GuitarChordShape chord) {
+    _strumTimer?.cancel();
+    final List<(int stringNum, int fretNum)> notes = [];
+    for (int s = 6; s >= 1; s--) {
+      final f = chord.fretsByString1To6[s - 1];
+      if (f >= 0) {
+        notes.add((s, f));
+      }
+    }
+    if (notes.isEmpty) return;
+    int idx = 0;
+    void playNext() {
+      if (!mounted || idx >= notes.length) {
+        _strumTimer?.cancel();
+        return;
+      }
+      final (s, f) = notes[idx];
+      final n = GuitarFretboardData.noteAt(stringNumber: s, fret: f);
+      ref.read(audioServiceProvider).playPolyphonicAsset(n.audioAsset);
+      idx++;
+    }
+
+    playNext();
+    _strumTimer = Timer.periodic(
+      const Duration(milliseconds: 38),
+      (_) => playNext(),
+    );
   }
 
   void _startChordStrum(
@@ -302,22 +805,37 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
       _spiderStep = 0;
     });
     _playCurrentSpiderStep();
-    _spiderTimer = Timer.periodic(const Duration(milliseconds: 520), (_) {
-      if (!mounted) return;
-      setState(() {
-        _spiderStep = (_spiderStep + 1) % 8;
-      });
-      _playCurrentSpiderStep();
+    _spiderTimer = Timer.periodic(
+      Duration(milliseconds: _spiderStepIntervalMs),
+      (_) {
+        if (!mounted) return;
+        final workout =
+            GuitarFretboardData.fingerWorkouts[_selectedWorkoutIndex];
+        setState(() {
+          _spiderStep = (_spiderStep + 1) % workout.steps.length;
+        });
+        _playCurrentSpiderStep();
+      },
+    );
+  }
+
+  void _stepWorkoutManually(int delta) {
+    _spiderTimer?.cancel();
+    final workout = GuitarFretboardData.fingerWorkouts[_selectedWorkoutIndex];
+    setState(() {
+      _isSpiderPlaying = false;
+      _spiderStep =
+          (_spiderStep + delta + workout.steps.length) % workout.steps.length;
     });
+    _playCurrentSpiderStep();
   }
 
   void _playCurrentSpiderStep() {
-    // 4 bước đầu: Bò nhện 1-2-3-4 trên dây 6; 4 bước sau: 1-2-3-4 trên dây 5
-    final stringNum = _spiderStep < 4 ? 6 : 5;
-    final fretNum = (_spiderStep % 4) + 1;
+    final workout = GuitarFretboardData.fingerWorkouts[_selectedWorkoutIndex];
+    final step = workout.steps[_spiderStep % workout.steps.length];
     final note = GuitarFretboardData.noteAt(
-      stringNumber: stringNum,
-      fret: fretNum,
+      stringNumber: step.$1,
+      fret: step.$2,
     );
     ref.read(audioServiceProvider).playPolyphonicAsset(note.audioAsset);
   }
@@ -329,172 +847,136 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
     final adState = ref.watch(rewardedAdProvider);
     final proUnlocked = ref.watch(guitarProUnlockedProvider);
     final isEn = ref.watch(appSettingsProvider).isEnglish;
+    final isWorkoutPage = widget.isWorkoutOnlyPage;
 
-    return Container(
+    return Scaffold(
       key: const Key('guitar_studio_sheet'),
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.90,
-      ),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border.all(
-          color: isDark ? AppColors.borderDark : AppColors.borderLight,
+      backgroundColor:
+          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      appBar: AppBar(
+        leading: IconButton(
+          key: const Key('btn_close_guitar_studio'),
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: Text(
+          isWorkoutPage
+              ? (isEn
+                  ? 'Guitar Finger Workouts & Tab'
+                  : 'Luyện Ngón Guitar & Đọc Tab')
+              : (isEn
+                  ? 'Guitar Fretboard, Chords & Scales'
+                  : 'Bản Đồ Cần Đàn & Hợp Âm Guitar'),
+          style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.w800),
         ),
       ),
-      child: SafeArea(
-        top: false,
+      body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-          shrinkWrap: true,
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
+          ),
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 28),
           children: [
-            Center(
-              child: Container(
-                width: 42,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey.withOpacity(0.35),
-                  borderRadius: BorderRadius.circular(99),
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFD97706).withOpacity(0.14),
-                    borderRadius: BorderRadius.circular(11),
-                  ),
-                  child: const Icon(
-                    Icons.music_note_rounded,
-                    color: Color(0xFFD97706),
-                    size: 21,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        isEn
-                            ? 'Guitar Studio & Fretboard Map'
-                            : 'Phòng Học Guitar & Bản Đồ Cần Đàn',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      Text(
-                        isEn
-                            ? '6 Strings (E–A–D–G–B–e) • Chords • Scales • Tab & Spider'
-                            : '6 Dây (E–A–D–G–B–e) • Hợp âm • Scale • Đọc Tab & Luyện ngón',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 11.5),
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  key: const Key('btn_close_guitar_studio'),
-                  icon: const Icon(Icons.close_rounded),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-
-            // 4 Chế độ học Guitar tách biệt rõ ràng (Hiển thị gọn trên 1 hàng 4 cột, không tràn khung 360px)
-            Row(
-              children: [
-                for (final (idx, label, icon) in [
-                  (0, isEn ? 'Fretboard' : 'Map Cần', Icons.grid_on_rounded),
-                  (1, isEn ? 'Chords' : 'Hợp âm', Icons.pan_tool_alt_rounded),
-                  (2, 'Scale', Icons.timeline_rounded),
-                  (3, isEn ? 'Tab & 1234' : 'Đọc Tab', Icons.queue_music_rounded),
-                ]) ...[
-                  if (idx > 0) const SizedBox(width: 6),
-                  Expanded(
-                    child: Material(
-                      color: _selectedTab == idx
-                          ? const Color(0xFFD97706)
-                          : (isDark
-                              ? Colors.white.withOpacity(0.06)
-                              : const Color(0xFFD97706).withOpacity(0.08)),
-                      borderRadius: BorderRadius.circular(11),
-                      child: InkWell(
-                        key: Key('chip_guitar_tab_$idx'),
-                        borderRadius: BorderRadius.circular(11),
-                        onTap: () {
-                          _spiderTimer?.cancel();
-                          _strumTimer?.cancel();
-                          setState(() {
-                            _isSpiderPlaying = false;
-                            _activeStrumString = null;
-                            _activeStrumFret = null;
-                            _selectedTab = idx;
-                          });
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 8,
-                            horizontal: 4,
-                          ),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                icon,
-                                size: 16,
+            if (!isWorkoutPage) ...[
+              // 3 Phân khu trên Trang Bản Đồ Cần Đàn (Map Cần | 36 Hợp Âm | Bản đồ Scale)
+              Row(
+                children: [
+                  for (final (idx, label, icon) in [
+                    (0, isEn ? 'Fretboard' : 'Map Cần đàn', Icons.grid_on_rounded),
+                    (
+                      1,
+                      isEn ? 'Chords (36)' : 'Hợp âm (36)',
+                      Icons.pan_tool_alt_rounded
+                    ),
+                    (2, isEn ? 'Scales' : 'Bản đồ Scale', Icons.timeline_rounded),
+                  ]) ...[
+                    if (idx > 0) const SizedBox(width: 8),
+                    Expanded(
+                      child: Material(
+                        color: _selectedTab == idx
+                            ? const Color(0xFFD97706)
+                            : (isDark
+                                ? AppColors.surfaceDark
+                                : Colors.white),
+                        borderRadius: BorderRadius.circular(12),
+                        child: InkWell(
+                          key: Key('chip_guitar_tab_$idx'),
+                          borderRadius: BorderRadius.circular(12),
+                          onTap: () {
+                            _spiderTimer?.cancel();
+                            _strumTimer?.cancel();
+                            setState(() {
+                              _isSpiderPlaying = false;
+                              _activeStrumString = null;
+                              _activeStrumFret = null;
+                              _selectedTab = idx;
+                            });
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 10,
+                              horizontal: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
                                 color: _selectedTab == idx
-                                    ? Colors.white
-                                    : const Color(0xFFD97706),
+                                    ? const Color(0xFFD97706)
+                                    : (isDark
+                                        ? AppColors.borderDark
+                                        : AppColors.borderLight),
                               ),
-                              const SizedBox(height: 3),
-                              FittedBox(
-                                fit: BoxFit.scaleDown,
-                                child: Text(
-                                  label,
-                                  style: TextStyle(
-                                    fontSize: 11.5,
-                                    fontWeight: FontWeight.w800,
-                                    color: _selectedTab == idx
-                                        ? Colors.white
-                                        : null,
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  icon,
+                                  size: 18,
+                                  color: _selectedTab == idx
+                                      ? Colors.white
+                                      : const Color(0xFFD97706),
+                                ),
+                                const SizedBox(height: 4),
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    label,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w800,
+                                      color: _selectedTab == idx
+                                          ? Colors.white
+                                          : null,
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
+                  ],
                 ],
-              ],
-            ),
-            const SizedBox(height: 12),
+              ),
+              const SizedBox(height: 14),
+            ],
 
-            if (_selectedTab == 0)
+            if (isWorkoutPage || _selectedTab == 3)
+              _buildTabAndSpiderExerciseTab(audioService, isDark, isEn)
+            else if (_selectedTab == 0)
               _buildFretboardMapTab(audioService, isDark, isEn)
             else if (_selectedTab == 1)
               _buildChordShapesTab(audioService, isDark, isEn)
-            else if (_selectedTab == 2)
+            else
               _buildScaleMapTab(
                 context,
                 audioService,
                 adState,
                 proUnlocked,
                 isDark,
-              )
-            else
-              _buildTabAndSpiderExerciseTab(audioService, isDark),
+              ),
           ],
         ),
       ),
@@ -657,40 +1139,94 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
     );
   }
 
-  /// TAB 2: Thư viện Thế bấm Hợp âm Guitar (Chord Shapes) + Rải từng dây sáng đèn
+  /// TAB 2: Thư viện 36 Hợp âm Guitar thực tế (Phân theo 4 nhóm: Mở, Chặn Barre, Hợp âm 7, Hợp âm Màu)
   Widget _buildChordShapesTab(dynamic audioService, bool isDark, bool isEn) {
-    final chord = GuitarFretboardData.commonChords[_selectedChordIndex];
+    final categories = [
+      ('all', isEn ? 'All (36)' : 'Tất cả (36)'),
+      ('open', isEn ? 'Open (8)' : 'Hợp âm Mở (8)'),
+      ('barre', isEn ? 'Barre (8)' : 'Hợp âm Chặn (8)'),
+      ('seventh', isEn ? '7th (12)' : 'Hợp âm Bảy (12)'),
+      ('color', isEn ? 'Color (8)' : 'Hợp âm Màu (8)'),
+    ];
+    final filteredChords = _selectedChordCategory == 'all'
+        ? GuitarFretboardData.commonChords
+        : GuitarFretboardData.commonChords
+            .where((c) => c.category == _selectedChordCategory)
+            .toList();
+    final chord = filteredChords.firstWhere(
+      (c) => c.id == _selectedChordId,
+      orElse: () => filteredChords.first,
+    );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Bộ lọc 4 nhóm hợp âm (Mở, Chặn, Hợp âm 7, Hợp âm Màu)
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              for (int i = 0; i < categories.length; i++) ...[
+                if (i > 0) const SizedBox(width: 6),
+                ChoiceChip(
+                  key: Key('chip_chord_cat_${categories[i].$1}'),
+                  visualDensity: VisualDensity.compact,
+                  label: Text(
+                    categories[i].$2,
+                    style: const TextStyle(
+                      fontSize: 11.8,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  selected: _selectedChordCategory == categories[i].$1,
+                  onSelected: (_) {
+                    _strumTimer?.cancel();
+                    final nextList = categories[i].$1 == 'all'
+                        ? GuitarFretboardData.commonChords
+                        : GuitarFretboardData.commonChords
+                            .where((c) => c.category == categories[i].$1)
+                            .toList();
+                    setState(() {
+                      _selectedChordCategory = categories[i].$1;
+                      _selectedChordId = nextList.first.id;
+                      _activeStrumString = null;
+                      _activeStrumFret = null;
+                    });
+                    _playChordRealVoicing(nextList.first);
+                  },
+                ),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
         Wrap(
           spacing: 6,
           runSpacing: 6,
-          children: List.generate(GuitarFretboardData.commonChords.length, (i) {
-            final c = GuitarFretboardData.commonChords[i];
-            final selected = _selectedChordIndex == i;
-            return ChoiceChip(
-              key: Key('chip_guitar_chord_${c.id}'),
-              visualDensity: VisualDensity.compact,
-              label: Text(
-                c.id,
-                style: const TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w800,
+          children: [
+            for (final c in filteredChords)
+              ChoiceChip(
+                key: Key('chip_guitar_chord_${c.id}'),
+                visualDensity: VisualDensity.compact,
+                label: Text(
+                  c.id,
+                  style: const TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
+                selected: chord.id == c.id,
+                onSelected: (_) {
+                  _strumTimer?.cancel();
+                  setState(() {
+                    _selectedChordId = c.id;
+                    _activeStrumString = null;
+                    _activeStrumFret = null;
+                  });
+                  _playChordRealVoicing(c);
+                },
               ),
-              selected: selected,
-              onSelected: (_) {
-                _strumTimer?.cancel();
-                setState(() {
-                  _selectedChordIndex = i;
-                  _activeStrumString = null;
-                  _activeStrumFret = null;
-                });
-                audioService.playAsset(c.audioAsset);
-              },
-            );
-          }),
+          ],
         ),
         const SizedBox(height: 10),
         Container(
@@ -734,9 +1270,9 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
                       minimumSize: const Size(0, 34),
                       padding: const EdgeInsets.symmetric(horizontal: 10),
                     ),
-                    onPressed: () => audioService.playAsset(chord.audioAsset),
+                    onPressed: () => _playChordRealVoicing(chord),
                     icon: const Icon(Icons.volume_up_rounded, size: 15),
-                    label: Text(isEn ? 'Chord' : 'Gảy hợp âm'),
+                    label: Text(isEn ? 'Play Chord' : 'Gảy hợp âm'),
                   ),
                 ],
               ),
@@ -797,7 +1333,7 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
         ),
         const SizedBox(height: 10),
         InteractiveGuitarFretboard(
-          maxFrets: 5,
+          maxFrets: chord.maxFret > 5 ? chord.maxFret : 5,
           chordShape: chord,
           activeString: _activeStrumString,
           activeFret: _activeStrumFret,
@@ -808,7 +1344,7 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Hướng dẫn đặt ngón: ${chord.tip} (Số 1: Ngón trỏ • Số 2: Ngón giữa • Số 3: Áp út • O: Dây buông • X: Không gảy)',
+          'Hướng dẫn đặt ngón: ${chord.tip} (Số 1: Ngón trỏ • Số 2: Ngón giữa • Số 3: Áp út • Số 4: Út • O: Dây buông • X: Không gảy)',
           style: const TextStyle(fontSize: 12, height: 1.38),
         ),
       ],
@@ -842,11 +1378,27 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
       ),
       (
         'em_pentatonic',
-        'Full Map 12 ngăn (50 Gem)',
-        true,
-        {'E', 'G', 'A', 'B', 'D', 'F#'},
+        'Em Pentatonic',
+        false,
+        {'E', 'G', 'A', 'B', 'D'},
         'E',
-        'Bản đồ Scale mở rộng toàn cần đàn 12 ngăn giúp nối các thế bấm CAGED từ ngăn 0 lên ngăn 12.'
+        'Ngũ cung Mi Thứ (Mi – Sol – La – Si – Rê) tận dụng toàn bộ các dây buông trên cần đàn Guitar.'
+      ),
+      (
+        'g_major',
+        'Sol Trưởng (G)',
+        false,
+        {'G', 'A', 'B', 'C', 'D', 'E', 'F#'},
+        'G',
+        'Âm giai Sol Trưởng (có 1 dấu thăng Fa#), song song với giọng Mi Thứ (Em).'
+      ),
+      (
+        'a_harmonic_minor',
+        'La Thứ Hài Hòa (50 Gem)',
+        true,
+        {'A', 'B', 'C', 'D', 'E', 'F', 'G#'},
+        'A',
+        'Âm giai La Thứ Hài Hòa (nâng bậc 7 lên Sol# G#) tạo màu sắc cổ điển & Flamenco cuốn hút trên 12 ngăn.'
       ),
     ];
 
@@ -920,7 +1472,7 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
           scaleRootPitch: currentScale.$5,
           onTapFret: (s, f) {
             final info = GuitarFretboardData.noteAt(stringNumber: s, fret: f);
-            audioService.playAsset(info.audioAsset);
+            audioService.playPolyphonicAsset(info.audioAsset);
           },
         ),
         const SizedBox(height: 8),
@@ -932,78 +1484,266 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
     );
   }
 
-  /// TAB 4: Cách đọc Tab 6 dây & Bài luyện ngón Spider 1-2-3-4
-  Widget _buildTabAndSpiderExerciseTab(dynamic audioService, bool isDark) {
-    final activeString = _spiderStep < 4 ? 6 : 5;
-    final activeFret = (_spiderStep % 4) + 1;
+  /// TAB 4 (Trang riêng biệt): 6 Bài Luyện Ngón Guitar & Thực Hành Đọc Tab Chuyên Sâu
+  Widget _buildTabAndSpiderExerciseTab(
+    dynamic audioService,
+    bool isDark,
+    bool isEn,
+  ) {
+    final workouts = GuitarFretboardData.fingerWorkouts;
+    final currentWorkout = workouts[_selectedWorkoutIndex % workouts.length];
+    final currentStepTuple =
+        currentWorkout.steps[_spiderStep % currentWorkout.steps.length];
+    final activeString = currentStepTuple.$1;
+    final activeFret = currentStepTuple.$2;
+    final activeFingerText = currentStepTuple.$3;
+    final activeNote = GuitarFretboardData.noteAt(
+      stringNumber: activeString,
+      fret: activeFret,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Text(
+          isEn
+              ? 'Select Finger Workout (6 Progressive Exercises):'
+              : 'Chọn bài luyện ngón (6 bài từ Cơ bản đến Nâng cao):',
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(height: 8),
+        // Danh sách 6 bài luyện ngón
+        Column(
+          children: List.generate(workouts.length, (idx) {
+            final w = workouts[idx];
+            final selected = _selectedWorkoutIndex == idx;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 7),
+              child: Material(
+                color: selected
+                    ? const Color(0xFFD97706).withOpacity(isDark ? 0.22 : 0.12)
+                    : (isDark ? AppColors.surfaceDark : Colors.white),
+                borderRadius: BorderRadius.circular(13),
+                child: InkWell(
+                  key: Key('card_guitar_workout_${w.id}'),
+                  borderRadius: BorderRadius.circular(13),
+                  onTap: () {
+                    _spiderTimer?.cancel();
+                    setState(() {
+                      _isSpiderPlaying = false;
+                      _selectedWorkoutIndex = idx;
+                      _spiderStep = 0;
+                    });
+                    _playCurrentSpiderStep();
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(13),
+                      border: Border.all(
+                        color: selected
+                            ? const Color(0xFFD97706)
+                            : (isDark
+                                ? AppColors.borderDark
+                                : AppColors.borderLight),
+                        width: selected ? 1.6 : 1.0,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: selected
+                                ? const Color(0xFFD97706)
+                                : const Color(0xFFD97706).withOpacity(0.14),
+                            borderRadius: BorderRadius.circular(9),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            '${idx + 1}',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w900,
+                              color: selected
+                                  ? Colors.white
+                                  : const Color(0xFFD97706),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            w.title,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: w.levelTag == 'Cơ bản'
+                                ? AppColors.correct.withOpacity(0.15)
+                                : (w.levelTag == 'Trung bình'
+                                    ? AppColors.primary.withOpacity(0.15)
+                                    : const Color(0xFFD97706).withOpacity(0.2)),
+                            borderRadius: BorderRadius.circular(99),
+                          ),
+                          child: Text(
+                            w.levelTag,
+                            style: TextStyle(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w800,
+                              color: w.levelTag == 'Cơ bản'
+                                  ? AppColors.correct
+                                  : (w.levelTag == 'Trung bình'
+                                      ? AppColors.primary
+                                      : const Color(0xFFD97706)),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }),
+        ),
+        const SizedBox(height: 6),
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: AppColors.primary.withOpacity(0.08),
             borderRadius: BorderRadius.circular(14),
           ),
-          child: const Column(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Cách đọc Tab Guitar trong 10 giây:',
-                style: TextStyle(fontSize: 13.2, fontWeight: FontWeight.w800),
+                currentWorkout.title,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
-              SizedBox(height: 4),
+              const SizedBox(height: 4),
               Text(
-                '• Khuông Tab gồm 6 dòng kẻ ngang đại diện cho 6 dây đàn (Dòng trên cùng là Dây 1 mỏng nhất e4, dòng dưới cùng là Dây 6 dày nhất E2).\n'
-                '• Con số viết trên dòng nào = Bấm vào NGĂN ĐÓ của dây đó (Số 0 = Gảy dây buông không bấm; Số 1–2–3–4 = Bấm ngăn 1, 2, 3, 4).',
-                style: TextStyle(fontSize: 11.8, height: 1.38),
+                currentWorkout.description,
+                style: const TextStyle(fontSize: 12, height: 1.38),
+              ),
+              const SizedBox(height: 10),
+              // Thanh điều khiển tốc độ & Chạy mẫu / Tập từng bước
+              Row(
+                children: [
+                  for (final (ms, lbl) in [
+                    (680, isEn ? 'Slow' : 'Chậm'),
+                    (500, isEn ? 'Normal' : 'Vừa'),
+                    (330, isEn ? 'Fast' : 'Nhanh'),
+                  ]) ...[
+                    Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: ChoiceChip(
+                        visualDensity: VisualDensity.compact,
+                        label: Text(
+                          lbl,
+                          style: const TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        selected: _spiderStepIntervalMs == ms,
+                        onSelected: (_) {
+                          setState(() => _spiderStepIntervalMs = ms);
+                          if (_isSpiderPlaying) {
+                            _spiderTimer?.cancel();
+                            _isSpiderPlaying = false;
+                            _toggleSpiderExercise();
+                          }
+                        },
+                      ),
+                    ),
+                  ],
+                  const Spacer(),
+                  IconButton(
+                    tooltip: isEn ? 'Previous Step' : 'Bước trước',
+                    onPressed: () => _stepWorkoutManually(-1),
+                    icon: const Icon(Icons.skip_previous_rounded),
+                  ),
+                  IconButton(
+                    tooltip: isEn ? 'Next Step' : 'Bước tiếp',
+                    onPressed: () => _stepWorkoutManually(1),
+                    icon: const Icon(Icons.skip_next_rounded),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Bước ${(_spiderStep % currentWorkout.steps.length) + 1}/${currentWorkout.steps.length}: Dây $activeString • Ngăn $activeFret (${activeNote.fullLabel}) → $activeFingerText',
+                      style: const TextStyle(
+                        fontSize: 12.2,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton.icon(
+                    key: const Key('btn_toggle_spider_exercise'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _isSpiderPlaying
+                          ? AppColors.wrong
+                          : const Color(0xFFD97706),
+                      minimumSize: const Size(0, 38),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                    ),
+                    onPressed: _toggleSpiderExercise,
+                    icon: Icon(
+                      _isSpiderPlaying
+                          ? Icons.stop_rounded
+                          : Icons.play_arrow_rounded,
+                      size: 18,
+                    ),
+                    label: Text(
+                      _isSpiderPlaying
+                          ? (isEn ? 'Stop' : 'Dừng tập')
+                          : (isEn ? 'Auto Play' : 'Chạy mẫu'),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
         ),
         const SizedBox(height: 10),
-        Row(
-          children: [
-            const Expanded(
-              child: Text(
-                'Bài luyện ngón Spider (Bò nhện 1–2–3–4):',
-                style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800),
-              ),
-            ),
-            ElevatedButton.icon(
-              key: const Key('btn_toggle_spider_exercise'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    _isSpiderPlaying ? AppColors.wrong : AppColors.primary,
-                minimumSize: const Size(0, 36),
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-              ),
-              onPressed: _toggleSpiderExercise,
-              icon: Icon(
-                _isSpiderPlaying
-                    ? Icons.stop_rounded
-                    : Icons.play_arrow_rounded,
-                size: 18,
-              ),
-              label: Text(_isSpiderPlaying ? 'Dừng tập' : 'Chạy mẫu 1-2-3-4'),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
         GuitarTabViewerWidget(
-          activeStepIndex: _spiderStep,
+          activeStepIndex: _spiderStep % currentWorkout.steps.length,
           isDark: isDark,
+          customSteps: currentWorkout.steps
+              .map((s) => (s.$1, s.$2))
+              .toList(growable: false),
         ),
         const SizedBox(height: 10),
         InteractiveGuitarFretboard(
-          maxFrets: 5,
+          maxFrets: currentWorkout.maxFret,
           activeString: activeString,
           activeFret: activeFret,
           showAllNotes: false,
           onTapFret: (s, f) {
             final info = GuitarFretboardData.noteAt(stringNumber: s, fret: f);
-            audioService.playAsset(info.audioAsset);
+            audioService.playPolyphonicAsset(info.audioAsset);
           },
         ),
       ],
@@ -1275,6 +2015,7 @@ class GuitarTabViewerWidget extends StatelessWidget {
   final bool isDark;
   final int? highlightString; // 1..6
   final int? highlightFret;
+  final List<(int, int)>? customSteps;
 
   const GuitarTabViewerWidget({
     super.key,
@@ -1282,22 +2023,23 @@ class GuitarTabViewerWidget extends StatelessWidget {
     required this.isDark,
     this.highlightString,
     this.highlightFret,
+    this.customSteps,
   });
 
   @override
   Widget build(BuildContext context) {
     const tabStrings = ['e|', 'B|', 'G|', 'D|', 'A|', 'E|'];
-    // 8 bước bài tập Spider 1-2-3-4 trên Dây 6 rồi sang Dây 5
-    const steps = [
-      (6, 1),
-      (6, 2),
-      (6, 3),
-      (6, 4),
-      (5, 1),
-      (5, 2),
-      (5, 3),
-      (5, 4),
-    ];
+    final steps = customSteps ??
+        const [
+          (6, 1),
+          (6, 2),
+          (6, 3),
+          (6, 4),
+          (5, 1),
+          (5, 2),
+          (5, 3),
+          (5, 4),
+        ];
 
     return Container(
       padding: const EdgeInsets.all(10),

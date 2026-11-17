@@ -473,16 +473,16 @@ class TopicsScreen extends ConsumerWidget {
           title: isEn ? '6-String Fretboard' : 'Map Cần đàn 6 dây',
           accentColor: const Color(0xFFD97706),
           isDark: isDark,
-          onTap: () => showGuitarStudioSheet(context),
+          onTap: () => showGuitarStudioSheet(context, initialTab: 0),
         );
       }
       return _BigTopicGridCard(
         key: const Key('topic_grid_card_guitar_spider'),
         icon: Icons.touch_app_rounded,
-        title: isEn ? 'Spider 1-2-3-4' : 'Luyện ngón 1-2-3-4',
+        title: isEn ? 'Finger Workouts' : 'Luyện ngón 1-2-3-4',
         accentColor: const Color(0xFFD97706),
         isDark: isDark,
-        onTap: () => showGuitarStudioSheet(context),
+        onTap: () => showGuitarFingerWorkoutPage(context),
       );
     }
 
