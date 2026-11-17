@@ -169,7 +169,7 @@ Future<bool> redeemPrestigePointsForBattleTurns(
   return true;
 }
 
-/// UI-12: Hỗ trợ nhà phát triển – Xem Video Quảng Cáo Có Thưởng (UC-16 & Section 13)
+/// Màn hình Trạm Gem & Hỗ trợ nhà phát triển
 class SupportDeveloperScreen extends ConsumerStatefulWidget {
   const SupportDeveloperScreen({super.key});
 
@@ -519,31 +519,13 @@ class _SupportDeveloperScreenState
                       ),
                     ),
 
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Icon(
-                          _statusIcon(adState.status),
-                          color: _statusColor(adState.status),
-                          size: 18,
-                        ),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            'Trạng thái: ${_statusLabel(adState.status)}',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w800,
-                              fontSize: 13.5,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 10),
                     Text(
                       adState.statusMessage,
                       key: const Key('text_ad_status_message'),
-                      style: const TextStyle(fontSize: 12.8, height: 1.35),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 12.2, height: 1.32),
                     ),
                     const SizedBox(height: 12),
 
@@ -561,7 +543,7 @@ class _SupportDeveloperScreenState
                           size: 22,
                         ),
                         label: const Text(
-                          'Xem video quảng cáo ủng hộ ngay (15s)',
+                          'Xem video 15s (+100 Gem & +1 Lượt)',
                         ),
                       )
                     else
@@ -585,8 +567,8 @@ class _SupportDeveloperScreenState
                             : const Icon(Icons.ondemand_video_rounded),
                         label: Text(
                           adState.status == RewardedAdStatus.loading
-                              ? 'Đang tải video quảng cáo...'
-                              : 'Tải & Xem video quảng cáo ủng hộ',
+                              ? 'Đang tải video...'
+                              : 'Xem video 15s (+100 Gem)',
                         ),
                       ),
 
@@ -815,8 +797,8 @@ class _SupportDeveloperScreenState
             // Package 1: 100 Gems -> +1 Turn
             _buildRedeemPackageTile(
               buttonKey: const Key('btn_redeem_100_points'),
-              title: 'Gói Nạp Nhanh: +1 Lượt Đấu Trường',
-              subtitle: 'Tỷ lệ chuẩn 100 Gem = 1 Lượt • Đổi ngay cả khi Offline',
+              title: '+1 Lượt Đấu Trường',
+              subtitle: '100 Gem',
               pointsCost: 100,
               turnsToGrant: 1,
               availablePoints: availablePoints,
@@ -829,12 +811,12 @@ class _SupportDeveloperScreenState
             // Package 2: 250 Gems -> +3 Turns (Save 50 Gems)
             _buildRedeemPackageTile(
               buttonKey: const Key('btn_redeem_250_points'),
-              title: 'Gói Tăng Tốc: +3 Lượt Đấu Trường',
-              subtitle: 'Tiết kiệm 50 Gem (+20% giá trị lượt chơi)',
+              title: '+3 Lượt Đấu Trường',
+              subtitle: 'Tiết kiệm 50 Gem',
               pointsCost: 250,
               turnsToGrant: 3,
               availablePoints: availablePoints,
-              badgeText: 'TIẾT KIỆM 50 GEM',
+              badgeText: 'ƯU ĐÃI',
               accentColor: AppColors.correct,
               isDark: isDark,
             ),
@@ -843,12 +825,12 @@ class _SupportDeveloperScreenState
             // Package 3: 400 Gems -> +5 Turns (Save 100 Gems)
             _buildRedeemPackageTile(
               buttonKey: const Key('btn_redeem_400_points'),
-              title: 'Gói Cao Thủ: +5 Lượt Đấu Trường',
-              subtitle: 'Tiết kiệm 100 Gem (Tặng 1 lượt miễn phí • Đầy 5/5 thanh)',
+              title: '+5 Lượt Đấu Trường',
+              subtitle: 'Tiết kiệm 100 Gem',
               pointsCost: 400,
               turnsToGrant: 5,
               availablePoints: availablePoints,
-              badgeText: 'HOT • TẶNG +1 LƯỢT',
+              badgeText: 'TỐT NHẤT',
               accentColor: AppColors.primary,
               isDark: isDark,
             ),
@@ -980,50 +962,6 @@ class _SupportDeveloperScreenState
         ],
       ),
     );
-  }
-
-  String _statusLabel(RewardedAdStatus status) {
-    switch (status) {
-      case RewardedAdStatus.notLoaded:
-        return 'Sẵn sàng kết nối';
-      case RewardedAdStatus.loading:
-        return 'Đang tải video...';
-      case RewardedAdStatus.ready:
-        return 'Video đã sẵn sàng';
-      case RewardedAdStatus.completed:
-        return 'Đã xem hoàn tất';
-      case RewardedAdStatus.dismissedEarly:
-        return 'Đã đóng sớm';
-      case RewardedAdStatus.offline:
-        return 'Không có mạng';
-      case RewardedAdStatus.sdkError:
-        return 'Tạm thời chưa khả dụng';
-    }
-  }
-
-  IconData _statusIcon(RewardedAdStatus status) {
-    switch (status) {
-      case RewardedAdStatus.completed:
-        return Icons.check_circle_rounded;
-      case RewardedAdStatus.offline:
-        return Icons.wifi_off_rounded;
-      case RewardedAdStatus.ready:
-        return Icons.play_circle_fill_rounded;
-      default:
-        return Icons.smart_display_rounded;
-    }
-  }
-
-  Color _statusColor(RewardedAdStatus status) {
-    switch (status) {
-      case RewardedAdStatus.completed:
-      case RewardedAdStatus.ready:
-        return AppColors.correct;
-      case RewardedAdStatus.offline:
-        return AppColors.warning;
-      default:
-        return AppColors.primary;
-    }
   }
 }
 

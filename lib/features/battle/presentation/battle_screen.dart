@@ -25,6 +25,7 @@ class BattleScreen extends ConsumerStatefulWidget {
 class _BattleScreenState extends ConsumerState<BattleScreen>
     with WidgetsBindingObserver {
   BattleNotifier? _battleNotifier;
+  bool _isTabletopOpposite180 = false;
 
   static const List<(String id, String label, IconData icon)> _battleTopics = [
     ('all', 'Tổng hợp (7 Chủ đề)', Icons.auto_awesome_rounded),
@@ -1863,7 +1864,8 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
   }
 
   /// Giao diện Chiến đấu 2 Người 1 Máy:
-  /// Mỗi bên có một giao diện câu hỏi, nút nghe và 4 đáp án riêng biệt, đánh độc lập không chờ nhau!
+  /// - Hỗ trợ chuyển đổi giữa "Ngồi cạnh nhau (Trái/Phải)" và "Ngồi đối diện bàn (Xoay 180° nửa trên)".
+  /// - Mỗi bên có một giao diện câu hỏi, nút nghe và 4 đáp án riêng biệt, đánh độc lập không chờ nhau!
   Widget _buildSplitScreenControls(
     BuildContext context,
     BattleNotifier notifier,
@@ -1874,184 +1876,223 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
     bool isDark,
   ) {
     const badges = ['A', 'B', 'C', 'D'];
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+
+    final p1Station = Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: const Color(0xFF4F46E5).withOpacity(0.08),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: const Color(0xFF4F46E5).withOpacity(0.35),
+        ),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Flexible(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.shield_rounded,
+                      size: 13,
+                      color: Color(0xFF4F46E5),
+                    ),
+                    SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        'NGƯỜI CHƠI 1',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFF4F46E5),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(
+                  minWidth: 26,
+                  minHeight: 26,
+                ),
+                icon: const Icon(
+                  Icons.volume_up_rounded,
+                  size: 16,
+                  color: Color(0xFF4F46E5),
+                ),
+                onPressed: () => audioService.playAsset(p1Q.audioAsset),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            _shortBattlePrompt(p1Q.prompt),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 6),
+          for (int i = 0; i < p1Q.options.length; i++) ...[
+            if (i > 0) const SizedBox(height: 6),
+            _buildBattleOptionTile(
+              key: Key('battle_p1_opt_$i'),
+              badge: badges[i % badges.length],
+              option: p1Q.options[i],
+              isResolved: state.isRoundResolved || state.p1LockedOut,
+              selectedOptionId: state.p1SelectedOptionId,
+              accentColor: const Color(0xFF4F46E5),
+              isDark: isDark,
+              compact: true,
+              onTap: () => notifier.submitPlayer1Answer(p1Q.options[i]),
+            ),
+          ],
+        ],
+      ),
+    );
+
+    final p2Station = Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEC4899).withOpacity(0.08),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: const Color(0xFFEC4899).withOpacity(0.35),
+        ),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Flexible(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.local_fire_department_rounded,
+                      size: 13,
+                      color: Color(0xFFEC4899),
+                    ),
+                    SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        'NGƯỜI CHƠI 2',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFFEC4899),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(
+                  minWidth: 26,
+                  minHeight: 26,
+                ),
+                icon: const Icon(
+                  Icons.volume_up_rounded,
+                  size: 16,
+                  color: Color(0xFFEC4899),
+                ),
+                onPressed: () => audioService.playAsset(p2Q.audioAsset),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            _shortBattlePrompt(p2Q.prompt),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 6),
+          for (int i = 0; i < p2Q.options.length; i++) ...[
+            if (i > 0) const SizedBox(height: 6),
+            _buildBattleOptionTile(
+              key: Key('battle_p2_opt_$i'),
+              badge: badges[i % badges.length],
+              option: p2Q.options[i],
+              isResolved: state.isRoundResolved || state.p2LockedOut,
+              selectedOptionId: state.p2SelectedOptionId,
+              accentColor: const Color(0xFFEC4899),
+              isDark: isDark,
+              compact: true,
+              onTap: () => notifier.submitPlayer2Answer(p2Q.options[i]),
+            ),
+          ],
+        ],
+      ),
+    );
+
+    return Column(
       children: [
-        // Giao diện riêng của Người chơi 1 (Trái)
-        Expanded(
-          child: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: const Color(0xFF4F46E5).withOpacity(0.08),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: const Color(0xFF4F46E5).withOpacity(0.35),
-              ),
+        Align(
+          alignment: Alignment.centerRight,
+          child: TextButton.icon(
+            key: const Key('btn_toggle_split_tabletop_180'),
+            style: TextButton.styleFrom(
+              minimumSize: const Size(0, 30),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              backgroundColor: AppColors.primary.withOpacity(0.10),
             ),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Flexible(
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.shield_rounded,
-                            size: 13,
-                            color: Color(0xFF4F46E5),
-                          ),
-                          SizedBox(width: 4),
-                          Flexible(
-                            child: Text(
-                              'NGƯỜI CHƠI 1',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w900,
-                                color: Color(0xFF4F46E5),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    IconButton(
-                      visualDensity: VisualDensity.compact,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(
-                        minWidth: 26,
-                        minHeight: 26,
-                      ),
-                      icon: const Icon(
-                        Icons.volume_up_rounded,
-                        size: 16,
-                        color: Color(0xFF4F46E5),
-                      ),
-                      onPressed: () => audioService.playAsset(p1Q.audioAsset),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _shortBattlePrompt(p1Q.prompt),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                for (int i = 0; i < p1Q.options.length; i++) ...[
-                  if (i > 0) const SizedBox(height: 6),
-                  _buildBattleOptionTile(
-                    key: Key('battle_p1_opt_$i'),
-                    badge: badges[i % badges.length],
-                    option: p1Q.options[i],
-                    isResolved: state.isRoundResolved || state.p1LockedOut,
-                    selectedOptionId: state.p1SelectedOptionId,
-                    accentColor: const Color(0xFF4F46E5),
-                    isDark: isDark,
-                    compact: true,
-                    onTap: () => notifier.submitPlayer1Answer(p1Q.options[i]),
-                  ),
-                ],
-              ],
+            onPressed: () => setState(
+              () => _isTabletopOpposite180 = !_isTabletopOpposite180,
+            ),
+            icon: Icon(
+              _isTabletopOpposite180
+                  ? Icons.view_column_rounded
+                  : Icons.screen_rotation_alt_rounded,
+              size: 15,
+            ),
+            label: Text(
+              _isTabletopOpposite180
+                  ? 'Chế độ: Ngồi đối diện (180°) • Đổi sang Ngồi cạnh'
+                  : 'Đổi sang: Ngồi đối diện bàn (Xoay 180°)',
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
             ),
           ),
         ),
-        const SizedBox(width: 8),
-        // Giao diện riêng của Người chơi 2 (Phải)
-        Expanded(
-          child: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: const Color(0xFFEC4899).withOpacity(0.08),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: const Color(0xFFEC4899).withOpacity(0.35),
-              ),
-            ),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Flexible(
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.local_fire_department_rounded,
-                            size: 13,
-                            color: Color(0xFFEC4899),
-                          ),
-                          SizedBox(width: 4),
-                          Flexible(
-                            child: Text(
-                              'NGƯỜI CHƠI 2',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w900,
-                                color: Color(0xFFEC4899),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    IconButton(
-                      visualDensity: VisualDensity.compact,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(
-                        minWidth: 26,
-                        minHeight: 26,
-                      ),
-                      icon: const Icon(
-                        Icons.volume_up_rounded,
-                        size: 16,
-                        color: Color(0xFFEC4899),
-                      ),
-                      onPressed: () => audioService.playAsset(p2Q.audioAsset),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _shortBattlePrompt(p2Q.prompt),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                for (int i = 0; i < p2Q.options.length; i++) ...[
-                  if (i > 0) const SizedBox(height: 6),
-                  _buildBattleOptionTile(
-                    key: Key('battle_p2_opt_$i'),
-                    badge: badges[i % badges.length],
-                    option: p2Q.options[i],
-                    isResolved: state.isRoundResolved || state.p2LockedOut,
-                    selectedOptionId: state.p2SelectedOptionId,
-                    accentColor: const Color(0xFFEC4899),
-                    isDark: isDark,
-                    compact: true,
-                    onTap: () => notifier.submitPlayer2Answer(p2Q.options[i]),
-                  ),
-                ],
-              ],
-            ),
+        const SizedBox(height: 6),
+        if (_isTabletopOpposite180) ...[
+          RotatedBox(
+            quarterTurns: 2,
+            child: p2Station,
           ),
-        ),
+          const SizedBox(height: 10),
+          p1Station,
+        ] else
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: p1Station),
+              const SizedBox(width: 8),
+              Expanded(child: p2Station),
+            ],
+          ),
       ],
     );
   }

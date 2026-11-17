@@ -10,7 +10,7 @@ import '../../../../core/utils/note_formatter.dart';
 ///   Plots the note (notehead, stem, 1–2 upper/lower ledger lines, sharp `♯`) on the 5-line staff
 ///   (Treble Clef `𝄞` including G3–C6 ledger lines, Bass Clef `𝄢` including C3–D4 ledger lines)
 ///   BEFORE answering while hiding the note name (`?`), then reveals the answer (`✓` / `✗`) after answering.
-class MusicalStaffWidget extends StatelessWidget {
+class MusicalStaffWidget extends StatefulWidget {
   final String? targetNoteKey; // e.g. 'C4', 'G3_SOL', 'A3_SOL', 'C6', 'C4_FA'
   final String? selectedNoteKey; // e.g. 'D4'
   final bool showNote;
@@ -39,17 +39,24 @@ class MusicalStaffWidget extends StatelessWidget {
   }
 
   @override
+  State<MusicalStaffWidget> createState() => _MusicalStaffWidgetState();
+}
+
+class _MusicalStaffWidgetState extends State<MusicalStaffWidget> {
+  bool _showLandmarks = false;
+
+  @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final targetParsed = _ParsedStaffNote.tryParse(targetNoteKey);
-    final selectedParsed = _ParsedStaffNote.tryParse(selectedNoteKey);
+    final targetParsed = _ParsedStaffNote.tryParse(widget.targetNoteKey);
+    final selectedParsed = _ParsedStaffNote.tryParse(widget.selectedNoteKey);
 
-    final hasWrongComparison = showNote &&
+    final hasWrongComparison = widget.showNote &&
         selectedParsed != null &&
         targetParsed != null &&
         selectedParsed.cleanKey != targetParsed.cleanKey;
 
-    final bool useBassClef = forceBassClef ??
+    final bool useBassClef = widget.forceBassClef ??
         (targetParsed != null
             ? (targetParsed.explicitClef == 'bass'
                 ? true
@@ -66,13 +73,13 @@ class MusicalStaffWidget extends StatelessWidget {
         targetParsed?.ledgerLineBadgeLabel(useBassClef: useBassClef);
 
     final String statusBadgeText;
-    if (showNote) {
+    if (widget.showNote) {
       final cleanLabel =
           NoteFormatter.toVietnameseLabel(targetParsed?.cleanKey ?? '');
       statusBadgeText = ledgerHint != null
           ? '$cleanLabel • $ledgerHint'
           : 'Vị trí: $cleanLabel';
-    } else if (isSightReading) {
+    } else if (widget.isSightReading) {
       if (ledgerHint != null) {
         statusBadgeText = ledgerHint;
       } else {
@@ -89,7 +96,7 @@ class MusicalStaffWidget extends StatelessWidget {
 
     return Container(
       key: const Key('musical_staff_widget'),
-      height: isSightReading ? 114 : 96,
+      height: widget.isSightReading ? 114 : 96,
       padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
       decoration: BoxDecoration(
         color: isDark
@@ -97,12 +104,13 @@ class MusicalStaffWidget extends StatelessWidget {
             : const Color(0xFFF6F9FF),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: showNote
+          color: widget.showNote
               ? (hasWrongComparison
                   ? AppColors.wrong.withOpacity(0.45)
                   : AppColors.correct.withOpacity(0.45))
-              : activeHeaderColor.withOpacity(isSightReading ? 0.42 : 0.22),
-          width: isSightReading && !showNote ? 1.5 : 1.2,
+              : activeHeaderColor
+                  .withOpacity(widget.isSightReading ? 0.42 : 0.22),
+          width: widget.isSightReading && !widget.showNote ? 1.5 : 1.2,
         ),
       ),
       child: Column(
@@ -126,7 +134,41 @@ class MusicalStaffWidget extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: 4),
+                InkWell(
+                  key: const Key('btn_toggle_staff_landmarks'),
+                  borderRadius: BorderRadius.circular(99),
+                  onTap: () => setState(() => _showLandmarks = !_showLandmarks),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _showLandmarks
+                          ? AppColors.accentAmber.withOpacity(0.22)
+                          : activeHeaderColor.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(99),
+                      border: Border.all(
+                        color: _showLandmarks
+                            ? AppColors.accentAmber
+                            : activeHeaderColor.withOpacity(0.25),
+                        width: 0.9,
+                      ),
+                    ),
+                    child: Text(
+                      _showLandmarks ? 'Ẩn mốc' : 'Mốc chuẩn',
+                      style: TextStyle(
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w800,
+                        color: _showLandmarks
+                            ? AppColors.accentAmber
+                            : activeHeaderColor,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 4),
                 Flexible(
                   child: Container(
                     padding: const EdgeInsets.symmetric(
@@ -134,9 +176,9 @@ class MusicalStaffWidget extends StatelessWidget {
                       vertical: 2,
                     ),
                     decoration: BoxDecoration(
-                      color: showNote
+                      color: widget.showNote
                           ? AppColors.correct.withOpacity(0.15)
-                          : (ledgerHint != null && isSightReading
+                          : (ledgerHint != null && widget.isSightReading
                               ? AppColors.accentAmber.withOpacity(0.16)
                               : activeHeaderColor.withOpacity(0.12)),
                       borderRadius: BorderRadius.circular(99),
@@ -148,9 +190,9 @@ class MusicalStaffWidget extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 10.5,
                           fontWeight: FontWeight.w800,
-                          color: showNote
+                          color: widget.showNote
                               ? AppColors.correct
-                              : (ledgerHint != null && isSightReading
+                              : (ledgerHint != null && widget.isSightReading
                                   ? AppColors.accentAmber
                                   : activeHeaderColor),
                         ),
@@ -165,11 +207,13 @@ class MusicalStaffWidget extends StatelessWidget {
           Expanded(
             child: CustomPaint(
               painter: _MusicalStaffPainter(
-                targetNoteKey: targetNoteKey,
-                selectedNoteKey: hasWrongComparison ? selectedNoteKey : null,
-                showNote: showNote,
-                isSightReading: isSightReading,
+                targetNoteKey: widget.targetNoteKey,
+                selectedNoteKey:
+                    hasWrongComparison ? widget.selectedNoteKey : null,
+                showNote: widget.showNote,
+                isSightReading: widget.isSightReading,
                 useBassClef: useBassClef,
+                showLandmarks: _showLandmarks,
                 isDark: isDark,
               ),
             ),
@@ -283,6 +327,7 @@ class _MusicalStaffPainter extends CustomPainter {
   final bool showNote;
   final bool isSightReading;
   final bool useBassClef;
+  final bool showLandmarks;
   final bool isDark;
 
   _MusicalStaffPainter({
@@ -291,6 +336,7 @@ class _MusicalStaffPainter extends CustomPainter {
     required this.showNote,
     required this.isSightReading,
     required this.useBassClef,
+    this.showLandmarks = false,
     required this.isDark,
   });
 
@@ -377,6 +423,40 @@ class _MusicalStaffPainter extends CustomPainter {
 
     double yForStep(int step) {
       return bottomLineY - (step - 2) * stepHeight;
+    }
+
+    // Vẽ Mốc chuẩn định vị nhanh (C4 / Sol4 / La5 cho Khóa Sol; Fa3 / C4 cho Khóa Fa) khi bật
+    if (showLandmarks) {
+      final landmarks = useBassClef
+          ? const [(8, 'Fa3 (Dòng 4)'), (12, 'Đô C4 (Phụ 1)')]
+          : const [
+              (0, 'Đô C4 (Phụ 1)'),
+              (4, 'Sol4 (Dòng 2)'),
+              (12, 'La5 (Phụ 1)')
+            ];
+      for (final (lmStep, lmLabel) in landmarks) {
+        final lmY = yForStep(lmStep);
+        final lmPaint = Paint()
+          ..color = AppColors.accentAmber.withOpacity(0.55)
+          ..strokeWidth = 1.2;
+        canvas.drawLine(
+          Offset(leftX + 38, lmY),
+          Offset(leftX + 54, lmY),
+          lmPaint,
+        );
+        final tp = TextPainter(
+          text: TextSpan(
+            text: lmLabel,
+            style: TextStyle(
+              fontSize: 8.5,
+              fontWeight: FontWeight.w800,
+              color: AppColors.accentAmber.withOpacity(0.92),
+            ),
+          ),
+          textDirection: TextDirection.ltr,
+        )..layout();
+        tp.paint(canvas, Offset(leftX + 56, lmY - tp.height / 2));
+      }
     }
 
     final targetParsed = _ParsedStaffNote.tryParse(targetNoteKey);
@@ -608,6 +688,7 @@ class _MusicalStaffPainter extends CustomPainter {
         oldDelegate.showNote != showNote ||
         oldDelegate.isSightReading != isSightReading ||
         oldDelegate.useBassClef != useBassClef ||
+        oldDelegate.showLandmarks != showLandmarks ||
         oldDelegate.isDark != isDark;
   }
 }

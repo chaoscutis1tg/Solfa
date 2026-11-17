@@ -9,6 +9,7 @@ import '../../../app/widgets/solfa_background.dart';
 import '../../../core/models/domain_models.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/utils/note_formatter.dart';
+import '../../guitar/presentation/guitar_studio_sheet.dart';
 import '../application/practice_session_controller.dart';
 import 'widgets/musical_staff_widget.dart';
 
@@ -435,8 +436,15 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
                           },
                         ),
 
-                        // Visual 5-Line Musical Staff (Piano Keyboard removed for a clean, focused layout)
-                        if (question.showPianoHelper) ...[
+                        // Visual 5-Line Musical Staff (Piano/Theory) or Interactive Guitar Fretboard/Tab Board (Guitar Mode)
+                        if (question.topicId.startsWith('topic_guitar_')) ...[
+                          const SizedBox(height: 12),
+                          GuitarQuestionBoardWidget(
+                            topicId: question.topicId,
+                            optionKey: question.correctOption.optionKey,
+                            isRevealed: isCurrentAnswered,
+                          ),
+                        ] else if (question.showPianoHelper) ...[
                           const SizedBox(height: 12),
                           MusicalStaffWidget(
                             targetNoteKey: question.correctOption.optionKey,

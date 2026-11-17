@@ -773,7 +773,7 @@ void main() {
           await sessionNotifier.abandonSessionIfIncomplete();
         });
 
-        // 9. Kiểm tra Modal chọn Cấp độ & Thời gian (modal_topic_practice_setup) và Pháp lý Gem / Chống hack trên màn 360x680
+        // 9. Kiểm tra Modal chọn Cấp độ & Thời gian (modal_topic_practice_setup), Phân khu Học Guitar & Pháp lý Gem / Chống hack trên màn 360x680
         router.go('/topics');
         await pumpFrames(300);
         await tester.tap(find.text('Luyện đọc nốt'));
@@ -785,6 +785,30 @@ void main() {
         expect(find.byKey(const Key('btn_modal_start_practice')), findsOneWidget);
         expect(tester.takeException(), isNull);
         Navigator.of(tester.element(find.byKey(const Key('modal_topic_practice_setup')))).pop();
+        await pumpFrames(250);
+
+        // Chuyển sang phân khu "Học Guitar & Cần đàn" trên màn 360x680
+        await tester.tap(find.byKey(const Key('tab_practice_area_guitar')));
+        await pumpFrames(300);
+        expect(find.byKey(const Key('topic_grid_card_topic_guitar_notes')), findsOneWidget);
+        expect(find.byKey(const Key('topic_grid_card_topic_guitar_chords')), findsOneWidget);
+        expect(find.byKey(const Key('topic_grid_card_topic_guitar_scales')), findsOneWidget);
+        expect(find.byKey(const Key('topic_grid_card_topic_guitar_tabs')), findsOneWidget);
+        expect(tester.takeException(), isNull);
+
+        await tester.tap(find.byKey(const Key('topic_grid_card_guitar_studio')));
+        await pumpFrames(300);
+        expect(find.byKey(const Key('guitar_studio_sheet')), findsOneWidget);
+        await tester.tap(find.byKey(const Key('chip_guitar_tab_1')));
+        await pumpFrames(250);
+        await tester.tap(find.byKey(const Key('chip_guitar_tab_2')));
+        await pumpFrames(250);
+        await tester.tap(find.byKey(const Key('chip_guitar_tab_3')));
+        await pumpFrames(250);
+        expect(tester.takeException(), isNull);
+        await tester.tap(find.byKey(const Key('btn_close_guitar_studio')));
+        await pumpFrames(250);
+        await tester.tap(find.byKey(const Key('tab_practice_area_piano')));
         await pumpFrames(250);
 
         router.go('/settings');
@@ -1687,6 +1711,33 @@ void main() {
         // Đủ 50 Gem -> mở khóa phiên luyện tập chuyên sâu 1 tiếng thành công, trừ 50 Gem
         expect(await adNotifier.spendGemsForOneHourSession(), isTrue);
         expect(container.read(rewardedAdProvider).prestigePoints, equals(0));
+        // 7. Kiểm tra cả 4 bài học Chế độ Guitar (Nhớ nốt Cần đàn, Hợp âm Guitar, Bản đồ Scale, Đọc Tab & Luyện ngón)
+        for (final gtrTopic in const [
+          'topic_guitar_notes',
+          'topic_guitar_chords',
+          'topic_guitar_scales',
+          'topic_guitar_tabs',
+        ]) {
+          final gtrOk = await sessionNotifier.startSession(
+            mode: 'topic',
+            topicId: gtrTopic,
+            levelId: '${gtrTopic.replaceFirst('topic_', 'lvl_')}_basic',
+            targetCount: 6,
+            seed: 555,
+          );
+          expect(gtrOk, isTrue, reason: 'Khởi tạo $gtrTopic phải thành công');
+          final gtrQuestions = container.read(practiceSessionProvider).questions;
+          expect(gtrQuestions.length, equals(6));
+          for (final q in gtrQuestions) {
+            expect(q.options.length, equals(4));
+            expect(
+              q.correctOption.optionKey.startsWith('GTR_'),
+              isTrue,
+              reason: 'Câu hỏi $gtrTopic phải gắn mã sơ đồ trực quan GTR_',
+            );
+          }
+          await sessionNotifier.abandonSessionIfIncomplete();
+        }
       },
     );
   });

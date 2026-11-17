@@ -8,6 +8,7 @@ import '../../../app/widgets/crossed_swords_icon.dart';
 import '../../../app/widgets/solfa_gem_icon.dart';
 import '../../../core/models/domain_models.dart';
 import '../../../core/providers/app_providers.dart';
+import '../../guitar/presentation/guitar_studio_sheet.dart';
 import '../../practice/application/practice_session_controller.dart';
 import '../../practice/presentation/widgets/free_piano_explorer_sheet.dart';
 import '../../support_developer/application/rewarded_ad_controller.dart';
@@ -469,11 +470,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             VerticalDivider(width: 1, thickness: 1, color: dividerColor),
             Expanded(
               child: _QuickAccessItem(
+                key: const Key('btn_open_guitar_studio'),
+                icon: Icons.grid_on_rounded,
+                title: 'Đàn Guitar',
+                subtitle: 'Map & Tab',
+                accentColor: const Color(0xFFD97706),
+                onTap: () => showGuitarStudioSheet(context),
+              ),
+            ),
+            VerticalDivider(width: 1, thickness: 1, color: dividerColor),
+            Expanded(
+              child: _QuickAccessItem(
                 icon: Icons.replay_rounded,
                 title: 'Ôn câu sai',
                 subtitle: pendingCount > 0
-                    ? '$pendingCount câu cần ôn'
-                    : 'Đã thuộc hết',
+                    ? '$pendingCount câu'
+                    : 'Thuộc hết',
                 accentColor: pendingCount > 0 ? AppColors.wrong : null,
                 onTap: () => context.push('/review'),
               ),
