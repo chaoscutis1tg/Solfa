@@ -160,40 +160,32 @@ def generate_poster_screenshot() -> None:
     accent_box = im.crop((166, 38, 176, 45)).transpose(Image.Transpose.FLIP_LEFT_RIGHT)
     im.paste(accent_box, (166, 38))
 
-    # 2. Fix subtitle 'Khương Nhạc' -> 'Khuông Nhạc' (around x=255..279, y=180..202)
-    # Remove tiny horn on 'ư' (x=259..264, y=184..191) and horn/grave above 'ơ' (x=265..280, y=179..190)
-    for y in range(178, 191):
-        bg_col = px[256, 181]
-        for x in range(259, 280):
-            if y < 189 or x >= 260:
-                r, g, b, a = px[x, y]
-                # Erase only above the main x-height (y < 189) or the horn on 'u' (x=260..263, y=186..190)
-                if y <= 187 or (260 <= x <= 264 and y <= 190) or (273 <= x <= 279 and y <= 191):
-                    px[x, y] = bg_col
-    # Draw crisp white circumflex '^' above 'o' in 'Khuông' centered at (269, 184)
+    # 2. Fix subtitle 'Khương Nhạc' -> 'Khuông Nhạc'
+    bg_sub = px[265, 181]
+    for y in range(180, 189):
+        for x in range(264, 279):
+            if (264 <= x <= 266 and 184 <= y <= 188) or (268 <= x <= 274 and 180 <= y <= 185) or (275 <= x <= 278 and 184 <= y <= 189):
+                px[x, y] = bg_sub
     pdraw = ImageDraw.Draw(im)
-    pdraw.line([(265, 186), (269, 181), (273, 186)], fill=(255, 255, 255, 255), width=2)
+    pdraw.line([(267, 185), (271, 181), (275, 185)], fill=(255, 255, 255, 255), width=2)
 
-    # 3. Fix Card 1 'Khương nhạc' -> 'Khuông nhạc' (around x=399..415, y=276..287)
-    for y in range(276, 286):
-        bg_c1 = px[398, 278]
-        for x in range(400, 415):
-            if y <= 282 or (401 <= x <= 404 and y <= 285) or (411 <= x <= 415 and y <= 286):
-                px[x, y] = bg_c1
-    pdraw.line([(405, 281), (408, 278), (411, 281)], fill=(255, 255, 255, 255), width=2)
+    # 3. Fix Card 1 'Khương nhạc' -> 'Khuông nhạc'
+    bg_c1 = px[405, 279]
+    for y in range(281, 286):
+        for x in [405, 406, 413, 414, 415]:
+            px[x, y] = bg_c1
+    pdraw.line([(407, 282), (410, 279), (413, 282)], fill=(255, 255, 255, 255), width=2)
 
-    # 4. Fix Card 2 'Cặn đàn' -> 'Cần đàn' (around x=383..393, y=357..375)
-    # Erase dot below 'a' (y=371..375) and breve above 'a' (y=357..362)
-    bg_c2 = px[383, 359]
-    for y in range(371, 376):
-        for x in range(384, 392):
+    # 4. Fix Card 2 'Cặn đàn' -> 'Cần đàn' (letter 'a' is at x=384..389, y=367..371)
+    bg_c2 = px[384, 363]
+    for y in range(372, 375):
+        for x in range(385, 389):
             px[x, y] = px[383, y]
-    for y in range(356, 363):
-        for x in range(384, 393):
+    for y in range(364, 367):
+        for x in range(384, 390):
             px[x, y] = bg_c2
-    # Draw circumflex '^' + grave accent above 'a' -> 'ầ'
-    pdraw.line([(385, 362), (388, 359), (391, 362)], fill=(235, 245, 255, 255), width=1)
-    pdraw.line([(387, 356), (390, 358)], fill=(235, 245, 255, 255), width=1)
+    pdraw.line([(384, 366), (386, 364), (388, 366)], fill=(235, 245, 255, 255), width=1)
+    pdraw.line([(386, 362), (388, 363)], fill=(235, 245, 255, 255), width=1)
 
     poster_1080 = im.convert("RGB").resize((1080, 1920), Image.Resampling.LANCZOS)
     poster_1080.save(os.path.join(STORE_DIR, "screenshot_0_poster_gioi_thieu.png"), "PNG")
