@@ -16,11 +16,23 @@ enum RewardedAdStatus {
 }
 
 class RewardedAdState {
-  /// Chi phí mở khóa 1 phiên luyện tập chuyên sâu 1 tiếng (3600 giây).
-  static const int kOneHourPracticeGemCost = 50;
+  /// Chi phí mở khóa 1 phiên luyện tập chuyên sâu 1 tiếng (3600 giây) = 200 Gem (tương đương 2 video quảng cáo).
+  static const int kOneHourPracticeGemCost = 200;
 
-  /// Chi phí mở khóa 1 phiên luyện tập Tự do không giới hạn thời gian (0 giây).
-  static const int kUnlimitedPracticeGemCost = 100;
+  /// Chi phí mở khóa 1 phiên luyện tập Tự do không giới hạn thời gian (0 giây) = 350 Gem (tương đương 3–4 video quảng cáo).
+  static const int kUnlimitedPracticeGemCost = 350;
+
+  /// Chi phí mở khóa vĩnh viễn Bản đồ Scale VIP Guitar 12 ngăn = 300 Gem (tương đương 3 video quảng cáo).
+  static const int kGuitarProScaleGemCost = 300;
+
+  /// Chi phí đổi Gem tích lũy lấy +1 Lượt Đấu Trường = 200 Gem.
+  static const int kSingleBattleTurnGemCost = 200;
+
+  /// Chi phí đổi Gem tích lũy lấy gói +3 Lượt Đấu Trường (Ưu đãi tiết kiệm 100 Gem) = 500 Gem.
+  static const int kThreeBattleTurnsGemCost = 500;
+
+  /// Chi phí đổi Gem tích lũy lấy gói +5 Lượt Đấu Trường (Tốt nhất tiết kiệm 200 Gem) = 800 Gem.
+  static const int kFiveBattleTurnsGemCost = 800;
 
   /// Phần thưởng Gem khi hoàn thành mục tiêu hàng ngày.
   static const int kDailyGoalBonusGems = 20;
@@ -67,7 +79,7 @@ class RewardedAdState {
   /// Alias cho `prestigePoints` theo tên đơn vị mới `Gem`.
   int get gems => prestigePoints;
 
-  bool get canRedeemSingleTurn => prestigePoints >= 100;
+  bool get canRedeemSingleTurn => prestigePoints >= kSingleBattleTurnGemCost;
 
   bool get canAffordOneHourPractice =>
       prestigePoints >= kOneHourPracticeGemCost;

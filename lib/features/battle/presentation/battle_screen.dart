@@ -107,7 +107,8 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
   ) async {
     final adState = ref.read(rewardedAdProvider);
     final availablePoints = adState.prestigePoints;
-    final canRedeem = availablePoints >= 100;
+    const turnCost = RewardedAdState.kSingleBattleTurnGemCost;
+    final canRedeem = availablePoints >= turnCost;
 
     final action = await showDialog<String>(
       context: context,
@@ -145,7 +146,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
             ),
             const SizedBox(height: 8),
             Text(
-              'Mỗi ngày Đấu Trường tặng 5 lượt miễn phí. Bạn có thể xem 1 video (15 giây) để hồi ngay +1 lượt & nhận +100 Gem, hoặc dùng Gem tích lũy (hiện có: $availablePoints Gem) để đổi sang lượt chơi!',
+              'Mỗi ngày Đấu Trường tặng 5 lượt miễn phí. Bạn có thể xem 1 video (15 giây) để hồi ngay +1 lượt & nhận +100 Gem, hoặc dùng $turnCost Gem tích lũy (hiện có: $availablePoints Gem) để đổi sang lượt chơi!',
               textAlign: TextAlign.center,
               style: const TextStyle(fontSize: 13, height: 1.38),
             ),
@@ -191,7 +192,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
                 label: FittedBox(
                   fit: BoxFit.scaleDown,
                   child: Text(
-                    'Đổi 100 Gem → +1 Lượt ($availablePoints Gem)',
+                    'Đổi $turnCost Gem → +1 Lượt ($availablePoints Gem)',
                     style: TextStyle(
                       fontWeight: FontWeight.w800,
                       color:
@@ -232,7 +233,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
       await redeemPrestigePointsForBattleTurns(
         context,
         ref,
-        pointsCost: 100,
+        pointsCost: turnCost,
         turnsToGrant: 1,
       );
     } else if (action == 'open_station') {
@@ -853,7 +854,8 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
   ) {
     final adState = ref.watch(rewardedAdProvider);
     final availablePoints = adState.prestigePoints;
-    final canRedeem = availablePoints >= 100;
+    const turnCost = RewardedAdState.kSingleBattleTurnGemCost;
+    final canRedeem = availablePoints >= turnCost;
     final remaining = state.remainingBattlesToday;
     const maxFree = BattleState.maxDailyFreeBattles;
     final hasTurns = remaining > 0;
@@ -998,14 +1000,14 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
                   onPressed: () => redeemPrestigePointsForBattleTurns(
                     context,
                     ref,
-                    pointsCost: 100,
+                    pointsCost: turnCost,
                     turnsToGrant: 1,
                   ),
                   icon: const SolfaGemIcon(size: 13),
                   label: FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Text(
-                      'Đổi 100 Gem → +1 Lượt',
+                      'Đổi $turnCost Gem → +1 Lượt',
                       style: TextStyle(
                         fontSize: 11.5,
                         fontWeight: FontWeight.w700,

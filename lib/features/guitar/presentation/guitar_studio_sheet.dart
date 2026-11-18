@@ -2349,7 +2349,7 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet>
       ),
       (
         'a_harmonic_minor',
-        'La Thứ Hài Hòa (50 Gem)',
+        'La Thứ Hài Hòa (${RewardedAdState.kGuitarProScaleGemCost} Gem)',
         true,
         {'A', 'B', 'C', 'D', 'E', 'F', 'G#'},
         'A',
@@ -2396,13 +2396,15 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet>
                     if (sc.$3 && !proUnlocked) {
                       final ok = await ref
                           .read(rewardedAdProvider.notifier)
-                          .spendGemsForOneHourSession(gemCost: 50);
+                          .spendGemsForOneHourSession(
+                            gemCost: RewardedAdState.kGuitarProScaleGemCost,
+                          );
                       if (!ok) {
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: const Text(
-                                'Cần 50 Gem để mở khóa vĩnh viễn Full Map Scale 12 ngăn. Hãy xem video ngắn để nhận ngay +100 Gem miễn phí nhé!',
+                                'Cần ${RewardedAdState.kGuitarProScaleGemCost} Gem để mở khóa vĩnh viễn Full Map Scale 12 ngăn. Hãy xem video ngắn để nhận ngay +100 Gem miễn phí nhé!',
                               ),
                               action: SnackBarAction(
                                 label: 'Nhận +100 Gem',
@@ -2452,8 +2454,8 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet>
                 Expanded(
                   child: Text(
                     isEn
-                        ? 'Watch a short ad for +100 Gems & unlock Pro Scales!'
-                        : 'Mở khóa Scale VIP: Xem video ngắn nhận ngay +100 Gem!',
+                        ? 'Watch short ads for +100 Gems & unlock Pro Scales (${RewardedAdState.kGuitarProScaleGemCost} Gems)!'
+                        : 'Mở khóa Scale VIP (${RewardedAdState.kGuitarProScaleGemCost} Gem): Xem video ngắn nhận +100 Gem!',
                     style: const TextStyle(
                       fontSize: 11.2,
                       fontWeight: FontWeight.w700,
@@ -2470,9 +2472,18 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet>
                   onPressed: () async {
                     await showRewardedVideoAdSimulationDialog(context, ref);
                     if (mounted &&
-                        ref.read(rewardedAdProvider).prestigePoints >= 50) {
-                      ref.read(guitarProUnlockedProvider.notifier).state = true;
-                      unawaited(persistGuitarProUnlockedPreference(true));
+                        ref.read(rewardedAdProvider).prestigePoints >=
+                            RewardedAdState.kGuitarProScaleGemCost) {
+                      final ok = await ref
+                          .read(rewardedAdProvider.notifier)
+                          .spendGemsForOneHourSession(
+                            gemCost: RewardedAdState.kGuitarProScaleGemCost,
+                          );
+                      if (ok && mounted) {
+                        ref.read(guitarProUnlockedProvider.notifier).state =
+                            true;
+                        unawaited(persistGuitarProUnlockedPreference(true));
+                      }
                     }
                   },
                   icon: const Icon(Icons.play_circle_fill_rounded, size: 14),

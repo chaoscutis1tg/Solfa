@@ -1535,24 +1535,32 @@ void main() {
         await pumpFrames(250);
         expect(tester.takeException(), isNull);
 
-        // 7. Kiểm tra Đổi Điểm Uy Tín (100đ -> +1 Lượt Đấu) ngay tại Đấu Trường & tại Trạm Đổi Điểm (/support-developer)
+        // 7. Kiểm tra Đổi Điểm Uy Tín (200 Gem -> +1 Lượt Đấu) ngay tại Đấu Trường & tại Trạm Đổi Điểm (/support-developer)
         expect(container.read(rewardedAdProvider).prestigePoints, equals(100));
         expect(container.read(rewardedAdProvider).supportedCount, equals(1));
         expect(find.byKey(const Key('btn_battle_redeem_points_turn')), findsOneWidget);
 
         await tester.runAsync(() async {
+          // Xem thêm 1 quảng cáo nữa để đủ 200 Gem đổi 1 lượt đấu
+          await container
+              .read(rewardedAdProvider.notifier)
+              .completeWatchingAd(watchedToEnd: true);
+          expect(container.read(rewardedAdProvider).prestigePoints, equals(200));
           final redeemed = await container
               .read(rewardedAdProvider.notifier)
-              .spendPrestigePointsForTurns(pointsCost: 100, turnsGranted: 1);
+              .spendPrestigePointsForTurns(
+                pointsCost: RewardedAdState.kSingleBattleTurnGemCost,
+                turnsGranted: 1,
+              );
           expect(redeemed, isTrue);
           await battleNotifier.restoreTurnFromRewardedAd(turns: 1);
         });
         await pumpFrames(250);
         expect(container.read(rewardedAdProvider).prestigePoints, equals(0));
-        expect(container.read(rewardedAdProvider).totalPrestigePoints, equals(100));
-        expect(container.read(rewardedAdProvider).spentPrestigePoints, equals(100));
+        expect(container.read(rewardedAdProvider).totalPrestigePoints, equals(200));
+        expect(container.read(rewardedAdProvider).spentPrestigePoints, equals(200));
         // Danh hiệu vinh danh vĩnh viễn vẫn giữ nguyên dù đã đổi hết điểm khả dụng!
-        expect(container.read(rewardedAdProvider).supportedCount, equals(1));
+        expect(container.read(rewardedAdProvider).supportedCount, equals(2));
         expect(
           container.read(rewardedAdProvider).supporterBadgeTitle,
           equals('Người đồng hành Âm nhạc'),
@@ -1570,17 +1578,17 @@ void main() {
         expect(find.byKey(const Key('btn_redeem_400_points')), findsOneWidget);
         expect(tester.takeException(), isNull);
 
-        // Tích lũy thêm 3 lượt ủng hộ (+300đ) và bấm trực tiếp nút Đổi gói 250đ -> +3 Lượt Đấu Trường
+        // Tích lũy thêm 5 lượt ủng hộ (+500 Gem) và bấm trực tiếp nút Đổi gói 500 Gem -> +3 Lượt Đấu Trường
         await tester.runAsync(() async {
-          for (int i = 0; i < 3; i++) {
+          for (int i = 0; i < 5; i++) {
             await container
                 .read(rewardedAdProvider.notifier)
                 .completeWatchingAd(watchedToEnd: true);
           }
         });
         await pumpFrames(250);
-        expect(container.read(rewardedAdProvider).prestigePoints, equals(300));
-        expect(container.read(rewardedAdProvider).supportedCount, equals(4));
+        expect(container.read(rewardedAdProvider).prestigePoints, equals(500));
+        expect(container.read(rewardedAdProvider).supportedCount, equals(7));
 
         await tester.ensureVisible(
           find.byKey(const Key('btn_redeem_250_points')),
@@ -1591,9 +1599,9 @@ void main() {
           await Future.delayed(const Duration(milliseconds: 50));
         });
         await pumpFrames(300);
-        expect(container.read(rewardedAdProvider).prestigePoints, equals(50));
-        expect(container.read(rewardedAdProvider).spentPrestigePoints, equals(350));
-        expect(container.read(rewardedAdProvider).supportedCount, equals(4));
+        expect(container.read(rewardedAdProvider).prestigePoints, equals(0));
+        expect(container.read(rewardedAdProvider).spentPrestigePoints, equals(700));
+        expect(container.read(rewardedAdProvider).supportedCount, equals(7));
         expect(container.read(battleProvider).remainingBattlesToday, equals(4));
         expect(container.read(battleProvider).matchHistory.isNotEmpty, isTrue);
 
@@ -1618,7 +1626,7 @@ void main() {
           container.read(rewardedAdProvider).claimedQuestsCountToday,
           equals(3),
         );
-        expect(container.read(rewardedAdProvider).prestigePoints, equals(150));
+        expect(container.read(rewardedAdProvider).prestigePoints, equals(100));
         expect(tester.takeException(), isNull);
       },
     );
@@ -1816,9 +1824,10 @@ void main() {
         );
 
         final adNotifier = container.read(rewardedAdProvider.notifier);
-        // Khi chưa có Gem (0 Gem), mở gói 1 tiếng (50 Gem) phải từ chối
+        // Khi chưa có Gem (0 Gem), mở gói 1 tiếng (200 Gem) phải từ chối
+        expect(RewardedAdState.kOneHourPracticeGemCost, equals(200));
         expect(await adNotifier.spendGemsForOneHourSession(), isFalse);
-        // Nhận thưởng hoàn thành Mục tiêu hôm nay (+20 Gem) và Nhiệm vụ Khởi động (+30 Gem) => tổng 50 Gem
+        // Nhận thưởng hoàn thành Mục tiêu hôm nay (+20 Gem) và Nhiệm vụ Khởi động (+30 Gem) => tổng 50 Gem (chưa đủ 200 Gem)
         final dailyBonus = await adNotifier.awardDailyGoalBonusIfEligible();
         expect(dailyBonus, equals(20));
         // Nhận lần 2 trong cùng ngày sẽ trả về 0 (chống nhận trùng)
@@ -1826,14 +1835,17 @@ void main() {
         final practiceQuest = await adNotifier.claimDailyQuest('practice');
         expect(practiceQuest, equals(30));
         expect(container.read(rewardedAdProvider).prestigePoints, equals(50));
-        // Đủ 50 Gem -> mở khóa phiên luyện tập chuyên sâu 1 tiếng thành công, trừ 50 Gem
+        expect(await adNotifier.spendGemsForOneHourSession(), isFalse);
+        // Tích lũy thêm +150 Gem -> đủ 200 Gem mở khóa phiên luyện tập chuyên sâu 1 tiếng thành công
+        await adNotifier.grantBonusPrestigePoints(150);
+        expect(container.read(rewardedAdProvider).prestigePoints, equals(200));
         expect(await adNotifier.spendGemsForOneHourSession(), isTrue);
         expect(container.read(rewardedAdProvider).prestigePoints, equals(0));
-        // Chế độ Tự do không giới hạn thời gian yêu cầu 100 Gem (cao hơn gói 1 tiếng 50 Gem)
-        expect(RewardedAdState.kUnlimitedPracticeGemCost, equals(100));
+        // Chế độ Tự do không giới hạn thời gian yêu cầu 350 Gem (cao hơn gói 1 tiếng 200 Gem)
+        expect(RewardedAdState.kUnlimitedPracticeGemCost, equals(350));
         expect(await adNotifier.spendGemsForUnlimitedSession(), isFalse);
-        await adNotifier.grantBonusPrestigePoints(100);
-        expect(container.read(rewardedAdProvider).prestigePoints, equals(100));
+        await adNotifier.grantBonusPrestigePoints(350);
+        expect(container.read(rewardedAdProvider).prestigePoints, equals(350));
         expect(await adNotifier.spendGemsForUnlimitedSession(), isTrue);
         expect(container.read(rewardedAdProvider).prestigePoints, equals(0));
         // 7. Kiểm tra cả 4 bài học Chế độ Guitar từ Cơ bản -> Trung bình -> Nâng cao & Lưu lịch sử / Ôn câu sai

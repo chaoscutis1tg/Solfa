@@ -494,7 +494,7 @@ class SettingsScreen extends ConsumerWidget {
                       ),
                       SizedBox(height: 4),
                       Text(
-                        '• "Gem" là đơn vị điểm thưởng nội bộ dùng để mở khóa phiên luyện tập chuyên sâu 1 tiếng (50 Gem), chế độ Tự do không giới hạn thời gian (100 Gem), tính năng Studio hoặc đổi lượt Đấu Trường.\n'
+                        '• "Gem" là đơn vị điểm thưởng nội bộ dùng để mở khóa phiên luyện tập chuyên sâu 1 tiếng (200 Gem), chế độ Tự do không giới hạn thời gian (350 Gem), tính năng Studio (300 Gem) hoặc đổi lượt Đấu Trường (từ 200 Gem).\n'
                         '• Gem hoàn toàn KHÔNG có giá trị tiền mặt, KHÔNG mua bán bằng tiền thật, KHÔNG chuyển nhượng và KHÔNG quy đổi/rút thành tiền dưới mọi hình thức.',
                         style: TextStyle(fontSize: 12.5, height: 1.42),
                       ),

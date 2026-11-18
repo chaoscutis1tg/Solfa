@@ -692,7 +692,7 @@ class _SupportDeveloperScreenState
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '50 Gem mở phiên 1h • 100 Gem mở chế độ Tự do hoặc +1 Lượt Đấu (100% Offline)',
+                        '${RewardedAdState.kOneHourPracticeGemCost} Gem mở phiên 1h • ${RewardedAdState.kUnlimitedPracticeGemCost} Gem mở Tự do • ${RewardedAdState.kSingleBattleTurnGemCost} Gem đổi +1 Lượt Đấu',
                         style: TextStyle(
                           fontSize: 11.3,
                           color: isDark ? Colors.white70 : Colors.black54,
@@ -822,12 +822,12 @@ class _SupportDeveloperScreenState
 
             const SizedBox(height: 12),
 
-            // Package 1: 100 Gems -> +1 Turn
+            // Package 1: 200 Gems -> +1 Turn
             _buildRedeemPackageTile(
               buttonKey: const Key('btn_redeem_100_points'),
               title: '+1 Lượt Đấu Trường',
-              subtitle: '100 Gem',
-              pointsCost: 100,
+              subtitle: '${RewardedAdState.kSingleBattleTurnGemCost} Gem',
+              pointsCost: RewardedAdState.kSingleBattleTurnGemCost,
               turnsToGrant: 1,
               availablePoints: availablePoints,
               badgeText: null,
@@ -836,12 +836,12 @@ class _SupportDeveloperScreenState
             ),
             const SizedBox(height: 8),
 
-            // Package 2: 250 Gems -> +3 Turns (Save 50 Gems)
+            // Package 2: 500 Gems -> +3 Turns (Save 100 Gems)
             _buildRedeemPackageTile(
               buttonKey: const Key('btn_redeem_250_points'),
               title: '+3 Lượt Đấu Trường',
-              subtitle: 'Tiết kiệm 50 Gem',
-              pointsCost: 250,
+              subtitle: 'Tiết kiệm 100 Gem',
+              pointsCost: RewardedAdState.kThreeBattleTurnsGemCost,
               turnsToGrant: 3,
               availablePoints: availablePoints,
               badgeText: 'ƯU ĐÃI',
@@ -850,12 +850,12 @@ class _SupportDeveloperScreenState
             ),
             const SizedBox(height: 8),
 
-            // Package 3: 400 Gems -> +5 Turns (Save 100 Gems)
+            // Package 3: 800 Gems -> +5 Turns (Save 200 Gems)
             _buildRedeemPackageTile(
               buttonKey: const Key('btn_redeem_400_points'),
               title: '+5 Lượt Đấu Trường',
-              subtitle: 'Tiết kiệm 100 Gem',
-              pointsCost: 400,
+              subtitle: 'Tiết kiệm 200 Gem',
+              pointsCost: RewardedAdState.kFiveBattleTurnsGemCost,
               turnsToGrant: 5,
               availablePoints: availablePoints,
               badgeText: 'TỐT NHẤT',
