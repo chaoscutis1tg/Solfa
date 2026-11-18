@@ -1,7 +1,7 @@
 name: solfa
 description: "Solfa – Ứng dụng luyện cảm âm, kiến thức âm nhạc và máy đếm nhịp offline-first."
 publish_to: 'none'
-version: 1.9.0+22
+version: 1.9.1+23
 
 environment:
   sdk: ^3.5.3
@@ -37,5 +37,9 @@ flutter:
     - assets/audio/notes/
     - assets/audio/intervals/
     - assets/audio/keys/
+    - assets/audio/guitar_acoustic/notes/
+    - assets/audio/guitar_acoustic/keys/
+    - assets/audio/guitar_electric/notes/
+    - assets/audio/guitar_electric/keys/
     - assets/audio/metronome/
     - assets/audio/sfx/

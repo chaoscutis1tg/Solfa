@@ -11,6 +11,8 @@ class AssetValidator {
     'assets/audio/notes/',
     'assets/audio/intervals/',
     'assets/audio/keys/',
+    'assets/audio/guitar_acoustic/',
+    'assets/audio/guitar_electric/',
     'assets/audio/metronome/',
     'assets/audio/sfx/',
   };

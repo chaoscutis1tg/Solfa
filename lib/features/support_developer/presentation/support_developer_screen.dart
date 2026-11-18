@@ -97,6 +97,13 @@ Future<bool> showSolfaRewardedVideoAdModal(
   }
 }
 
+/// Alias tiện ích để mở trình phát Quảng cáo Video Nhận Thưởng (+100 Gem & +1 Lượt Đấu Trường) từ mọi màn hình.
+Future<bool> showRewardedVideoAdSimulationDialog(
+  BuildContext context,
+  WidgetRef ref,
+) =>
+    showSolfaRewardedVideoAdModal(context, ref);
+
 /// Exchanges accumulated Developer Supporter Prestige Points (`prestigePoints`)
 /// into Battle Arena Turns (`remainingBattlesToday`). Works 100% offline!
 Future<bool> redeemPrestigePointsForBattleTurns(

@@ -52,20 +52,51 @@ def note_name_to_midi(name: str, octave: int) -> int:
     return (octave + 1) * 12 + NOTE_OFFSETS[name.lower()]
 
 
-def synthesize_piano_note(freq: float, duration: float, volume: float = 0.78) -> list[float]:
-    """Synthesizes a warm grand-piano tone with subtle inharmonicity and hammer attack."""
+def apply_smooth_fade(
+    samples: list[float],
+    fade_in_sec: float = 0.0025,
+    fade_out_sec: float = 0.055,
+) -> list[float]:
+    """Applies a raised-cosine fade-in and fade-out so every sound begins and ends at an exact, click-free zero crossing."""
+    n = len(samples)
+    if n == 0:
+        return samples
+    out = list(samples)
+    n_in = min(int(SAMPLE_RATE * fade_in_sec), n // 4)
+    n_out = min(int(SAMPLE_RATE * fade_out_sec), n // 2)
+    for i in range(n_in):
+        w = 0.5 * (1.0 - math.cos(math.pi * i / max(1, n_in)))
+        out[i] *= w
+    for k in range(n_out):
+        idx = n - 1 - k
+        w = 0.5 * (1.0 - math.cos(math.pi * k / max(1, n_out)))
+        out[idx] *= w
+    if n >= 2:
+        out[0] = 0.0
+        out[-1] = 0.0
+    return out
+
+
+def synthesize_piano_note(freq: float, duration: float, volume: float = 0.80) -> list[float]:
+    """Synthesizes a warm Concert Grand Piano tone with natural string inharmonicity, dual-stage soundboard bloom, and zero-click cosine release."""
     num_samples = int(SAMPLE_RATE * duration)
     samples = [0.0] * num_samples
-    attack = min(0.009, duration * 0.06)
-    release_start = max(attack, duration - 0.09)
+    attack = min(0.006, duration * 0.05)
+    release_len = min(0.14, duration * 0.28)
+    release_start = max(attack, duration - release_len)
 
-    harmonics = [
-        (1.0, 1.00, 1.5),
-        (2.0005, 0.48, 2.5),
-        (3.0015, 0.24, 3.5),
-        (4.0030, 0.12, 4.8),
-        (5.0050, 0.06, 6.2),
-        (6.0080, 0.03, 8.0),
+    # Real piano string inharmonicity coefficient B (higher for upper register)
+    inharm_b = 0.00016 + 0.00012 * min(1.0, freq / 880.0)
+    # Warm harmonic profile (1..8) with faster damping on upper partials
+    base_harmonics = [
+        (1, 1.00, 1.35),
+        (2, 0.52, 2.10),
+        (3, 0.28, 3.00),
+        (4, 0.15, 4.10),
+        (5, 0.08, 5.40),
+        (6, 0.045, 6.80),
+        (7, 0.022, 8.40),
+        (8, 0.011, 10.2),
     ]
 
     for i in range(num_samples):
@@ -73,27 +104,166 @@ def synthesize_piano_note(freq: float, duration: float, volume: float = 0.78) ->
         if t < attack:
             env = 0.5 * (1.0 - math.cos(math.pi * t / attack))
         elif t > release_start:
-            env = max(0.0, 1.0 - (t - release_start) / (duration - release_start))
+            rel_t = (t - release_start) / max(1e-6, duration - release_start)
+            env = 0.5 * (1.0 + math.cos(math.pi * min(1.0, rel_t)))
         else:
             env = 1.0
 
-        val = 0.0
-        for mult, amp, decay in harmonics:
-            f_h = freq * mult
-            if f_h < SAMPLE_RATE * 0.45:
-                val += amp * math.exp(-decay * t) * math.sin(2.0 * math.pi * f_h * t)
+        # Two-stage piano soundboard envelope (initial bloom + singing sustain)
+        soundboard = 0.32 * math.exp(-8.5 * t) + 0.68 * math.exp(-1.15 * t)
 
-        # Subtle warm hammer transient in first 12 ms
-        if t < 0.012:
-            transient = math.exp(-220.0 * t) * math.sin(2.0 * math.pi * (freq * 7.5) * t) * 0.08
-            val += transient
+        val = 0.0
+        for h_idx, amp, decay in base_harmonics:
+            f_h = freq * h_idx * math.sqrt(1.0 + inharm_b * (h_idx ** 2))
+            if f_h < SAMPLE_RATE * 0.44:
+                # Slightly detuned unison string pair on 1st & 2nd harmonics for real grand piano chorus warmth
+                main_wave = math.sin(2.0 * math.pi * f_h * t)
+                if h_idx <= 2:
+                    main_wave = 0.72 * main_wave + 0.28 * math.sin(2.0 * math.pi * (f_h * 1.00045) * t + 0.35)
+                val += amp * math.exp(-decay * t) * main_wave
+
+        # Soft felt-hammer wooden soundboard thump in first 8 ms (warm low-mid, never harsh)
+        if t < 0.008:
+            felt_env = math.exp(-340.0 * t) * math.sin(math.pi * t / 0.008)
+            felt_thump = (
+                0.55 * math.sin(2.0 * math.pi * 185.0 * t)
+                + 0.45 * math.sin(2.0 * math.pi * (freq * 2.5) * t)
+            ) * felt_env * 0.075
+            val += felt_thump
+
+        samples[i] = val * soundboard * env * volume
+
+    samples = apply_smooth_fade(samples, fade_in_sec=0.002, fade_out_sec=min(0.065, duration * 0.22))
+    peak = max((abs(s) for s in samples), default=1.0)
+    if peak > 1e-6:
+        scale = min(1.0, 0.88 / peak) if peak > 0.88 else (0.82 / peak)
+        samples = [s * scale for s in samples]
+    return samples
+
+
+def synthesize_guitar_acoustic_note(freq: float, duration: float = 0.96, volume: float = 0.84) -> list[float]:
+    """
+    Synthesizes an authentic Plucked Phosphor-Bronze Acoustic Guitar (Guitar Thùng):
+    - Plucked string harmonic profile sin(n * pi * x_p) at soundhole rosette (x_p = 0.145)
+    - Spruce soundboard & mahogany air-cavity wood resonances (~104 Hz & ~214 Hz)
+    - Slight initial string displacement pitch settle (+0.32% over 16 ms)
+    - Rapid upper-harmonic mellowing into a warm wooden sustain + smooth cosine fade-out.
+    """
+    num_samples = int(SAMPLE_RATE * duration)
+    samples = [0.0] * num_samples
+    attack = 0.0022
+    release_len = min(0.12, duration * 0.25)
+    release_start = max(attack, duration - release_len)
+    pluck_pos = 0.145
+    inharm_b = 0.00011
+
+    harmonics = []
+    for h in range(1, 11):
+        pluck_weight = abs(math.sin(h * math.pi * pluck_pos)) / (h ** 0.82)
+        decay_rate = 1.65 + 0.58 * (h ** 1.38)
+        harmonics.append((h, pluck_weight, decay_rate))
+
+    for i in range(num_samples):
+        t = i / SAMPLE_RATE
+        if t < attack:
+            env = 0.5 * (1.0 - math.cos(math.pi * t / attack))
+        elif t > release_start:
+            rel_t = (t - release_start) / max(1e-6, duration - release_start)
+            env = 0.5 * (1.0 + math.cos(math.pi * min(1.0, rel_t)))
+        else:
+            env = 1.0
+
+        # Initial string tension pitch settle after plectrum release
+        pitch_bend = 1.0 + 0.0032 * math.exp(-140.0 * t)
+        f_inst = freq * pitch_bend
+
+        val = 0.0
+        for h, amp, decay in harmonics:
+            f_h = f_inst * h * math.sqrt(1.0 + inharm_b * (h ** 2))
+            if f_h < SAMPLE_RATE * 0.44:
+                val += amp * math.exp(-decay * t) * math.sin(2.0 * math.pi * f_h * t + (h * 0.21))
+
+        # Acoustic guitar wooden body resonance (Helmholtz air cavity 104 Hz + Spruce top 214 Hz)
+        if t < 0.055:
+            body_env = math.exp(-68.0 * t) * min(1.0, t / 0.0015)
+            wood_body = (
+                0.22 * math.sin(2.0 * math.pi * 104.0 * t)
+                + 0.16 * math.sin(2.0 * math.pi * 214.0 * t)
+                + 0.10 * math.sin(2.0 * math.pi * 395.0 * t)
+            ) * body_env
+            val += wood_body
+
+        # Crisp plectrum/fingernail pluck transient (0..3.2 ms)
+        if t < 0.0032:
+            pick_env = math.exp(-950.0 * t)
+            pick = (
+                0.14 * math.sin(2.0 * math.pi * 2150.0 * t)
+                + 0.09 * math.sin(2.0 * math.pi * 3420.0 * t)
+            ) * pick_env
+            val += pick
 
         samples[i] = val * env * volume
 
+    samples = apply_smooth_fade(samples, fade_in_sec=0.0018, fade_out_sec=min(0.06, duration * 0.20))
     peak = max((abs(s) for s in samples), default=1.0)
-    if peak > 0.92:
-        scale = 0.90 / peak
-        samples = [s * scale for s in samples]
+    if peak > 1e-6:
+        samples = [s * (0.86 / peak) for s in samples]
+    return samples
+
+
+def synthesize_guitar_electric_note(freq: float, duration: float = 0.96, volume: float = 0.84) -> list[float]:
+    """
+    Synthesizes an authentic Electric Guitar (Guitar Điện - Warm Tube Amp & 12" Speaker Cabinet):
+    - Dual magnetic pickup comb profile + tight plectrum attack
+    - Warm asymmetric tube pre-amp harmonic saturation (tanh soft-clipping)
+    - Singing mid-focused sustain with speaker cabinet roll-off above 3.2 kHz
+    - Smooth raised-cosine fade-out to zero.
+    """
+    num_samples = int(SAMPLE_RATE * duration)
+    samples = [0.0] * num_samples
+    attack = 0.0016
+    release_len = min(0.12, duration * 0.24)
+    release_start = max(attack, duration - release_len)
+
+    harmonics = []
+    for h in range(1, 12):
+        # Neck + Bridge pickup blend profile + 3.2kHz cabinet roll-off
+        pickup_weight = abs(math.sin(h * math.pi * 0.12)) * (0.75 + 0.25 * math.cos(h * math.pi * 0.04))
+        decay_rate = 1.05 + 0.36 * (h ** 1.28)
+        harmonics.append((h, pickup_weight / (h ** 0.72), decay_rate))
+
+    for i in range(num_samples):
+        t = i / SAMPLE_RATE
+        if t < attack:
+            env = 0.5 * (1.0 - math.cos(math.pi * t / attack))
+        elif t > release_start:
+            rel_t = (t - release_start) / max(1e-6, duration - release_start)
+            env = 0.5 * (1.0 + math.cos(math.pi * min(1.0, rel_t)))
+        else:
+            env = 1.0
+
+        pitch_bend = 1.0 + 0.0040 * math.exp(-165.0 * t)
+        f_inst = freq * pitch_bend
+
+        raw = 0.0
+        for h, amp, decay in harmonics:
+            f_h = f_inst * h
+            if f_h < 3400.0:
+                cab_roll = 1.0 / (1.0 + (f_h / 2450.0) ** 2)
+                raw += amp * cab_roll * math.exp(-decay * t) * math.sin(2.0 * math.pi * f_h * t + (h * 0.15))
+
+        # Crisp pick attack snap (0..2.2 ms)
+        if t < 0.0022:
+            raw += 0.20 * math.exp(-1100.0 * t) * math.sin(2.0 * math.pi * 1950.0 * t)
+
+        # Warm tube amplifier soft saturation (adds rich even & odd tube harmonics)
+        tube_saturated = math.tanh(1.85 * raw + 0.06 * (raw ** 2))
+        samples[i] = tube_saturated * env * volume
+
+    samples = apply_smooth_fade(samples, fade_in_sec=0.0015, fade_out_sec=min(0.06, duration * 0.20))
+    peak = max((abs(s) for s in samples), default=1.0)
+    if peak > 1e-6:
+        samples = [s * (0.86 / peak) for s in samples]
     return samples
 
 
@@ -105,6 +275,7 @@ def mix_samples(tracks: list[list[float]], max_peak: float = 0.88) -> list[float
     for t in tracks:
         for i, s in enumerate(t):
             out[i] += s
+    out = apply_smooth_fade(out, fade_in_sec=0.0015, fade_out_sec=0.035)
     peak = max((abs(s) for s in out), default=1.0)
     if peak > 0:
         scale = min(1.0, max_peak / peak)
@@ -113,7 +284,7 @@ def mix_samples(tracks: list[list[float]], max_peak: float = 0.88) -> list[float
 
 
 def mix_at_offsets(events: list[tuple[float, list[float]]], max_peak: float = 0.90) -> list[float]:
-    """Mixes multiple sample arrays at specific start times (in seconds) for overlapping chimes."""
+    """Mixes multiple sample arrays at specific start times (in seconds) with smooth tail fade."""
     if not events:
         return []
     total_len = 0
@@ -128,6 +299,7 @@ def mix_at_offsets(events: list[tuple[float, list[float]]], max_peak: float = 0.
         for i, s in enumerate(samples):
             out[offset + i] += s
 
+    out = apply_smooth_fade(out, fade_in_sec=0.0015, fade_out_sec=0.035)
     peak = max((abs(s) for s in out), default=1.0)
     if peak > 0:
         scale = min(1.0, max_peak / peak)
@@ -141,18 +313,19 @@ def concat_samples(segments: list[list[float]], gap_sec: float = 0.08) -> list[f
     for idx, seg in enumerate(segments):
         if idx > 0 and gap_sec > 0:
             out.extend(gap)
-        out.extend(seg)
-    return out
+        out.extend(apply_smooth_fade(seg, fade_in_sec=0.002, fade_out_sec=0.035))
+    return apply_smooth_fade(out, fade_in_sec=0.002, fade_out_sec=0.04)
 
 
 def write_wav(filepath: str, samples: list[float]) -> None:
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
+    cleaned = apply_smooth_fade(samples, fade_in_sec=0.0015, fade_out_sec=0.025)
     with wave.open(filepath, "w") as wf:
         wf.setnchannels(1)
         wf.setsampwidth(2)
         wf.setframerate(SAMPLE_RATE)
         frames = bytearray()
-        for s in samples:
+        for s in cleaned:
             clamped = max(-0.98, min(0.98, s))
             frames.extend(struct.pack("<h", int(clamped * 32767)))
         wf.writeframes(frames)
@@ -399,40 +572,56 @@ def generate_keys() -> None:
         write_wav(os.path.join(keys_dir, f"{rname}.wav"), mix_at_offsets(events, max_peak=0.92))
 
 
-def synthesize_chime_bell(freq: float, duration: float, amp: float = 0.8) -> list[float]:
-    """Synthesizes a sparkling, warm celesta/glockenspiel chime tone for UI reward feedback."""
+def synthesize_chime_bell(freq: float, duration: float, amp: float = 0.78) -> list[float]:
+    """Synthesizes a warm, smooth rosewood-kalimba/celesta tone with a click-free raised-cosine tail."""
     n = int(SAMPLE_RATE * duration)
     out = [0.0] * n
-    attack = 0.004
+    attack = min(0.0035, duration * 0.08)
+    release_len = min(0.085, duration * 0.38)
+    release_start = max(attack, duration - release_len)
     for i in range(n):
         t = i / SAMPLE_RATE
-        env = (t / attack) if t < attack else math.exp(-7.5 * (t - attack))
-        # Shimmering celesta overtones + slight detuned chorus warmth
+        if t < attack:
+            win = 0.5 * (1.0 - math.cos(math.pi * t / attack))
+        elif t > release_start:
+            rel_t = (t - release_start) / max(1e-6, duration - release_start)
+            win = 0.5 * (1.0 + math.cos(math.pi * min(1.0, rel_t)))
+        else:
+            win = 1.0
+        env = win * math.exp(-10.5 * max(0.0, t - attack))
+        # Pure harmonic overtones only (no 4.2x inharmonic ring or detuned beating)
         v = (
-            0.70 * math.sin(2.0 * math.pi * freq * t)
-            + 0.25 * math.sin(2.0 * math.pi * (freq * 1.0015) * t)
-            + 0.28 * math.exp(-12.0 * t) * math.sin(2.0 * math.pi * (freq * 2.0) * t)
-            + 0.12 * math.exp(-18.0 * t) * math.sin(2.0 * math.pi * (freq * 3.0) * t)
-            + 0.06 * math.exp(-26.0 * t) * math.sin(2.0 * math.pi * (freq * 4.2) * t)
+            0.82 * math.sin(2.0 * math.pi * freq * t)
+            + 0.15 * math.exp(-18.0 * t) * math.sin(2.0 * math.pi * (freq * 2.0) * t)
+            + 0.03 * math.exp(-28.0 * t) * math.sin(2.0 * math.pi * (freq * 3.0) * t)
         )
         out[i] = v * env * amp
-    return out
+    return apply_smooth_fade(out, fade_in_sec=0.002, fade_out_sec=min(0.045, duration * 0.28))
 
 
-def synthesize_soft_marimba(freq: float, duration: float, amp: float = 0.7) -> list[float]:
-    """Warm, rounded wooden marimba tone for non-harsh wrong-answer feedback."""
+def synthesize_soft_marimba(freq: float, duration: float, amp: float = 0.68) -> list[float]:
+    """Warm, rounded wooden marimba tone with a smooth raised-cosine fade-out for non-harsh wrong-answer feedback."""
     n = int(SAMPLE_RATE * duration)
     out = [0.0] * n
-    attack = 0.006
+    attack = min(0.0045, duration * 0.10)
+    release_len = min(0.065, duration * 0.38)
+    release_start = max(attack, duration - release_len)
     for i in range(n):
         t = i / SAMPLE_RATE
-        env = (t / attack) if t < attack else math.exp(-13.0 * (t - attack))
+        if t < attack:
+            win = 0.5 * (1.0 - math.cos(math.pi * t / attack))
+        elif t > release_start:
+            rel_t = (t - release_start) / max(1e-6, duration - release_start)
+            win = 0.5 * (1.0 + math.cos(math.pi * min(1.0, rel_t)))
+        else:
+            win = 1.0
+        env = win * math.exp(-14.5 * max(0.0, t - attack))
         v = (
-            0.85 * math.sin(2.0 * math.pi * freq * t)
-            + 0.15 * math.exp(-28.0 * t) * math.sin(2.0 * math.pi * (freq * 4.0) * t)
+            0.88 * math.sin(2.0 * math.pi * freq * t)
+            + 0.12 * math.exp(-30.0 * t) * math.sin(2.0 * math.pi * (freq * 2.0) * t)
         )
         out[i] = v * env * amp
-    return out
+    return apply_smooth_fade(out, fade_in_sec=0.002, fade_out_sec=min(0.04, duration * 0.28))
 
 
 def generate_metronome_and_sfx() -> None:
@@ -603,44 +792,109 @@ def generate_metronome_and_sfx() -> None:
     write_wav(os.path.join(metro_dir, "woodblock_sub.wav"), wood_sub)
     write_wav(os.path.join(metro_dir, "bell_sub.wav"), mech_sub)
 
-    # UPGRADED CORRECT SFX: Sparkling overlapping 4-note celesta chime arpeggio (G5 -> B5 -> D6 -> G6)
-    # Distinct from lesson piano notes, bright, rewarding, and instantaneous!
-    chime_1 = synthesize_chime_bell(midi_to_freq(72), 0.32, 0.65)  # C5
-    chime_2 = synthesize_chime_bell(midi_to_freq(76), 0.34, 0.72)  # E5
-    chime_3 = synthesize_chime_bell(midi_to_freq(79), 0.38, 0.78)  # G5
-    chime_4 = synthesize_chime_bell(midi_to_freq(84), 0.52, 0.90)  # C6
-    chime_harmony = synthesize_chime_bell(midi_to_freq(76), 0.48, 0.38)  # E5 warm sustain
+    # UPGRADED CORRECT SFX (~230ms): Crisp, warm rosewood-kalimba harmonic 5th micro-chime (A5 -> E6)
+    # Finishes in 0.23s (long before 0.8s auto-advance), zero harsh metallic partials, zero tail click!
+    chime_1 = synthesize_chime_bell(midi_to_freq(81), 0.165, 0.72)  # A5 (880 Hz)
+    chime_2 = synthesize_chime_bell(midi_to_freq(88), 0.180, 0.82)  # E6 (1318.5 Hz)
     correct_samples = mix_at_offsets([
         (0.00, chime_1),
-        (0.055, chime_2),
-        (0.110, chime_3),
-        (0.165, chime_4),
-        (0.165, chime_harmony),
-    ], max_peak=0.92)
+        (0.052, chime_2),
+    ], max_peak=0.84)
     write_wav(os.path.join(sfx_dir, "correct.wav"), correct_samples)
 
-    # UPGRADED WRONG SFX: Soft muted wooden marimba double-thud (A3 -> E3)
-    w1 = synthesize_soft_marimba(midi_to_freq(57), 0.18, 0.65)
-    w2 = synthesize_soft_marimba(midi_to_freq(52), 0.28, 0.68)
+    # UPGRADED WRONG SFX (~215ms): Soft, muted rosewood double-tap (E3 -> B2) with smooth cosine tail
+    w1 = synthesize_soft_marimba(midi_to_freq(52), 0.145, 0.64)  # E3
+    w2 = synthesize_soft_marimba(midi_to_freq(47), 0.165, 0.68)  # B2
     wrong_samples = mix_at_offsets([
         (0.00, w1),
-        (0.11, w2),
-    ], max_peak=0.82)
+        (0.058, w2),
+    ], max_peak=0.76)
     write_wav(os.path.join(sfx_dir, "wrong.wav"), wrong_samples)
 
-    # NEW SESSION COMPLETE FANFARE: Uplifting Major 9th shimmer arpeggio
+    # NEW SESSION COMPLETE FANFARE: Uplifting Major 9th shimmer arpeggio with click-free cosine tails
     fanfare_events = [
-        (0.00, synthesize_chime_bell(midi_to_freq(60), 0.55, 0.55)),  # C4
-        (0.07, synthesize_chime_bell(midi_to_freq(64), 0.55, 0.60)),  # E4
-        (0.14, synthesize_chime_bell(midi_to_freq(67), 0.55, 0.65)),  # G4
-        (0.21, synthesize_chime_bell(midi_to_freq(72), 0.65, 0.75)),  # C5
-        (0.28, synthesize_chime_bell(midi_to_freq(76), 0.70, 0.80)),  # E5
-        (0.35, synthesize_chime_bell(midi_to_freq(79), 0.85, 0.85)),  # G5
-        (0.42, synthesize_chime_bell(midi_to_freq(84), 0.95, 0.92)),  # C6
-        (0.42, synthesize_chime_bell(midi_to_freq(76), 0.90, 0.45)),  # E5 chord
-        (0.42, synthesize_chime_bell(midi_to_freq(79), 0.90, 0.45)),  # G5 chord
+        (0.00, synthesize_chime_bell(midi_to_freq(60), 0.45, 0.55)),  # C4
+        (0.07, synthesize_chime_bell(midi_to_freq(64), 0.45, 0.60)),  # E4
+        (0.14, synthesize_chime_bell(midi_to_freq(67), 0.45, 0.65)),  # G4
+        (0.21, synthesize_chime_bell(midi_to_freq(72), 0.52, 0.72)),  # C5
+        (0.28, synthesize_chime_bell(midi_to_freq(76), 0.58, 0.78)),  # E5
+        (0.35, synthesize_chime_bell(midi_to_freq(79), 0.68, 0.82)),  # G5
+        (0.42, synthesize_chime_bell(midi_to_freq(84), 0.78, 0.88)),  # C6
+        (0.42, synthesize_chime_bell(midi_to_freq(76), 0.74, 0.42)),  # E5 chord
+        (0.42, synthesize_chime_bell(midi_to_freq(79), 0.74, 0.42)),  # G5 chord
     ]
-    write_wav(os.path.join(sfx_dir, "complete.wav"), mix_at_offsets(fanfare_events, max_peak=0.92))
+    write_wav(os.path.join(sfx_dir, "complete.wav"), mix_at_offsets(fanfare_events, max_peak=0.88))
+
+
+def generate_guitar_audio_assets() -> None:
+    """
+    Generates dedicated, studio-quality audio assets for:
+    1. Guitar Thùng (Acoustic Steel-String): assets/audio/guitar_acoustic/notes/ & keys/
+    2. Guitar Điện (Electric Tube Amp): assets/audio/guitar_electric/notes/ & keys/
+    Includes all notes (c2..c6), 15 standard 6-string strummed chords, and 8 Electric Power Chords (E5, A5, G5, C5, D5, B5, F5, F#5).
+    """
+    acoustic_notes_dir = os.path.join(ASSETS_DIR, "audio", "guitar_acoustic", "notes")
+    acoustic_keys_dir = os.path.join(ASSETS_DIR, "audio", "guitar_acoustic", "keys")
+    electric_notes_dir = os.path.join(ASSETS_DIR, "audio", "guitar_electric", "notes")
+    electric_keys_dir = os.path.join(ASSETS_DIR, "audio", "guitar_electric", "keys")
+
+    for octave in [2, 3, 4, 5]:
+        for name in NOTE_OFFSETS:
+            midi = note_name_to_midi(name, octave)
+            freq = midi_to_freq(midi)
+            ac_samples = synthesize_guitar_acoustic_note(freq, duration=0.92)
+            el_samples = synthesize_guitar_electric_note(freq, duration=0.92)
+            write_wav(os.path.join(acoustic_notes_dir, f"{name}{octave}.wav"), ac_samples)
+            write_wav(os.path.join(electric_notes_dir, f"{name}{octave}.wav"), el_samples)
+
+    c6_freq = midi_to_freq(note_name_to_midi("c", 6))
+    write_wav(os.path.join(acoustic_notes_dir, "c6.wav"), synthesize_guitar_acoustic_note(c6_freq, duration=0.92))
+    write_wav(os.path.join(electric_notes_dir, "c6.wav"), synthesize_guitar_electric_note(c6_freq, duration=0.92))
+
+    # Real 6-string guitar chord voicings (low string -> high string MIDI notes)
+    guitar_chord_voicings = {
+        "chord_c_maj": [48, 52, 55, 60, 64],         # X-3-2-0-1-0
+        "chord_a_min": [45, 52, 57, 60, 64],         # X-0-2-2-1-0
+        "chord_c_min": [48, 55, 60, 63, 67],         # X-3-5-5-4-3
+        "chord_f_maj": [41, 48, 53, 57, 60, 65],     # 1-3-3-2-1-1
+        "chord_d_min": [50, 57, 62, 65],             # X-X-0-2-3-1
+        "chord_g_maj": [43, 47, 50, 55, 59, 67],     # 3-2-0-0-0-3
+        "chord_e_min": [40, 47, 52, 55, 59, 64],     # 0-2-2-0-0-0
+        "chord_d_maj": [50, 57, 62, 66],             # X-X-0-2-3-2
+        "chord_e_maj": [40, 47, 52, 56, 59, 64],     # 0-2-2-1-0-0
+        "chord_c_dim": [48, 54, 60, 63],
+        "chord_c_aug": [48, 56, 60, 64],
+        "chord_c_sus4": [48, 53, 55, 60, 64],        # X-3-3-0-1-0
+        "chord_c_maj7": [48, 52, 55, 59, 64],        # X-3-2-0-0-0
+        "chord_a_min7": [45, 52, 55, 60, 64],        # X-0-2-0-1-0
+        "chord_g_dom7": [43, 47, 50, 55, 59, 65],    # 3-2-0-0-0-1
+        # Power Chords (Hợp âm 5 Guitar Điện & Rock/Pop)
+        "chord_e5": [40, 47, 52],                    # 0-2-2-X-X-X
+        "chord_a5": [45, 52, 57],                    # X-0-2-2-X-X
+        "chord_g5": [43, 50, 55],                    # 3-5-5-X-X-X
+        "chord_c5": [48, 55, 60],                    # X-3-5-5-X-X
+        "chord_d5": [50, 57, 62],                    # X-5-7-7-X-X
+        "chord_b5": [47, 54, 59],                    # X-2-4-4-X-X
+        "chord_f5": [41, 48, 53],                    # 1-3-3-X-X-X
+    }
+
+    for cname, midis in guitar_chord_voicings.items():
+        # Acoustic Guitar strum: 24ms pick sweep per string + warm 1.05s sustain
+        ac_events = [
+            (idx * 0.024, synthesize_guitar_acoustic_note(midi_to_freq(m), duration=1.08))
+            for idx, m in enumerate(midis)
+        ]
+        write_wav(os.path.join(acoustic_keys_dir, f"{cname}.wav"), mix_at_offsets(ac_events, max_peak=0.86))
+
+        # Electric Guitar strum: tight 15ms pick sweep per string + tube sustain
+        el_events = [
+            (idx * 0.015, synthesize_guitar_electric_note(midi_to_freq(m), duration=1.08))
+            for idx, m in enumerate(midis)
+        ]
+        el_mixed = mix_at_offsets(el_events, max_peak=0.86)
+        write_wav(os.path.join(electric_keys_dir, f"{cname}.wav"), el_mixed)
+        if cname.endswith("5"):
+            write_wav(os.path.join(ASSETS_DIR, "audio", "keys", f"{cname}.wav"), el_mixed)
 
 
 def write_rgba_png(filepath: str, width: int, height: int, rgba_bytes: bytearray) -> None:
@@ -1522,14 +1776,17 @@ def generate_seed_json() -> None:
 
 
 def main() -> None:
-    print("Generating upgraded Solfa 44.1kHz audio, chime SFX, logos, and seed content...")
-    generate_logos_and_icons()
+    print("Generating upgraded Solfa 44.1kHz Grand Piano, Acoustic Guitar, Electric Guitar, and studio SFX...")
+    chaonote_src = os.path.join(ASSETS_DIR, "images", "chaonote_logo_source.jpg")
+    if not os.path.exists(chaonote_src):
+        generate_logos_and_icons()
     generate_notes()
     generate_intervals()
     generate_keys()
+    generate_guitar_audio_assets()
     generate_metronome_and_sfx()
     generate_seed_json()
-    print("All assets and logos generated successfully!")
+    print("All assets generated successfully!")
 
 
 if __name__ == "__main__":

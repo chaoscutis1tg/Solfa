@@ -7,9 +7,21 @@ import '../../../app/theme/app_colors.dart';
 import '../../../app/widgets/solfa_gem_icon.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../support_developer/application/rewarded_ad_controller.dart';
+import '../../support_developer/presentation/support_developer_screen.dart';
 
-/// Trạng thái mở khóa vĩnh viễn Bản đồ Scale & Bài Guitar Nâng Cao (50 Gem).
+/// Chế độ đàn Guitar đang chọn: 'acoustic' (Guitar Thùng Dây Đồng/Gỗ) hoặc 'electric' (Guitar Điện Amp).
+final selectedGuitarTypeProvider = StateProvider<String>((ref) => 'acoustic');
+
+/// Trạng thái mở khóa vĩnh viễn Bản đồ Scale & Bài Guitar Nâng Cao (50 Gem hoặc Xem Video Nhận Thưởng).
 final guitarProUnlockedProvider = StateProvider<bool>((ref) => false);
+
+/// Lưu số Sao (1..3 Sao) đạt được cho từng bài tập trong 12 bài Lộ trình Guitar (Level 1 -> Level 5).
+final guitarWorkoutStarsProvider = StateProvider<Map<String, int>>(
+  (ref) => const {
+    'spider_1234': 2,
+    'spider_4321': 2,
+  },
+);
 
 /// Dữ liệu chuẩn 6 dây đàn Guitar (Từ dây 1 mỏng nhất ở trên -> dây 6 dày nhất ở dưới).
 class GuitarFretboardData {
@@ -456,14 +468,101 @@ class GuitarFretboardData {
       audioAsset: 'assets/audio/keys/chord_g_maj.wav',
       tip: 'Hợp âm cầu nối Bass đi bộ mượt mà giữa Đô Trưởng (C) và La Thứ (Am)',
     ),
+
+    // ================= 5. HỢP ÂM 5 GUITAR ĐIỆN (POWER CHORDS ROCK/POP) =================
+    GuitarChordShape(
+      id: 'E5',
+      category: 'power',
+      name: 'Mi Năm (E5 • Power Chord)',
+      formula: '0 - 2 - 2 - X - X - X',
+      fretsByString1To6: [-1, -1, -1, 2, 2, 0],
+      fingersByString1To6: [0, 0, 0, 3, 2, 0],
+      audioAsset: 'assets/audio/keys/chord_e5.wav',
+      tip: 'Hợp âm 5 Guitar Điện mở: Gảy mạnh 3 dây trầm (Dây 6 buông + Ngón 2&3 tại Dây 5&4 ngăn 2), bịt 3 dây mỏng',
+    ),
+    GuitarChordShape(
+      id: 'A5',
+      category: 'power',
+      name: 'La Năm (A5 • Power Chord)',
+      formula: 'X - 0 - 2 - 2 - X - X',
+      fretsByString1To6: [-1, -1, 2, 2, 0, -1],
+      fingersByString1To6: [0, 0, 3, 2, 0, 0],
+      audioAsset: 'assets/audio/keys/chord_a5.wav',
+      tip: 'Hợp âm 5 gốc Dây 5: Dây 5 buông (La) + Ngón 2 Dây 4 ngăn 2 + Ngón 3 Dây 3 ngăn 2 (bịt dây 6, 2, 1)',
+    ),
+    GuitarChordShape(
+      id: 'G5',
+      category: 'power',
+      name: 'Sol Năm (G5 • Power Chord)',
+      formula: '3 - 5 - 5 - X - X - X',
+      fretsByString1To6: [-1, -1, -1, 5, 5, 3],
+      fingersByString1To6: [0, 0, 0, 4, 3, 1],
+      audioAsset: 'assets/audio/keys/chord_g5.wav',
+      tip: 'Thế bấm Power Chord di động trên Dây 6: Ngón 1 Dây 6 ngăn 3 (Sol) • Ngón 3 Dây 5 ngăn 5 • Ngón 4 Dây 4 ngăn 5',
+    ),
+    GuitarChordShape(
+      id: 'C5',
+      category: 'power',
+      name: 'Đô Năm (C5 • Power Chord)',
+      formula: 'X - 3 - 5 - 5 - X - X',
+      fretsByString1To6: [-1, -1, 5, 5, 3, -1],
+      fingersByString1To6: [0, 0, 4, 3, 1, 0],
+      audioAsset: 'assets/audio/keys/chord_c5.wav',
+      tip: 'Thế bấm Power Chord di động trên Dây 5: Ngón 1 Dây 5 ngăn 3 (Đô) • Ngón 3 Dây 4 ngăn 5 • Ngón 4 Dây 3 ngăn 5',
+    ),
+    GuitarChordShape(
+      id: 'D5',
+      category: 'power',
+      name: 'Rê Năm (D5 • Power Chord)',
+      formula: 'X - 5 - 7 - 7 - X - X',
+      fretsByString1To6: [-1, -1, 7, 7, 5, -1],
+      fingersByString1To6: [0, 0, 4, 3, 1, 0],
+      audioAsset: 'assets/audio/keys/chord_d5.wav',
+      tip: 'Dịch dáng C5 lên 2 ngăn: Ngón 1 Dây 5 ngăn 5 (Rê) • Ngón 3 Dây 4 ngăn 7 • Ngón 4 Dây 3 ngăn 7',
+    ),
+    GuitarChordShape(
+      id: 'B5',
+      category: 'power',
+      name: 'Si Năm (B5 • Power Chord)',
+      formula: 'X - 2 - 4 - 4 - X - X',
+      fretsByString1To6: [-1, -1, 4, 4, 2, -1],
+      fingersByString1To6: [0, 0, 4, 3, 1, 0],
+      audioAsset: 'assets/audio/keys/chord_b5.wav',
+      tip: 'Ngón 1 Dây 5 ngăn 2 (Si) • Ngón 3 Dây 4 ngăn 4 • Ngón 4 Dây 3 ngăn 4 (Thay thế Bm chặn cực nhanh khi chơi Rock/Pop)',
+    ),
+    GuitarChordShape(
+      id: 'F5',
+      category: 'power',
+      name: 'Fa Năm (F5 • Power Chord)',
+      formula: '1 - 3 - 3 - X - X - X',
+      fretsByString1To6: [-1, -1, -1, 3, 3, 1],
+      fingersByString1To6: [0, 0, 0, 4, 3, 1],
+      audioAsset: 'assets/audio/keys/chord_f5.wav',
+      tip: 'Ngón 1 Dây 6 ngăn 1 (Fa) • Ngón 3 Dây 5 ngăn 3 • Ngón 4 Dây 4 ngăn 3 (Không cần chặn cả 6 dây như Fa Trưởng)',
+    ),
+    GuitarChordShape(
+      id: 'F#5',
+      category: 'power',
+      name: 'Fa Thăng Năm (F#5 • Power Chord)',
+      formula: '2 - 4 - 4 - X - X - X',
+      fretsByString1To6: [-1, -1, -1, 4, 4, 2],
+      fingersByString1To6: [0, 0, 0, 4, 3, 1],
+      audioAsset: 'assets/audio/keys/chord_e5.wav',
+      tip: 'Dịch dáng F5 lên ngăn 2: Ngón 1 Dây 6 ngăn 2 (Fa#) • Ngón 3 Dây 5 ngăn 4 • Ngón 4 Dây 4 ngăn 4',
+    ),
   ];
 
-  /// 6 Bài luyện ngón Guitar thực tế từ Cơ bản đến Nâng cao (Tay trái Spider, Đảo ngón, Nhảy dây, Rải tay phải P-i-m-a, Solo Pentatonic)
+  /// 12 Bài luyện ngón, Rải âm Fingerstyle, Vòng hợp âm & Riff/Solo phân theo Lộ trình 5 Cấp độ (Level 1 -> Level 5)
+  /// cho cả Guitar Thùng (Acoustic) và Guitar Điện (Electric).
   static const List<GuitarWorkoutExercise> fingerWorkouts = [
+    // ================= CẤP ĐỘ 1 (LEVEL 1: KHỞI ĐỘNG & KIỂM SOÁT NGÓN) =================
     GuitarWorkoutExercise(
       id: 'spider_1234',
-      title: 'Bài 1: Bò Nhện Cơ Bản (1–2–3–4)',
-      levelTag: 'Cơ bản',
+      title: 'Bài 1: Bò Nhện Chuẩn (1–2–3–4 • Mở Khẩu Độ)',
+      levelNumber: 1,
+      levelTag: 'Lv.1 • Cơ bản',
+      guitarStyle: 'acoustic',
+      styleBadge: 'Guitar Thùng • Khởi động',
       description:
           'Mỗi ngón tay trái phụ trách 1 ngăn liên tiếp (Trỏ 1 – Giữa 2 – Áp út 3 – Út 4) leo từ Dây 6 sang Dây 5. Giữ đầu ngón tay vuông góc và bấm sát thanh sắt ngăn đàn.',
       steps: [
@@ -479,59 +578,33 @@ class GuitarFretboardData {
     ),
     GuitarWorkoutExercise(
       id: 'spider_4321',
-      title: 'Bài 2: Bò Nhện Ngược (4–3–2–1 • Khỏe Ngón Út)',
-      levelTag: 'Cơ bản',
+      title: 'Bài 2: Alternate Picking Lùi (4–3–2–1 • Khỏe Ngón Út)',
+      levelNumber: 1,
+      levelTag: 'Lv.1 • Cơ bản',
+      guitarStyle: 'electric',
+      styleBadge: 'Guitar Điện • Phím gảy ↓↑',
       description:
-          'Đánh ngược từ Ngăn 4 lùi về Ngăn 1 (Út 4 → Áp út 3 → Giữa 2 → Trỏ 1) trên Dây 1 & Dây 2 để rèn sức mạnh và độ chính xác cho ngón Út và Áp út.',
+          'Cầm phím gảy (Pick) đánh xen kẽ Xuống (↓) – Lên (↑) lùi từ Ngăn 4 về Ngăn 1 (Út 4 → Áp út 3 → Giữa 2 → Trỏ 1) trên Dây 1 & Dây 2 để làm khỏe ngón Út.',
       steps: [
-        (1, 4, 'Ngón 4 (Út)'),
-        (1, 3, 'Ngón 3 (Áp út)'),
-        (1, 2, 'Ngón 2 (Giữa)'),
-        (1, 1, 'Ngón 1 (Trỏ)'),
-        (2, 4, 'Ngón 4 (Út)'),
-        (2, 3, 'Ngón 3 (Áp út)'),
-        (2, 2, 'Ngón 2 (Giữa)'),
-        (2, 1, 'Ngón 1 (Trỏ)'),
+        (1, 4, 'Ngón 4 (Phím ↓)'),
+        (1, 3, 'Ngón 3 (Phím ↑)'),
+        (1, 2, 'Ngón 2 (Phím ↓)'),
+        (1, 1, 'Ngón 1 (Phím ↑)'),
+        (2, 4, 'Ngón 4 (Phím ↓)'),
+        (2, 3, 'Ngón 3 (Phím ↑)'),
+        (2, 2, 'Ngón 2 (Phím ↓)'),
+        (2, 1, 'Ngón 1 (Phím ↑)'),
       ],
     ),
-    GuitarWorkoutExercise(
-      id: 'perm_1324',
-      title: 'Bài 3: Đảo Ngón Chéo (1–3–2–4 • Tách Ngón)',
-      levelTag: 'Trung bình',
-      description:
-          'Bài tập tách gân ngón tay kinh điển: đánh xen kẽ Trỏ (1) → Áp út (3) → Giữa (2) → Út (4) trên Dây 4 & Dây 3 giúp chuyển hợp âm cực nhanh.',
-      steps: [
-        (4, 1, 'Ngón 1 (Trỏ)'),
-        (4, 3, 'Ngón 3 (Áp út)'),
-        (4, 2, 'Ngón 2 (Giữa)'),
-        (4, 4, 'Ngón 4 (Út)'),
-        (3, 1, 'Ngón 1 (Trỏ)'),
-        (3, 3, 'Ngón 3 (Áp út)'),
-        (3, 2, 'Ngón 2 (Giữa)'),
-        (3, 4, 'Ngón 4 (Út)'),
-      ],
-    ),
-    GuitarWorkoutExercise(
-      id: 'string_skip',
-      title: 'Bài 4: Nhảy Dây Cách Quãng (String Skipping)',
-      levelTag: 'Trung bình',
-      description:
-          'Nhảy cách qua 1 dây đàn (Dây 6 → Dây 4 → Dây 5 → Dây 3) để luyện sự chính xác đồng bộ giữa tay phải gảy dây và tay trái bấm phím.',
-      steps: [
-        (6, 1, 'Ngón 1 (Dây 6)'),
-        (6, 2, 'Ngón 2 (Dây 6)'),
-        (4, 1, 'Ngón 1 (Dây 4)'),
-        (4, 2, 'Ngón 2 (Dây 4)'),
-        (5, 3, 'Ngón 3 (Dây 5)'),
-        (5, 4, 'Ngón 4 (Dây 5)'),
-        (3, 3, 'Ngón 3 (Dây 3)'),
-        (3, 4, 'Ngón 4 (Dây 3)'),
-      ],
-    ),
+
+    // ================= CẤP ĐỘ 2 (LEVEL 2: RẢI BALLAD, VALSE & POWER RIFF) =================
     GuitarWorkoutExercise(
       id: 'arpeggio_ballad',
-      title: 'Bài 5: Rải Tay Phải P–i–m–a (Ballad 4/4 • Đô Trưởng)',
-      levelTag: 'Trung bình',
+      title: 'Bài 3: Rải Tay Phải P–i–m–a (Ballad 4/4 • Đô Trưởng)',
+      levelNumber: 2,
+      levelTag: 'Lv.2 • Đệm rải',
+      guitarStyle: 'acoustic',
+      styleBadge: 'Guitar Thùng • Ballad 4/4',
       description:
           'Giữ thế bấm Đô Trưởng (C) bằng tay trái, tay phải rải công thức Ballad kinh điển: Cái P (Dây 5) – Trỏ i (3) – Giữa m (2) – Trỏ i (3) – Áp út a (1) – Trỏ i (3) – Giữa m (2) – Trỏ i (3).',
       steps: [
@@ -546,9 +619,136 @@ class GuitarFretboardData {
       ],
     ),
     GuitarWorkoutExercise(
+      id: 'acoustic_valse_bolero',
+      title: 'Bài 4: Đệm Valse 3/4 & Đảo Bass Bolero (La Thứ Am)',
+      levelNumber: 2,
+      levelTag: 'Lv.2 • Đệm hát',
+      guitarStyle: 'acoustic',
+      styleBadge: 'Guitar Thùng • Valse & Bolero',
+      description:
+          'Giữ hợp âm La Thứ (Am): Phách 1 gảy Bass chính Dây 5 buông (La) → rải dây 3–2–1 → đảo sang Bass phụ Dây 4 ngăn 2 (Mi) tạo nhịp điệu trầm bổng tự nhiên.',
+      steps: [
+        (5, 0, 'Cái P (Bass La)'),
+        (3, 2, 'Trỏ i (La A3)'),
+        (2, 1, 'Giữa m (Đô C4)'),
+        (1, 0, 'Áp út a (Mi E4)'),
+        (4, 2, 'Cái P (Bass phụ Mi)'),
+        (3, 2, 'Trỏ i (La A3)'),
+        (2, 1, 'Giữa m (Đô C4)'),
+        (1, 0, 'Áp út a (Mi E4)'),
+      ],
+    ),
+    GuitarWorkoutExercise(
+      id: 'electric_power_riff',
+      title: 'Bài 5: Riff Hợp Âm 5 Rock Kinh Điển (E5 – G5 – A5 – C5)',
+      levelNumber: 2,
+      levelTag: 'Lv.2 • Riff Điện',
+      guitarStyle: 'electric',
+      styleBadge: 'Guitar Điện • Power Chords',
+      description:
+          'Đánh câu Riff Rock bất hủ bằng thế bấm Hợp âm 5 (Root + Quãng 5): E5 (Dây 6 buông + Dây 5 ngăn 2) → G5 (Ngăn 3–5) → A5 (Dây 5 buông + Dây 4 ngăn 2) → C5 (Ngăn 3–5).',
+      steps: [
+        (6, 0, 'Root E5 (Mi E2)'),
+        (5, 2, 'Quãng 5 (Si B2)'),
+        (6, 3, 'Root G5 (Sol G2)'),
+        (5, 5, 'Quãng 5 (Rê D3)'),
+        (5, 0, 'Root A5 (La A2)'),
+        (4, 2, 'Quãng 5 (Mi E3)'),
+        (5, 3, 'Root C5 (Đô C3)'),
+        (4, 5, 'Quãng 5 (Sol G3)'),
+      ],
+    ),
+
+    // ================= CẤP ĐỘ 3 (LEVEL 3: TÁCH NGÓN, LEGATO & VÒNG CANON) =================
+    GuitarWorkoutExercise(
+      id: 'perm_1324',
+      title: 'Bài 6: Đảo Ngón Chéo & Legato (1–3–2–4 • Tách Ngón)',
+      levelNumber: 3,
+      levelTag: 'Lv.3 • Trung bình',
+      guitarStyle: 'electric',
+      styleBadge: 'Guitar Điện • Legato H/P',
+      description:
+          'Bài tập tách gân ngón tay và luyến Hammer-on: đánh xen kẽ Trỏ (1) → Áp út (3) → Giữa (2) → Út (4) trên Dây 4 & Dây 3 giúp chuyển hợp âm và chạy câu cực nhanh.',
+      steps: [
+        (4, 1, 'Ngón 1 (Trỏ)'),
+        (4, 3, 'Ngón 3 (Hammer)'),
+        (4, 2, 'Ngón 2 (Giữa)'),
+        (4, 4, 'Ngón 4 (Hammer)'),
+        (3, 1, 'Ngón 1 (Trỏ)'),
+        (3, 3, 'Ngón 3 (Hammer)'),
+        (3, 2, 'Ngón 2 (Giữa)'),
+        (3, 4, 'Ngón 4 (Hammer)'),
+      ],
+    ),
+    GuitarWorkoutExercise(
+      id: 'acoustic_canon_pop',
+      title: 'Bài 7: Vòng Hợp Âm Canon & Pop (C – G/B – Am – Fmaj7)',
+      levelNumber: 3,
+      levelTag: 'Lv.3 • Vòng Hòa Âm',
+      guitarStyle: 'acoustic',
+      styleBadge: 'Guitar Thùng • Bass Đi Bộ',
+      description:
+          'Luyện đường Bass đi bộ (Walking Bass) mượt mà nối 4 hợp âm Pop/Ballad quốc dân: Đô (Dây 5 ngăn 3) → Si (Dây 5 ngăn 2) → La (Dây 5 buông) → Fa (Dây 4 ngăn 3).',
+      steps: [
+        (5, 3, 'Bass C (Đô C3)'),
+        (2, 1, 'Nốt giai điệu C4'),
+        (5, 2, 'Bass G/B (Si B2)'),
+        (2, 3, 'Nốt giai điệu D4'),
+        (5, 0, 'Bass Am (La A2)'),
+        (2, 1, 'Nốt giai điệu C4'),
+        (4, 3, 'Bass Fmaj7 (Fa F3)'),
+        (3, 2, 'Nốt giai điệu A3'),
+      ],
+    ),
+    GuitarWorkoutExercise(
+      id: 'string_skip',
+      title: 'Bài 8: Nhảy Dây Cách Quãng (String Skipping)',
+      levelNumber: 3,
+      levelTag: 'Lv.3 • Trung bình',
+      guitarStyle: 'acoustic',
+      styleBadge: 'Guitar Thùng • Nhảy dây',
+      description:
+          'Nhảy cách qua 1 dây đàn (Dây 6 → Dây 4 → Dây 5 → Dây 3) để luyện sự chính xác đồng bộ giữa tay phải gảy dây và tay trái bấm phím.',
+      steps: [
+        (6, 1, 'Ngón 1 (Dây 6)'),
+        (6, 2, 'Ngón 2 (Dây 6)'),
+        (4, 1, 'Ngón 1 (Dây 4)'),
+        (4, 2, 'Ngón 2 (Dây 4)'),
+        (5, 3, 'Ngón 3 (Dây 5)'),
+        (5, 4, 'Ngón 4 (Dây 5)'),
+        (3, 3, 'Ngón 3 (Dây 3)'),
+        (3, 4, 'Ngón 4 (Dây 3)'),
+      ],
+    ),
+
+    // ================= CẤP ĐỘ 4 (LEVEL 4: CÂU LICK INTRO & SOLO PENTATONIC/BLUES) =================
+    GuitarWorkoutExercise(
+      id: 'acoustic_fingerstyle_lick',
+      title: 'Bài 9: Câu Lick Intro Fingerstyle Mộc Mạc (Mi Thứ Em)',
+      levelNumber: 4,
+      levelTag: 'Lv.4 • Fingerstyle',
+      guitarStyle: 'acoustic',
+      styleBadge: 'Guitar Thùng • Intro Lick',
+      description:
+          'Câu Intro Acoustic đậm chất tự sự ở giọng Mi Thứ (Em): kết hợp dây 6 buông trầm ấm với giai điệu trên Dây 1 & Dây 2 (Ngăn 0 – 3 – 2 – 0).',
+      steps: [
+        (6, 0, 'Bass Mi (Dây 6)'),
+        (1, 0, 'Dây 1 buông (Mi)'),
+        (1, 3, 'Ngón 3 (Sol G4)'),
+        (1, 2, 'Ngón 2 (Fa# F#4)'),
+        (1, 0, 'Dây 1 buông (Mi)'),
+        (2, 3, 'Ngón 3 (Rê D4)'),
+        (2, 0, 'Dây 2 buông (Si)'),
+        (3, 0, 'Dây 3 buông (Sol)'),
+      ],
+    ),
+    GuitarWorkoutExercise(
       id: 'pentatonic_box1',
-      title: 'Bài 6: Chạy Ngón Solo Am Pentatonic (Ngăn 5–8)',
-      levelTag: 'Nâng cao',
+      title: 'Bài 10: Chạy Ngón Solo Am Pentatonic (Box 1 • Ngăn 5–8)',
+      levelNumber: 4,
+      levelTag: 'Lv.4 • Nâng cao',
+      guitarStyle: 'electric',
+      styleBadge: 'Guitar Điện • Solo Box 1',
       description:
           'Chạy mẫu Solo Ngũ cung La Thứ (Box 1 tại Ngăn 5–8): Dây 6 (5–8) → Dây 5 (5–7) → Dây 4 (5–7) → Dây 3 (5–7). Ngón 1 giữ trụ ở Ngăn 5, Ngón 3 bấm Ngăn 7, Ngón 4 bấm Ngăn 8.',
       steps: [
@@ -562,12 +762,54 @@ class GuitarFretboardData {
         (3, 7, 'Ngón 3 (Rê D4)'),
       ],
     ),
+    GuitarWorkoutExercise(
+      id: 'electric_blues_lick',
+      title: 'Bài 11: Câu Lick Blues & Nốt Blue Note (A Blues • Ngăn 5–8)',
+      levelNumber: 4,
+      levelTag: 'Lv.4 • Blues Lead',
+      guitarStyle: 'electric',
+      styleBadge: 'Guitar Điện • Blues Lick',
+      description:
+          'Đi qua nốt "Blue Note" đặc trưng (Rê# tại Dây 5 Ngăn 6 & Dây 3 Ngăn 8) để tạo màu sắc Blues/Rock đầy cảm xúc và cá tính.',
+      steps: [
+        (6, 5, 'Ngón 1 (Gốc La)'),
+        (6, 8, 'Ngón 4 (Đô C3)'),
+        (5, 5, 'Ngón 1 (Rê D3)'),
+        (5, 6, 'Ngón 2 (Blue Note Rê#)'),
+        (5, 7, 'Ngón 3 (Mi E3)'),
+        (4, 5, 'Ngón 1 (Sol G3)'),
+        (4, 7, 'Ngón 3 (Gốc La A3)'),
+        (3, 8, 'Ngón 4 (Blue Note Rê#)'),
+      ],
+    ),
+
+    // ================= CẤP ĐỘ 5 (LEVEL 5: CHẠY LEAD TỐC ĐỘ CAO & MASTER) =================
+    GuitarWorkoutExercise(
+      id: 'electric_funk_groove',
+      title: 'Bài 12: Chạy Lead Tốc Độ Cao 3 Dây Mỏng (Mi Thứ • Ngăn 7–10)',
+      levelNumber: 5,
+      levelTag: 'Lv.5 • Master Solo',
+      guitarStyle: 'electric',
+      styleBadge: 'Guitar Điện • High Lead',
+      description:
+          'Mẫu chạy Lead cao trào trên 3 dây mỏng ở thế tay cao (Ngăn 7–10): kết hợp Alternate Picking và kết câu tại nốt chủ âm Mi (Dây 3 Ngăn 9).',
+      steps: [
+        (1, 7, 'Ngón 1 (Si B4)'),
+        (1, 10, 'Ngón 4 (Rê D5)'),
+        (1, 7, 'Ngón 1 (Si B4)'),
+        (2, 10, 'Ngón 4 (La A4)'),
+        (2, 8, 'Ngón 2 (Sol G4)'),
+        (2, 7, 'Ngón 1 (Fa# F#4)'),
+        (3, 9, 'Ngón 3 (Chủ âm Mi)'),
+        (3, 7, 'Ngón 1 (Rê D4)'),
+      ],
+    ),
   ];
 }
 
 class GuitarChordShape {
   final String id;
-  final String category; // 'open', 'barre', 'seventh', 'color'
+  final String category; // 'open', 'barre', 'seventh', 'color', 'power'
   final String name;
   final String formula;
   final List<int> fretsByString1To6;
@@ -598,14 +840,20 @@ class GuitarChordShape {
 class GuitarWorkoutExercise {
   final String id;
   final String title;
+  final int levelNumber; // 1..5
   final String levelTag;
+  final String guitarStyle; // 'acoustic' | 'electric'
+  final String styleBadge;
   final String description;
   final List<(int stringNum, int fretNum, String fingerLabel)> steps;
 
   const GuitarWorkoutExercise({
     required this.id,
     required this.title,
+    this.levelNumber = 1,
     required this.levelTag,
+    this.guitarStyle = 'acoustic',
+    this.styleBadge = 'Guitar',
     required this.description,
     required this.steps,
   });
@@ -661,11 +909,149 @@ class GuitarStudioSheet extends ConsumerStatefulWidget {
   ConsumerState<GuitarStudioSheet> createState() => _GuitarStudioSheetState();
 }
 
+/// Thanh chuyển nhanh 2 chế độ đàn: Guitar Thùng (Acoustic) <-> Guitar Điện (Electric)
+/// Đổi đồng thời cả Âm sắc vật lý (guitar_acoustic / guitar_electric) và Giáo trình gợi ý.
+class GuitarTypeSwitchBar extends ConsumerWidget {
+  final ValueChanged<String>? onChanged;
+
+  const GuitarTypeSwitchBar({
+    super.key,
+    this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final guitarType = ref.watch(selectedGuitarTypeProvider);
+    final isElectric = guitarType == 'electric';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isEn = ref.watch(appSettingsProvider).isEnglish;
+
+    void selectType(String type) {
+      ref.read(selectedGuitarTypeProvider.notifier).state = type;
+      final audio = ref.read(audioServiceProvider);
+      audio.setGuitarType(type);
+      // Phát ngay âm thanh mẫu đặc trưng của từng cây đàn (Hợp âm G Thùng vs Hợp âm E5 Điện)
+      final previewChord = type == 'electric'
+          ? 'assets/audio/keys/chord_e5.wav'
+          : 'assets/audio/keys/chord_g_maj.wav';
+      audio.playGuitarAsset(previewChord, overrideGuitarType: type);
+      onChanged?.call(type);
+    }
+
+    return Container(
+      key: const Key('guitar_type_switch_bar'),
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.surfaceDark : Colors.white,
+        borderRadius: BorderRadius.circular(13),
+        border: Border.all(
+          color: isDark ? AppColors.borderDark : AppColors.borderLight,
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: InkWell(
+              key: const Key('btn_guitar_type_acoustic'),
+              borderRadius: BorderRadius.circular(10),
+              onTap: () => selectType('acoustic'),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 160),
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                decoration: BoxDecoration(
+                  color: !isElectric
+                      ? const Color(0xFFD97706)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.music_note_rounded,
+                      size: 16,
+                      color: !isElectric
+                          ? Colors.white
+                          : const Color(0xFFD97706),
+                    ),
+                    const SizedBox(width: 5),
+                    Flexible(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          isEn
+                              ? 'Acoustic Guitar (Steel)'
+                              : 'Guitar Thùng (Acoustic)',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            color: !isElectric ? Colors.white : null,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: InkWell(
+              key: const Key('btn_guitar_type_electric'),
+              borderRadius: BorderRadius.circular(10),
+              onTap: () => selectType('electric'),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 160),
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                decoration: BoxDecoration(
+                  color: isElectric
+                      ? const Color(0xFF6366F1)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.bolt_rounded,
+                      size: 17,
+                      color: isElectric
+                          ? Colors.white
+                          : const Color(0xFF6366F1),
+                    ),
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          isEn
+                              ? 'Electric Guitar (Rock/Lead)'
+                              : 'Guitar Điện (Electric)',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            color: isElectric ? Colors.white : null,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
   /// 0: Bản đồ Cần đàn (Fretboard Map)
-  /// 1: Hợp âm Guitar (Chord Shapes - 36 hợp âm)
-  /// 2: Bản đồ Scale (Pentatonic & Trưởng/Thứ)
-  /// 3: Luyện ngón & Đọc Tab (6 bài tập từ Cơ bản đến Nâng cao)
+  /// 1: Hợp âm Guitar (Chord Shapes - 44 hợp âm gồm Mở, Chặn, Bảy, Màu & Hợp âm 5 Điện)
+  /// 2: Bản đồ Scale (7 Âm giai: Pentatonic, Blues, Trưởng/Thứ & Hài hòa)
+  /// 3: Luyện ngón, Mẫu chạy & Đọc Tab (12 bài từ Level 1 -> Level 5)
   late int _selectedTab;
 
   int _activeString = 5; // Dây 5
@@ -673,13 +1059,14 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
   bool _showNaturalNotesOnly = true;
   bool _showOctaveJumpGuide = false;
 
-  String _selectedChordCategory = 'all'; // 'all', 'open', 'barre', 'seventh', 'color'
+  String _selectedChordCategory = 'all'; // 'all', 'open', 'barre', 'seventh', 'color', 'power'
   String _selectedChordId = 'C';
   String _selectedScaleId = 'am_pentatonic';
 
+  String _workoutStyleFilter = 'all'; // 'all', 'acoustic', 'electric'
   int _selectedWorkoutIndex = 0;
   int _spiderStep = 0;
-  int _spiderStepIntervalMs = 520; // 650ms (Chậm), 520ms (Vừa), 360ms (Nhanh)
+  int _spiderStepIntervalMs = 500; // 680ms (Chậm), 500ms (Vừa), 330ms (Nhanh)
   Timer? _spiderTimer;
   bool _isSpiderPlaying = false;
 
@@ -700,7 +1087,7 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
     super.dispose();
   }
 
-  /// Phát hợp âm chuẩn xác 100% theo cao độ thực tế của 6 dây trên cần đàn (quét nhanh 35ms như gảy phím thật).
+  /// Phát hợp âm chuẩn xác 100% theo cao độ thực tế của 6 dây trên cần đàn (quét nhanh như gảy phím thật theo đúng âm sắc Guitar Thùng / Guitar Điện).
   void _playChordRealVoicing(GuitarChordShape chord) {
     _strumTimer?.cancel();
     final List<(int stringNum, int fretNum)> notes = [];
@@ -712,6 +1099,7 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
     }
     if (notes.isEmpty) return;
     int idx = 0;
+    final audio = ref.read(audioServiceProvider);
     void playNext() {
       if (!mounted || idx >= notes.length) {
         _strumTimer?.cancel();
@@ -719,13 +1107,13 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
       }
       final (s, f) = notes[idx];
       final n = GuitarFretboardData.noteAt(stringNumber: s, fret: f);
-      ref.read(audioServiceProvider).playPolyphonicAsset(n.audioAsset);
+      audio.playGuitarAsset(n.audioAsset);
       idx++;
     }
 
     playNext();
     _strumTimer = Timer.periodic(
-      const Duration(milliseconds: 38),
+      const Duration(milliseconds: 32),
       (_) => playNext(),
     );
   }
@@ -766,6 +1154,7 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
     if (sequence.isEmpty) return;
 
     int step = 0;
+    final audio = ref.read(audioServiceProvider);
     void playStep() {
       if (!mounted || step >= sequence.length) {
         _strumTimer?.cancel();
@@ -783,7 +1172,7 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
         _activeStrumFret = f;
       });
       final note = GuitarFretboardData.noteAt(stringNumber: s, fret: f);
-      ref.read(audioServiceProvider).playPolyphonicAsset(note.audioAsset);
+      audio.playGuitarAsset(note.audioAsset);
       step++;
     }
 
@@ -792,6 +1181,17 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
       Duration(milliseconds: isBallad ? 210 : 115),
       (_) => playStep(),
     );
+  }
+
+  void _awardThreeStarsForCurrentWorkout(GuitarWorkoutExercise workout) {
+    final currentMap = ref.read(guitarWorkoutStarsProvider);
+    final prevStars = currentMap[workout.id] ?? 0;
+    if (prevStars < 3) {
+      ref.read(guitarWorkoutStarsProvider.notifier).state = {
+        ...currentMap,
+        workout.id: 3,
+      };
+    }
   }
 
   void _toggleSpiderExercise() {
@@ -811,8 +1211,12 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
         if (!mounted) return;
         final workout =
             GuitarFretboardData.fingerWorkouts[_selectedWorkoutIndex];
+        final nextStep = (_spiderStep + 1) % workout.steps.length;
+        if (nextStep == workout.steps.length - 1) {
+          _awardThreeStarsForCurrentWorkout(workout);
+        }
         setState(() {
-          _spiderStep = (_spiderStep + 1) % workout.steps.length;
+          _spiderStep = nextStep;
         });
         _playCurrentSpiderStep();
       },
@@ -822,10 +1226,14 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
   void _stepWorkoutManually(int delta) {
     _spiderTimer?.cancel();
     final workout = GuitarFretboardData.fingerWorkouts[_selectedWorkoutIndex];
+    final nextStep =
+        (_spiderStep + delta + workout.steps.length) % workout.steps.length;
+    if (nextStep == workout.steps.length - 1) {
+      _awardThreeStarsForCurrentWorkout(workout);
+    }
     setState(() {
       _isSpiderPlaying = false;
-      _spiderStep =
-          (_spiderStep + delta + workout.steps.length) % workout.steps.length;
+      _spiderStep = nextStep;
     });
     _playCurrentSpiderStep();
   }
@@ -837,7 +1245,7 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
       stringNumber: step.$1,
       fret: step.$2,
     );
-    ref.read(audioServiceProvider).playPolyphonicAsset(note.audioAsset);
+    ref.read(audioServiceProvider).playGuitarAsset(note.audioAsset);
   }
 
   @override
@@ -846,8 +1254,15 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
     final audioService = ref.watch(audioServiceProvider);
     final adState = ref.watch(rewardedAdProvider);
     final proUnlocked = ref.watch(guitarProUnlockedProvider);
+    final guitarType = ref.watch(selectedGuitarTypeProvider);
+    final isElectric = guitarType == 'electric';
+    final accentColor =
+        isElectric ? const Color(0xFF6366F1) : const Color(0xFFD97706);
     final isEn = ref.watch(appSettingsProvider).isEnglish;
     final isWorkoutPage = widget.isWorkoutOnlyPage;
+
+    // Đồng bộ âm sắc Guitar trong AudioService
+    audioService.setGuitarType(guitarType);
 
     return Scaffold(
       key: const Key('guitar_studio_sheet'),
@@ -862,12 +1277,12 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
         title: Text(
           isWorkoutPage
               ? (isEn
-                  ? 'Guitar Finger Workouts & Tab'
-                  : 'Luyện Ngón Guitar & Đọc Tab')
+                  ? 'Guitar Workouts, Licks & Tab (Lv.1–5)'
+                  : 'Luyện Ngón, Mẫu Chạy & Đọc Tab (Lv.1–5)')
               : (isEn
-                  ? 'Guitar Fretboard, Chords & Scales'
-                  : 'Bản Đồ Cần Đàn & Hợp Âm Guitar'),
-          style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.w800),
+                  ? 'Guitar Fretboard, 44 Chords & Scales'
+                  : 'Bản Đồ Cần Đàn, 44 Hợp Âm & Scale'),
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
         ),
       ),
       body: SafeArea(
@@ -875,26 +1290,37 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
           physics: const AlwaysScrollableScrollPhysics(
             parent: BouncingScrollPhysics(),
           ),
-          padding: const EdgeInsets.fromLTRB(16, 10, 16, 28),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
           children: [
+            // Thanh chuyển nhanh chế độ: Guitar Thùng (Acoustic) <-> Guitar Điện (Electric)
+            GuitarTypeSwitchBar(
+              onChanged: (type) {
+                if (!mounted) return;
+                if (_selectedTab == 1 && type == 'electric' && _selectedChordCategory == 'all') {
+                  setState(() => _selectedChordId = 'E5');
+                }
+              },
+            ),
+            const SizedBox(height: 10),
+
             if (!isWorkoutPage) ...[
-              // 3 Phân khu trên Trang Bản Đồ Cần Đàn (Map Cần | 36 Hợp Âm | Bản đồ Scale)
+              // 3 Phân khu trên Trang Bản Đồ Cần Đàn (Map Cần | 44 Hợp Âm | Bản đồ Scale)
               Row(
                 children: [
                   for (final (idx, label, icon) in [
                     (0, isEn ? 'Fretboard' : 'Map Cần đàn', Icons.grid_on_rounded),
                     (
                       1,
-                      isEn ? 'Chords (36)' : 'Hợp âm (36)',
+                      isEn ? 'Chords (44)' : 'Hợp âm (44)',
                       Icons.pan_tool_alt_rounded
                     ),
-                    (2, isEn ? 'Scales' : 'Bản đồ Scale', Icons.timeline_rounded),
+                    (2, isEn ? 'Scales (7)' : 'Bản đồ Scale', Icons.timeline_rounded),
                   ]) ...[
                     if (idx > 0) const SizedBox(width: 8),
                     Expanded(
                       child: Material(
                         color: _selectedTab == idx
-                            ? const Color(0xFFD97706)
+                            ? accentColor
                             : (isDark
                                 ? AppColors.surfaceDark
                                 : Colors.white),
@@ -921,7 +1347,7 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
                                 color: _selectedTab == idx
-                                    ? const Color(0xFFD97706)
+                                    ? accentColor
                                     : (isDark
                                         ? AppColors.borderDark
                                         : AppColors.borderLight),
@@ -935,7 +1361,7 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
                                   size: 18,
                                   color: _selectedTab == idx
                                       ? Colors.white
-                                      : const Color(0xFFD97706),
+                                      : accentColor,
                                 ),
                                 const SizedBox(height: 4),
                                 FittedBox(
@@ -960,11 +1386,11 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
                   ],
                 ],
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 12),
             ],
 
             if (isWorkoutPage || _selectedTab == 3)
-              _buildTabAndSpiderExerciseTab(audioService, isDark, isEn)
+              _buildTabAndSpiderExerciseTab(context, audioService, isDark, isEn, accentColor)
             else if (_selectedTab == 0)
               _buildFretboardMapTab(audioService, isDark, isEn)
             else if (_selectedTab == 1)
@@ -976,6 +1402,7 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
                 adState,
                 proUnlocked,
                 isDark,
+                isEn,
               ),
           ],
         ),
@@ -1031,7 +1458,7 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
                 onPressed: () =>
-                    audioService.playPolyphonicAsset(activeInfo.audioAsset),
+                    audioService.playGuitarAsset(activeInfo.audioAsset),
                 icon: const Icon(Icons.volume_up_rounded, size: 15),
                 label: Text(
                   isEn ? 'Play' : 'Nghe nốt',
@@ -1096,7 +1523,7 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
               _activeFret = f;
             });
             final info = GuitarFretboardData.noteAt(stringNumber: s, fret: f);
-            audioService.playPolyphonicAsset(info.audioAsset);
+            audioService.playGuitarAsset(info.audioAsset);
           },
         ),
         const SizedBox(height: 10),
@@ -1139,11 +1566,12 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
     );
   }
 
-  /// TAB 2: Thư viện 36 Hợp âm Guitar thực tế (Phân theo 4 nhóm: Mở, Chặn Barre, Hợp âm 7, Hợp âm Màu)
+  /// TAB 2: Thư viện 44 Hợp âm Guitar thực tế (Phân theo 5 nhóm: Mở, Chặn Barre, Hợp âm 7, Hợp âm Màu & Hợp âm 5 Power Chords)
   Widget _buildChordShapesTab(dynamic audioService, bool isDark, bool isEn) {
     final categories = [
-      ('all', isEn ? 'All (36)' : 'Tất cả (36)'),
+      ('all', isEn ? 'All (44)' : 'Tất cả (44)'),
       ('open', isEn ? 'Open (8)' : 'Hợp âm Mở (8)'),
+      ('power', isEn ? 'Power 5th (8)' : 'Hợp âm 5 Điện (8)'),
       ('barre', isEn ? 'Barre (8)' : 'Hợp âm Chặn (8)'),
       ('seventh', isEn ? '7th (12)' : 'Hợp âm Bảy (12)'),
       ('color', isEn ? 'Color (8)' : 'Hợp âm Màu (8)'),
@@ -1161,7 +1589,7 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Bộ lọc 4 nhóm hợp âm (Mở, Chặn, Hợp âm 7, Hợp âm Màu)
+        // Bộ lọc 5 nhóm hợp âm (Mở, Hợp âm 5 Power, Chặn, Hợp âm 7, Hợp âm Màu)
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
@@ -1339,7 +1767,7 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
           activeFret: _activeStrumFret,
           onTapFret: (s, f) {
             final info = GuitarFretboardData.noteAt(stringNumber: s, fret: f);
-            audioService.playPolyphonicAsset(info.audioAsset);
+            audioService.playGuitarAsset(info.audioAsset);
           },
         ),
         const SizedBox(height: 8),
@@ -1351,13 +1779,14 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
     );
   }
 
-  /// TAB 3: Bản đồ Âm giai (Scale Map - Pentatonic & Trưởng/Thứ)
+  /// TAB 3: Bản đồ 7 Âm giai (Scale Map - Pentatonic, Blues, Trưởng/Thứ & Hài hòa)
   Widget _buildScaleMapTab(
     BuildContext context,
     dynamic audioService,
     RewardedAdState adState,
     bool proUnlocked,
     bool isDark,
+    bool isEn,
   ) {
     const scales = [
       (
@@ -1367,6 +1796,14 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
         {'A', 'C', 'D', 'E', 'G'},
         'A',
         'Scale phổ biến số 1 để chạy ngón Solo & ngẫu hứng (gồm 5 nốt: La – Đô – Rê – Mi – Sol). Chấm Đỏ là nốt chủ âm (Root A).'
+      ),
+      (
+        'a_blues',
+        'A Blues (6 nốt)',
+        false,
+        {'A', 'C', 'D', 'D#', 'E', 'G'},
+        'A',
+        'Âm giai La Thứ Blues (thêm nốt Blue Note Rê# D#) tạo chất lửa đặc trưng cho Guitar Điện & Acoustic Blues.'
       ),
       (
         'c_major',
@@ -1393,12 +1830,20 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
         'Âm giai Sol Trưởng (có 1 dấu thăng Fa#), song song với giọng Mi Thứ (Em).'
       ),
       (
+        'dm_pentatonic',
+        'Dm Pentatonic',
+        false,
+        {'D', 'F', 'G', 'A', 'C'},
+        'D',
+        'Ngũ cung Rê Thứ (Rê – Fa – Sol – La – Đô) rất hợp cho các bản Ballad trầm buồn và Bolero.'
+      ),
+      (
         'a_harmonic_minor',
         'La Thứ Hài Hòa (50 Gem)',
         true,
         {'A', 'B', 'C', 'D', 'E', 'F', 'G#'},
         'A',
-        'Âm giai La Thứ Hài Hòa (nâng bậc 7 lên Sol# G#) tạo màu sắc cổ điển & Flamenco cuốn hút trên 12 ngăn.'
+        'Âm giai La Thứ Hài Hòa (nâng bậc 7 lên Sol# G#) tạo màu sắc cổ điển, Neo-Classical & Flamenco cuốn hút trên 12 ngăn.'
       ),
     ];
 
@@ -1449,9 +1894,18 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
                     if (!ok) {
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Cần 50 Gem để mở khóa vĩnh viễn Full Map Scale 12 ngăn. Hãy hoàn thành nhiệm vụ hoặc xem video ủng hộ nhé!',
+                          SnackBar(
+                            content: const Text(
+                              'Cần 50 Gem để mở khóa vĩnh viễn Full Map Scale 12 ngăn. Hãy xem video ngắn để nhận ngay +100 Gem miễn phí nhé!',
+                            ),
+                            action: SnackBarAction(
+                              label: 'Nhận +100 Gem',
+                              onPressed: () {
+                                showRewardedVideoAdSimulationDialog(
+                                  context,
+                                  ref,
+                                );
+                              },
                             ),
                           ),
                         );
@@ -1465,6 +1919,56 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
               ),
           ],
         ),
+        if (!proUnlocked) ...[
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF59E0B).withOpacity(0.12),
+              borderRadius: BorderRadius.circular(11),
+              border: Border.all(
+                color: const Color(0xFFF59E0B).withOpacity(0.35),
+              ),
+            ),
+            child: Row(
+              children: [
+                const SolfaGemIcon(size: 16),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    isEn
+                        ? 'Watch a short ad to get +100 Gems & unlock Pro Scales!'
+                        : 'Thiếu Gem mở khóa Scale VIP? Xem video ngắn nhận ngay +100 Gem!',
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                TextButton.icon(
+                  key: const Key('btn_guitar_watch_ad_gems'),
+                  style: TextButton.styleFrom(
+                    minimumSize: const Size(0, 30),
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  onPressed: () async {
+                    await showRewardedVideoAdSimulationDialog(context, ref);
+                    if (mounted &&
+                        ref.read(rewardedAdProvider).prestigePoints >= 50) {
+                      ref.read(guitarProUnlockedProvider.notifier).state = true;
+                    }
+                  },
+                  icon: const Icon(Icons.play_circle_fill_rounded, size: 15),
+                  label: const Text(
+                    '+100 Gem',
+                    style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w900),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
         const SizedBox(height: 10),
         InteractiveGuitarFretboard(
           maxFrets: 12,
@@ -1472,7 +1976,7 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
           scaleRootPitch: currentScale.$5,
           onTapFret: (s, f) {
             final info = GuitarFretboardData.noteAt(stringNumber: s, fret: f);
-            audioService.playPolyphonicAsset(info.audioAsset);
+            audioService.playGuitarAsset(info.audioAsset);
           },
         ),
         const SizedBox(height: 8),
@@ -1484,16 +1988,35 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
     );
   }
 
-  /// TAB 4 (Trang riêng biệt): 6 Bài Luyện Ngón Guitar & Thực Hành Đọc Tab Chuyên Sâu
+  /// TAB 4 (Trang riêng biệt): Lộ Trình 5 Cấp Độ (12 Bài Luyện Ngón, Fingerstyle, Vòng Hợp Âm & Riff/Solo Guitar Điện & Thùng)
   Widget _buildTabAndSpiderExerciseTab(
+    BuildContext context,
     dynamic audioService,
     bool isDark,
     bool isEn,
+    Color accentColor,
   ) {
-    const workouts = GuitarFretboardData.fingerWorkouts;
-    final currentWorkout = workouts[_selectedWorkoutIndex % workouts.length];
-    final currentStepTuple =
-        currentWorkout.steps[_spiderStep % currentWorkout.steps.length];
+    const allWorkouts = GuitarFretboardData.fingerWorkouts;
+    final starsMap = ref.watch(guitarWorkoutStarsProvider);
+    final totalStars = starsMap.values.fold<int>(0, (sum, v) => sum + v);
+    final maxPossibleStars = allWorkouts.length * 3;
+
+    final filteredIndices = <int>[];
+    for (int i = 0; i < allWorkouts.length; i++) {
+      if (_workoutStyleFilter == 'all' ||
+          allWorkouts[i].guitarStyle == _workoutStyleFilter) {
+        filteredIndices.add(i);
+      }
+    }
+    if (!filteredIndices.contains(_selectedWorkoutIndex) &&
+        filteredIndices.isNotEmpty) {
+      _selectedWorkoutIndex = filteredIndices.first;
+    }
+
+    final currentWorkout =
+        allWorkouts[_selectedWorkoutIndex % allWorkouts.length];
+    final currentStepIndex = _spiderStep % currentWorkout.steps.length;
+    final currentStepTuple = currentWorkout.steps[currentStepIndex];
     final activeString = currentStepTuple.$1;
     final activeFret = currentStepTuple.$2;
     final activeFingerText = currentStepTuple.$3;
@@ -1501,19 +2024,122 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
       stringNumber: activeString,
       fret: activeFret,
     );
+    final currentWorkoutStars = starsMap[currentWorkout.id] ?? 1;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          isEn
-              ? 'Select Finger Workout (6 Progressive Exercises):'
-              : 'Chọn bài luyện ngón (6 bài từ Cơ bản đến Nâng cao):',
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
+        // 1. Thanh Lộ Trình 5 Cấp Độ (Level 1 -> Level 5) + Tổng Sao + Nhận +100 Gem (Rewarded Ad)
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+          decoration: BoxDecoration(
+            color: accentColor.withOpacity(0.10),
+            borderRadius: BorderRadius.circular(13),
+            border: Border.all(color: accentColor.withOpacity(0.32)),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.emoji_events_rounded, size: 20, color: accentColor),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isEn
+                          ? '5-Level Guitar Roadmap • $totalStars/$maxPossibleStars ★'
+                          : 'Lộ trình 5 Cấp độ (Lv.1–Lv.5) • $totalStars/$maxPossibleStars ★',
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    Text(
+                      isEn
+                          ? 'Complete any exercise to earn 3 ★ & master Acoustic/Electric runs'
+                          : 'Chạy hết 8 phách mỗi bài để đạt 3 Sao (★★★) cả Guitar Thùng & Điện',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isDark
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondaryLight,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              TextButton.icon(
+                key: const Key('btn_workout_watch_ad_gems'),
+                style: TextButton.styleFrom(
+                  minimumSize: const Size(0, 30),
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  backgroundColor: accentColor.withOpacity(0.15),
+                ),
+                onPressed: () {
+                  showRewardedVideoAdSimulationDialog(context, ref);
+                },
+                icon: const SolfaGemIcon(size: 13),
+                label: const Text(
+                  '+100 Gem',
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900),
+                ),
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: 8),
-        // Lưới 2 cột gọn gàng cho 6 bài luyện ngón (tiết kiệm 50% chiều dọc để Khuông Tab & Cần đàn hiển thị ngay trên màn hình)
-        for (int row = 0; row < (workouts.length / 2).ceil(); row++)
+
+        // 2. Bộ lọc nhanh: Tất cả 12 bài (Lv.1–5) | Guitar Thùng (6) | Guitar Điện (6)
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              for (final (code, lbl) in [
+                ('all', isEn ? 'All 12 Workouts (Lv.1–5)' : 'Tất cả 12 bài (Lv.1–5)'),
+                ('acoustic', isEn ? 'Acoustic (6)' : 'Guitar Thùng (6 bài)'),
+                ('electric', isEn ? 'Electric (6)' : 'Guitar Điện (6 bài)'),
+              ]) ...[
+                Padding(
+                  padding: const EdgeInsets.only(right: 6),
+                  child: ChoiceChip(
+                    key: Key('chip_workout_filter_$code'),
+                    visualDensity: VisualDensity.compact,
+                    label: Text(
+                      lbl,
+                      style: const TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    selected: _workoutStyleFilter == code,
+                    onSelected: (_) {
+                      _spiderTimer?.cancel();
+                      setState(() {
+                        _isSpiderPlaying = false;
+                        _workoutStyleFilter = code;
+                        _spiderStep = 0;
+                        if (code == 'acoustic') {
+                          ref.read(selectedGuitarTypeProvider.notifier).state =
+                              'acoustic';
+                          audioService.setGuitarType('acoustic');
+                        } else if (code == 'electric') {
+                          ref.read(selectedGuitarTypeProvider.notifier).state =
+                              'electric';
+                          audioService.setGuitarType('electric');
+                        }
+                      });
+                    },
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+
+        // 3. Lưới 2 cột hiển thị danh sách bài tập với Nhãn Level (Lv.1..Lv.5) & Số Sao (★)
+        for (int row = 0; row < (filteredIndices.length / 2).ceil(); row++)
           Padding(
             padding: const EdgeInsets.only(bottom: 6),
             child: Row(
@@ -1523,15 +2149,21 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
                   Expanded(
                     child: Builder(
                       builder: (_) {
-                        final idx = row * 2 + col;
-                        if (idx >= workouts.length) {
+                        final cellPos = row * 2 + col;
+                        if (cellPos >= filteredIndices.length) {
                           return const SizedBox.shrink();
                         }
-                        final w = workouts[idx];
+                        final idx = filteredIndices[cellPos];
+                        final w = allWorkouts[idx];
                         final selected = _selectedWorkoutIndex == idx;
+                        final isElWorkout = w.guitarStyle == 'electric';
+                        final cardColor = isElWorkout
+                            ? const Color(0xFF6366F1)
+                            : const Color(0xFFD97706);
+                        final wStars = starsMap[w.id] ?? 1;
                         return Material(
                           color: selected
-                              ? const Color(0xFFD97706)
+                              ? cardColor
                               : (isDark ? AppColors.surfaceDark : Colors.white),
                           borderRadius: BorderRadius.circular(11),
                           child: InkWell(
@@ -1544,61 +2176,99 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
                                 _selectedWorkoutIndex = idx;
                                 _spiderStep = 0;
                               });
+                              ref
+                                  .read(selectedGuitarTypeProvider.notifier)
+                                  .state = w.guitarStyle;
+                              audioService.setGuitarType(w.guitarStyle);
                               _playCurrentSpiderStep();
                             },
                             child: Container(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 9,
-                                vertical: 8,
+                                horizontal: 8,
+                                vertical: 7,
                               ),
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(11),
                                 border: Border.all(
                                   color: selected
-                                      ? const Color(0xFFD97706)
+                                      ? cardColor
                                       : (isDark
                                           ? AppColors.borderDark
                                           : AppColors.borderLight),
                                 ),
                               ),
-                              child: Row(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Container(
-                                    width: 22,
-                                    height: 22,
-                                    decoration: BoxDecoration(
-                                      color: selected
-                                          ? Colors.white.withOpacity(0.22)
-                                          : const Color(0xFFD97706)
-                                              .withOpacity(0.14),
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    alignment: Alignment.center,
-                                    child: Text(
-                                      '${idx + 1}',
-                                      style: TextStyle(
-                                        fontSize: 11.5,
-                                        fontWeight: FontWeight.w900,
-                                        color: selected
-                                            ? Colors.white
-                                            : const Color(0xFFD97706),
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 5,
+                                          vertical: 1.5,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: selected
+                                              ? Colors.white.withOpacity(0.24)
+                                              : cardColor.withOpacity(0.14),
+                                          borderRadius:
+                                              BorderRadius.circular(5),
+                                        ),
+                                        child: Text(
+                                          'Lv.${w.levelNumber}',
+                                          style: TextStyle(
+                                            fontSize: 9.8,
+                                            fontWeight: FontWeight.w900,
+                                            color: selected
+                                                ? Colors.white
+                                                : cardColor,
+                                          ),
+                                        ),
                                       ),
-                                    ),
+                                      const SizedBox(width: 4),
+                                      Expanded(
+                                        child: Text(
+                                          w.styleBadge
+                                              .replaceFirst('Guitar Thùng • ', '')
+                                              .replaceFirst('Guitar Điện • ', ''),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontSize: 9.8,
+                                            fontWeight: FontWeight.w700,
+                                            color: selected
+                                                ? Colors.white70
+                                                : (isDark
+                                                    ? AppColors
+                                                        .textSecondaryDark
+                                                    : AppColors
+                                                        .textSecondaryLight),
+                                          ),
+                                        ),
+                                      ),
+                                      Text(
+                                        '★' * wStars,
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: selected
+                                              ? const Color(0xFFFDE047)
+                                              : const Color(0xFFF59E0B),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  const SizedBox(width: 6),
-                                  Expanded(
-                                    child: Text(
-                                      w.title.replaceFirst(
-                                        RegExp(r'^Bài \d+:\s*'),
-                                        '',
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        fontSize: 11.8,
-                                        fontWeight: FontWeight.w800,
-                                        color: selected ? Colors.white : null,
-                                      ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    w.title.replaceFirst(
+                                      RegExp(r'^Bài \d+:\s*'),
+                                      '',
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w800,
+                                      color: selected ? Colors.white : null,
                                     ),
                                   ),
                                 ],
@@ -1614,15 +2284,60 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
             ),
           ),
         const SizedBox(height: 6),
+
+        // 4. Bảng chi tiết bài đang tập + Thanh điều khiển Tốc độ & Thanh Tiến Độ Nốt 1..8 Trực Quan
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.08),
+            color: accentColor.withOpacity(0.08),
             borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: accentColor.withOpacity(0.24)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Row(
+                children: [
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: accentColor,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      currentWorkout.levelTag,
+                      style: const TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      currentWorkout.styleBadge,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w800,
+                        color: accentColor,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    '★' * currentWorkoutStars +
+                        '☆' * (3 - currentWorkoutStars),
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFFF59E0B),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 5),
               Text(
                 currentWorkout.title,
                 style: const TextStyle(
@@ -1630,12 +2345,91 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
                   fontWeight: FontWeight.w800,
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 3),
               Text(
                 currentWorkout.description,
-                style: const TextStyle(fontSize: 12, height: 1.38),
+                style: const TextStyle(fontSize: 11.8, height: 1.36),
               ),
               const SizedBox(height: 10),
+
+              // Thanh Tiến Độ Nốt Trực Quan & Đếm Nhịp 1–8 (Bấm trực tiếp vào từng phách để nghe & xem thế tay)
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: List.generate(currentWorkout.steps.length, (sIdx) {
+                    final st = currentWorkout.steps[sIdx];
+                    final noteInfo = GuitarFretboardData.noteAt(
+                      stringNumber: st.$1,
+                      fret: st.$2,
+                    );
+                    final isCurrentBeat = sIdx == currentStepIndex;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 5),
+                      child: InkWell(
+                        key: Key('btn_workout_beat_$sIdx'),
+                        borderRadius: BorderRadius.circular(8),
+                        onTap: () {
+                          _spiderTimer?.cancel();
+                          setState(() {
+                            _isSpiderPlaying = false;
+                            _spiderStep = sIdx;
+                          });
+                          _playCurrentSpiderStep();
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 120),
+                          width: 44,
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 5,
+                            horizontal: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isCurrentBeat
+                                ? AppColors.correct
+                                : (isDark
+                                    ? AppColors.surfaceDark
+                                    : Colors.white),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: isCurrentBeat
+                                  ? AppColors.correct
+                                  : accentColor.withOpacity(0.35),
+                              width: isCurrentBeat ? 1.6 : 1.0,
+                            ),
+                          ),
+                          child: Column(
+                            children: [
+                              Text(
+                                '${sIdx + 1}',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w900,
+                                  color: isCurrentBeat
+                                      ? Colors.white
+                                      : accentColor,
+                                ),
+                              ),
+                              FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  noteInfo.vnLabel,
+                                  style: TextStyle(
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w800,
+                                    color: isCurrentBeat ? Colors.white : null,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                ),
+              ),
+              const SizedBox(height: 8),
+
               // Thanh điều khiển tốc độ & Chạy mẫu / Tập từng bước (Không tràn khung 360px)
               Wrap(
                 spacing: 6,
@@ -1693,11 +2487,11 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
                 children: [
                   Expanded(
                     child: Text(
-                      'Bước ${(_spiderStep % currentWorkout.steps.length) + 1}/${currentWorkout.steps.length}: Dây $activeString • Ngăn $activeFret (${activeNote.fullLabel}) → $activeFingerText',
-                      style: const TextStyle(
+                      'Phách ${currentStepIndex + 1}/${currentWorkout.steps.length}: Dây $activeString • Ngăn $activeFret (${activeNote.fullLabel}) → $activeFingerText',
+                      style: TextStyle(
                         fontSize: 12.2,
                         fontWeight: FontWeight.w800,
-                        color: AppColors.primary,
+                        color: accentColor,
                       ),
                     ),
                   ),
@@ -1705,9 +2499,8 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
                   ElevatedButton.icon(
                     key: const Key('btn_toggle_spider_exercise'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: _isSpiderPlaying
-                          ? AppColors.wrong
-                          : const Color(0xFFD97706),
+                      backgroundColor:
+                          _isSpiderPlaying ? AppColors.wrong : accentColor,
                       minimumSize: const Size(0, 38),
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                     ),
@@ -1731,7 +2524,7 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
         ),
         const SizedBox(height: 10),
         GuitarTabViewerWidget(
-          activeStepIndex: _spiderStep % currentWorkout.steps.length,
+          activeStepIndex: currentStepIndex,
           isDark: isDark,
           customSteps: currentWorkout.steps
               .map((s) => (s.$1, s.$2))
@@ -1745,7 +2538,7 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
           showAllNotes: false,
           onTapFret: (s, f) {
             final info = GuitarFretboardData.noteAt(stringNumber: s, fret: f);
-            audioService.playPolyphonicAsset(info.audioAsset);
+            audioService.playGuitarAsset(info.audioAsset);
           },
         ),
       ],

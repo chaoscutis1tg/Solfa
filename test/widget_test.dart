@@ -798,17 +798,27 @@ void main() {
         // Chuyển sang phân khu "Học Guitar & Cần đàn" trên màn 360x680
         await tester.tap(find.byKey(const Key('tab_practice_area_guitar')));
         await pumpFrames(300);
+        expect(find.byKey(const Key('guitar_type_switch_bar')), findsOneWidget);
         expect(find.byKey(const Key('topic_grid_card_topic_guitar_notes')), findsOneWidget);
         expect(find.byKey(const Key('topic_grid_card_topic_guitar_chords')), findsOneWidget);
         expect(find.byKey(const Key('topic_grid_card_topic_guitar_scales')), findsOneWidget);
         expect(find.byKey(const Key('topic_grid_card_topic_guitar_tabs')), findsOneWidget);
+        await tester.tap(find.byKey(const Key('btn_guitar_type_electric')));
+        await pumpFrames(200);
+        await tester.tap(find.byKey(const Key('btn_guitar_type_acoustic')));
+        await pumpFrames(200);
         expect(tester.takeException(), isNull);
 
+        await tester.ensureVisible(
+          find.byKey(const Key('topic_grid_card_guitar_studio')),
+        );
+        await pumpFrames(200);
         await tester.tap(find.byKey(const Key('topic_grid_card_guitar_studio')));
         await pumpFrames(300);
         expect(find.byKey(const Key('guitar_studio_sheet')), findsOneWidget);
         await tester.tap(find.byKey(const Key('chip_guitar_tab_1')));
         await pumpFrames(250);
+        expect(find.byKey(const Key('chip_chord_cat_power')), findsOneWidget);
         expect(find.byKey(const Key('chip_chord_cat_barre')), findsOneWidget);
         await tester.tap(find.byKey(const Key('chip_guitar_tab_2')));
         await pumpFrames(250);
@@ -817,13 +827,22 @@ void main() {
         await pumpFrames(250);
 
         // Mở Trang Luyện Ngón Guitar & Đọc Tab riêng biệt từ thẻ Luyện ngón 1-2-3-4
+        await tester.ensureVisible(
+          find.byKey(const Key('topic_grid_card_guitar_spider')),
+        );
+        await pumpFrames(200);
         await tester.tap(find.byKey(const Key('topic_grid_card_guitar_spider')));
         await pumpFrames(300);
         expect(find.byKey(const Key('card_guitar_workout_spider_1234')), findsOneWidget);
         expect(find.byKey(const Key('card_guitar_workout_pentatonic_box1')), findsOneWidget);
+        expect(find.byKey(const Key('btn_workout_beat_0')), findsOneWidget);
         expect(tester.takeException(), isNull);
         await tester.tap(find.byKey(const Key('btn_close_guitar_studio')));
         await pumpFrames(250);
+        await tester.ensureVisible(
+          find.byKey(const Key('tab_practice_area_piano')),
+        );
+        await pumpFrames(200);
         await tester.tap(find.byKey(const Key('tab_practice_area_piano')));
         await pumpFrames(250);
 
@@ -1820,6 +1839,7 @@ void main() {
           GuitarFretboardData.noteAt(stringNumber: 1, fret: 12).audioAsset,
           equals('assets/audio/notes/e5.wav'),
         );
+        final audio = container.read(audioServiceProvider);
         for (int s = 1; s <= 6; s++) {
           for (int f = 0; f <= 12; f++) {
             final note = GuitarFretboardData.noteAt(stringNumber: s, fret: f);
@@ -1829,9 +1849,23 @@ void main() {
               isTrue,
               reason: 'Dây $s ngăn $f (${note.fullLabel}) thiếu file ${note.audioAsset}',
             );
+            final acFile = File(
+              audio.resolveGuitarAssetPath(
+                note.audioAsset,
+                overrideGuitarType: 'acoustic',
+              ),
+            );
+            final elFile = File(
+              audio.resolveGuitarAssetPath(
+                note.audioAsset,
+                overrideGuitarType: 'electric',
+              ),
+            );
+            expect(acFile.existsSync(), isTrue);
+            expect(elFile.existsSync(), isTrue);
           }
         }
-        expect(GuitarFretboardData.commonChords.length, equals(36));
+        expect(GuitarFretboardData.commonChords.length, equals(44));
         for (final chord in GuitarFretboardData.commonChords) {
           expect(chord.fretsByString1To6.length, equals(6));
           expect(chord.fingersByString1To6.length, equals(6));
@@ -1841,10 +1875,37 @@ void main() {
             isTrue,
             reason: 'Hợp âm ${chord.id} thiếu file ${chord.audioAsset}',
           );
+          final acChord = File(
+            audio.resolveGuitarAssetPath(
+              chord.audioAsset,
+              overrideGuitarType: 'acoustic',
+            ),
+          );
+          final elChord = File(
+            audio.resolveGuitarAssetPath(
+              chord.audioAsset,
+              overrideGuitarType: 'electric',
+            ),
+          );
+          expect(acChord.existsSync(), isTrue);
+          expect(elChord.existsSync(), isTrue);
         }
-        expect(GuitarFretboardData.fingerWorkouts.length, equals(6));
+        expect(GuitarFretboardData.fingerWorkouts.length, equals(12));
+        expect(
+          GuitarFretboardData.fingerWorkouts
+              .where((w) => w.guitarStyle == 'acoustic')
+              .length,
+          equals(6),
+        );
+        expect(
+          GuitarFretboardData.fingerWorkouts
+              .where((w) => w.guitarStyle == 'electric')
+              .length,
+          equals(6),
+        );
         for (final w in GuitarFretboardData.fingerWorkouts) {
           expect(w.steps.length, equals(8));
+          expect(w.levelNumber, inInclusiveRange(1, 5));
           for (final st in w.steps) {
             expect(st.$1, inInclusiveRange(1, 6));
             expect(st.$2, inInclusiveRange(0, 12));

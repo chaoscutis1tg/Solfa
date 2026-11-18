@@ -264,6 +264,13 @@ class PracticeSessionNotifier extends StateNotifier<PracticeSessionState> {
     this._ref,
   ) : super(const PracticeSessionState());
 
+  String _resolveQuestionAudioAsset(QuestionModel q) {
+    if (q.topicId.startsWith('topic_guitar_') || q.type.startsWith('guitar_')) {
+      return _audioService.resolveGuitarAssetPath(q.audioAsset);
+    }
+    return q.audioAsset;
+  }
+
   void _stopTimer() {
     _sessionTimer?.cancel();
     _sessionTimer = null;
@@ -397,7 +404,9 @@ class PracticeSessionNotifier extends StateNotifier<PracticeSessionState> {
       if (settings.autoPlayQuestionAudio &&
           state.currentQuestion != null &&
           state.currentQuestion!.hasQuestionAudio) {
-        await _audioService.playAsset(state.currentQuestion!.audioAsset);
+        await _audioService.playAsset(
+          _resolveQuestionAudioAsset(state.currentQuestion!),
+        );
       }
 
       return true;
@@ -478,7 +487,9 @@ class PracticeSessionNotifier extends StateNotifier<PracticeSessionState> {
       if (settings.autoPlayQuestionAudio &&
           state.currentQuestion != null &&
           state.currentQuestion!.hasQuestionAudio) {
-        await _audioService.playAsset(state.currentQuestion!.audioAsset);
+        await _audioService.playAsset(
+          _resolveQuestionAudioAsset(state.currentQuestion!),
+        );
       }
     } catch (_) {
     } finally {
@@ -557,7 +568,9 @@ class PracticeSessionNotifier extends StateNotifier<PracticeSessionState> {
       if (settings.autoPlayQuestionAudio &&
           state.currentQuestion != null &&
           state.currentQuestion!.hasQuestionAudio) {
-        await _audioService.playAsset(state.currentQuestion!.audioAsset);
+        await _audioService.playAsset(
+          _resolveQuestionAudioAsset(state.currentQuestion!),
+        );
       }
     } catch (_) {
     } finally {
@@ -663,8 +676,10 @@ class PracticeSessionNotifier extends StateNotifier<PracticeSessionState> {
       } catch (_) {}
     }
     if (currentQ.playsPitchConfirmationOnAnswer) {
-      // For visual note/tab/staff questions, play the true pitch AFTER the user answers so they connect eye & ear!
-      unawaited(_audioService.playAsset(currentQ.audioAsset));
+      // Play true pitch on polyphonic pool so advancing to the next question at 800ms never cuts off the note tail!
+      unawaited(
+        _audioService.playPolyphonicAsset(_resolveQuestionAudioAsset(currentQ)),
+      );
     }
     await _audioService.playFeedbackSfx(isCorrect: option.isCorrect);
   }
@@ -675,8 +690,6 @@ class PracticeSessionNotifier extends StateNotifier<PracticeSessionState> {
     if (_isBusy || !state.isCurrentAnswered || state.isCompleted) return false;
     _isBusy = true;
     try {
-      await _audioService.stop();
-
       final nextIdx = state.currentIndex + 1;
 
       // If in Continuous Scoring Mode (60s, 15m, 1h, Unlimited) and running low on questions,
@@ -705,7 +718,11 @@ class PracticeSessionNotifier extends StateNotifier<PracticeSessionState> {
           if (settings.autoPlayQuestionAudio &&
               state.currentQuestion != null &&
               state.currentQuestion!.hasQuestionAudio) {
-            await _audioService.playAsset(state.currentQuestion!.audioAsset);
+            await _audioService.playAsset(
+              _resolveQuestionAudioAsset(state.currentQuestion!),
+            );
+          } else {
+            await _audioService.stop();
           }
           return false;
         }
@@ -721,7 +738,11 @@ class PracticeSessionNotifier extends StateNotifier<PracticeSessionState> {
         if (settings.autoPlayQuestionAudio &&
             state.currentQuestion != null &&
             state.currentQuestion!.hasQuestionAudio) {
-          await _audioService.playAsset(state.currentQuestion!.audioAsset);
+          await _audioService.playAsset(
+            _resolveQuestionAudioAsset(state.currentQuestion!),
+          );
+        } else {
+          await _audioService.stop();
         }
         return false; // Not finished yet
       } else {

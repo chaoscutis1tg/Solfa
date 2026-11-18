@@ -410,8 +410,21 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
                                             : AppColors.primary,
                                       ),
                                       onPressed: () {
-                                        audioService
-                                            .playAsset(question.audioAsset);
+                                        if (question.topicId.startsWith(
+                                              'topic_guitar_',
+                                            ) ||
+                                            question.type.startsWith(
+                                              'guitar_',
+                                            )) {
+                                          audioService.playGuitarAsset(
+                                            question.audioAsset,
+                                            polyphonic: false,
+                                          );
+                                        } else {
+                                          audioService.playAsset(
+                                            question.audioAsset,
+                                          );
+                                        }
                                       },
                                       icon: Icon(
                                         isPlaying

@@ -9,6 +9,7 @@ import '../../../app/widgets/solfa_gem_icon.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/utils/note_formatter.dart';
 import '../../support_developer/application/rewarded_ad_controller.dart';
+import '../../support_developer/presentation/support_developer_screen.dart';
 import '../application/practice_session_controller.dart';
 
 /// UI-07: Kết quả & Bảng điểm phiên luyện tập (UC-11)
@@ -609,100 +610,100 @@ class _SessionResultScreenState extends ConsumerState<SessionResultScreen> {
 
               const SizedBox(height: 10),
 
-              // 5. Gentle Milestone Red-Heart Nudge Card (Every 3 sessions or first time)
-              if (isMilestoneNudge)
-                Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: isDark
-                          ? [
-                              const Color(0xFF280D20).withOpacity(0.92),
-                              const Color(0xFF130B29).withOpacity(0.92),
-                            ]
-                          : [
-                              const Color(0xFFFFF0F3),
-                              const Color(0xFFFFF8FA),
-                            ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(
-                      color: kHeartRedColor.withOpacity(isDark ? 0.55 : 0.42),
-                      width: 1.4,
-                    ),
-                  ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(18),
-                      onTap: () => context.push('/support-developer'),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 10,
-                        ),
-                        child: Row(
-                          children: [
-                            const PulsingRedHeart(
-                              size: 20,
-                              showGlowBadge: true,
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    completedSessions > 0 &&
-                                            completedSessions % 3 == 0
-                                        ? 'Cột mốc $completedSessions phiên học! Tặng Solfa 1 tim nhé?'
-                                        : 'Tặng 1 tim (15s) ủng hộ nhà phát triển',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 13.2,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  const Text(
-                                    'Nhận ngay +100 Gem & Huy hiệu Tri Ân trên Trang chủ',
-                                    style: TextStyle(fontSize: 11.5),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const Icon(
-                              Icons.chevron_right_rounded,
-                              color: kHeartRedColor,
-                            ),
+              // 5. Rewarded Video Ad Card (+100 Gem for Unlimited / 1-Hour / VIP Guitar / Battle Arena)
+              Container(
+                key: const Key('card_result_rewarded_ad'),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: isDark
+                        ? [
+                            const Color(0xFF280D20).withOpacity(0.92),
+                            const Color(0xFF130B29).withOpacity(0.92),
+                          ]
+                        : [
+                            const Color(0xFFFFF0F3),
+                            const Color(0xFFFFF8FA),
                           ],
-                        ),
-                      ),
-                    ),
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
-                )
-              else
-                Center(
-                  child: TextButton.icon(
-                    style: TextButton.styleFrom(
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: kHeartRedColor.withOpacity(isDark ? 0.55 : 0.42),
+                    width: 1.4,
+                  ),
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    key: const Key('btn_result_watch_ad_100_gems'),
+                    borderRadius: BorderRadius.circular(18),
+                    onTap: () => showRewardedVideoAdSimulationDialog(context, ref),
+                    child: Padding(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 6,
+                        horizontal: 12,
+                        vertical: 10,
                       ),
-                      minimumSize: const Size(0, 34),
-                    ),
-                    onPressed: () => context.push('/support-developer'),
-                    icon: const PulsingRedHeart(size: 16),
-                    label: Text(
-                      'Tặng thêm tim ủng hộ (${adState.supporterBadgeTitle})',
-                      style: const TextStyle(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w800,
-                        color: kHeartRedColor,
+                      child: Row(
+                        children: [
+                          const PulsingRedHeart(
+                            size: 20,
+                            showGlowBadge: true,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  isMilestoneNudge && completedSessions > 0
+                                      ? 'Cột mốc $completedSessions phiên học! Xem video nhận +100 Gem'
+                                      : 'Thưởng thêm +100 Gem (Xem video ngắn 15s)',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                const Text(
+                                  'Mở khóa Tự do Không giới hạn, VIP Guitar Điện/Thùng & Đấu Trường',
+                                  style: TextStyle(fontSize: 11.2),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 9,
+                              vertical: 5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: kHeartRedColor,
+                              borderRadius: BorderRadius.circular(99),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                SolfaGemIcon(size: 13),
+                                SizedBox(width: 4),
+                                Text(
+                                  '+100',
+                                  style: TextStyle(
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w900,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
                 ),
+              ),
             ],
           ),
         ),

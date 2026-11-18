@@ -12,6 +12,7 @@ import '../../guitar/presentation/guitar_studio_sheet.dart';
 import '../../practice/application/practice_session_controller.dart';
 import '../../practice/presentation/widgets/free_piano_explorer_sheet.dart';
 import '../../support_developer/application/rewarded_ad_controller.dart';
+import '../../support_developer/presentation/support_developer_screen.dart';
 
 /// Chế độ phân khu trên trang Luyện tập: 'piano' (Piano & Nhạc lý) hoặc 'guitar' (Học Guitar & Cần đàn).
 final selectedPracticeAreaProvider = StateProvider<String>((ref) => 'piano');
@@ -404,6 +405,10 @@ class TopicsScreen extends ConsumerWidget {
                 ],
               ),
             ),
+            if (isGuitarArea) ...[
+              const SizedBox(height: 10),
+              const GuitarTypeSwitchBar(),
+            ],
             const SizedBox(height: 14),
 
             for (int r = 0; r < rowCount; r++) ...[
@@ -949,7 +954,62 @@ class _TopicPracticeSetupSheetState
                 ],
               ),
 
-              const SizedBox(height: 18),
+              if (selectedDuration == 3600 || selectedDuration == 0) ...[
+                const SizedBox(height: 8),
+                InkWell(
+                  key: const Key('btn_setup_modal_watch_ad_gems'),
+                  borderRadius: BorderRadius.circular(11),
+                  onTap: () {
+                    showRewardedVideoAdSimulationDialog(context, ref);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 7,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF59E0B).withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(11),
+                      border: Border.all(
+                        color: const Color(0xFFF59E0B).withOpacity(0.35),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.play_circle_fill_rounded,
+                          size: 16,
+                          color: Color(0xFFD97706),
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            isEn
+                                ? 'Need Gems for Unlimited / 1-Hour? Watch a short video for +100 Gems!'
+                                : 'Cần thêm Gem mở gói Tự do / 1 tiếng? Xem video ngắn nhận ngay +100 Gem!',
+                            style: const TextStyle(
+                              fontSize: 11.2,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        const SolfaGemIcon(size: 14),
+                        const SizedBox(width: 3),
+                        const Text(
+                          '+100',
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFFD97706),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+
+              const SizedBox(height: 16),
 
               // 3. Nút hành động chính duy nhất
               ElevatedButton.icon(

@@ -7,7 +7,7 @@ import '../../../core/utils/note_formatter.dart';
 import '../presentation/widgets/musical_staff_widget.dart';
 
 class HybridQuestionGenerator {
-  static const int _currentGeneratorVersion = 10;
+  static const int _currentGeneratorVersion = 11;
   static final Random _entropySource = Random();
 
   final AppDatabase _db;
@@ -2198,6 +2198,32 @@ class HybridQuestionGenerator {
             ],
             'Nghe âm thanh & quan sát thế bấm (dịch dáng Am lên 1 dây) để chọn tên hợp âm:',
             'Hợp âm Mi Trưởng (E): Ngón 1 Dây 3 ngăn 1 • Ngón 2 Dây 5 ngăn 2 • Ngón 3 Dây 4 ngăn 2.'
+          ),
+          (
+            'guitar_chord_shape',
+            'assets/audio/keys/chord_e5.wav',
+            'GTR_CHORD_E5',
+            'Mi Năm (E5 Power Chord • 0-2-2-X-X-X)',
+            [
+              ('GTR_CHORD_A5', 'La Năm (A5 Power Chord • X-0-2-2-X-X)'),
+              ('GTR_CHORD_G5', 'Sol Năm (G5 Power Chord • 3-5-5-X-X-X)'),
+              ('GTR_CHORD_C5', 'Đô Năm (C5 Power Chord • X-3-5-5-X-X)'),
+            ],
+            'Nghe âm thanh & quan sát thế bấm Hợp âm 5 Guitar Điện (Dây 6 buông + Dây 5&4 ngăn 2, bịt 3 dây dưới):',
+            'Hợp âm 5 Mi Năm (E5) gồm nốt gốc Mi (E2) và Quãng 5 đúng Si (B2 + E3), tạo âm thanh Rock/Pop đầy uy lực.'
+          ),
+          (
+            'guitar_chord_shape',
+            'assets/audio/keys/chord_a5.wav',
+            'GTR_CHORD_A5',
+            'La Năm (A5 Power Chord • X-0-2-2-X-X)',
+            [
+              ('GTR_CHORD_E5', 'Mi Năm (E5 Power Chord • 0-2-2-X-X-X)'),
+              ('GTR_CHORD_C5', 'Đô Năm (C5 Power Chord • X-3-5-5-X-X)'),
+              ('GTR_CHORD_D5', 'Rê Năm (D5 Power Chord • X-5-7-7-X-X)'),
+            ],
+            'Nghe âm thanh & quan sát thế bấm Hợp âm 5 gốc Dây 5 buông (kèm Dây 4&3 ngăn 2) để chọn đáp án:',
+            'Hợp âm La Năm (A5): Dây 5 buông (La A2) + Ngón 2&3 tại Dây 4&3 ngăn 2 (Mi E3 & La A3).'
           ),
         ];
 

@@ -14,10 +14,64 @@ class AudioService {
   final ValueNotifier<bool> isPlayingNotifier = ValueNotifier<bool>(false);
   double _lessonVolume = 0.9;
   bool _sfxEnabled = true;
+  String _guitarType = 'acoustic'; // 'acoustic' (Guitar Thùng) | 'electric' (Guitar Điện)
   bool _isDisposed = false;
   int _playSerial = 0;
 
   AudioService({this.isTestMode = false});
+
+  String get guitarType => _guitarType;
+
+  void setGuitarType(String type) {
+    if (type == 'electric' || type == 'acoustic') {
+      _guitarType = type;
+    }
+  }
+
+  /// Chuyển đổi đường dẫn âm thanh sang đúng âm sắc Guitar Thùng (guitar_acoustic) hoặc Guitar Điện (guitar_electric).
+  String resolveGuitarAssetPath(String assetPath, {String? overrideGuitarType}) {
+    final targetFolder = (overrideGuitarType ?? _guitarType) == 'electric'
+        ? 'guitar_electric'
+        : 'guitar_acoustic';
+    if (assetPath.startsWith('assets/audio/guitar_acoustic/')) {
+      return assetPath.replaceFirst(
+        'assets/audio/guitar_acoustic/',
+        'assets/audio/$targetFolder/',
+      );
+    }
+    if (assetPath.startsWith('assets/audio/guitar_electric/')) {
+      return assetPath.replaceFirst(
+        'assets/audio/guitar_electric/',
+        'assets/audio/$targetFolder/',
+      );
+    }
+    if (assetPath.startsWith('assets/audio/notes/')) {
+      return assetPath.replaceFirst(
+        'assets/audio/notes/',
+        'assets/audio/$targetFolder/notes/',
+      );
+    }
+    if (assetPath.startsWith('assets/audio/keys/')) {
+      return assetPath.replaceFirst(
+        'assets/audio/keys/',
+        'assets/audio/$targetFolder/keys/',
+      );
+    }
+    return assetPath;
+  }
+
+  /// Phát âm thanh nhạc cụ Guitar theo đúng chế độ Guitar Thùng (Acoustic) hoặc Guitar Điện (Electric) đang chọn.
+  Future<bool> playGuitarAsset(
+    String assetPath, {
+    bool polyphonic = true,
+    String? overrideGuitarType,
+  }) async {
+    final resolved = resolveGuitarAssetPath(
+      assetPath,
+      overrideGuitarType: overrideGuitarType,
+    );
+    return polyphonic ? playPolyphonicAsset(resolved) : playAsset(resolved);
+  }
 
   void updateConfig({double? lessonVolume, bool? sfxEnabled}) {
     if (lessonVolume != null) {
@@ -154,7 +208,7 @@ class AudioService {
     } catch (_) {}
   }
 
-  Future<void> stop() async {
+  Future<void> stop({bool includePolyphony = false}) async {
     _playSerial++;
     if (!_isDisposed) {
       isPlayingNotifier.value = false;
@@ -162,8 +216,10 @@ class AudioService {
     if (isTestMode || _isDisposed) return;
     try {
       await _lessonPlayer?.stop();
-      for (final p in _polyPool) {
-        await p.stop();
+      if (includePolyphony) {
+        for (final p in _polyPool) {
+          await p.stop();
+        }
       }
     } catch (_) {}
   }
