@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -6,6 +7,7 @@ import '../../../app/theme/app_colors.dart';
 import '../../../app/widgets/pulsing_red_heart.dart';
 import '../../../app/widgets/solfa_background.dart';
 import '../../../app/widgets/solfa_gem_icon.dart';
+import '../../../app/widgets/solfa_logo.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/utils/note_formatter.dart';
 import '../../support_developer/application/rewarded_ad_controller.dart';
@@ -75,6 +77,22 @@ class _SessionResultScreenState extends ConsumerState<SessionResultScreen> {
             automaticallyImplyLeading: false,
             centerTitle: true,
             title: const Text('Bảng điểm phiên luyện tập'),
+            actions: [
+              IconButton(
+                key: const Key('btn_share_achievement_card'),
+                tooltip: 'Thẻ Vinh Danh Thành Tích',
+                icon: const Icon(Icons.ios_share_rounded),
+                onPressed: () => _showAchievementShareDialog(
+                  context,
+                  scorePoints: state.scorePoints,
+                  accuracy: accuracy,
+                  maxCombo: state.maxComboInSession,
+                  starCount: starCount,
+                  streakDays:
+                      progressAsync.valueOrNull?.currentStreakDays ?? 1,
+                ),
+              ),
+            ],
           ),
         body: SafeArea(
           child: ListView(
@@ -709,6 +727,180 @@ class _SessionResultScreenState extends ConsumerState<SessionResultScreen> {
         ),
       ),
     ),
+    );
+  }
+
+  Future<void> _showAchievementShareDialog(
+    BuildContext context, {
+    required int scorePoints,
+    required double accuracy,
+    required int maxCombo,
+    required int starCount,
+    required int streakDays,
+  }) async {
+    final starsStr = '★' * starCount + '☆' * (3 - starCount);
+    final shareText =
+        '🎵 ChaoNote (Cháo Nhạc) – Thành Tích Luyện Tập!\n'
+        '🏆 Điểm đạt: $scorePoints điểm ($starsStr)\n'
+        '🎯 Độ chính xác: ${accuracy.toStringAsFixed(0)}% • Combo x$maxCombo\n'
+        '🔥 Chuỗi ngày học: $streakDays ngày liên tiếp\n'
+        '👉 Cùng luyện Piano, Guitar Thùng/Điện & Cảm âm Offline trên ChaoNote!';
+
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => Dialog(
+        key: const Key('dialog_achievement_share_card'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        child: Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(22),
+            gradient: const LinearGradient(
+              colors: [Color(0xFF1E1B4B), Color(0xFF312E81)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const SolfaLogo(size: 36),
+                  const SizedBox(width: 10),
+                  Flexible(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            'CHAONOTE • THẺ VINH DANH',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w900,
+                              color: Color(0xFFFDE047),
+                              letterSpacing: 0.6,
+                            ),
+                          ),
+                        ),
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            'Chuỗi học tập: 🔥 $streakDays ngày',
+                            style: const TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white70,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  starsStr,
+                  style: const TextStyle(
+                    fontSize: 28,
+                    color: Color(0xFFFACC15),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 4),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  '$scorePoints ĐIỂM',
+                  style: const TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(99),
+                ),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    'Chính xác ${accuracy.toStringAsFixed(0)}% • Combo x$maxCombo',
+                    style: const TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        side: const BorderSide(color: Colors.white38),
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                      ),
+                      onPressed: () => Navigator.of(ctx).pop(),
+                      child: const FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text('Đóng'),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      key: const Key('btn_copy_achievement_text'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFF59E0B),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                      ),
+                      onPressed: () async {
+                        await Clipboard.setData(
+                          ClipboardData(text: shareText),
+                        );
+                        if (ctx.mounted) {
+                          Navigator.of(ctx).pop();
+                        }
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              backgroundColor: AppColors.correct,
+                              content: Text(
+                                'Đã sao chép Thẻ Vinh Danh! Bạn có thể dán chia sẻ ngay.',
+                              ),
+                            ),
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.copy_rounded, size: 15),
+                      label: const FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text('Sao chép'),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

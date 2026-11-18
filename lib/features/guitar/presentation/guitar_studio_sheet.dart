@@ -1114,6 +1114,10 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
   int? _activeScaleRunFret;
   bool _isScaleRunPlaying = false;
 
+  Timer? _jamLoopTimer;
+  String? _activeJamTrackId;
+  int _activeJamStep = 0;
+
   @override
   void initState() {
     super.initState();
@@ -1158,6 +1162,7 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
     _tunerLoopTimer?.cancel();
     _progLoopTimer?.cancel();
     _scaleRunTimer?.cancel();
+    _jamLoopTimer?.cancel();
   }
 
   @override
@@ -1403,6 +1408,37 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
     _scaleRunTimer = Timer.periodic(
       const Duration(milliseconds: 340),
       (_) => playScaleStep(),
+    );
+  }
+
+  /// Chế độ Nhạc Nền Đệm Tập (Backing Track Jam Loop): Phát vòng hòa âm nền để người học tự do gảy Solo trên Bản đồ Scale!
+  void _toggleBackingTrackJam(String jamId, List<String> chordAssets, String targetScaleId) {
+    _jamLoopTimer?.cancel();
+    if (_activeJamTrackId == jamId) {
+      setState(() {
+        _activeJamTrackId = null;
+        _activeJamStep = 0;
+      });
+      return;
+    }
+    setState(() {
+      _activeJamTrackId = jamId;
+      _activeJamStep = 0;
+      _selectedScaleId = targetScaleId;
+    });
+    final audio = ref.read(audioServiceProvider);
+    audio.playGuitarAsset(chordAssets.first);
+    _jamLoopTimer = Timer.periodic(
+      const Duration(milliseconds: 1650),
+      (_) {
+        if (!mounted || _activeJamTrackId != jamId) {
+          _jamLoopTimer?.cancel();
+          return;
+        }
+        final nextIdx = (_activeJamStep + 1) % chordAssets.length;
+        setState(() => _activeJamStep = nextIdx);
+        audio.playGuitarAsset(chordAssets[nextIdx]);
+      },
     );
   }
 
@@ -1717,13 +1753,13 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
                   ),
                 ),
                 const SizedBox(width: 6),
-                for (final (sNum, sLbl) in const [
-                  (6, '6E'),
-                  (5, '5A'),
-                  (4, '4D'),
-                  (3, '3G'),
-                  (2, '2B'),
-                  (1, '1e'),
+                for (final (sNum, sLbl, hzLbl) in const [
+                  (6, '6E', '82.4Hz'),
+                  (5, '5A', '110Hz'),
+                  (4, '4D', '146.8Hz'),
+                  (3, '3G', '196Hz'),
+                  (2, '2B', '246.9Hz'),
+                  (1, '1e', '329.6Hz'),
                 ]) ...[
                   Padding(
                     padding: const EdgeInsets.only(right: 5),
@@ -1735,8 +1771,8 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
                           _tapTunerOpenString(sNum, toggleLoop: true),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
+                          horizontal: 7,
+                          vertical: 3,
                         ),
                         decoration: BoxDecoration(
                           color: _loopingTunerString == sNum
@@ -1746,16 +1782,36 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
                                   : const Color(0xFFD97706).withOpacity(0.12)),
                           borderRadius: BorderRadius.circular(7),
                         ),
-                        child: Text(
-                          sLbl,
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w900,
-                            color: (_loopingTunerString == sNum ||
-                                    (_activeString == sNum && _activeFret == 0))
-                                ? Colors.white
-                                : const Color(0xFFD97706),
-                          ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              sLbl,
+                              style: TextStyle(
+                                fontSize: 10.8,
+                                fontWeight: FontWeight.w900,
+                                color: (_loopingTunerString == sNum ||
+                                        (_activeString == sNum &&
+                                            _activeFret == 0))
+                                    ? Colors.white
+                                    : const Color(0xFFD97706),
+                              ),
+                            ),
+                            Text(
+                              hzLbl,
+                              style: TextStyle(
+                                fontSize: 8.5,
+                                fontWeight: FontWeight.w700,
+                                color: (_loopingTunerString == sNum ||
+                                        (_activeString == sNum &&
+                                            _activeFret == 0))
+                                    ? Colors.white.withOpacity(0.9)
+                                    : (isDark
+                                        ? AppColors.textSecondaryDark
+                                        : AppColors.textSecondaryLight),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -2408,7 +2464,134 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
             audioService.playGuitarAsset(info.audioAsset);
           },
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
+        // Thanh Nhạc Nền Đệm Tập (Backing Track Jam Loop: Bật hòa âm nền để gảy Solo tự do trên cần đàn!)
+        Container(
+          key: const Key('guitar_backing_track_jam_bar'),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.surfaceDark : Colors.white,
+            borderRadius: BorderRadius.circular(11),
+            border: Border.all(
+              color: isDark ? AppColors.borderDark : AppColors.borderLight,
+            ),
+          ),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.album_rounded,
+                  size: 15,
+                  color: AppColors.primary,
+                ),
+                const SizedBox(width: 5),
+                Text(
+                  isEn ? 'Backing Jam:' : 'Nhạc nền Jam:',
+                  style: const TextStyle(
+                    fontSize: 11.2,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                for (final (jId, jLbl, jScale, jChords) in const [
+                  (
+                    'jam_am',
+                    'Am Ballad (Am–F–C–G)',
+                    'am_pentatonic',
+                    [
+                      'assets/audio/keys/chord_a_min.wav',
+                      'assets/audio/keys/chord_f_maj.wav',
+                      'assets/audio/keys/chord_c_maj.wav',
+                      'assets/audio/keys/chord_g_maj.wav',
+                    ]
+                  ),
+                  (
+                    'jam_blues',
+                    'A Blues Rock (A5–D5–E5)',
+                    'a_blues',
+                    [
+                      'assets/audio/keys/chord_a5.wav',
+                      'assets/audio/keys/chord_d5.wav',
+                      'assets/audio/keys/chord_a5.wav',
+                      'assets/audio/keys/chord_e5.wav',
+                    ]
+                  ),
+                  (
+                    'jam_cpop',
+                    'C Canon Pop (C–G–Am–F)',
+                    'c_major',
+                    [
+                      'assets/audio/keys/chord_c_maj.wav',
+                      'assets/audio/keys/chord_g_maj.wav',
+                      'assets/audio/keys/chord_a_min.wav',
+                      'assets/audio/keys/chord_f_maj.wav',
+                    ]
+                  ),
+                  (
+                    'jam_em',
+                    'Em Acoustic (Em–C–G–D)',
+                    'em_pentatonic',
+                    [
+                      'assets/audio/keys/chord_e_min.wav',
+                      'assets/audio/keys/chord_c_maj.wav',
+                      'assets/audio/keys/chord_g_maj.wav',
+                      'assets/audio/keys/chord_d_maj.wav',
+                    ]
+                  ),
+                ]) ...[
+                  Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: InkWell(
+                      key: Key('btn_backing_jam_$jId'),
+                      borderRadius: BorderRadius.circular(7),
+                      onTap: () =>
+                          _toggleBackingTrackJam(jId, jChords, jScale),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _activeJamTrackId == jId
+                              ? AppColors.correct
+                              : AppColors.primary.withOpacity(0.10),
+                          borderRadius: BorderRadius.circular(7),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              _activeJamTrackId == jId
+                                  ? Icons.stop_rounded
+                                  : Icons.play_arrow_rounded,
+                              size: 13,
+                              color: _activeJamTrackId == jId
+                                  ? Colors.white
+                                  : AppColors.primary,
+                            ),
+                            const SizedBox(width: 3),
+                            Text(
+                              jLbl,
+                              style: TextStyle(
+                                fontSize: 10.8,
+                                fontWeight: FontWeight.w800,
+                                color: _activeJamTrackId == jId
+                                    ? Colors.white
+                                    : AppColors.primary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(

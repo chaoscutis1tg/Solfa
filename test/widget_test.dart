@@ -673,6 +673,12 @@ void main() {
         router.go('/session-result');
         await pumpFrames();
         expect(find.byKey(const Key('result_accuracy_text')), findsOneWidget);
+        expect(find.byKey(const Key('btn_share_achievement_card')), findsOneWidget);
+        await tester.tap(find.byKey(const Key('btn_share_achievement_card')));
+        await pumpFrames(250);
+        expect(find.byKey(const Key('dialog_achievement_share_card')), findsOneWidget);
+        await tester.tap(find.text('Đóng'));
+        await pumpFrames(200);
         expect(tester.takeException(), isNull);
 
         // 4. Màn hình Máy đếm nhịp (MetronomeScreen) với Tempo Lite, Subdivision, Speed Trainer & 6/8
@@ -824,6 +830,7 @@ void main() {
         expect(find.byKey(const Key('guitar_chord_progression_bar')), findsOneWidget);
         await tester.tap(find.byKey(const Key('chip_guitar_tab_2')));
         await pumpFrames(250);
+        expect(find.byKey(const Key('guitar_backing_track_jam_bar')), findsOneWidget);
         expect(find.byKey(const Key('btn_play_guitar_scale_run')), findsOneWidget);
         expect(tester.takeException(), isNull);
         await tester.tap(find.byKey(const Key('btn_close_guitar_studio')));
