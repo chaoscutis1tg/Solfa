@@ -15,6 +15,7 @@ import 'package:solfa/core/providers/app_providers.dart';
 import 'package:solfa/core/security/solfa_integrity_guard.dart';
 import 'package:solfa/features/battle/application/battle_controller.dart';
 import 'package:solfa/features/guitar/presentation/guitar_studio_sheet.dart';
+import 'package:solfa/features/guitar/presentation/interactive_songbook_and_theory_sheet.dart';
 import 'package:solfa/features/metronome/application/metronome_controller.dart';
 import 'package:solfa/features/practice/application/practice_session_controller.dart';
 import 'package:solfa/features/practice/presentation/widgets/musical_staff_widget.dart';
@@ -2173,6 +2174,25 @@ void main() {
         await tester.pump(const Duration(milliseconds: 1700));
         await tester.tap(find.byKey(const Key('btn_play_guitar_scale_run')));
         await tester.pump(const Duration(milliseconds: 1500));
+        expect(tester.takeException(), isNull);
+
+        // 2c-bis. Chuyển sang Tab 4 (Bản Nhạc & Capo): Kiểm tra Kho Bản Nhạc (Canon Rock 500 Gem, Ode to Joy) & Vòng Tròn Bậc 5 / Dịch Capo
+        expect(
+          kInteractiveSongbookCatalog.any(
+            (s) => s.id == 'song_canon_rock' && s.gemCost == 500,
+          ),
+          isTrue,
+        );
+        await tester.tap(find.byKey(const Key('chip_guitar_tab_4')));
+        await tester.pump(const Duration(milliseconds: 200));
+        expect(find.byKey(const Key('btn_tap_current_highway_note')), findsOneWidget);
+        await tester.tap(find.byKey(const Key('btn_tap_current_highway_note')));
+        await tester.pump(const Duration(milliseconds: 150));
+        await tester.tap(find.byKey(const Key('chip_submode_circle_capo')));
+        await tester.pump(const Duration(milliseconds: 200));
+        expect(find.byKey(const Key('btn_transpose_up')), findsOneWidget);
+        await tester.tap(find.byKey(const Key('btn_transpose_up')));
+        await tester.pump(const Duration(milliseconds: 150));
         expect(tester.takeException(), isNull);
 
         // 2d. Mở trang Luyện ngón (isWorkoutOnlyPage: true) -> Chạy mẫu hết 8 phách để nhận đủ 3 Sao (★★★)

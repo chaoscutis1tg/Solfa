@@ -11,6 +11,7 @@ import '../../../app/widgets/solfa_guitar_icon.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../support_developer/application/rewarded_ad_controller.dart';
 import '../../support_developer/presentation/support_developer_screen.dart';
+import 'interactive_songbook_and_theory_sheet.dart';
 
 const String _kPrefGuitarType = 'solfa_guitar_type_v1';
 const String _kPrefGuitarProUnlocked = 'solfa_guitar_pro_unlocked_v1';
@@ -1579,19 +1580,26 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet>
             const SizedBox(height: 10),
 
             if (!isWorkoutPage) ...[
-              // 3 Phân khu trên Trang Bản Đồ Cần Đàn (Map Cần | 44 Hợp Âm | Bản đồ Scale)
+              // 4 Phân khu trên Trang Bản Đồ Cần Đàn (Map Cần | 44 Hợp Âm | Bản đồ Scale | Bản nhạc & Capo)
               Row(
                 children: [
-                  for (final (idx, label, icon) in [
-                    (0, isEn ? 'Fretboard' : 'Map Cần đàn', Icons.grid_on_rounded),
+                  for (final (posIdx, idx, label, icon) in [
+                    (0, 0, isEn ? 'Fretboard' : 'Map Cần đàn', Icons.grid_on_rounded),
                     (
+                      1,
                       1,
                       isEn ? 'Chords (44)' : 'Hợp âm (44)',
                       Icons.pan_tool_alt_rounded
                     ),
-                    (2, isEn ? 'Scales (7)' : 'Bản đồ Scale', Icons.timeline_rounded),
+                    (2, 2, isEn ? 'Scales (7)' : 'Bản đồ Scale', Icons.timeline_rounded),
+                    (
+                      3,
+                      4,
+                      isEn ? 'Songs & Capo' : 'Bản nhạc & Capo',
+                      Icons.queue_music_rounded
+                    ),
                   ]) ...[
-                    if (idx > 0) const SizedBox(width: 8),
+                    if (posIdx > 0) const SizedBox(width: 6),
                     Expanded(
                       child: Material(
                         color: _selectedTab == idx
@@ -1674,6 +1682,8 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet>
               _buildFretboardMapTab(audioService, isDark, isEn)
             else if (_selectedTab == 1)
               _buildChordShapesTab(audioService, isDark, isEn)
+            else if (_selectedTab == 4)
+              const InteractiveSongbookAndTheoryTab()
             else
               _buildScaleMapTab(
                 context,
@@ -1892,6 +1902,10 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet>
               ],
             ),
           ),
+        ),
+        const SizedBox(height: 6),
+        ChromaticCentsTunerChallengeCard(
+          activeStringNumber: _activeString,
         ),
         const SizedBox(height: 6),
         Wrap(

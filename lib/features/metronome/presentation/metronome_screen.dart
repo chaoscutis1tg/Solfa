@@ -3,8 +3,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/theme/app_colors.dart';
+import '../../../app/widgets/solfa_gem_icon.dart';
 import '../../../core/models/domain_models.dart';
 import '../../../core/providers/app_providers.dart';
+import '../../support_developer/application/rewarded_ad_controller.dart';
+import '../../support_developer/presentation/support_developer_screen.dart';
 import '../application/metronome_controller.dart';
 
 final metronomePresetsProvider =
@@ -971,7 +974,363 @@ class _MetronomeScreenState extends ConsumerState<MetronomeScreen>
             ),
           ),
         ),
+
+        const SizedBox(height: 14),
+
+        // 3. Máy Đánh Trống (Drum Loops) & Bộ Gõ Tiết Tấu (Rhythm Tap Accuracy Pad)
+        _RhythmTapAndDrumLoopsCard(
+          bpm: cfg.bpm,
+          isRunning: cfg.isRunning,
+          isDark: isDark,
+          isEn: isEn,
+        ),
       ],
+    );
+  }
+}
+
+class _RhythmTapAndDrumLoopsCard extends ConsumerStatefulWidget {
+  final int bpm;
+  final bool isRunning;
+  final bool isDark;
+  final bool isEn;
+
+  const _RhythmTapAndDrumLoopsCard({
+    required this.bpm,
+    required this.isRunning,
+    required this.isDark,
+    required this.isEn,
+  });
+
+  @override
+  ConsumerState<_RhythmTapAndDrumLoopsCard> createState() =>
+      _RhythmTapAndDrumLoopsCardState();
+}
+
+class _RhythmTapAndDrumLoopsCardState
+    extends ConsumerState<_RhythmTapAndDrumLoopsCard> {
+  String _selectedGrooveId = 'pop_8beat';
+  final Set<String> _unlockedVipGrooves = <String>{};
+  int? _lastTapEpochMs;
+  String _tapGradeLabel = 'Chạm Pad theo nhịp phách để đo độ chuẩn xác (ms)';
+  Color _tapGradeColor = AppColors.primary;
+  int _tapCombo = 0;
+  int _perfectHits = 0;
+  int _totalTaps = 0;
+
+  static const List<(String id, String labelVi, String labelEn, int num, int den, int sub, int gemCost, List<String> pattern)>
+      _drumGrooves = [
+    ('pop_8beat', 'Pop 8-Beat', 'Pop 8-Beat', 4, 4, 2, 0, ['KICK', 'HAT', 'SNARE', 'HAT']),
+    ('ballad_44', 'Ballad 4/4', 'Ballad 4/4', 4, 4, 1, 0, ['KICK', 'HAT', 'RIM', 'HAT']),
+    ('waltz_34', 'Waltz 3/4', 'Waltz 3/4', 3, 4, 1, 0, ['KICK', 'HAT', 'HAT']),
+    ('bolero_vn', 'Bolero / Rumba', 'Bolero Groove', 4, 4, 2, 300, ['KICK', 'SNARE', 'HAT', 'SNARE']),
+    ('rock_drive', 'Canon Rock 16B', 'Canon Rock 16B', 4, 4, 2, 350, ['KICK', 'SNARE', 'KICK', 'SNARE']),
+    ('funk_shuffle', 'Funk Shuffle', 'Funk Shuffle', 4, 4, 3, 400, ['KICK', 'GHOST', 'SNARE', 'HAT']),
+  ];
+
+  Future<void> _onSelectGroove(
+    (String, String, String, int, int, int, int, List<String>) g,
+  ) async {
+    final id = g.$1;
+    final cost = g.$7;
+    if (cost > 0 && !_unlockedVipGrooves.contains(id)) {
+      final ok = await ref
+          .read(rewardedAdProvider.notifier)
+          .spendGemsForOneHourSession(gemCost: cost);
+      if (!ok) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: AppColors.warning,
+            content: Text(
+              'Điệu trống VIP "${g.$2}" cần $cost Gem. Xem video ngắn để nhận ngay +100 Gem!',
+            ),
+            action: SnackBarAction(
+              label: 'Nhận +100 Gem',
+              textColor: Colors.white,
+              onPressed: () {
+                showRewardedVideoAdSimulationDialog(context, ref);
+              },
+            ),
+          ),
+        );
+        return;
+      }
+      setState(() {
+        _unlockedVipGrooves.add(id);
+      });
+    }
+
+    final metro = ref.read(metronomeProvider.notifier);
+    metro.setTimeSignature(g.$4, g.$5);
+    metro.setSubdivision(g.$6);
+    setState(() {
+      _selectedGrooveId = id;
+    });
+  }
+
+  void _onTapRhythmPad() {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final targetIntervalMs = (60000.0 / widget.bpm).round();
+
+    if (ref.read(appSettingsProvider).hapticFeedbackEnabled) {
+      try {
+        HapticFeedback.lightImpact();
+      } catch (_) {}
+    }
+
+    if (_lastTapEpochMs == null || (now - _lastTapEpochMs!) > targetIntervalMs * 2.4) {
+      setState(() {
+        _lastTapEpochMs = now;
+        _tapCombo = 1;
+        _totalTaps = 1;
+        _perfectHits = 1;
+        _tapGradeLabel = 'Bắt đầu nhịp #1 • Gõ tiếp nhịp sau (${targetIntervalMs}ms/phách)!';
+        _tapGradeColor = AppColors.primary;
+      });
+      return;
+    }
+
+    final actualInterval = now - _lastTapEpochMs!;
+    final diff = actualInterval - targetIntervalMs;
+    final absDiff = diff.abs();
+
+    setState(() {
+      _lastTapEpochMs = now;
+      _totalTaps++;
+      if (absDiff <= 28) {
+        _tapCombo++;
+        _perfectHits++;
+        _tapGradeLabel = 'PERFECT! (Lệch ${diff >= 0 ? '+$diff' : '$diff'} ms)';
+        _tapGradeColor = AppColors.correct;
+      } else if (absDiff <= 65) {
+        _tapCombo++;
+        _perfectHits++;
+        _tapGradeLabel = 'GREAT! (Lệch ${diff >= 0 ? '+$diff' : '$diff'} ms)';
+        _tapGradeColor = AppColors.primary;
+      } else {
+        _tapCombo = 0;
+        _tapGradeLabel = diff < 0
+            ? 'Hơi SỚM ($diff ms so với chuẩn ${targetIntervalMs}ms)'
+            : 'Hơi TRỄ (+$diff ms so với chuẩn ${targetIntervalMs}ms)';
+        _tapGradeColor = const Color(0xFFF59E0B);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final currentBeat =
+        ref.watch(metronomeProvider.select((s) => s.currentBeat));
+    final currentGroove = _drumGrooves.firstWhere(
+      (g) => g.$1 == _selectedGrooveId,
+      orElse: () => _drumGrooves.first,
+    );
+    final accuracyPct = _totalTaps > 0
+        ? ((_perfectHits / _totalTaps) * 100).round()
+        : 100;
+
+    return Card(
+      key: const Key('card_metronome_drum_and_rhythm_pad'),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 1. Máy Đánh Trống Đệm Đàn (Drum Groove Loops)
+            Row(
+              children: [
+                const Icon(
+                  Icons.album_rounded,
+                  size: 18,
+                  color: AppColors.primary,
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    widget.isEn
+                        ? 'Drum Groove Loops & Rhythm Tap Trainer'
+                        : 'Máy Đánh Trống Đệm Đàn & Bộ Gõ Tiết Tấu (ms)',
+                    style: const TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  for (int i = 0; i < _drumGrooves.length; i++) ...[
+                    if (i > 0) const SizedBox(width: 6),
+                    Builder(
+                      builder: (_) {
+                        final g = _drumGrooves[i];
+                        final isSelected = g.$1 == _selectedGrooveId;
+                        final isLocked =
+                            g.$7 > 0 && !_unlockedVipGrooves.contains(g.$1);
+                        return ChoiceChip(
+                          key: Key('chip_drum_groove_${g.$1}'),
+                          visualDensity: VisualDensity.compact,
+                          label: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (isLocked) ...[
+                                const SolfaGemIcon(size: 11),
+                                const SizedBox(width: 3),
+                              ],
+                              Text(
+                                isLocked
+                                    ? '${widget.isEn ? g.$3 : g.$2} (${g.$7}G)'
+                                    : (widget.isEn ? g.$3 : g.$2),
+                                style: const TextStyle(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ],
+                          ),
+                          selected: isSelected,
+                          onSelected: (_) => _onSelectGroove(g),
+                        );
+                      },
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            // Visual Drum Step Matrix (Kick / Snare / Hi-Hat)
+            Row(
+              children: [
+                for (int b = 0; b < currentGroove.$8.length; b++) ...[
+                  if (b > 0) const SizedBox(width: 6),
+                  Expanded(
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 120),
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      decoration: BoxDecoration(
+                        color: (widget.isRunning && currentBeat == (b + 1))
+                            ? AppColors.primary
+                            : AppColors.primary.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(9),
+                        border: Border.all(
+                          color: (widget.isRunning && currentBeat == (b + 1))
+                              ? AppColors.secondary
+                              : AppColors.primary.withOpacity(0.25),
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          Text(
+                            'Phách ${b + 1}',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: (widget.isRunning &&
+                                      currentBeat == (b + 1))
+                                  ? Colors.white70
+                                  : null,
+                            ),
+                          ),
+                          Text(
+                            currentGroove.$8[b],
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w900,
+                              color: (widget.isRunning &&
+                                      currentBeat == (b + 1))
+                                  ? Colors.white
+                                  : AppColors.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            const SizedBox(height: 12),
+            const Divider(height: 1),
+            const SizedBox(height: 10),
+
+            // 2. Bộ Gõ Tiết Tấu Chấm Độ Lệch Mili-giây (Rhythm Tap Accuracy Pad)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  widget.isEn
+                      ? 'Rhythm Tap Accuracy Pad'
+                      : 'Bộ Gõ Luyện Phản Xạ Tiết Tấu (${widget.bpm} BPM)',
+                  style: const TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.correct.withOpacity(0.14),
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                  child: Text(
+                    'Combo x$_tapCombo • Chuẩn $accuracyPct%',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.correct,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              _tapGradeLabel,
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w800,
+                color: _tapGradeColor,
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              height: 44,
+              child: OutlinedButton.icon(
+                key: const Key('btn_rhythm_tap_accuracy_pad'),
+                style: OutlinedButton.styleFrom(
+                  backgroundColor: _tapGradeColor.withOpacity(0.10),
+                  side: BorderSide(color: _tapGradeColor.withOpacity(0.55)),
+                ),
+                onPressed: _onTapRhythmPad,
+                icon: Icon(
+                  Icons.pan_tool_alt_rounded,
+                  size: 18,
+                  color: _tapGradeColor,
+                ),
+                label: Text(
+                  widget.isEn
+                      ? 'TAP BEAT PAD HERE (±25ms = PERFECT)'
+                      : 'GÕ NHỊP VÀO ĐÂY THEO PHÁCH (±25ms = PERFECT)',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                    color: _tapGradeColor,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
