@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,6 +8,7 @@ import '../../../app/theme/app_colors.dart';
 import '../../../app/widgets/animated_ui.dart';
 import '../../../app/widgets/solfa_background.dart';
 import '../../../app/widgets/solfa_logo.dart';
+import '../../../core/ads/admob_service.dart';
 import '../../../core/providers/app_providers.dart';
 
 /// UI-01: Splash / Khởi động
@@ -30,6 +33,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       final db = ref.read(appDatabaseProvider);
       await db.seedContent();
       await ref.read(appSettingsProvider.notifier).loadSettings();
+      final isTest = ref.read(audioServiceProvider).isTestMode;
+      unawaited(AdMobService.instance.initialize(isTestMode: isTest));
       ref.invalidate(topicsListProvider);
       ref.invalidate(overallProgressProvider);
       ref.invalidate(pendingReviewItemsProvider);

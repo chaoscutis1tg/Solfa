@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/ads/admob_service.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/security/solfa_integrity_guard.dart';
@@ -287,6 +290,9 @@ class RewardedAdNotifier extends StateNotifier<RewardedAdState> {
       );
       return false;
     }
+
+    // Preload real Google AdMob Rewarded Ad in the background on Android/iOS
+    unawaited(AdMobService.instance.preloadRewardedAd());
 
     await Future.delayed(const Duration(milliseconds: 350));
     if (!mounted) return false;

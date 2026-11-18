@@ -9,11 +9,47 @@ import '../../../app/widgets/pulsing_red_heart.dart';
 import '../../../app/widgets/solfa_background.dart';
 import '../../../app/widgets/solfa_gem_icon.dart';
 import '../../../app/widgets/solfa_logo.dart';
+import '../../../core/ads/admob_service.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../battle/application/battle_controller.dart';
 import '../application/rewarded_ad_controller.dart';
 
 bool _isOpeningGlobalAdModal = false;
+
+Future<bool> _showRealAdMobOrFallbackVideo(
+  BuildContext context,
+  WidgetRef ref,
+) async {
+  final audioService = ref.read(audioServiceProvider);
+  await audioService.stop();
+
+  final adMobOutcome = await AdMobService.instance.showRewardedAd(
+    isTestMode: audioService.isTestMode,
+  );
+  if (adMobOutcome == AdMobShowResult.earnedReward) {
+    return true;
+  }
+  if (adMobOutcome == AdMobShowResult.dismissedWithoutReward) {
+    return false;
+  }
+
+  if (!context.mounted) return false;
+  final completed = await showDialog<bool>(
+    context: context,
+    barrierDismissible: false,
+    builder: (ctx) => _RewardedVideoAdPlayerDialog(
+      isTestMode: audioService.isTestMode,
+      onPlayPreviewSound: (asset) {
+        audioService.playAsset(asset);
+      },
+      onStopSound: () {
+        audioService.stop();
+      },
+    ),
+  );
+  await audioService.stop();
+  return completed == true;
+}
 
 /// Opens the 15-second Rewarded Video Ad modal and, upon completion,
 /// grants +1 Battle Arena turn AND +100 Developer Supporter Prestige Points.
@@ -59,24 +95,11 @@ Future<bool> showSolfaRewardedVideoAdModal(
 
     if (!context.mounted) return false;
     final audioService = ref.read(audioServiceProvider);
-    final completed = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => _RewardedVideoAdPlayerDialog(
-        isTestMode: audioService.isTestMode,
-        onPlayPreviewSound: (asset) {
-          audioService.playAsset(asset);
-        },
-        onStopSound: () {
-          audioService.stop();
-        },
-      ),
-    );
+    final completed = await _showRealAdMobOrFallbackVideo(context, ref);
 
-    await audioService.stop();
-    await notifier.completeWatchingAd(watchedToEnd: completed == true);
+    await notifier.completeWatchingAd(watchedToEnd: completed);
 
-    if (completed == true) {
+    if (completed) {
       await ref
           .read(battleProvider.notifier)
           .restoreTurnFromRewardedAd(turns: 1);
@@ -230,26 +253,13 @@ class _SupportDeveloperScreenState
     _isOpeningAdModal = true;
     try {
       final audioService = ref.read(audioServiceProvider);
-      final completed = await showDialog<bool>(
-        context: context,
-        barrierDismissible: false,
-        builder: (ctx) => _RewardedVideoAdPlayerDialog(
-          isTestMode: audioService.isTestMode,
-          onPlayPreviewSound: (asset) {
-            audioService.playAsset(asset);
-          },
-          onStopSound: () {
-            audioService.stop();
-          },
-        ),
-      );
+      final completed = await _showRealAdMobOrFallbackVideo(context, ref);
 
-      await audioService.stop();
       await ref
           .read(rewardedAdProvider.notifier)
-          .completeWatchingAd(watchedToEnd: completed == true);
+          .completeWatchingAd(watchedToEnd: completed);
 
-      if (completed == true && mounted) {
+      if (completed && mounted) {
         await ref
             .read(battleProvider.notifier)
             .restoreTurnFromRewardedAd(turns: 1);
