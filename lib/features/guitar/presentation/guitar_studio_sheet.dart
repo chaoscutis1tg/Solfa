@@ -1,13 +1,19 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../app/theme/app_colors.dart';
 import '../../../app/widgets/solfa_gem_icon.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../support_developer/application/rewarded_ad_controller.dart';
 import '../../support_developer/presentation/support_developer_screen.dart';
+
+const String _kPrefGuitarType = 'solfa_guitar_type_v1';
+const String _kPrefGuitarProUnlocked = 'solfa_guitar_pro_unlocked_v1';
+const String _kPrefGuitarWorkoutStars = 'solfa_guitar_workout_stars_v1';
 
 /// Chế độ đàn Guitar đang chọn: 'acoustic' (Guitar Thùng Dây Đồng/Gỗ) hoặc 'electric' (Guitar Điện Amp).
 final selectedGuitarTypeProvider = StateProvider<String>((ref) => 'acoustic');
@@ -22,6 +28,27 @@ final guitarWorkoutStarsProvider = StateProvider<Map<String, int>>(
     'spider_4321': 2,
   },
 );
+
+Future<void> persistGuitarTypePreference(String type) async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_kPrefGuitarType, type);
+  } catch (_) {}
+}
+
+Future<void> persistGuitarProUnlockedPreference(bool unlocked) async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_kPrefGuitarProUnlocked, unlocked);
+  } catch (_) {}
+}
+
+Future<void> persistGuitarWorkoutStarsPreference(Map<String, int> stars) async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_kPrefGuitarWorkoutStars, jsonEncode(stars));
+  } catch (_) {}
+}
 
 /// Dữ liệu chuẩn 6 dây đàn Guitar (Từ dây 1 mỏng nhất ở trên -> dây 6 dày nhất ở dưới).
 class GuitarFretboardData {
@@ -928,6 +955,7 @@ class GuitarTypeSwitchBar extends ConsumerWidget {
 
     void selectType(String type) {
       ref.read(selectedGuitarTypeProvider.notifier).state = type;
+      unawaited(persistGuitarTypePreference(type));
       final audio = ref.read(audioServiceProvider);
       audio.setGuitarType(type);
       // Phát ngay âm thanh mẫu đặc trưng của từng cây đàn (Hợp âm G Thùng vs Hợp âm E5 Điện)
@@ -1074,16 +1102,67 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
   int? _activeStrumString;
   int? _activeStrumFret;
 
+  Timer? _tunerLoopTimer;
+  int? _loopingTunerString; // 1..6 khi đang bật lặp so dây
+
+  Timer? _progLoopTimer;
+  String? _activeProgressionId;
+  int _activeProgressionStep = 0;
+
+  Timer? _scaleRunTimer;
+  int? _activeScaleRunString;
+  int? _activeScaleRunFret;
+  bool _isScaleRunPlaying = false;
+
   @override
   void initState() {
     super.initState();
     _selectedTab = widget.isWorkoutOnlyPage ? 3 : widget.initialTab;
+    unawaited(_loadPersistedGuitarState());
+  }
+
+  Future<void> _loadPersistedGuitarState() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (!mounted) return;
+      final savedType = prefs.getString(_kPrefGuitarType);
+      if (savedType == 'acoustic' || savedType == 'electric') {
+        ref.read(selectedGuitarTypeProvider.notifier).state = savedType!;
+        ref.read(audioServiceProvider).setGuitarType(savedType);
+      }
+      final savedPro = prefs.getBool(_kPrefGuitarProUnlocked);
+      if (savedPro == true) {
+        ref.read(guitarProUnlockedProvider.notifier).state = true;
+      }
+      final savedStarsJson = prefs.getString(_kPrefGuitarWorkoutStars);
+      if (savedStarsJson != null && savedStarsJson.isNotEmpty) {
+        final decoded = jsonDecode(savedStarsJson);
+        if (decoded is Map) {
+          final parsed = <String, int>{};
+          decoded.forEach((k, v) {
+            if (k is String && v is num) {
+              parsed[k] = v.toInt().clamp(1, 3);
+            }
+          });
+          if (parsed.isNotEmpty) {
+            ref.read(guitarWorkoutStarsProvider.notifier).state = parsed;
+          }
+        }
+      }
+    } catch (_) {}
+  }
+
+  void _stopAllAuxiliaryTimers() {
+    _spiderTimer?.cancel();
+    _strumTimer?.cancel();
+    _tunerLoopTimer?.cancel();
+    _progLoopTimer?.cancel();
+    _scaleRunTimer?.cancel();
   }
 
   @override
   void dispose() {
-    _spiderTimer?.cancel();
-    _strumTimer?.cancel();
+    _stopAllAuxiliaryTimers();
     super.dispose();
   }
 
@@ -1187,11 +1266,144 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
     final currentMap = ref.read(guitarWorkoutStarsProvider);
     final prevStars = currentMap[workout.id] ?? 0;
     if (prevStars < 3) {
-      ref.read(guitarWorkoutStarsProvider.notifier).state = {
+      final updated = {
         ...currentMap,
         workout.id: 3,
       };
+      ref.read(guitarWorkoutStarsProvider.notifier).state = updated;
+      unawaited(persistGuitarWorkoutStarsPreference(updated));
     }
+  }
+
+  /// So dây chuẩn 6 dây (Dây 6 E2 -> Dây 1 e4) có chế độ lặp tự động để vặn khóa đàn.
+  void _tapTunerOpenString(int stringNumber, {bool toggleLoop = false}) {
+    _tunerLoopTimer?.cancel();
+    final info = GuitarFretboardData.noteAt(stringNumber: stringNumber, fret: 0);
+    final audio = ref.read(audioServiceProvider);
+    if (toggleLoop && _loopingTunerString == stringNumber) {
+      setState(() => _loopingTunerString = null);
+      return;
+    }
+    setState(() {
+      _activeString = stringNumber;
+      _activeFret = 0;
+      if (toggleLoop) {
+        _loopingTunerString = stringNumber;
+      }
+    });
+    audio.playGuitarAsset(info.audioAsset);
+    if (_loopingTunerString == stringNumber) {
+      _tunerLoopTimer = Timer.periodic(
+        const Duration(milliseconds: 1400),
+        (_) {
+          if (!mounted || _loopingTunerString != stringNumber) {
+            _tunerLoopTimer?.cancel();
+            return;
+          }
+          audio.playGuitarAsset(info.audioAsset);
+        },
+      );
+    }
+  }
+
+  /// Chạy tự động Vòng Hợp Âm thực tế (Canon, Ballad, Bolero, Rock Power Chords) để luyện chuyển tay.
+  void _toggleChordProgressionLoop(String progId, List<String> chordIds) {
+    _progLoopTimer?.cancel();
+    _strumTimer?.cancel();
+    if (_activeProgressionId == progId) {
+      setState(() {
+        _activeProgressionId = null;
+        _activeProgressionStep = 0;
+      });
+      return;
+    }
+    setState(() {
+      _selectedChordCategory = 'all';
+      _activeProgressionId = progId;
+      _activeProgressionStep = 0;
+      _selectedChordId = chordIds.first;
+    });
+    final firstChord = GuitarFretboardData.commonChords.firstWhere(
+      (c) => c.id == chordIds.first,
+      orElse: () => GuitarFretboardData.commonChords.first,
+    );
+    _playChordRealVoicing(firstChord);
+
+    _progLoopTimer = Timer.periodic(
+      const Duration(milliseconds: 1450),
+      (_) {
+        if (!mounted || _activeProgressionId != progId) {
+          _progLoopTimer?.cancel();
+          return;
+        }
+        final nextStep = (_activeProgressionStep + 1) % chordIds.length;
+        final nextId = chordIds[nextStep];
+        final nextChord = GuitarFretboardData.commonChords.firstWhere(
+          (c) => c.id == nextId,
+          orElse: () => GuitarFretboardData.commonChords.first,
+        );
+        setState(() {
+          _activeProgressionStep = nextStep;
+          _selectedChordId = nextId;
+        });
+        _playChordRealVoicing(nextChord);
+      },
+    );
+  }
+
+  /// Chạy nghe mẫu toàn bộ các nốt trong Âm giai (Scale Run) trên cần đàn.
+  void _toggleScaleRunPreview(Set<String> pitchSet, String rootPitch) {
+    _scaleRunTimer?.cancel();
+    if (_isScaleRunPlaying) {
+      setState(() {
+        _isScaleRunPlaying = false;
+        _activeScaleRunString = null;
+        _activeScaleRunFret = null;
+      });
+      return;
+    }
+    final sequence = <(int stringNum, int fretNum, String asset)>[];
+    for (int s = 6; s >= 1; s--) {
+      for (int f = 0; f <= 8; f++) {
+        final n = GuitarFretboardData.noteAt(stringNumber: s, fret: f);
+        if (pitchSet.contains(n.noteCode)) {
+          sequence.add((s, f, n.audioAsset));
+          if (sequence.length >= 12) break;
+        }
+      }
+      if (sequence.length >= 12) break;
+    }
+    if (sequence.isEmpty) return;
+
+    int idx = 0;
+    final audio = ref.read(audioServiceProvider);
+    void playScaleStep() {
+      if (!mounted || idx >= sequence.length) {
+        _scaleRunTimer?.cancel();
+        if (mounted) {
+          setState(() {
+            _isScaleRunPlaying = false;
+            _activeScaleRunString = null;
+            _activeScaleRunFret = null;
+          });
+        }
+        return;
+      }
+      final step = sequence[idx];
+      setState(() {
+        _isScaleRunPlaying = true;
+        _activeScaleRunString = step.$1;
+        _activeScaleRunFret = step.$2;
+      });
+      audio.playGuitarAsset(step.$3);
+      idx++;
+    }
+
+    playScaleStep();
+    _scaleRunTimer = Timer.periodic(
+      const Duration(milliseconds: 340),
+      (_) => playScaleStep(),
+    );
   }
 
   void _toggleSpiderExercise() {
@@ -1329,12 +1541,16 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
                           key: Key('chip_guitar_tab_$idx'),
                           borderRadius: BorderRadius.circular(12),
                           onTap: () {
-                            _spiderTimer?.cancel();
-                            _strumTimer?.cancel();
+                            _stopAllAuxiliaryTimers();
                             setState(() {
                               _isSpiderPlaying = false;
+                              _isScaleRunPlaying = false;
+                              _loopingTunerString = null;
+                              _activeProgressionId = null;
                               _activeStrumString = null;
                               _activeStrumFret = null;
+                              _activeScaleRunString = null;
+                              _activeScaleRunFret = null;
                               _selectedTab = idx;
                             });
                           },
@@ -1471,7 +1687,130 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
             ],
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
+        // Bộ So Dây Đàn 6 Dây Chuẩn (6E - 5A - 4D - 3G - 2B - 1e) kèm chế độ Lặp để vặn khóa đàn
+        Container(
+          key: const Key('guitar_standard_tuner_bar'),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.surfaceDark : Colors.white,
+            borderRadius: BorderRadius.circular(11),
+            border: Border.all(
+              color: isDark ? AppColors.borderDark : AppColors.borderLight,
+            ),
+          ),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.tune_rounded,
+                  size: 15,
+                  color: Color(0xFFD97706),
+                ),
+                const SizedBox(width: 5),
+                Text(
+                  isEn ? 'Tune:' : 'So dây:',
+                  style: const TextStyle(
+                    fontSize: 11.2,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                for (final (sNum, sLbl) in const [
+                  (6, '6E'),
+                  (5, '5A'),
+                  (4, '4D'),
+                  (3, '3G'),
+                  (2, '2B'),
+                  (1, '1e'),
+                ]) ...[
+                  Padding(
+                    padding: const EdgeInsets.only(right: 5),
+                    child: InkWell(
+                      key: Key('btn_tuner_string_$sNum'),
+                      borderRadius: BorderRadius.circular(7),
+                      onTap: () => _tapTunerOpenString(sNum),
+                      onLongPress: () =>
+                          _tapTunerOpenString(sNum, toggleLoop: true),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _loopingTunerString == sNum
+                              ? AppColors.correct
+                              : (_activeString == sNum && _activeFret == 0
+                                  ? const Color(0xFFD97706)
+                                  : const Color(0xFFD97706).withOpacity(0.12)),
+                          borderRadius: BorderRadius.circular(7),
+                        ),
+                        child: Text(
+                          sLbl,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w900,
+                            color: (_loopingTunerString == sNum ||
+                                    (_activeString == sNum && _activeFret == 0))
+                                ? Colors.white
+                                : const Color(0xFFD97706),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+                InkWell(
+                  key: const Key('btn_tuner_toggle_loop'),
+                  borderRadius: BorderRadius.circular(7),
+                  onTap: () => _tapTunerOpenString(
+                    _activeString,
+                    toggleLoop: true,
+                  ),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 7,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _loopingTunerString != null
+                          ? AppColors.correct
+                          : AppColors.primary.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(7),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.repeat_rounded,
+                          size: 13,
+                          color: _loopingTunerString != null
+                              ? Colors.white
+                              : AppColors.primary,
+                        ),
+                        const SizedBox(width: 3),
+                        Text(
+                          _loopingTunerString != null
+                              ? (isEn ? 'Looping' : 'Đang lặp')
+                              : (isEn ? 'Loop' : 'Lặp'),
+                          style: TextStyle(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w800,
+                            color: _loopingTunerString != null
+                                ? Colors.white
+                                : AppColors.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
         Wrap(
           spacing: 6,
           runSpacing: 6,
@@ -1644,7 +1983,93 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
             ],
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
+        // Thanh luyện chuyển Vòng Hợp Âm tự động (Canon, Ballad, Bolero, Rock Power Chords)
+        Container(
+          key: const Key('guitar_chord_progression_bar'),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.surfaceDark : Colors.white,
+            borderRadius: BorderRadius.circular(11),
+            border: Border.all(
+              color: isDark ? AppColors.borderDark : AppColors.borderLight,
+            ),
+          ),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.autorenew_rounded,
+                  size: 15,
+                  color: AppColors.primary,
+                ),
+                const SizedBox(width: 5),
+                Text(
+                  isEn ? 'Loop:' : 'Vòng:',
+                  style: const TextStyle(
+                    fontSize: 11.2,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                for (final (pId, pLbl, pChords) in const [
+                  ('canon', 'Canon (C–G–Am–F)', ['C', 'G', 'Am', 'F']),
+                  ('ballad', 'Ballad (Am–F–C–G)', ['Am', 'F', 'C', 'G']),
+                  ('bolero', 'Bolero (Am–Dm–E7–Am)', ['Am', 'Dm', 'E7', 'Am']),
+                  ('rock5', 'Rock 5 (E5–G5–A5–C5)', ['E5', 'G5', 'A5', 'C5']),
+                ]) ...[
+                  Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: InkWell(
+                      key: Key('btn_chord_prog_$pId'),
+                      borderRadius: BorderRadius.circular(7),
+                      onTap: () => _toggleChordProgressionLoop(pId, pChords),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _activeProgressionId == pId
+                              ? AppColors.correct
+                              : AppColors.primary.withOpacity(0.10),
+                          borderRadius: BorderRadius.circular(7),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              _activeProgressionId == pId
+                                  ? Icons.stop_rounded
+                                  : Icons.play_arrow_rounded,
+                              size: 13,
+                              color: _activeProgressionId == pId
+                                  ? Colors.white
+                                  : AppColors.primary,
+                            ),
+                            const SizedBox(width: 3),
+                            Text(
+                              pLbl,
+                              style: TextStyle(
+                                fontSize: 10.8,
+                                fontWeight: FontWeight.w800,
+                                color: _activeProgressionId == pId
+                                    ? Colors.white
+                                    : AppColors.primary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
@@ -1905,8 +2330,15 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
                         return;
                       }
                       ref.read(guitarProUnlockedProvider.notifier).state = true;
+                      unawaited(persistGuitarProUnlockedPreference(true));
                     }
-                    setState(() => _selectedScaleId = sc.$1);
+                    _scaleRunTimer?.cancel();
+                    setState(() {
+                      _isScaleRunPlaying = false;
+                      _activeScaleRunString = null;
+                      _activeScaleRunFret = null;
+                      _selectedScaleId = sc.$1;
+                    });
                   },
                 ),
               ],
@@ -1951,6 +2383,7 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
                     if (mounted &&
                         ref.read(rewardedAdProvider).prestigePoints >= 50) {
                       ref.read(guitarProUnlockedProvider.notifier).state = true;
+                      unawaited(persistGuitarProUnlockedPreference(true));
                     }
                   },
                   icon: const Icon(Icons.play_circle_fill_rounded, size: 14),
@@ -1966,6 +2399,8 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
         const SizedBox(height: 8),
         InteractiveGuitarFretboard(
           maxFrets: 12,
+          activeString: _activeScaleRunString,
+          activeFret: _activeScaleRunFret,
           scalePitchSet: currentScale.$4,
           scaleRootPitch: currentScale.$5,
           onTapFret: (s, f) {
@@ -1980,9 +2415,43 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
             color: AppColors.primary.withOpacity(0.06),
             borderRadius: BorderRadius.circular(11),
           ),
-          child: Text(
-            currentScale.$6,
-            style: const TextStyle(fontSize: 11.5, height: 1.35),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  currentScale.$6,
+                  style: const TextStyle(fontSize: 11.4, height: 1.35),
+                ),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton.icon(
+                key: const Key('btn_play_guitar_scale_run'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _isScaleRunPlaying
+                      ? AppColors.wrong
+                      : AppColors.primary,
+                  minimumSize: const Size(0, 32),
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                onPressed: () => _toggleScaleRunPreview(
+                  currentScale.$4,
+                  currentScale.$5,
+                ),
+                icon: Icon(
+                  _isScaleRunPlaying
+                      ? Icons.stop_rounded
+                      : Icons.play_arrow_rounded,
+                  size: 16,
+                ),
+                label: Text(
+                  _isScaleRunPlaying
+                      ? (isEn ? 'Stop' : 'Dừng')
+                      : (isEn ? 'Play Scale' : 'Chạy Scale'),
+                  style: const TextStyle(fontSize: 11.5),
+                ),
+              ),
+            ],
           ),
         ),
       ],

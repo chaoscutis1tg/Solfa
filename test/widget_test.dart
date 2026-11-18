@@ -816,12 +816,15 @@ void main() {
         await tester.tap(find.byKey(const Key('topic_grid_card_guitar_studio')));
         await pumpFrames(300);
         expect(find.byKey(const Key('guitar_studio_sheet')), findsOneWidget);
+        expect(find.byKey(const Key('guitar_standard_tuner_bar')), findsOneWidget);
         await tester.tap(find.byKey(const Key('chip_guitar_tab_1')));
         await pumpFrames(250);
         expect(find.byKey(const Key('chip_chord_cat_power')), findsOneWidget);
         expect(find.byKey(const Key('chip_chord_cat_barre')), findsOneWidget);
+        expect(find.byKey(const Key('guitar_chord_progression_bar')), findsOneWidget);
         await tester.tap(find.byKey(const Key('chip_guitar_tab_2')));
         await pumpFrames(250);
+        expect(find.byKey(const Key('btn_play_guitar_scale_run')), findsOneWidget);
         expect(tester.takeException(), isNull);
         await tester.tap(find.byKey(const Key('btn_close_guitar_studio')));
         await pumpFrames(250);
