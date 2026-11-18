@@ -15,7 +15,18 @@ import '../domain/hybrid_question_generator.dart';
 /// - 900 seconds (15 phút)
 /// - 3600 seconds (1 tiếng)
 /// - 0 = Unlimited (Không giới hạn)
-final selectedPracticeDurationProvider = StateProvider<int>((ref) => 60);
+final selectedPracticeDurationProvider = StateProvider<int>((ref) {
+  final defaultDur = ref.read(appSettingsProvider).defaultPracticeDuration;
+  ref.listen<int>(
+    appSettingsProvider.select((s) => s.defaultPracticeDuration),
+    (prev, next) {
+      if (ref.controller.state != next) {
+        ref.controller.state = next;
+      }
+    },
+  );
+  return defaultDur;
+});
 
 /// Selected difficulty level for "Nhận biết nốt" (Note Recognition):
 /// - 'lvl_notes_basic': Mức 1 (Dễ - Chỉ C4 tự nhiên, không dấu #/b)

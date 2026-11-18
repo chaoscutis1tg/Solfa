@@ -8,6 +8,7 @@ import '../../../app/widgets/solfa_gem_icon.dart';
 import '../../../core/models/domain_models.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../practice/application/practice_session_controller.dart';
+import '../../support_developer/application/rewarded_ad_controller.dart';
 import 'topics_screen.dart';
 
 final topicDetailLevelsProvider = FutureProvider.family<
@@ -222,32 +223,60 @@ class _TopicDetailScreenState extends ConsumerState<TopicDetailScreen> {
                           ChoiceChip(
                             label: const Text('60 giây'),
                             selected: selectedDuration == 60,
-                            onSelected: (_) => ref
-                                .read(selectedPracticeDurationProvider.notifier)
-                                .state = 60,
+                            onSelected: (_) {
+                              ref
+                                  .read(
+                                      selectedPracticeDurationProvider.notifier)
+                                  .state = 60;
+                              ref
+                                  .read(appSettingsProvider.notifier)
+                                  .setDefaultPracticeDuration(60);
+                            },
                           ),
                           ChoiceChip(
                             label: const Text('15 phút'),
                             selected: selectedDuration == 900,
-                            onSelected: (_) => ref
-                                .read(selectedPracticeDurationProvider.notifier)
-                                .state = 900,
+                            onSelected: (_) {
+                              ref
+                                  .read(
+                                      selectedPracticeDurationProvider.notifier)
+                                  .state = 900;
+                              ref
+                                  .read(appSettingsProvider.notifier)
+                                  .setDefaultPracticeDuration(900);
+                            },
                           ),
                           ChoiceChip(
                             avatar: const SolfaGemIcon(size: 13),
-                            label: const Text('1 tiếng (50 Gem)'),
+                            label: const Text(
+                              '1 tiếng (${RewardedAdState.kOneHourPracticeGemCost} Gem)',
+                            ),
                             selected: selectedDuration == 3600,
-                            onSelected: (_) => ref
-                                .read(selectedPracticeDurationProvider.notifier)
-                                .state = 3600,
+                            onSelected: (_) {
+                              ref
+                                  .read(
+                                      selectedPracticeDurationProvider.notifier)
+                                  .state = 3600;
+                              ref
+                                  .read(appSettingsProvider.notifier)
+                                  .setDefaultPracticeDuration(3600);
+                            },
                           ),
                           ChoiceChip(
                             avatar: const SolfaGemIcon(size: 13),
-                            label: const Text('Tự do (100 Gem)'),
+                            label: const Text(
+                              'Tự do (${RewardedAdState.kUnlimitedPracticeGemCost} Gem)',
+                            ),
                             selected: selectedDuration == 0,
-                            onSelected: (_) => ref
-                                .read(selectedPracticeDurationProvider.notifier)
-                                .state = 0,
+                            onSelected: (_) {
+                              ref
+                                  .read(
+                                      selectedPracticeDurationProvider.notifier)
+                                  .state = 0;
+                              ref
+                                  .read(appSettingsProvider.notifier)
+                                  .setDefaultPracticeDuration(0);
+                            },
                           ),
                         ],
                       ),

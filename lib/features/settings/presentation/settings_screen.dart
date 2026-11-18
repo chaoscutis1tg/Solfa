@@ -12,6 +12,7 @@ import '../../../core/providers/app_providers.dart';
 import '../../metronome/application/metronome_controller.dart';
 import '../../practice/application/practice_session_controller.dart';
 import '../../support_developer/application/rewarded_ad_controller.dart';
+import '../../topics/presentation/topic_detail_screen.dart';
 
 /// Màn hình Cài đặt hệ thống
 class SettingsScreen extends ConsumerWidget {
@@ -265,6 +266,8 @@ class SettingsScreen extends ConsumerWidget {
       await db.clearLearningHistory();
       ref.invalidate(overallProgressProvider);
       ref.invalidate(pendingReviewItemsProvider);
+      ref.invalidate(topicsListProvider);
+      ref.invalidate(topicDetailLevelsProvider);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -409,7 +412,7 @@ class SettingsScreen extends ConsumerWidget {
                       ),
                       SizedBox(height: 4),
                       Text(
-                        '• "Gem" is a free in-app reward unit earned via daily goals, Battle Arena ranks, or voluntary support videos.\n'
+                        '• "Gem" is a free in-app reward unit used to unlock 1-hour intensive practice (200 Gems), Unlimited free practice (350 Gems), Pro Studio Scales (300 Gems), or Battle Arena turns (from 200 Gems).\n'
                         '• Gems have NO real-world monetary value, cannot be purchased with real money, and cannot be cashed out or transferred.',
                         style: TextStyle(fontSize: 12.5, height: 1.42),
                       ),
@@ -544,7 +547,61 @@ class SettingsScreen extends ConsumerWidget {
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(
-          title: Text(isEn ? 'System Settings' : 'Cài đặt hệ thống'),
+          titleSpacing: 0,
+          title: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              isEn ? 'System Settings' : 'Cài đặt hệ thống',
+              maxLines: 1,
+            ),
+          ),
+          actions: [
+            // Đồng bộ Huy hiệu Gem [💎 220] giống Header chính
+            Padding(
+              padding: const EdgeInsets.only(right: 14),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(99),
+                  onTap: () => context.push('/support-developer'),
+                  child: Container(
+                    height: 28,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 9,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color:
+                          AppColors.primary.withOpacity(isDark ? 0.16 : 0.11),
+                      borderRadius: BorderRadius.circular(99),
+                      border: Border.all(
+                        color:
+                            AppColors.primary.withOpacity(isDark ? 0.45 : 0.32),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const SolfaGemIcon(size: 13.5),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${adState.prestigePoints}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            color: isDark
+                                ? const Color(0xFF93C5FD)
+                                : AppColors.primaryDark,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
         body: ListView(
           physics: const AlwaysScrollableScrollPhysics(
@@ -568,7 +625,7 @@ class SettingsScreen extends ConsumerWidget {
                             children: [
                               const Expanded(
                                 child: Text(
-                                  'ChaoNote Studio v1.8.4',
+                                  'ChaoNote Studio v1.9.4',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
@@ -601,7 +658,7 @@ class SettingsScreen extends ConsumerWidget {
                           Text(
                             isEn
                                 ? 'Piano & Guitar Studio • 11 Topics • 174+ Countries'
-                                : '7 chủ đề cảm âm & đọc khuông nhạc • Đàn C3–C5 • Guitar',
+                                : '11 Chủ đề Cảm âm, Piano & Guitar • 174+ Quốc gia',
                             style: TextStyle(
                               fontSize: 12.5,
                               color:
@@ -910,40 +967,56 @@ class SettingsScreen extends ConsumerWidget {
                               label: isEn ? '60s' : '60 giây',
                               isSelected: selectedDuration == 60,
                               isDark: isDark,
-                              onTap: () => ref
-                                  .read(
-                                      selectedPracticeDurationProvider.notifier)
-                                  .state = 60,
+                              onTap: () {
+                                ref
+                                    .read(selectedPracticeDurationProvider
+                                        .notifier)
+                                    .state = 60;
+                                notifier.setDefaultPracticeDuration(60);
+                              },
                             ),
                             const SizedBox(width: 6),
                             _DurationChoiceButton(
                               label: isEn ? '15 min' : '15 phút',
                               isSelected: selectedDuration == 900,
                               isDark: isDark,
-                              onTap: () => ref
-                                  .read(
-                                      selectedPracticeDurationProvider.notifier)
-                                  .state = 900,
+                              onTap: () {
+                                ref
+                                    .read(selectedPracticeDurationProvider
+                                        .notifier)
+                                    .state = 900;
+                                notifier.setDefaultPracticeDuration(900);
+                              },
                             ),
                             const SizedBox(width: 6),
                             _DurationChoiceButton(
-                              label: isEn ? '1h (50G)' : '1 tiếng (50G)',
+                              label: isEn
+                                  ? '1h (${RewardedAdState.kOneHourPracticeGemCost}G)'
+                                  : '1 tiếng (${RewardedAdState.kOneHourPracticeGemCost}G)',
                               isSelected: selectedDuration == 3600,
                               isDark: isDark,
-                              onTap: () => ref
-                                  .read(
-                                      selectedPracticeDurationProvider.notifier)
-                                  .state = 3600,
+                              onTap: () {
+                                ref
+                                    .read(selectedPracticeDurationProvider
+                                        .notifier)
+                                    .state = 3600;
+                                notifier.setDefaultPracticeDuration(3600);
+                              },
                             ),
                             const SizedBox(width: 6),
                             _DurationChoiceButton(
-                              label: isEn ? 'Free (100G)' : 'Tự do (100G)',
+                              label: isEn
+                                  ? 'Free (${RewardedAdState.kUnlimitedPracticeGemCost}G)'
+                                  : 'Tự do (${RewardedAdState.kUnlimitedPracticeGemCost}G)',
                               isSelected: selectedDuration == 0,
                               isDark: isDark,
-                              onTap: () => ref
-                                  .read(
-                                      selectedPracticeDurationProvider.notifier)
-                                  .state = 0,
+                              onTap: () {
+                                ref
+                                    .read(selectedPracticeDurationProvider
+                                        .notifier)
+                                    .state = 0;
+                                notifier.setDefaultPracticeDuration(0);
+                              },
                             ),
                           ],
                         ),
@@ -1512,7 +1585,7 @@ class SettingsScreen extends ConsumerWidget {
                     onTap: () => showLicensePage(
                       context: context,
                       applicationName: 'ChaoNote Studio',
-                      applicationVersion: '1.8.4 (Offline-First)',
+                      applicationVersion: '1.9.4 (Offline-First)',
                       applicationIcon: const Padding(
                         padding: EdgeInsets.all(8.0),
                         child: SolfaLogo(size: 56),
@@ -1642,7 +1715,9 @@ class _ThemeModeCardButton extends StatelessWidget {
                 Icon(
                   icon,
                   size: 20,
-                  color: isSelected ? Colors.white : AppColors.primary,
+                  color: isSelected
+                      ? Colors.white
+                      : (isDark ? AppColors.secondary : AppColors.primary),
                 ),
                 const SizedBox(height: 5),
                 FittedBox(
@@ -1652,7 +1727,11 @@ class _ThemeModeCardButton extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w800,
-                      color: isSelected ? Colors.white : null,
+                      color: isSelected
+                          ? Colors.white
+                          : (isDark
+                              ? AppColors.textPrimaryDark
+                              : AppColors.textPrimaryLight),
                     ),
                   ),
                 ),
@@ -1711,7 +1790,11 @@ class _DurationChoiceButton extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w800,
-                  color: isSelected ? Colors.white : null,
+                  color: isSelected
+                      ? Colors.white
+                      : (isDark
+                          ? AppColors.textPrimaryDark
+                          : AppColors.textPrimaryLight),
                 ),
               ),
             ),

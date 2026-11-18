@@ -990,9 +990,14 @@ class _TopicPracticeSetupSheetState
                         showGemBadge: durations[i].$4,
                         isSelected: selectedDuration == durations[i].$1,
                         isDark: isDark,
-                        onTap: () => ref
-                            .read(selectedPracticeDurationProvider.notifier)
-                            .state = durations[i].$1,
+                        onTap: () {
+                          ref
+                              .read(selectedPracticeDurationProvider.notifier)
+                              .state = durations[i].$1;
+                          ref
+                              .read(appSettingsProvider.notifier)
+                              .setDefaultPracticeDuration(durations[i].$1);
+                        },
                       ),
                     ),
                   ],

@@ -205,6 +205,28 @@ class MetronomeNotifier extends StateNotifier<MetronomeState> {
       : super(const MetronomeState()) {
     final defaultSound = _ref.read(appSettingsProvider).defaultMetronomeSound;
     state = state.copyWith(soundType: defaultSound);
+    _ref.listen<String>(
+      appSettingsProvider.select((s) => s.defaultMetronomeSound),
+      (prev, next) {
+        if (state.soundType != next) {
+          state = state.copyWith(soundType: next);
+        }
+      },
+    );
+    _ref.listen<bool>(
+      appSettingsProvider.select((s) => s.keepScreenAwakeOnMetronome),
+      (prev, next) {
+        if (state.isRunning && !isTestMode) {
+          try {
+            if (next) {
+              unawaited(WakelockPlus.enable());
+            } else {
+              unawaited(WakelockPlus.disable());
+            }
+          } catch (_) {}
+        }
+      },
+    );
   }
 
   Future<void> _initAudioPlayers() async {
@@ -256,7 +278,15 @@ class MetronomeNotifier extends StateNotifier<MetronomeState> {
   }
 
   void setSoundType(String soundType) {
+    if (state.soundType == soundType) return;
     state = state.copyWith(soundType: soundType);
+    if (_ref.read(appSettingsProvider).defaultMetronomeSound != soundType) {
+      unawaited(
+        _ref.read(appSettingsProvider.notifier).setDefaultMetronomeSound(
+              soundType,
+            ),
+      );
+    }
   }
 
   void setSubdivision(int sub) {

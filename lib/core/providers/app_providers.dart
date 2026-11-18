@@ -33,6 +33,7 @@ class AppSettingsState {
   final bool keepScreenAwakeOnMetronome;
   final bool unlockAllLevels;
   final int dailyGoalTarget;
+  final int defaultPracticeDuration; // 60 | 900 | 3600 | 0
   final String languageMode; // 'auto' | 'vi' | 'en'
   final String countryCodeOverride; // '' (auto) | 'VN' | 'US' | 'DE' | ...
   final bool isLoaded;
@@ -47,6 +48,7 @@ class AppSettingsState {
     this.keepScreenAwakeOnMetronome = true,
     this.unlockAllLevels = true,
     this.dailyGoalTarget = 20,
+    this.defaultPracticeDuration = 60,
     this.languageMode = 'auto',
     this.countryCodeOverride = '',
     this.isLoaded = false,
@@ -75,6 +77,7 @@ class AppSettingsState {
     bool? keepScreenAwakeOnMetronome,
     bool? unlockAllLevels,
     int? dailyGoalTarget,
+    int? defaultPracticeDuration,
     String? languageMode,
     String? countryCodeOverride,
     bool? isLoaded,
@@ -90,6 +93,8 @@ class AppSettingsState {
           keepScreenAwakeOnMetronome ?? this.keepScreenAwakeOnMetronome,
       unlockAllLevels: unlockAllLevels ?? this.unlockAllLevels,
       dailyGoalTarget: dailyGoalTarget ?? this.dailyGoalTarget,
+      defaultPracticeDuration:
+          defaultPracticeDuration ?? this.defaultPracticeDuration,
       languageMode: languageMode ?? this.languageMode,
       countryCodeOverride: countryCodeOverride ?? this.countryCodeOverride,
       isLoaded: isLoaded ?? this.isLoaded,
@@ -103,6 +108,13 @@ class AppSettingsNotifier extends StateNotifier<AppSettingsState> {
 
   AppSettingsNotifier(this._db, this._audioService)
       : super(const AppSettingsState());
+
+  static int _normalizePracticeDuration(int? raw) {
+    if (raw == 0 || raw == 60 || raw == 900 || raw == 3600) {
+      return raw!;
+    }
+    return 60;
+  }
 
   Future<void> loadSettings() async {
     final map = await _db.getAllSettings();
@@ -125,6 +137,9 @@ class AppSettingsNotifier extends StateNotifier<AppSettingsState> {
     final unlockAll = (map['unlock_all_levels'] ?? 'true') == 'true';
     final dailyGoal =
         (int.tryParse(map['daily_goal_target'] ?? '') ?? 20).clamp(5, 200);
+    final defaultDuration = _normalizePracticeDuration(
+      int.tryParse(map['default_practice_duration'] ?? ''),
+    );
     final rawLang = map['language_mode'] ?? 'auto';
     final langMode =
         (rawLang == 'vi' || rawLang == 'en') ? rawLang : 'auto';
@@ -142,6 +157,7 @@ class AppSettingsNotifier extends StateNotifier<AppSettingsState> {
       keepScreenAwakeOnMetronome: keepAwake,
       unlockAllLevels: unlockAll,
       dailyGoalTarget: dailyGoal,
+      defaultPracticeDuration: defaultDuration,
       languageMode: langMode,
       countryCodeOverride: countryOverride,
       isLoaded: true,
@@ -217,6 +233,14 @@ class AppSettingsNotifier extends StateNotifier<AppSettingsState> {
     state = state.copyWith(dailyGoalTarget: clamped);
     try {
       await _db.setSetting('daily_goal_target', clamped.toString());
+    } catch (_) {}
+  }
+
+  Future<void> setDefaultPracticeDuration(int seconds) async {
+    final normalized = _normalizePracticeDuration(seconds);
+    state = state.copyWith(defaultPracticeDuration: normalized);
+    try {
+      await _db.setSetting('default_practice_duration', normalized.toString());
     } catch (_) {}
   }
 
