@@ -1526,40 +1526,21 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
             audioService.playGuitarAsset(info.audioAsset);
           },
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
         Container(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
             color: isDark ? Colors.white.withOpacity(0.04) : AppColors.backgroundLight,
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isDark ? AppColors.borderDark : AppColors.borderLight,
             ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                isEn
-                    ? '3 Golden Rules to Master the Fretboard:'
-                    : '3 Quy tắc Vàng để nhớ hết nốt trên cần đàn:',
-                style: const TextStyle(
-                  fontSize: 12.8,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                isEn
-                    ? '• Step 1 (6 Open Strings): From String 6 (thickest) to String 1: E2 – A2 – D3 – G3 – B3 – E4.\n'
-                      '• Step 2 (Anchor Frets on Strings 6 & 5): S6 Fret 3 = G2, S6 Fret 5 = A2, S5 Fret 3 = C3.\n'
-                      '• Step 3 (Diagonal Octave Rule): Move down 2 strings + 2 frets (or +3 frets across String 2) to find the same note 1 octave higher!'
-                    : '• Bước 1 (Nhớ 6 dây buông Ngăn 0): Từ dây 6 (dày nhất) xuống dây 1: E (Mi) – A (La) – D (Rê) – G (Sol) – B (Si) – e (Mi).\n'
-                      '• Bước 2 (Nhớ 3 ngăn mốc trên Dây 6 & Dây 5): Ngăn 3 Dây 6 = Sol (G), Ngăn 5 Dây 6 = La (A), Ngăn 3 Dây 5 = Đô (C).\n'
-                      '• Bước 3 (Quy tắc Quãng 8 chéo): Từ Dây 6 hoặc Dây 5, lùi xuống 2 dây + tiến thêm 2 ngăn sẽ gặp lại chính nốt đó cao hơn 1 quãng tám!',
-                style: const TextStyle(fontSize: 11.8, height: 1.4),
-              ),
-            ],
+          child: Text(
+            isEn
+                ? '• 6 Open Strings: E2–A2–D3–G3–B3–E4 • Anchors: S6F3=G, S6F5=A, S5F3=C • Octave Jump: Down 2 strings + 2 frets (+3 across S2).'
+                : '• 6 Dây buông: E–A–D–G–B–e • Mốc chuẩn: Dây 6 Ngăn 3 = Sol, Ngăn 5 = La, Dây 5 Ngăn 3 = Đô • Quãng 8 chéo: Xuống 2 dây + tiến 2 ngăn.',
+            style: const TextStyle(fontSize: 11.4, height: 1.35, fontWeight: FontWeight.w600),
           ),
         ),
       ],
@@ -1599,10 +1580,11 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
                 ChoiceChip(
                   key: Key('chip_chord_cat_${categories[i].$1}'),
                   visualDensity: VisualDensity.compact,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   label: Text(
                     categories[i].$2,
                     style: const TextStyle(
-                      fontSize: 11.8,
+                      fontSize: 11.5,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
@@ -1627,41 +1609,47 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
             ],
           ),
         ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 6,
-          runSpacing: 6,
-          children: [
-            for (final c in filteredChords)
-              ChoiceChip(
-                key: Key('chip_guitar_chord_${c.id}'),
-                visualDensity: VisualDensity.compact,
-                label: Text(
-                  c.id,
-                  style: const TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w800,
+        const SizedBox(height: 6),
+        // Thanh trượt ngang chọn hợp âm thông minh (1 hàng gọn gàng để Cần đàn luôn hiển thị ngay trên màn hình)
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              for (int i = 0; i < filteredChords.length; i++) ...[
+                if (i > 0) const SizedBox(width: 6),
+                ChoiceChip(
+                  key: Key('chip_guitar_chord_${filteredChords[i].id}'),
+                  visualDensity: VisualDensity.compact,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  label: Text(
+                    filteredChords[i].id,
+                    style: const TextStyle(
+                      fontSize: 12.2,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
+                  selected: chord.id == filteredChords[i].id,
+                  onSelected: (_) {
+                    final c = filteredChords[i];
+                    _strumTimer?.cancel();
+                    setState(() {
+                      _selectedChordId = c.id;
+                      _activeStrumString = null;
+                      _activeStrumFret = null;
+                    });
+                    _playChordRealVoicing(c);
+                  },
                 ),
-                selected: chord.id == c.id,
-                onSelected: (_) {
-                  _strumTimer?.cancel();
-                  setState(() {
-                    _selectedChordId = c.id;
-                    _activeStrumString = null;
-                    _activeStrumFret = null;
-                  });
-                  _playChordRealVoicing(c);
-                },
-              ),
-          ],
+              ],
+            ],
+          ),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
         Container(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
             color: AppColors.primary.withOpacity(0.08),
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(13),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1675,17 +1663,16 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
                         Text(
                           chord.name,
                           style: const TextStyle(
-                            fontSize: 15,
+                            fontSize: 14.5,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
-                        const SizedBox(height: 2),
                         Text(
                           isEn
                               ? 'Voicing (S6 → S1): ${chord.formula}'
                               : 'Thế bấm (Dây 6 → Dây 1): ${chord.formula}',
                           style: const TextStyle(
-                            fontSize: 12,
+                            fontSize: 11.5,
                             fontWeight: FontWeight.w700,
                             color: AppColors.primary,
                           ),
@@ -1695,27 +1682,29 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
                   ),
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
-                      minimumSize: const Size(0, 34),
+                      minimumSize: const Size(0, 32),
                       padding: const EdgeInsets.symmetric(horizontal: 10),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                     onPressed: () => _playChordRealVoicing(chord),
                     icon: const Icon(Icons.volume_up_rounded, size: 15),
-                    label: Text(isEn ? 'Play Chord' : 'Gảy hợp âm'),
+                    label: Text(isEn ? 'Play' : 'Gảy hợp âm'),
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               Row(
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
                       key: const Key('btn_guitar_chord_strum'),
                       style: OutlinedButton.styleFrom(
-                        minimumSize: const Size(0, 34),
+                        minimumSize: const Size(0, 32),
                         padding: const EdgeInsets.symmetric(horizontal: 8),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
                       onPressed: () => _startChordStrum(chord, isBallad: false),
-                      icon: const Icon(Icons.south_rounded, size: 15),
+                      icon: const Icon(Icons.south_rounded, size: 14),
                       label: FittedBox(
                         fit: BoxFit.scaleDown,
                         child: Text(
@@ -1723,7 +1712,7 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
                               ? 'Strum (Bass → S1)'
                               : 'Rải từ Bass xuống (Strum)',
                           style: const TextStyle(
-                            fontSize: 11.5,
+                            fontSize: 11.2,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -1735,11 +1724,12 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
                     child: OutlinedButton.icon(
                       key: const Key('btn_guitar_chord_ballad_arpeggio'),
                       style: OutlinedButton.styleFrom(
-                        minimumSize: const Size(0, 34),
+                        minimumSize: const Size(0, 32),
                         padding: const EdgeInsets.symmetric(horizontal: 8),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
                       onPressed: () => _startChordStrum(chord, isBallad: true),
-                      icon: const Icon(Icons.waves_rounded, size: 15),
+                      icon: const Icon(Icons.waves_rounded, size: 14),
                       label: FittedBox(
                         fit: BoxFit.scaleDown,
                         child: Text(
@@ -1747,7 +1737,7 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
                               ? 'Ballad (Bass-3-2-3-1-3-2-3)'
                               : 'Rải Ballad (Bass-3-2-3-1-3-2-3)',
                           style: const TextStyle(
-                            fontSize: 11.5,
+                            fontSize: 11.2,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -1756,10 +1746,21 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
                   ),
                 ],
               ),
+              const SizedBox(height: 6),
+              Text(
+                chord.tip,
+                style: TextStyle(
+                  fontSize: 11.2,
+                  height: 1.32,
+                  color: isDark
+                      ? AppColors.textSecondaryDark
+                      : AppColors.textSecondaryLight,
+                ),
+              ),
             ],
           ),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
         InteractiveGuitarFretboard(
           maxFrets: chord.maxFret > 5 ? chord.maxFret : 5,
           chordShape: chord,
@@ -1769,11 +1770,6 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
             final info = GuitarFretboardData.noteAt(stringNumber: s, fret: f);
             audioService.playGuitarAsset(info.audioAsset);
           },
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Hướng dẫn đặt ngón: ${chord.tip} (Số 1: Ngón trỏ • Số 2: Ngón giữa • Số 3: Áp út • Số 4: Út • O: Dây buông • X: Không gảy)',
-          style: const TextStyle(fontSize: 12, height: 1.38),
         ),
       ],
     );
@@ -1853,30 +1849,26 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Map Scale là gì? Là sơ đồ tô sáng các nốt "an toàn & hòa hợp" của một giọng trên cần đàn. Khi đánh bất kỳ nốt nào nằm trên Map này, tiếng đàn sẽ luôn đúng giọng!',
-          style: TextStyle(fontSize: 12, height: 1.38),
-        ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 6,
-          runSpacing: 6,
-          children: [
-            for (final sc in scales)
-              ChoiceChip(
-                key: Key('chip_guitar_scale_${sc.$1}'),
-                visualDensity: VisualDensity.compact,
-                label: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Row(
+        // Thanh trượt ngang 7 Âm giai gọn trên 1 dòng
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              for (int i = 0; i < scales.length; i++) ...[
+                if (i > 0) const SizedBox(width: 6),
+                ChoiceChip(
+                  key: Key('chip_guitar_scale_${scales[i].$1}'),
+                  visualDensity: VisualDensity.compact,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  label: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (sc.$3 && !proUnlocked) ...[
+                      if (scales[i].$3 && !proUnlocked) ...[
                         const SolfaGemIcon(size: 12),
                         const SizedBox(width: 4),
                       ],
                       Text(
-                        sc.$2,
+                        scales[i].$2,
                         style: const TextStyle(
                           fontSize: 11.5,
                           fontWeight: FontWeight.w700,
@@ -1884,63 +1876,65 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
                       ),
                     ],
                   ),
-                ),
-                selected: _selectedScaleId == sc.$1,
-                onSelected: (_) async {
-                  if (sc.$3 && !proUnlocked) {
-                    final ok = await ref
-                        .read(rewardedAdProvider.notifier)
-                        .spendGemsForOneHourSession(gemCost: 50);
-                    if (!ok) {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: const Text(
-                              'Cần 50 Gem để mở khóa vĩnh viễn Full Map Scale 12 ngăn. Hãy xem video ngắn để nhận ngay +100 Gem miễn phí nhé!',
+                  selected: _selectedScaleId == scales[i].$1,
+                  onSelected: (_) async {
+                    final sc = scales[i];
+                    if (sc.$3 && !proUnlocked) {
+                      final ok = await ref
+                          .read(rewardedAdProvider.notifier)
+                          .spendGemsForOneHourSession(gemCost: 50);
+                      if (!ok) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: const Text(
+                                'Cần 50 Gem để mở khóa vĩnh viễn Full Map Scale 12 ngăn. Hãy xem video ngắn để nhận ngay +100 Gem miễn phí nhé!',
+                              ),
+                              action: SnackBarAction(
+                                label: 'Nhận +100 Gem',
+                                onPressed: () {
+                                  showRewardedVideoAdSimulationDialog(
+                                    context,
+                                    ref,
+                                  );
+                                },
+                              ),
                             ),
-                            action: SnackBarAction(
-                              label: 'Nhận +100 Gem',
-                              onPressed: () {
-                                showRewardedVideoAdSimulationDialog(
-                                  context,
-                                  ref,
-                                );
-                              },
-                            ),
-                          ),
-                        );
+                          );
+                        }
+                        return;
                       }
-                      return;
+                      ref.read(guitarProUnlockedProvider.notifier).state = true;
                     }
-                    ref.read(guitarProUnlockedProvider.notifier).state = true;
-                  }
-                  setState(() => _selectedScaleId = sc.$1);
-                },
-              ),
-          ],
+                    setState(() => _selectedScaleId = sc.$1);
+                  },
+                ),
+              ],
+            ],
+          ),
         ),
         if (!proUnlocked) ...[
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
               color: const Color(0xFFF59E0B).withOpacity(0.12),
-              borderRadius: BorderRadius.circular(11),
+              borderRadius: BorderRadius.circular(10),
               border: Border.all(
                 color: const Color(0xFFF59E0B).withOpacity(0.35),
               ),
             ),
             child: Row(
               children: [
-                const SolfaGemIcon(size: 16),
-                const SizedBox(width: 8),
+                const SolfaGemIcon(size: 15),
+                const SizedBox(width: 6),
                 Expanded(
                   child: Text(
                     isEn
-                        ? 'Watch a short ad to get +100 Gems & unlock Pro Scales!'
-                        : 'Thiếu Gem mở khóa Scale VIP? Xem video ngắn nhận ngay +100 Gem!',
+                        ? 'Watch a short ad for +100 Gems & unlock Pro Scales!'
+                        : 'Mở khóa Scale VIP: Xem video ngắn nhận ngay +100 Gem!',
                     style: const TextStyle(
-                      fontSize: 11.5,
+                      fontSize: 11.2,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -1948,7 +1942,7 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
                 TextButton.icon(
                   key: const Key('btn_guitar_watch_ad_gems'),
                   style: TextButton.styleFrom(
-                    minimumSize: const Size(0, 30),
+                    minimumSize: const Size(0, 28),
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
@@ -1959,17 +1953,17 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
                       ref.read(guitarProUnlockedProvider.notifier).state = true;
                     }
                   },
-                  icon: const Icon(Icons.play_circle_fill_rounded, size: 15),
+                  icon: const Icon(Icons.play_circle_fill_rounded, size: 14),
                   label: const Text(
                     '+100 Gem',
-                    style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w900),
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900),
                   ),
                 ),
               ],
             ),
           ),
         ],
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
         InteractiveGuitarFretboard(
           maxFrets: 12,
           scalePitchSet: currentScale.$4,
@@ -1980,15 +1974,22 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
           },
         ),
         const SizedBox(height: 8),
-        Text(
-          currentScale.$6,
-          style: const TextStyle(fontSize: 12, height: 1.38),
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withOpacity(0.06),
+            borderRadius: BorderRadius.circular(11),
+          ),
+          child: Text(
+            currentScale.$6,
+            style: const TextStyle(fontSize: 11.5, height: 1.35),
+          ),
         ),
       ],
     );
   }
 
-  /// TAB 4 (Trang riêng biệt): Lộ Trình 5 Cấp Độ (12 Bài Luyện Ngón, Fingerstyle, Vòng Hợp Âm & Riff/Solo Guitar Điện & Thùng)
+  /// TAB 4 (Trang riêng biệt): Lộ Trình 5 Cấp Độ Tinh Gọn Trên 1 Màn Hình (12 Bài Luyện Ngón, Fingerstyle, Vòng Hợp Âm & Riff/Solo)
   Widget _buildTabAndSpiderExerciseTab(
     BuildContext context,
     dynamic audioService,
@@ -2029,86 +2030,26 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 1. Thanh Lộ Trình 5 Cấp Độ (Level 1 -> Level 5) + Tổng Sao + Nhận +100 Gem (Rewarded Ad)
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-          decoration: BoxDecoration(
-            color: accentColor.withOpacity(0.10),
-            borderRadius: BorderRadius.circular(13),
-            border: Border.all(color: accentColor.withOpacity(0.32)),
-          ),
-          child: Row(
-            children: [
-              Icon(Icons.emoji_events_rounded, size: 20, color: accentColor),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      isEn
-                          ? '5-Level Guitar Roadmap • $totalStars/$maxPossibleStars ★'
-                          : 'Lộ trình 5 Cấp độ (Lv.1–Lv.5) • $totalStars/$maxPossibleStars ★',
-                      style: const TextStyle(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    Text(
-                      isEn
-                          ? 'Complete any exercise to earn 3 ★ & master Acoustic/Electric runs'
-                          : 'Chạy hết 8 phách mỗi bài để đạt 3 Sao (★★★) cả Guitar Thùng & Điện',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: isDark
-                            ? AppColors.textSecondaryDark
-                            : AppColors.textSecondaryLight,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              TextButton.icon(
-                key: const Key('btn_workout_watch_ad_gems'),
-                style: TextButton.styleFrom(
-                  minimumSize: const Size(0, 30),
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  backgroundColor: accentColor.withOpacity(0.15),
-                ),
-                onPressed: () {
-                  showRewardedVideoAdSimulationDialog(context, ref);
-                },
-                icon: const SolfaGemIcon(size: 13),
-                label: const Text(
-                  '+100 Gem',
-                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
-
-        // 2. Bộ lọc nhanh: Tất cả 12 bài (Lv.1–5) | Guitar Thùng (6) | Guitar Điện (6)
+        // 1. Thanh gộp thông minh: Bộ lọc (Tất cả 12 / Thùng / Điện) + Tổng Sao (★) + Nút +100 Gem trên cùng 1 hàng
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
             children: [
               for (final (code, lbl) in [
-                ('all', isEn ? 'All 12 Workouts (Lv.1–5)' : 'Tất cả 12 bài (Lv.1–5)'),
-                ('acoustic', isEn ? 'Acoustic (6)' : 'Guitar Thùng (6 bài)'),
-                ('electric', isEn ? 'Electric (6)' : 'Guitar Điện (6 bài)'),
-              ]) ...[
+                ('all', isEn ? 'All (12)' : 'Tất cả (12)'),
+                ('acoustic', isEn ? 'Acoustic (6)' : 'Đàn Thùng (6)'),
+                ('electric', isEn ? 'Electric (6)' : 'Đàn Điện (6)'),
+              ])
                 Padding(
                   padding: const EdgeInsets.only(right: 6),
                   child: ChoiceChip(
                     key: Key('chip_workout_filter_$code'),
                     visualDensity: VisualDensity.compact,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     label: Text(
                       lbl,
                       style: const TextStyle(
-                        fontSize: 11.5,
+                        fontSize: 11.2,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -2132,165 +2073,173 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
                     },
                   ),
                 ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                decoration: BoxDecoration(
+                  color: accentColor.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(99),
+                ),
+                child: Text(
+                  '★ $totalStars/$maxPossibleStars',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                    color: accentColor,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              TextButton.icon(
+                key: const Key('btn_workout_watch_ad_gems'),
+                style: TextButton.styleFrom(
+                  minimumSize: const Size(0, 28),
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  backgroundColor: accentColor.withOpacity(0.14),
+                ),
+                onPressed: () {
+                  showRewardedVideoAdSimulationDialog(context, ref);
+                },
+                icon: const SolfaGemIcon(size: 12),
+                label: const Text(
+                  '+100 Gem',
+                  style: TextStyle(fontSize: 10.8, fontWeight: FontWeight.w900),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 6),
+
+        // 2. Thanh trượt ngang chọn bài tập (Carousel 1 hàng gọn gàng giúp Khuông Tab & Cần đàn hiển thị ngay trước mắt!)
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              for (int cellPos = 0;
+                  cellPos < filteredIndices.length;
+                  cellPos++) ...[
+                if (cellPos > 0) const SizedBox(width: 6),
+                Builder(
+                  builder: (_) {
+                    final idx = filteredIndices[cellPos];
+                    final w = allWorkouts[idx];
+                    final selected = _selectedWorkoutIndex == idx;
+                    final isElWorkout = w.guitarStyle == 'electric';
+                    final cardColor = isElWorkout
+                        ? const Color(0xFF6366F1)
+                        : const Color(0xFFD97706);
+                    final wStars = starsMap[w.id] ?? 1;
+                    return Material(
+                      color: selected
+                          ? cardColor
+                          : (isDark ? AppColors.surfaceDark : Colors.white),
+                      borderRadius: BorderRadius.circular(11),
+                      child: InkWell(
+                        key: Key('card_guitar_workout_${w.id}'),
+                        borderRadius: BorderRadius.circular(11),
+                        onTap: () {
+                          _spiderTimer?.cancel();
+                          setState(() {
+                            _isSpiderPlaying = false;
+                            _selectedWorkoutIndex = idx;
+                            _spiderStep = 0;
+                          });
+                          ref
+                              .read(selectedGuitarTypeProvider.notifier)
+                              .state = w.guitarStyle;
+                          audioService.setGuitarType(w.guitarStyle);
+                          _playCurrentSpiderStep();
+                        },
+                        child: Container(
+                          width: 152,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(11),
+                            border: Border.all(
+                              color: selected
+                                  ? cardColor
+                                  : (isDark
+                                      ? AppColors.borderDark
+                                      : AppColors.borderLight),
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 5,
+                                      vertical: 1,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: selected
+                                          ? Colors.white.withOpacity(0.24)
+                                          : cardColor.withOpacity(0.14),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      'Lv.${w.levelNumber}',
+                                      style: TextStyle(
+                                        fontSize: 9.5,
+                                        fontWeight: FontWeight.w900,
+                                        color: selected
+                                            ? Colors.white
+                                            : cardColor,
+                                      ),
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  Text(
+                                    '★' * wStars,
+                                    style: TextStyle(
+                                      fontSize: 9.8,
+                                      color: selected
+                                          ? const Color(0xFFFDE047)
+                                          : const Color(0xFFF59E0B),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                w.title.replaceFirst(
+                                  RegExp(r'^Bài \d+:\s*'),
+                                  '',
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 11.2,
+                                  fontWeight: FontWeight.w800,
+                                  color: selected ? Colors.white : null,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ],
             ],
           ),
         ),
         const SizedBox(height: 8),
 
-        // 3. Lưới 2 cột hiển thị danh sách bài tập với Nhãn Level (Lv.1..Lv.5) & Số Sao (★)
-        for (int row = 0; row < (filteredIndices.length / 2).ceil(); row++)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 6),
-            child: Row(
-              children: [
-                for (int col = 0; col < 2; col++) ...[
-                  if (col > 0) const SizedBox(width: 8),
-                  Expanded(
-                    child: Builder(
-                      builder: (_) {
-                        final cellPos = row * 2 + col;
-                        if (cellPos >= filteredIndices.length) {
-                          return const SizedBox.shrink();
-                        }
-                        final idx = filteredIndices[cellPos];
-                        final w = allWorkouts[idx];
-                        final selected = _selectedWorkoutIndex == idx;
-                        final isElWorkout = w.guitarStyle == 'electric';
-                        final cardColor = isElWorkout
-                            ? const Color(0xFF6366F1)
-                            : const Color(0xFFD97706);
-                        final wStars = starsMap[w.id] ?? 1;
-                        return Material(
-                          color: selected
-                              ? cardColor
-                              : (isDark ? AppColors.surfaceDark : Colors.white),
-                          borderRadius: BorderRadius.circular(11),
-                          child: InkWell(
-                            key: Key('card_guitar_workout_${w.id}'),
-                            borderRadius: BorderRadius.circular(11),
-                            onTap: () {
-                              _spiderTimer?.cancel();
-                              setState(() {
-                                _isSpiderPlaying = false;
-                                _selectedWorkoutIndex = idx;
-                                _spiderStep = 0;
-                              });
-                              ref
-                                  .read(selectedGuitarTypeProvider.notifier)
-                                  .state = w.guitarStyle;
-                              audioService.setGuitarType(w.guitarStyle);
-                              _playCurrentSpiderStep();
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 7,
-                              ),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(11),
-                                border: Border.all(
-                                  color: selected
-                                      ? cardColor
-                                      : (isDark
-                                          ? AppColors.borderDark
-                                          : AppColors.borderLight),
-                                ),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 5,
-                                          vertical: 1.5,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: selected
-                                              ? Colors.white.withOpacity(0.24)
-                                              : cardColor.withOpacity(0.14),
-                                          borderRadius:
-                                              BorderRadius.circular(5),
-                                        ),
-                                        child: Text(
-                                          'Lv.${w.levelNumber}',
-                                          style: TextStyle(
-                                            fontSize: 9.8,
-                                            fontWeight: FontWeight.w900,
-                                            color: selected
-                                                ? Colors.white
-                                                : cardColor,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Expanded(
-                                        child: Text(
-                                          w.styleBadge
-                                              .replaceFirst('Guitar Thùng • ', '')
-                                              .replaceFirst('Guitar Điện • ', ''),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
-                                            fontSize: 9.8,
-                                            fontWeight: FontWeight.w700,
-                                            color: selected
-                                                ? Colors.white70
-                                                : (isDark
-                                                    ? AppColors
-                                                        .textSecondaryDark
-                                                    : AppColors
-                                                        .textSecondaryLight),
-                                          ),
-                                        ),
-                                      ),
-                                      Text(
-                                        '★' * wStars,
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          color: selected
-                                              ? const Color(0xFFFDE047)
-                                              : const Color(0xFFF59E0B),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    w.title.replaceFirst(
-                                      RegExp(r'^Bài \d+:\s*'),
-                                      '',
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontSize: 11.5,
-                                      fontWeight: FontWeight.w800,
-                                      color: selected ? Colors.white : null,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        const SizedBox(height: 6),
-
-        // 4. Bảng chi tiết bài đang tập + Thanh điều khiển Tốc độ & Thanh Tiến Độ Nốt 1..8 Trực Quan
+        // 3. Bảng điều khiển bài tập + Thanh Tiến Độ Nốt 1–8 Trực Quan
         Container(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
             color: accentColor.withOpacity(0.08),
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(13),
             border: Border.all(color: accentColor.withOpacity(0.24)),
           ),
           child: Column(
@@ -2300,15 +2249,15 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
                 children: [
                   Container(
                     padding:
-                        const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
                       color: accentColor,
-                      borderRadius: BorderRadius.circular(6),
+                      borderRadius: BorderRadius.circular(5),
                     ),
                     child: Text(
                       currentWorkout.levelTag,
                       style: const TextStyle(
-                        fontSize: 10.5,
+                        fontSize: 10,
                         fontWeight: FontWeight.w900,
                         color: Colors.white,
                       ),
@@ -2317,13 +2266,12 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
-                      currentWorkout.styleBadge,
+                      currentWorkout.title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 11.5,
+                      style: const TextStyle(
+                        fontSize: 13,
                         fontWeight: FontWeight.w800,
-                        color: accentColor,
                       ),
                     ),
                   ),
@@ -2331,26 +2279,20 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
                     '★' * currentWorkoutStars +
                         '☆' * (3 - currentWorkoutStars),
                     style: const TextStyle(
-                      fontSize: 13,
+                      fontSize: 12,
                       color: Color(0xFFF59E0B),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 5),
-              Text(
-                currentWorkout.title,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
               const SizedBox(height: 3),
               Text(
                 currentWorkout.description,
-                style: const TextStyle(fontSize: 11.8, height: 1.36),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 11.2, height: 1.32),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
 
               // Thanh Tiến Độ Nốt Trực Quan & Đếm Nhịp 1–8 (Bấm trực tiếp vào từng phách để nghe & xem thế tay)
               SingleChildScrollView(
@@ -2378,10 +2320,10 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
                         },
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 120),
-                          width: 44,
+                          width: 42,
                           padding: const EdgeInsets.symmetric(
-                            vertical: 5,
-                            horizontal: 4,
+                            vertical: 4,
+                            horizontal: 3,
                           ),
                           decoration: BoxDecoration(
                             color: isCurrentBeat
@@ -2394,7 +2336,7 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
                               color: isCurrentBeat
                                   ? AppColors.correct
                                   : accentColor.withOpacity(0.35),
-                              width: isCurrentBeat ? 1.6 : 1.0,
+                              width: isCurrentBeat ? 1.5 : 1.0,
                             ),
                           ),
                           child: Column(
@@ -2402,7 +2344,7 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
                               Text(
                                 '${sIdx + 1}',
                                 style: TextStyle(
-                                  fontSize: 10,
+                                  fontSize: 9.5,
                                   fontWeight: FontWeight.w900,
                                   color: isCurrentBeat
                                       ? Colors.white
@@ -2414,7 +2356,7 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
                                 child: Text(
                                   noteInfo.vnLabel,
                                   style: TextStyle(
-                                    fontSize: 10.5,
+                                    fontSize: 10.2,
                                     fontWeight: FontWeight.w800,
                                     color: isCurrentBeat ? Colors.white : null,
                                   ),
@@ -2428,9 +2370,9 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
                   }),
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
 
-              // Thanh điều khiển tốc độ & Chạy mẫu / Tập từng bước (Không tràn khung 360px)
+              // Thanh điều khiển tốc độ & Chạy mẫu / Tập từng bước gọn gàng
               Wrap(
                 spacing: 6,
                 runSpacing: 6,
@@ -2464,65 +2406,60 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
                     ),
                   OutlinedButton(
                     style: OutlinedButton.styleFrom(
-                      minimumSize: const Size(34, 30),
+                      minimumSize: const Size(32, 28),
                       padding: const EdgeInsets.symmetric(horizontal: 6),
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                     onPressed: () => _stepWorkoutManually(-1),
-                    child: const Icon(Icons.skip_previous_rounded, size: 16),
+                    child: const Icon(Icons.skip_previous_rounded, size: 15),
                   ),
                   OutlinedButton(
                     style: OutlinedButton.styleFrom(
-                      minimumSize: const Size(34, 30),
+                      minimumSize: const Size(32, 28),
                       padding: const EdgeInsets.symmetric(horizontal: 6),
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                     onPressed: () => _stepWorkoutManually(1),
-                    child: const Icon(Icons.skip_next_rounded, size: 16),
+                    child: const Icon(Icons.skip_next_rounded, size: 15),
                   ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Phách ${currentStepIndex + 1}/${currentWorkout.steps.length}: Dây $activeString • Ngăn $activeFret (${activeNote.fullLabel}) → $activeFingerText',
-                      style: TextStyle(
-                        fontSize: 12.2,
-                        fontWeight: FontWeight.w800,
-                        color: accentColor,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
                   ElevatedButton.icon(
                     key: const Key('btn_toggle_spider_exercise'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor:
                           _isSpiderPlaying ? AppColors.wrong : accentColor,
-                      minimumSize: const Size(0, 38),
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      minimumSize: const Size(0, 32),
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                     onPressed: _toggleSpiderExercise,
                     icon: Icon(
                       _isSpiderPlaying
                           ? Icons.stop_rounded
                           : Icons.play_arrow_rounded,
-                      size: 18,
+                      size: 16,
                     ),
                     label: Text(
                       _isSpiderPlaying
                           ? (isEn ? 'Stop' : 'Dừng tập')
                           : (isEn ? 'Auto Play' : 'Chạy mẫu'),
+                      style: const TextStyle(fontSize: 11.5),
                     ),
                   ),
                 ],
               ),
+              const SizedBox(height: 4),
+              Text(
+                'Phách ${currentStepIndex + 1}/${currentWorkout.steps.length}: Dây $activeString • Ngăn $activeFret (${activeNote.fullLabel}) → $activeFingerText',
+                style: TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w800,
+                  color: accentColor,
+                ),
+              ),
             ],
           ),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
         GuitarTabViewerWidget(
           activeStepIndex: currentStepIndex,
           isDark: isDark,
@@ -2530,7 +2467,7 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
               .map((s) => (s.$1, s.$2))
               .toList(growable: false),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
         InteractiveGuitarFretboard(
           maxFrets: currentWorkout.maxFret,
           activeString: activeString,

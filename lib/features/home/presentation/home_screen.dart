@@ -152,16 +152,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
             data: (s) => _buildContinueLearningHero(context, s),
           ),
-          const SizedBox(height: SolfaSpacing.lg),
+          const SizedBox(height: SolfaSpacing.md),
 
-          // KHỐI 3 – Tiện ích nhanh (Đàn Piano C3–C5, Ôn câu sai, Đấu trường)
+          // KHỐI 3 – Tiện ích nhanh (Đàn Piano C3–C5, Đàn Guitar, Ôn câu sai, Đấu trường)
           _buildUnifiedQuickAccessGroup(context, stats, isDark),
-          const SizedBox(height: SolfaSpacing.lg),
+          const SizedBox(height: SolfaSpacing.md),
 
           // KHỐI 4 – Mục tiêu hôm nay (+20 Gem) & Nhiệm vụ ngày
           if (stats != null) ...[
             _buildTodayGoalSection(context, stats, adState, isDark),
-            const SizedBox(height: SolfaSpacing.lg),
+            const SizedBox(height: SolfaSpacing.md),
           ],
           _buildDailyQuestsChecklist(context, stats, adState, isDark),
         ],
