@@ -2185,11 +2185,23 @@ void main() {
         );
         await tester.tap(find.byKey(const Key('chip_guitar_tab_4')));
         await tester.pump(const Duration(milliseconds: 200));
+        await tester.ensureVisible(
+          find.byKey(const Key('btn_tap_current_highway_note')),
+        );
+        await tester.pump(const Duration(milliseconds: 100));
         expect(find.byKey(const Key('btn_tap_current_highway_note')), findsOneWidget);
         await tester.tap(find.byKey(const Key('btn_tap_current_highway_note')));
         await tester.pump(const Duration(milliseconds: 150));
+        await tester.ensureVisible(
+          find.byKey(const Key('chip_submode_circle_capo')),
+        );
+        await tester.pump(const Duration(milliseconds: 100));
         await tester.tap(find.byKey(const Key('chip_submode_circle_capo')));
         await tester.pump(const Duration(milliseconds: 200));
+        await tester.ensureVisible(
+          find.byKey(const Key('btn_transpose_up')),
+        );
+        await tester.pump(const Duration(milliseconds: 100));
         expect(find.byKey(const Key('btn_transpose_up')), findsOneWidget);
         await tester.tap(find.byKey(const Key('btn_transpose_up')));
         await tester.pump(const Duration(milliseconds: 150));
