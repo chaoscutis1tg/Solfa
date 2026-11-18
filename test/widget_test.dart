@@ -1,4 +1,5 @@
 import 'dart:io' show File;
+import 'dart:typed_data' show Endian;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -1997,6 +1998,115 @@ void main() {
         await settingsNotifier.setCountryCodeOverride('');
         await settingsNotifier.setLanguageMode('auto');
         expect(container.read(appSettingsProvider).isEnglish, isFalse);
+      },
+    );
+
+    testWidgets(
+      'TC-23: Kiểm định độ ổn định sóng âm (Zero-Click PCM), So dây Loop, Vòng Hợp âm tự động, Nhạc nền Jam, Chấm 3 Sao & Tạm dừng nền (Lifecycle)',
+      (WidgetTester tester) async {
+        // 1. Kiểm tra trực tiếp dữ liệu sóng âm PCM 16-bit của các file WAV:
+        // Đảm bảo điểm đầu và điểm cuối đều bằng 0 (Zero-Crossing tuyệt đối, không bao giờ gây tiếng click/rè cuối âm thanh)
+        const wavFilesToVerify = [
+          'assets/audio/sfx/correct.wav',
+          'assets/audio/sfx/wrong.wav',
+          'assets/audio/sfx/complete.wav',
+          'assets/audio/notes/c4.wav',
+          'assets/audio/guitar_acoustic/notes/e2.wav',
+          'assets/audio/guitar_acoustic/keys/chord_g_maj.wav',
+          'assets/audio/guitar_electric/notes/e2.wav',
+          'assets/audio/guitar_electric/keys/chord_e5.wav',
+        ];
+        for (final path in wavFilesToVerify) {
+          final bytes = File(path).readAsBytesSync();
+          expect(bytes.length, greaterThan(1000), reason: 'File $path phải có dữ liệu PCM');
+          // Mẫu PCM 16-bit đầu tiên (tại byte 44..45 sau WAV header 44 bytes) và mẫu cuối cùng
+          final firstSample = bytes.buffer.asByteData().getInt16(44, Endian.little);
+          final lastSample = bytes.buffer
+              .asByteData()
+              .getInt16(bytes.length - 2, Endian.little);
+          expect(
+            firstSample.abs(),
+            lessThanOrEqualTo(2),
+            reason: 'Mẫu đầu tiên của $path phải bắt đầu mượt tại 0',
+          );
+          expect(
+            lastSample.abs(),
+            lessThanOrEqualTo(2),
+            reason: 'Mẫu cuối cùng của $path phải kết thúc mượt tại 0 (Zero-Click)',
+          );
+        }
+
+        // 2. Mở trực tiếp GuitarStudioSheet và kiểm tra chu trình hoạt động của các bộ đếm thời gian (Timers)
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: const MaterialApp(
+              home: GuitarStudioSheet(initialTab: 0),
+            ),
+          ),
+        );
+        await tester.pump(const Duration(milliseconds: 200));
+
+        // 2a. Bật So dây 6E + Loop -> Tiến thời gian 1.5s -> Tắt Loop
+        await tester.tap(find.byKey(const Key('btn_tuner_string_6')));
+        await tester.pump(const Duration(milliseconds: 100));
+        await tester.tap(find.byKey(const Key('btn_tuner_toggle_loop')));
+        await tester.pump(const Duration(milliseconds: 1500));
+        expect(find.text('Đang lặp'), findsOneWidget);
+        await tester.tap(find.byKey(const Key('btn_tuner_toggle_loop')));
+        await tester.pump(const Duration(milliseconds: 100));
+        expect(find.text('Lặp'), findsOneWidget);
+
+        // 2b. Chuyển sang Tab Hợp âm (Tab 1) -> Bật Vòng hợp âm Canon (C-G-Am-F) -> Tiến 1.5s để tự động nhảy sang hợp âm G -> Chạm hợp âm Am để tự ngắt vòng lặp
+        await tester.tap(find.byKey(const Key('chip_guitar_tab_1')));
+        await tester.pump(const Duration(milliseconds: 200));
+        await tester.tap(find.byKey(const Key('btn_chord_prog_canon')));
+        await tester.pump(const Duration(milliseconds: 100));
+        expect(find.textContaining('Đô Trưởng (C)'), findsOneWidget);
+        await tester.pump(const Duration(milliseconds: 1500));
+        expect(find.textContaining('Sol Trưởng (G)'), findsOneWidget);
+        await tester.tap(find.byKey(const Key('chip_guitar_chord_Am')));
+        await tester.pump(const Duration(milliseconds: 200));
+        expect(find.textContaining('La Thứ (Am)'), findsOneWidget);
+
+        // 2c. Chuyển sang Tab Scale (Tab 2) -> Bật Nhạc nền Jam Blues + Chạy Scale -> Tiến 1.8s không lỗi
+        await tester.tap(find.byKey(const Key('chip_guitar_tab_2')));
+        await tester.pump(const Duration(milliseconds: 200));
+        await tester.tap(find.byKey(const Key('btn_backing_jam_jam_blues')));
+        await tester.pump(const Duration(milliseconds: 1700));
+        await tester.tap(find.byKey(const Key('btn_play_guitar_scale_run')));
+        await tester.pump(const Duration(milliseconds: 1500));
+        expect(tester.takeException(), isNull);
+
+        // 2d. Mở trang Luyện ngón (isWorkoutOnlyPage: true) -> Chạy mẫu hết 8 phách để nhận đủ 3 Sao (★★★)
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: const MaterialApp(
+              home: GuitarStudioSheet(
+                initialTab: 3,
+                isWorkoutOnlyPage: true,
+              ),
+            ),
+          ),
+        );
+        await tester.pump(const Duration(milliseconds: 200));
+        await tester.tap(find.byKey(const Key('btn_toggle_spider_exercise')));
+        for (int beat = 0; beat < 8; beat++) {
+          await tester.pump(const Duration(milliseconds: 520));
+        }
+        expect(
+          container.read(guitarWorkoutStarsProvider)['spider_1234'],
+          equals(3),
+        );
+
+        // 2e. Giả lập đưa ứng dụng xuống nền (AppLifecycleState.paused) -> Mọi Timer đang chạy phải tự động dừng an toàn
+        tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+        await tester.pump(const Duration(milliseconds: 200));
+        expect(find.text('Chạy mẫu'), findsOneWidget);
+        tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+        await tester.pump(const Duration(milliseconds: 100));
+        expect(tester.takeException(), isNull);
       },
     );
   });

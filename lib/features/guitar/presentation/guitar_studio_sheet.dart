@@ -1075,7 +1075,8 @@ class GuitarTypeSwitchBar extends ConsumerWidget {
   }
 }
 
-class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
+class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet>
+    with WidgetsBindingObserver {
   /// 0: Bản đồ Cần đàn (Fretboard Map)
   /// 1: Hợp âm Guitar (Chord Shapes - 44 hợp âm gồm Mở, Chặn, Bảy, Màu & Hợp âm 5 Điện)
   /// 2: Bản đồ Scale (7 Âm giai: Pentatonic, Blues, Trưởng/Thứ & Hài hòa)
@@ -1121,8 +1122,32 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _selectedTab = widget.isWorkoutOnlyPage ? 3 : widget.initialTab;
     unawaited(_loadPersistedGuitarState());
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.detached) {
+      _stopAllAuxiliaryTimers();
+      ref.read(audioServiceProvider).stop(includePolyphony: true);
+      if (mounted) {
+        setState(() {
+          _isSpiderPlaying = false;
+          _isScaleRunPlaying = false;
+          _loopingTunerString = null;
+          _activeProgressionId = null;
+          _activeJamTrackId = null;
+          _activeStrumString = null;
+          _activeStrumFret = null;
+          _activeScaleRunString = null;
+          _activeScaleRunFret = null;
+        });
+      }
+    }
   }
 
   Future<void> _loadPersistedGuitarState() async {
@@ -1167,6 +1192,7 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _stopAllAuxiliaryTimers();
     super.dispose();
   }
@@ -1913,7 +1939,9 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
           showAllNotes: true,
           naturalOnly: _showNaturalNotesOnly,
           onTapFret: (s, f) {
+            _tunerLoopTimer?.cancel();
             setState(() {
+              _loopingTunerString = null;
               _activeString = s;
               _activeFret = f;
             });
@@ -1986,12 +2014,14 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
                   selected: _selectedChordCategory == categories[i].$1,
                   onSelected: (_) {
                     _strumTimer?.cancel();
+                    _progLoopTimer?.cancel();
                     final nextList = categories[i].$1 == 'all'
                         ? GuitarFretboardData.commonChords
                         : GuitarFretboardData.commonChords
                             .where((c) => c.category == categories[i].$1)
                             .toList();
                     setState(() {
+                      _activeProgressionId = null;
                       _selectedChordCategory = categories[i].$1;
                       _selectedChordId = nextList.first.id;
                       _activeStrumString = null;
@@ -2027,7 +2057,9 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
                   onSelected: (_) {
                     final c = filteredChords[i];
                     _strumTimer?.cancel();
+                    _progLoopTimer?.cancel();
                     setState(() {
+                      _activeProgressionId = null;
                       _selectedChordId = c.id;
                       _activeStrumString = null;
                       _activeStrumFret = null;
@@ -2716,10 +2748,12 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
                           ref.read(selectedGuitarTypeProvider.notifier).state =
                               'acoustic';
                           audioService.setGuitarType('acoustic');
+                          unawaited(persistGuitarTypePreference('acoustic'));
                         } else if (code == 'electric') {
                           ref.read(selectedGuitarTypeProvider.notifier).state =
                               'electric';
                           audioService.setGuitarType('electric');
+                          unawaited(persistGuitarTypePreference('electric'));
                         }
                       });
                     },
@@ -2801,6 +2835,7 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet> {
                               .read(selectedGuitarTypeProvider.notifier)
                               .state = w.guitarStyle;
                           audioService.setGuitarType(w.guitarStyle);
+                          unawaited(persistGuitarTypePreference(w.guitarStyle));
                           _playCurrentSpiderStep();
                         },
                         child: Container(
