@@ -143,36 +143,248 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
       return true;
     }
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final hasAnswered = sessionState.answeredCount > 0;
+
     final action = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Kết thúc phiên luyện tập?'),
-        content: Text(
-          sessionState.answeredCount > 0
-              ? 'Bạn đã trả lời ${sessionState.answeredCount} nốt (Đúng: ${sessionState.correctCount}, Sai: ${sessionState.wrongCount}). Bạn muốn lưu kết quả & tính điểm hay thoát phiên?'
-              : 'Nếu thoát bây giờ, phiên học hiện tại sẽ được đánh dấu dở dang.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop('cancel'),
-            child: const Text('Tiếp tục luyện'),
-          ),
-          if (sessionState.answeredCount > 0)
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.correct,
-                minimumSize: const Size(120, 40),
-              ),
-              onPressed: () => Navigator.of(ctx).pop('finish_score'),
-              child: const Text('Lưu & Tính điểm'),
+        key: const Key('dialog_confirm_exit_session'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        contentPadding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.14),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  alignment: Alignment.center,
+                  child: const Icon(
+                    Icons.flag_rounded,
+                    color: AppColors.primary,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text(
+                    'Kết thúc phiên luyện tập?',
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                      height: 1.25,
+                    ),
+                  ),
+                ),
+              ],
             ),
-          TextButton(
-            style: TextButton.styleFrom(foregroundColor: AppColors.wrong),
-            onPressed: () => Navigator.of(ctx).pop('abandon'),
-            child: const Text('Thoát phiên'),
-          ),
-        ],
+            const SizedBox(height: 12),
+            if (hasAnswered) ...[
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? Colors.white.withOpacity(0.05)
+                      : AppColors.backgroundLight,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        children: [
+                          Text(
+                            '${sessionState.answeredCount}',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w900,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          const Text(
+                            'Đã trả lời',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      width: 1,
+                      height: 26,
+                      color:
+                          isDark ? AppColors.borderDark : AppColors.borderLight,
+                    ),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          Text(
+                            '${sessionState.correctCount}',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w900,
+                              color: AppColors.correct,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          const Text(
+                            'Đúng',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      width: 1,
+                      height: 26,
+                      color:
+                          isDark ? AppColors.borderDark : AppColors.borderLight,
+                    ),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          Text(
+                            '${sessionState.wrongCount}',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w900,
+                              color: AppColors.wrong,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          const Text(
+                            'Sai',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+            ],
+            Text(
+              hasAnswered
+                  ? 'Bạn đã trả lời ${sessionState.answeredCount} nốt (Đúng: ${sessionState.correctCount}, Sai: ${sessionState.wrongCount}). Bạn muốn lưu kết quả & tính điểm hay thoát phiên?'
+                  : 'Nếu thoát bây giờ, phiên học hiện tại sẽ được đánh dấu dở dang.',
+              style: TextStyle(
+                fontSize: 13.2,
+                height: 1.38,
+                color: isDark
+                    ? AppColors.textSecondaryDark
+                    : AppColors.textSecondaryLight,
+              ),
+            ),
+            const SizedBox(height: 16),
+            if (hasAnswered) ...[
+              SizedBox(
+                height: 44,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.correct,
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(double.infinity, 44),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(13),
+                    ),
+                  ),
+                  onPressed: () => Navigator.of(ctx).pop('finish_score'),
+                  icon: const Icon(Icons.emoji_events_rounded, size: 18),
+                  label: const Text(
+                    'Lưu & Tính điểm',
+                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+            ],
+            Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: 42,
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.wrong,
+                        side: BorderSide(
+                          color: AppColors.wrong.withOpacity(0.55),
+                          width: 1.2,
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: () => Navigator.of(ctx).pop('abandon'),
+                      child: const FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          'Thoát phiên',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 13.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: SizedBox(
+                    height: 42,
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        backgroundColor: AppColors.primary.withOpacity(0.12),
+                        foregroundColor: isDark ? Colors.white : AppColors.primary,
+                        side: BorderSide(
+                          color: AppColors.primary.withOpacity(0.55),
+                          width: 1.2,
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: () => Navigator.of(ctx).pop('cancel'),
+                      child: const FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          'Tiếp tục luyện',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 13.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
 

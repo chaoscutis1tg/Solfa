@@ -61,38 +61,60 @@ class _MetronomeScreenState extends ConsumerState<MetronomeScreen>
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('Nhập tốc độ BPM (30 – 300)'),
-        content: TextField(
-          controller: controller,
-          keyboardType: TextInputType.number,
-          inputFormatters: [
-            FilteringTextInputFormatter.digitsOnly,
-            LengthLimitingTextInputFormatter(3),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextField(
+              controller: controller,
+              keyboardType: TextInputType.number,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(3),
+              ],
+              autofocus: true,
+              decoration: const InputDecoration(
+                hintText: 'Ví dụ: 120',
+                helperText: 'Giới hạn hợp lệ: 30 đến 300 BPM',
+                suffixText: 'BPM',
+              ),
+              onSubmitted: (value) {
+                final val = int.tryParse(value.trim());
+                Navigator.of(ctx).pop(val);
+              },
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: 42,
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(ctx).pop(),
+                      child: const Text('Hủy'),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: SizedBox(
+                    height: 42,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: const Size(0, 42),
+                      ),
+                      onPressed: () {
+                        final val = int.tryParse(controller.text.trim());
+                        Navigator.of(ctx).pop(val);
+                      },
+                      child: const Text('Áp dụng'),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ],
-          autofocus: true,
-          decoration: const InputDecoration(
-            hintText: 'Ví dụ: 120',
-            helperText: 'Giới hạn hợp lệ: 30 đến 300 BPM',
-            suffixText: 'BPM',
-          ),
-          onSubmitted: (value) {
-            final val = int.tryParse(value.trim());
-            Navigator.of(ctx).pop(val);
-          },
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Hủy'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(minimumSize: const Size(96, 42)),
-            onPressed: () {
-              final val = int.tryParse(controller.text.trim());
-              Navigator.of(ctx).pop(val);
-            },
-            child: const Text('Áp dụng'),
-          ),
-        ],
       ),
     );
     controller.dispose();
@@ -110,33 +132,57 @@ class _MetronomeScreenState extends ConsumerState<MetronomeScreen>
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('Lưu Preset cá nhân'),
-        content: TextField(
-          key: const Key('input_custom_preset_name'),
-          controller: controller,
-          inputFormatters: [
-            LengthLimitingTextInputFormatter(36),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextField(
+              key: const Key('input_custom_preset_name'),
+              controller: controller,
+              inputFormatters: [
+                LengthLimitingTextInputFormatter(36),
+              ],
+              autofocus: true,
+              decoration: const InputDecoration(
+                labelText: 'Tên mẫu nhịp của bạn',
+                hintText: 'Ví dụ: Luyện ngón Guitar 95 BPM',
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: 42,
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(ctx).pop(),
+                      child: const Text('Hủy'),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: SizedBox(
+                    height: 42,
+                    child: ElevatedButton(
+                      key: const Key('btn_confirm_save_preset'),
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: const Size(0, 42),
+                      ),
+                      onPressed: () {
+                        final text = controller.text.trim();
+                        Navigator.of(ctx).pop(
+                          text.isNotEmpty ? text : defaultName,
+                        );
+                      },
+                      child: const Text('Lưu mẫu'),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ],
-          autofocus: true,
-          decoration: const InputDecoration(
-            labelText: 'Tên mẫu nhịp của bạn',
-            hintText: 'Ví dụ: Luyện ngón Guitar 95 BPM',
-          ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Hủy'),
-          ),
-          ElevatedButton(
-            key: const Key('btn_confirm_save_preset'),
-            style: ElevatedButton.styleFrom(minimumSize: const Size(96, 42)),
-            onPressed: () {
-              final text = controller.text.trim();
-              Navigator.of(ctx).pop(text.isNotEmpty ? text : defaultName);
-            },
-            child: const Text('Lưu mẫu'),
-          ),
-        ],
       ),
     );
     controller.dispose();

@@ -166,31 +166,97 @@ class SettingsScreen extends ConsumerWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          isEn
-              ? 'Clear Learning History Warning'
-              : 'Cảnh báo xóa dữ liệu học tập',
-        ),
-        content: Text(
-          isEn
-              ? 'This action will permanently delete all local practice sessions, scores, accuracy stats, daily streaks, and pending review questions on this device. Deleted data cannot be recovered. Are you sure you want to continue?'
-              : 'Hành động này sẽ xóa toàn bộ lịch sử phiên học, điểm số, thống kê độ chính xác, chuỗi ngày học và danh sách câu cần ôn tập trên thiết bị này. Dữ liệu đã xóa không thể khôi phục. Bạn có chắc chắn muốn tiếp tục?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(isEn ? 'Cancel' : 'Hủy'),
-          ),
-          ElevatedButton(
-            key: const Key('btn_confirm_clear_data'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.wrong,
-              minimumSize: const Size(120, 42),
+        contentPadding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: AppColors.wrong.withOpacity(0.14),
+                    borderRadius: BorderRadius.circular(11),
+                  ),
+                  alignment: Alignment.center,
+                  child: const Icon(
+                    Icons.warning_amber_rounded,
+                    color: AppColors.wrong,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    isEn
+                        ? 'Clear Learning History Warning'
+                        : 'Cảnh báo xóa dữ liệu học tập',
+                    style: const TextStyle(
+                      fontSize: 16.5,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ],
             ),
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(isEn ? 'Delete Data' : 'Xóa dữ liệu'),
-          ),
-        ],
+            const SizedBox(height: 12),
+            Text(
+              isEn
+                  ? 'This action will permanently delete all local practice sessions, scores, accuracy stats, daily streaks, and pending review questions on this device. Deleted data cannot be recovered. Are you sure you want to continue?'
+                  : 'Hành động này sẽ xóa toàn bộ lịch sử phiên học, điểm số, thống kê độ chính xác, chuỗi ngày học và danh sách câu cần ôn tập trên thiết bị này. Dữ liệu đã xóa không thể khôi phục. Bạn có chắc chắn muốn tiếp tục?',
+              style: const TextStyle(fontSize: 13.2, height: 1.38),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: 42,
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: () => Navigator.of(ctx).pop(false),
+                      child: Text(
+                        isEn ? 'Cancel' : 'Hủy',
+                        style: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: SizedBox(
+                    height: 42,
+                    child: ElevatedButton(
+                      key: const Key('btn_confirm_clear_data'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.wrong,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(0, 42),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: () => Navigator.of(ctx).pop(true),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          isEn ? 'Delete Data' : 'Xóa dữ liệu',
+                          style: const TextStyle(fontWeight: FontWeight.w800),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
 
