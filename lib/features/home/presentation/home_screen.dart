@@ -594,11 +594,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: Text(
-                  isEn
-                      ? 'Today\'s Goal: ${stats.todayAnsweredCount} / ${stats.dailyGoalTarget}'
-                      : 'Mục tiêu hôm nay: ${stats.todayAnsweredCount} / ${stats.dailyGoalTarget} câu',
-                  style: SolfaTypography.cardTitle,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    isEn
+                        ? 'Today\'s Goal: ${stats.todayAnsweredCount}/${stats.dailyGoalTarget}'
+                        : 'Mục tiêu hôm nay: ${stats.todayAnsweredCount}/${stats.dailyGoalTarget} câu',
+                    maxLines: 1,
+                    style: SolfaTypography.cardTitle,
+                  ),
                 ),
               ),
               if (canClaimGoalGem)
@@ -757,7 +762,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               context: context,
               buttonKey: const Key('btn_claim_quest_practice'),
               title: isEn
-                  ? 'Practice 10 ear-training questions'
+                  ? 'Practice 10 questions'
                   : 'Luyện cảm âm 10 câu',
               progressText: '${todayAnswered.clamp(0, 10)}/10',
               rewardPoints: 30,
@@ -771,8 +776,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               context: context,
               buttonKey: const Key('btn_claim_quest_battle'),
               title: isEn
-                  ? 'Play 1 Battle Arena match'
-                  : 'Thi đấu 1 trận Đấu Trường',
+                  ? 'Play 1 Arena match'
+                  : 'Đấu 1 trận Đấu Trường',
               progressText: '${adState.dailyBattlesPlayed.clamp(0, 1)}/1',
               rewardPoints: 40,
               isReadyToClaim: battleReady,
@@ -785,8 +790,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               context: context,
               buttonKey: const Key('btn_claim_quest_dictation'),
               title: isEn
-                  ? 'Complete 1 melodic dictation'
-                  : 'Chép nhạc 1 câu giai điệu',
+                  ? 'Complete 1 dictation'
+                  : 'Chép nhạc 1 giai điệu',
               progressText:
                   '${adState.dailyDictationCompletedCount.clamp(0, 1)}/1',
               rewardPoints: 30,
@@ -827,14 +832,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
         const SizedBox(width: 8),
         Expanded(
-          child: Text(
-            '$title ($progressText)',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              decoration: isClaimed ? TextDecoration.lineThrough : null,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              '$title ($progressText)',
+              maxLines: 1,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                decoration: isClaimed ? TextDecoration.lineThrough : null,
+              ),
             ),
           ),
         ),
@@ -842,11 +850,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         TextButton(
           key: buttonKey,
           style: TextButton.styleFrom(
-            minimumSize: const Size(0, 30),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            minimumSize: const Size(0, 28),
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             backgroundColor: isClaimed
-                ? Colors.transparent
+                ? AppColors.correct.withOpacity(0.10)
                 : (isReadyToClaim
                     ? AppColors.correct
                     : AppColors.primary.withOpacity(0.10)),
@@ -883,17 +891,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const SolfaGemIcon(size: 13),
+              const SolfaGemIcon(size: 12.5),
               const SizedBox(width: 4),
               Text(
                 isClaimed
-                    ? 'Đã nhận +$rewardPoints Gem'
+                    ? 'Đã nhận +$rewardPoints'
                     : (isReadyToClaim
-                        ? 'Nhận +$rewardPoints Gem'
-                        : '+$rewardPoints Gem'),
+                        ? 'Nhận +$rewardPoints'
+                        : '+$rewardPoints'),
                 style: const TextStyle(
                   fontSize: 11.5,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
             ],

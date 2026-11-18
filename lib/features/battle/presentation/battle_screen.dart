@@ -271,6 +271,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
         child: Scaffold(
           backgroundColor: Colors.transparent,
           appBar: AppBar(
+            titleSpacing: 0,
             leading: IconButton(
               key: const Key('btn_close_battle_screen'),
               icon: const Icon(Icons.arrow_back_rounded),
@@ -287,43 +288,46 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
             title: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(6),
+                  padding: const EdgeInsets.all(5),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
                       colors: [Color(0xFF6366F1), Color(0xFFEC4899)],
                     ),
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(9),
                   ),
                   child: const CrossedSwordsIcon(
-                    size: 18,
+                    size: 16,
                     color: Colors.white,
                     guardColor: Color(0xFFFFE082),
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 8),
                 Expanded(
-                  child: Text(
-                    isEn ? '1v1 Music Battle Arena' : 'Đấu Trường Âm Nhạc 1v1',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      isEn ? '1v1 Battle Arena' : 'Đấu Trường 1v1',
+                      maxLines: 1,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
                 ),
               ],
             ),
             actions: [
-              // Daily Battle Energy Pill (5 turns/day)
+              // Daily Battle Energy Pill (5 turns/day) — Thẻ Hạng Sao đã nằm ngay dưới Header nên không lặp lại trên AppBar
               InkWell(
                 borderRadius: BorderRadius.circular(99),
                 onTap: () => _handleWatchAdForTurn(context, ref),
                 child: Container(
                   key: const Key('badge_battle_turns_appbar'),
-                  margin: const EdgeInsets.only(right: 6),
+                  margin: const EdgeInsets.only(right: 14),
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
                     color: (state.canStartBattle
                             ? const Color(0xFFF59E0B)
@@ -347,7 +351,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
                             ? const Color(0xFFF59E0B)
                             : AppColors.wrong,
                       ),
-                      const SizedBox(width: 2),
+                      const SizedBox(width: 3),
                       Text(
                         '${state.remainingBattlesToday}/${BattleState.maxDailyFreeBattles}',
                         style: TextStyle(
@@ -362,47 +366,6 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
                       ),
                     ],
                   ),
-                ),
-              ),
-              Container(
-                margin: const EdgeInsets.only(right: 12),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: Color(state.rankInfo.colorHex).withOpacity(0.18),
-                  borderRadius: BorderRadius.circular(99),
-                  border: Border.all(
-                    color: Color(state.rankInfo.colorHex).withOpacity(0.55),
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      state.rankInfo.badgeIcon,
-                      size: 15,
-                      color: isDark
-                          ? Colors.white
-                          : Color(state.rankInfo.colorHex),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${state.totalStars}',
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w800,
-                        color: isDark
-                            ? Colors.white
-                            : Color(state.rankInfo.colorHex),
-                      ),
-                    ),
-                    const SizedBox(width: 2),
-                    const Icon(
-                      Icons.star_rounded,
-                      size: 14,
-                      color: Color(0xFFF59E0B),
-                    ),
-                  ],
                 ),
               ),
             ],
@@ -769,11 +732,11 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
           Row(
             children: [
               _buildMiniStatPill('Trận thắng', '${state.totalWins}', isDark),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               _buildMiniStatPill('Tổng trận', '${state.totalMatches}', isDark),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               _buildMiniStatPill('Tỷ lệ thắng', '$winRate%', isDark),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               _buildMiniStatPill(
                 'Chuỗi thắng',
                 'x${state.currentWinStreak}',
@@ -1027,7 +990,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
   Widget _buildMiniStatPill(String label, String value, bool isDark) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
         decoration: BoxDecoration(
           color: isDark
               ? Colors.white.withOpacity(0.04)
@@ -1036,23 +999,29 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
         ),
         child: Column(
           children: [
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 14.5,
-                fontWeight: FontWeight.w800,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             ),
             const SizedBox(height: 2),
-            Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 10.5,
-                color: isDark
-                    ? AppColors.textSecondaryDark
-                    : AppColors.textSecondaryLight,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label,
+                maxLines: 1,
+                style: TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w600,
+                  color: isDark
+                      ? AppColors.textSecondaryDark
+                      : AppColors.textSecondaryLight,
+                ),
               ),
             ),
           ],

@@ -64,6 +64,7 @@ class MainShell extends ConsumerWidget {
     final streakDays = progressAsync.valueOrNull?.currentStreakDays ?? 0;
     final adState = ref.watch(rewardedAdProvider);
     final isEn = ref.watch(appSettingsProvider).isEnglish;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return SolfaBackground(
       child: Scaffold(
@@ -74,24 +75,29 @@ class MainShell extends ConsumerWidget {
           titleSpacing: 16,
           title: Row(
             children: [
-              const SolfaLogo(size: 30, showShadow: false),
-              const SizedBox(width: 10),
+              if (currentIndex == 0) ...[
+                const SolfaLogo(size: 28, showShadow: false),
+                const SizedBox(width: 9),
+              ],
               Expanded(
-                child: Text(
-                  (isEn ? _tabTitlesEn : _tabTitlesVi)[currentIndex],
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.2,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    (isEn ? _tabTitlesEn : _tabTitlesVi)[currentIndex],
+                    maxLines: 1,
+                    style: const TextStyle(
+                      fontSize: 18.5,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.2,
+                    ),
                   ),
                 ),
               ),
             ],
           ),
           actions: [
-            // Compact Gem Pill (Viên Kim Cương)
+            // Compact Gem Pill: [💎 220] (chỉ hiện Icon + Số, gọn gàng & hiện đại)
             Material(
               color: Colors.transparent,
               child: InkWell(
@@ -99,26 +105,30 @@ class MainShell extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(99),
                 onTap: () => context.push('/support-developer'),
                 child: Container(
+                  height: 28,
                   padding:
                       const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.12),
+                    color: AppColors.primary.withOpacity(isDark ? 0.16 : 0.11),
                     borderRadius: BorderRadius.circular(99),
                     border: Border.all(
-                      color: AppColors.primary.withOpacity(0.35),
+                      color:
+                          AppColors.primary.withOpacity(isDark ? 0.45 : 0.32),
                     ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const SolfaGemIcon(size: 14),
+                      const SolfaGemIcon(size: 13.5),
                       const SizedBox(width: 4),
                       Text(
-                        '${adState.prestigePoints} Gem',
-                        style: const TextStyle(
-                          fontSize: 11.5,
+                        '${adState.prestigePoints}',
+                        style: TextStyle(
+                          fontSize: 12,
                           fontWeight: FontWeight.w800,
-                          color: AppColors.primary,
+                          color: isDark
+                              ? const Color(0xFF93C5FD)
+                              : AppColors.primaryDark,
                         ),
                       ),
                     ],
@@ -127,14 +137,16 @@ class MainShell extends ConsumerWidget {
               ),
             ),
             const SizedBox(width: 6),
-            // Compact Streak Pill
+            // Compact Streak Pill: [🔥 0]
             Container(
+              height: 28,
               padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
               decoration: BoxDecoration(
-                color: AppColors.accentAmber.withOpacity(0.12),
+                color: AppColors.accentAmber.withOpacity(isDark ? 0.16 : 0.12),
                 borderRadius: BorderRadius.circular(99),
                 border: Border.all(
-                  color: AppColors.accentAmber.withOpacity(0.35),
+                  color:
+                      AppColors.accentAmber.withOpacity(isDark ? 0.45 : 0.35),
                 ),
               ),
               child: Row(
@@ -148,10 +160,12 @@ class MainShell extends ConsumerWidget {
                   const SizedBox(width: 3),
                   Text(
                     '$streakDays',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w800,
-                      color: AppColors.accentAmber,
+                      color: isDark
+                          ? const Color(0xFFFBBF24)
+                          : const Color(0xFFD97706),
                     ),
                   ),
                 ],
@@ -162,12 +176,14 @@ class MainShell extends ConsumerWidget {
               key: const Key('btn_open_settings'),
               tooltip: isEn ? 'Settings' : 'Cài đặt',
               visualDensity: VisualDensity.compact,
-              icon: const Icon(Icons.settings_outlined, size: 21),
+              constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
+              padding: const EdgeInsets.all(6),
+              icon: const Icon(Icons.settings_outlined, size: 20),
               onPressed: () {
                 context.push('/settings');
               },
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 8),
           ],
         ),
         body: navigationShell,

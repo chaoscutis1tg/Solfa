@@ -505,6 +505,7 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
         child: Scaffold(
           backgroundColor: Colors.transparent,
           appBar: AppBar(
+            titleSpacing: 0,
             leading: IconButton(
               icon: const Icon(Icons.close_rounded),
               tooltip: isEn ? 'Exit session' : 'Thoát phiên',
@@ -515,16 +516,23 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
                 }
               },
             ),
-            title: Text(
-              viewState.isContinuousScoringMode
-                  ? (isEn
-                      ? 'Practice Room • Note #${viewState.currentIndex + 1}'
-                      : 'Phòng luyện tập • Nốt #${viewState.currentIndex + 1}')
-                  : (isEn
-                      ? 'Question ${viewState.currentIndex + 1} / ${viewState.questionsLength}'
-                      : 'Câu ${viewState.currentIndex + 1} / ${viewState.questionsLength}'),
-              style:
-                  const TextStyle(fontSize: 16.5, fontWeight: FontWeight.w800),
+            title: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                viewState.isContinuousScoringMode
+                    ? (isEn
+                        ? 'Practice • Note #${viewState.currentIndex + 1}'
+                        : 'Luyện tập • Nốt #${viewState.currentIndex + 1}')
+                    : (isEn
+                        ? 'Question ${viewState.currentIndex + 1} / ${viewState.questionsLength}'
+                        : 'Câu ${viewState.currentIndex + 1} / ${viewState.questionsLength}'),
+                maxLines: 1,
+                style: const TextStyle(
+                  fontSize: 16.5,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
             ),
             actions: [
               Padding(
