@@ -265,7 +265,8 @@ class InteractiveSongbookAndTheoryTab extends ConsumerStatefulWidget {
 }
 
 class _InteractiveSongbookAndTheoryTabState
-    extends ConsumerState<InteractiveSongbookAndTheoryTab> {
+    extends ConsumerState<InteractiveSongbookAndTheoryTab>
+    with WidgetsBindingObserver {
   int _subMode = 0; // 0: Kho Bản Nhạc & Tab Chạy, 1: Vòng Bậc 5 & Dịch Giọng Capo
   String _selectedSongId = kInteractiveSongbookCatalog.first.id;
   double _speedFactor = 1.0; // 0.5x | 0.75x | 1.0x
@@ -298,6 +299,7 @@ class _InteractiveSongbookAndTheoryTabState
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         loadSongbookPreferences(ref);
@@ -307,8 +309,17 @@ class _InteractiveSongbookAndTheoryTabState
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _playTimer?.cancel();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      _stopAutoPlay();
+    }
   }
 
   InteractiveSongItem get _currentSong => kInteractiveSongbookCatalog.firstWhere(
@@ -489,7 +500,15 @@ class _InteractiveSongbookAndTheoryTabState
                   fit: BoxFit.scaleDown,
                   child: Text(
                     isEn ? '🎵 Interactive Songbook' : '🎵 Bản Nhạc & Tab Chạy',
-                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 12,
+                      color: _subMode == 0
+                          ? Colors.white
+                          : (isDark
+                              ? AppColors.textPrimaryDark
+                              : AppColors.textPrimaryLight),
+                    ),
                   ),
                 ),
                 selected: _subMode == 0,
@@ -504,7 +523,15 @@ class _InteractiveSongbookAndTheoryTabState
                   fit: BoxFit.scaleDown,
                   child: Text(
                     isEn ? '🧭 Circle of 5ths & Capo' : '🧭 Vòng Bậc 5 & Dịch Capo',
-                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 12,
+                      color: _subMode == 1
+                          ? Colors.white
+                          : (isDark
+                              ? AppColors.textPrimaryDark
+                              : AppColors.textPrimaryLight),
+                    ),
                   ),
                 ),
                 selected: _subMode == 1,
@@ -660,7 +687,11 @@ class _InteractiveSongbookAndTheoryTabState
                               style: TextStyle(
                                 fontSize: 12.5,
                                 fontWeight: FontWeight.w800,
-                                color: isSelected ? Colors.white : null,
+                                color: isSelected
+                                    ? Colors.white
+                                    : (isDark
+                                        ? AppColors.textPrimaryDark
+                                        : AppColors.textPrimaryLight),
                               ),
                             ),
                             const SizedBox(height: 2),
@@ -760,9 +791,14 @@ class _InteractiveSongbookAndTheoryTabState
                         visualDensity: VisualDensity.compact,
                         label: Text(
                           '${(spd * 100).round()}%',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w800,
+                            color: _speedFactor == spd
+                                ? Colors.white
+                                : (isDark
+                                    ? AppColors.textPrimaryDark
+                                    : AppColors.textPrimaryLight),
                           ),
                         ),
                         selected: _speedFactor == spd,
@@ -808,16 +844,17 @@ class _InteractiveSongbookAndTheoryTabState
               ),
               const SizedBox(height: 10),
 
-              // 3. Scrolling 6-String Tab Highway
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF0F172A),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: AppColors.primary.withOpacity(0.45),
+              // 3. Scrolling 6-String Tab Highway isolated with RepaintBoundary for 60fps
+              RepaintBoundary(
+                child: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0F172A),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: AppColors.primary.withOpacity(0.45),
+                    ),
                   ),
-                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -950,17 +987,21 @@ class _InteractiveSongbookAndTheoryTabState
                           audio,
                         ),
                         icon: const Icon(Icons.touch_app_rounded, size: 17),
-                        label: Text(
-                          'Gảy Nốt Đang Sáng: Dây ${targetNote.stringNumber} • Ngăn ${targetNote.fret} (${targetNote.noteLabel})',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w800,
+                        label: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            'Gảy Nốt Đang Sáng: Dây ${targetNote.stringNumber} • Ngăn ${targetNote.fret} (${targetNote.noteLabel})',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
                         ),
                       ),
                     ),
                   ],
                 ),
+              ),
               ),
             ],
           ),
@@ -1025,9 +1066,14 @@ class _InteractiveSongbookAndTheoryTabState
                       visualDensity: VisualDensity.compact,
                       label: Text(
                         '${_circleOfFifthsKeys[i].$1} / ${_circleOfFifthsKeys[i].$2}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11.5,
                           fontWeight: FontWeight.w800,
+                          color: _selectedCircleKeyIndex == i
+                              ? Colors.white
+                              : (isDark
+                                  ? AppColors.textPrimaryDark
+                                  : AppColors.textPrimaryLight),
                         ),
                       ),
                       selected: _selectedCircleKeyIndex == i,
@@ -1072,16 +1118,22 @@ class _InteractiveSongbookAndTheoryTabState
                             children: [
                               Text(
                                 const ['I', 'ii', 'iii', 'IV', 'V', 'vi'][cIdx],
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 9.5,
                                   fontWeight: FontWeight.w700,
+                                  color: isDark
+                                      ? const Color(0xFF93C5FD)
+                                      : AppColors.primary,
                                 ),
                               ),
                               Text(
                                 currentKey.$4[cIdx],
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 12.5,
                                   fontWeight: FontWeight.w900,
+                                  color: isDark
+                                      ? Colors.white
+                                      : AppColors.primaryDark,
                                 ),
                               ),
                             ],
@@ -1124,24 +1176,29 @@ class _InteractiveSongbookAndTheoryTabState
                 spacing: 6,
                 runSpacing: 6,
                 children: [
-                  ChoiceChip(
-                    visualDensity: VisualDensity.compact,
-                    label: const Text('Vòng Canon in D', style: TextStyle(fontSize: 11)),
-                    selected: _selectedProgressionPresetId == 'canon',
-                    onSelected: (_) => setState(() => _selectedProgressionPresetId = 'canon'),
-                  ),
-                  ChoiceChip(
-                    visualDensity: VisualDensity.compact,
-                    label: const Text('Vòng Pop C-G-Am-F', style: TextStyle(fontSize: 11)),
-                    selected: _selectedProgressionPresetId == 'pop',
-                    onSelected: (_) => setState(() => _selectedProgressionPresetId = 'pop'),
-                  ),
-                  ChoiceChip(
-                    visualDensity: VisualDensity.compact,
-                    label: const Text('Vòng Ballad F#m-D-A-E', style: TextStyle(fontSize: 11)),
-                    selected: _selectedProgressionPresetId == 'ballad_fsharp',
-                    onSelected: (_) => setState(() => _selectedProgressionPresetId = 'ballad_fsharp'),
-                  ),
+                  for (final (pId, pLbl) in const [
+                    ('canon', 'Vòng Canon in D'),
+                    ('pop', 'Vòng Pop C-G-Am-F'),
+                    ('ballad_fsharp', 'Vòng Ballad F#m-D-A-E'),
+                  ])
+                    ChoiceChip(
+                      visualDensity: VisualDensity.compact,
+                      label: Text(
+                        pLbl,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: _selectedProgressionPresetId == pId
+                              ? Colors.white
+                              : (isDark
+                                  ? AppColors.textPrimaryDark
+                                  : AppColors.textPrimaryLight),
+                        ),
+                      ),
+                      selected: _selectedProgressionPresetId == pId,
+                      onSelected: (_) =>
+                          setState(() => _selectedProgressionPresetId = pId),
+                    ),
                 ],
               ),
               const SizedBox(height: 8),

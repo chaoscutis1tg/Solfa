@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../app/theme/app_colors.dart';
 import '../../../app/widgets/solfa_gem_icon.dart';
@@ -1009,6 +1010,9 @@ class _RhythmTapAndDrumLoopsCard extends ConsumerStatefulWidget {
 
 class _RhythmTapAndDrumLoopsCardState
     extends ConsumerState<_RhythmTapAndDrumLoopsCard> {
+  static const String _kUnlockedDrumGroovesPrefsKey =
+      'solfa_unlocked_vip_drum_grooves_v1';
+
   String _selectedGrooveId = 'pop_8beat';
   final Set<String> _unlockedVipGrooves = <String>{};
   int? _lastTapEpochMs;
@@ -1017,6 +1021,35 @@ class _RhythmTapAndDrumLoopsCardState
   int _tapCombo = 0;
   int _perfectHits = 0;
   int _totalTaps = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUnlockedDrumGrooves();
+  }
+
+  Future<void> _loadUnlockedDrumGrooves() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final list = prefs.getStringList(_kUnlockedDrumGroovesPrefsKey) ??
+          const <String>[];
+      if (mounted && list.isNotEmpty) {
+        setState(() {
+          _unlockedVipGrooves.addAll(list);
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _persistUnlockedDrumGrooves() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList(
+        _kUnlockedDrumGroovesPrefsKey,
+        _unlockedVipGrooves.toList(),
+      );
+    } catch (_) {}
+  }
 
   static const List<(String id, String labelVi, String labelEn, int num, int den, int sub, int gemCost, List<String> pattern)>
       _drumGrooves = [
@@ -1059,6 +1092,7 @@ class _RhythmTapAndDrumLoopsCardState
       setState(() {
         _unlockedVipGrooves.add(id);
       });
+      await _persistUnlockedDrumGrooves();
     }
 
     final metro = ref.read(metronomeProvider.notifier);
@@ -1186,9 +1220,14 @@ class _RhythmTapAndDrumLoopsCardState
                                 isLocked
                                     ? '${widget.isEn ? g.$3 : g.$2} (${g.$7}G)'
                                     : (widget.isEn ? g.$3 : g.$2),
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 11.5,
                                   fontWeight: FontWeight.w800,
+                                  color: isSelected
+                                      ? Colors.white
+                                      : (widget.isDark
+                                          ? AppColors.textPrimaryDark
+                                          : AppColors.textPrimaryLight),
                                 ),
                               ),
                             ],
@@ -1203,56 +1242,62 @@ class _RhythmTapAndDrumLoopsCardState
               ),
             ),
             const SizedBox(height: 8),
-            // Visual Drum Step Matrix (Kick / Snare / Hi-Hat)
-            Row(
-              children: [
-                for (int b = 0; b < currentGroove.$8.length; b++) ...[
-                  if (b > 0) const SizedBox(width: 6),
-                  Expanded(
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 120),
-                      padding: const EdgeInsets.symmetric(vertical: 6),
-                      decoration: BoxDecoration(
-                        color: (widget.isRunning && currentBeat == (b + 1))
-                            ? AppColors.primary
-                            : AppColors.primary.withOpacity(0.08),
-                        borderRadius: BorderRadius.circular(9),
-                        border: Border.all(
+            // Visual Drum Step Matrix (Kick / Snare / Hi-Hat) isolated with RepaintBoundary for 60fps
+            RepaintBoundary(
+              child: Row(
+                children: [
+                  for (int b = 0; b < currentGroove.$8.length; b++) ...[
+                    if (b > 0) const SizedBox(width: 6),
+                    Expanded(
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 120),
+                        padding: const EdgeInsets.symmetric(vertical: 6),
+                        decoration: BoxDecoration(
                           color: (widget.isRunning && currentBeat == (b + 1))
-                              ? AppColors.secondary
-                              : AppColors.primary.withOpacity(0.25),
+                              ? AppColors.primary
+                              : AppColors.primary.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(9),
+                          border: Border.all(
+                            color: (widget.isRunning && currentBeat == (b + 1))
+                                ? AppColors.secondary
+                                : AppColors.primary.withOpacity(0.25),
+                          ),
+                        ),
+                        child: Column(
+                          children: [
+                            Text(
+                              'Phách ${b + 1}',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: (widget.isRunning &&
+                                        currentBeat == (b + 1))
+                                    ? Colors.white70
+                                    : (widget.isDark
+                                        ? AppColors.textSecondaryDark
+                                        : AppColors.textSecondaryLight),
+                              ),
+                            ),
+                            Text(
+                              currentGroove.$8[b],
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w900,
+                                color: (widget.isRunning &&
+                                        currentBeat == (b + 1))
+                                    ? Colors.white
+                                    : (widget.isDark
+                                        ? const Color(0xFF93C5FD)
+                                        : AppColors.primary),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      child: Column(
-                        children: [
-                          Text(
-                            'Phách ${b + 1}',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                              color: (widget.isRunning &&
-                                      currentBeat == (b + 1))
-                                  ? Colors.white70
-                                  : null,
-                            ),
-                          ),
-                          Text(
-                            currentGroove.$8[b],
-                            style: TextStyle(
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w900,
-                              color: (widget.isRunning &&
-                                      currentBeat == (b + 1))
-                                  ? Colors.white
-                                  : AppColors.primary,
-                            ),
-                          ),
-                        ],
-                      ),
                     ),
-                  ),
+                  ],
                 ],
-              ],
+              ),
             ),
             const SizedBox(height: 12),
             const Divider(height: 1),
@@ -1316,14 +1361,17 @@ class _RhythmTapAndDrumLoopsCardState
                   size: 18,
                   color: _tapGradeColor,
                 ),
-                label: Text(
-                  widget.isEn
-                      ? 'TAP BEAT PAD HERE (±25ms = PERFECT)'
-                      : 'GÕ NHỊP VÀO ĐÂY THEO PHÁCH (±25ms = PERFECT)',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w900,
-                    color: _tapGradeColor,
+                label: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    widget.isEn
+                        ? 'TAP BEAT PAD HERE (±25ms = PERFECT)'
+                        : 'GÕ NHỊP VÀO ĐÂY THEO PHÁCH (±25ms = PERFECT)',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                      color: _tapGradeColor,
+                    ),
                   ),
                 ),
               ),
