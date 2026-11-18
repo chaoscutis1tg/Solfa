@@ -95,14 +95,15 @@ class AppTheme {
       ),
       chipTheme: ChipThemeData(
         backgroundColor: AppColors.surfaceLight,
-        selectedColor: AppColors.primaryLight,
+        selectedColor: AppColors.primary,
+        checkmarkColor: Colors.white,
         labelStyle: const TextStyle(
           color: AppColors.textPrimaryLight,
           fontSize: 13,
           fontWeight: FontWeight.w600,
         ),
         secondaryLabelStyle: const TextStyle(
-          color: AppColors.primaryDark,
+          color: Colors.white,
           fontSize: 13,
           fontWeight: FontWeight.w700,
         ),
@@ -131,7 +132,7 @@ class AppTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.textPrimaryLight,
-          backgroundColor: AppColors.surfaceLight,
+          backgroundColor: Colors.transparent,
           minimumSize: const Size(double.infinity, 46),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
           side: const BorderSide(
@@ -240,6 +241,7 @@ class AppTheme {
       chipTheme: ChipThemeData(
         backgroundColor: AppColors.surfaceDark,
         selectedColor: AppColors.primary,
+        checkmarkColor: Colors.white,
         labelStyle: const TextStyle(
           color: AppColors.textPrimaryDark,
           fontSize: 13,
@@ -275,7 +277,7 @@ class AppTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.textPrimaryDark,
-          backgroundColor: AppColors.surfaceDark,
+          backgroundColor: Colors.transparent,
           minimumSize: const Size(double.infinity, 46),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
           side: const BorderSide(

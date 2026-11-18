@@ -627,8 +627,10 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
                         botIcon,
                         size: 15,
                         color: state.botDifficulty == diff
-                            ? AppColors.primary
-                            : AppColors.textSecondaryLight,
+                            ? Colors.white
+                            : (isDark
+                                ? AppColors.textSecondaryDark
+                                : AppColors.textSecondaryLight),
                       ),
                       label: Text(
                         label,
@@ -667,8 +669,10 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
                       tIcon,
                       size: 15,
                       color: state.selectedTopicId == tId
-                          ? AppColors.primary
-                          : AppColors.textSecondaryLight,
+                          ? Colors.white
+                          : (isDark
+                              ? AppColors.textSecondaryDark
+                              : AppColors.textSecondaryLight),
                     ),
                     label: Text(
                       tLabel,

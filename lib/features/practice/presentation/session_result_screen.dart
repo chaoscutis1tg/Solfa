@@ -850,14 +850,21 @@ class _SessionResultScreenState extends ConsumerState<SessionResultScreen> {
                   Expanded(
                     child: OutlinedButton(
                       style: OutlinedButton.styleFrom(
+                        backgroundColor: Colors.white.withOpacity(0.10),
                         foregroundColor: Colors.white,
-                        side: const BorderSide(color: Colors.white38),
+                        side: const BorderSide(color: Colors.white38, width: 1.2),
                         padding: const EdgeInsets.symmetric(horizontal: 6),
                       ),
                       onPressed: () => Navigator.of(ctx).pop(),
                       child: const FittedBox(
                         fit: BoxFit.scaleDown,
-                        child: Text('Đóng'),
+                        child: Text(
+                          'Đóng',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
                       ),
                     ),
                   ),

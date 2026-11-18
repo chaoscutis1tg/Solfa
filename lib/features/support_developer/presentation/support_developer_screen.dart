@@ -1306,21 +1306,31 @@ class _RewardedVideoAdPlayerDialogState
 
             const SizedBox(height: 14),
 
-            // 4. Bottom Action Buttons
+            // 4. Bottom Action Buttons (Explicit dark-surface styling so Light Mode never causes white-on-white or dark-on-dark)
             Row(
               children: [
                 if (!isRewardUnlocked) ...[
                   Expanded(
                     child: OutlinedButton(
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.white70,
-                        side: const BorderSide(color: Colors.white24),
+                        backgroundColor: Colors.white.withOpacity(0.08),
+                        foregroundColor: Colors.white,
+                        side: const BorderSide(
+                          color: Colors.white38,
+                          width: 1.2,
+                        ),
                         minimumSize: const Size(0, 44),
                       ),
                       onPressed: () => Navigator.of(context).pop(false),
                       child: const FittedBox(
                         fit: BoxFit.scaleDown,
-                        child: Text('Đóng giữa chừng'),
+                        child: Text(
+                          'Đóng giữa chừng',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -1333,7 +1343,10 @@ class _RewardedVideoAdPlayerDialogState
                     style: ElevatedButton.styleFrom(
                       backgroundColor: (isRewardUnlocked || widget.isTestMode)
                           ? AppColors.correct
-                          : AppColors.primary.withOpacity(0.45),
+                          : const Color(0xFF1E293B),
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor: const Color(0xFF1E293B),
+                      disabledForegroundColor: Colors.white70,
                       minimumSize: const Size(0, 44),
                     ),
                     onPressed: (isRewardUnlocked || widget.isTestMode)
@@ -1344,6 +1357,7 @@ class _RewardedVideoAdPlayerDialogState
                           ? Icons.redeem_rounded
                           : Icons.hourglass_bottom_rounded,
                       size: 19,
+                      color: isRewardUnlocked ? Colors.white : Colors.white70,
                     ),
                     label: FittedBox(
                       fit: BoxFit.scaleDown,
@@ -1351,6 +1365,11 @@ class _RewardedVideoAdPlayerDialogState
                         isRewardUnlocked
                             ? 'Nhận thưởng (+100 Gem & +1 Lượt)'
                             : 'Đang phát... Còn ${remaining}s',
+                        style: TextStyle(
+                          color:
+                              isRewardUnlocked ? Colors.white : Colors.white70,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ),
                   ),

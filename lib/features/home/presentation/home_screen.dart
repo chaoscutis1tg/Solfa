@@ -316,16 +316,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   child: OutlinedButton.icon(
                     key: const Key('btn_quick_practice'),
                     style: OutlinedButton.styleFrom(
+                      backgroundColor: Colors.white.withOpacity(0.16),
                       foregroundColor: Colors.white,
-                      side: BorderSide(color: Colors.white.withOpacity(0.75)),
+                      iconColor: Colors.white,
+                      side: BorderSide(
+                        color: Colors.white.withOpacity(0.85),
+                        width: 1.3,
+                      ),
                       minimumSize: const Size(0, 44),
                       padding: const EdgeInsets.symmetric(horizontal: 10),
                     ),
                     onPressed: () => context.go('/topics'),
-                    icon: const Icon(Icons.grid_view_rounded, size: 17),
+                    icon: const Icon(
+                      Icons.grid_view_rounded,
+                      size: 17,
+                      color: Colors.white,
+                    ),
                     label: FittedBox(
                       fit: BoxFit.scaleDown,
-                      child: Text(isEn ? 'Practice Now' : 'Luyện tập ngay'),
+                      child: Text(
+                        isEn ? 'Practice Now' : 'Luyện tập ngay',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -449,14 +464,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               const SizedBox(width: 8),
               OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
+                  backgroundColor: Colors.white.withOpacity(0.16),
                   foregroundColor: Colors.white,
-                  side: BorderSide(color: Colors.white.withOpacity(0.75)),
+                  iconColor: Colors.white,
+                  side: BorderSide(
+                    color: Colors.white.withOpacity(0.85),
+                    width: 1.3,
+                  ),
                   minimumSize: const Size(0, 44),
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                 ),
                 onPressed: () => context.go('/topics'),
-                icon: const Icon(Icons.grid_view_rounded, size: 17),
-                label: Text(isEn ? 'Topics' : 'Đổi bài'),
+                icon: const Icon(
+                  Icons.grid_view_rounded,
+                  size: 17,
+                  color: Colors.white,
+                ),
+                label: Text(
+                  isEn ? 'Topics' : 'Đổi bài',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
               ),
             ],
           ),
