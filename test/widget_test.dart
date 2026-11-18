@@ -1239,6 +1239,78 @@ void main() {
           isNot(equals(fullQuestions[20].correctOption.optionKey)),
         );
         await sessionNotifier.abandonSessionIfIncomplete();
+
+        // 5. Kiểm tra mở rộng 44 Hợp âm Guitar (gồm cả 8 Hợp âm Chặn Barre, 12 Hợp âm 7, 8 Hợp âm Màu, 8 Power Chords)
+        // và kiểm chứng chống lặp + đảo ngẫu nhiên đáp án nhiễu (distractors)
+        final gtrBasicBatch = await generator.generateSessionQuestions(
+          mode: 'topic',
+          topicId: 'topic_guitar_chords',
+          levelId: 'lvl_guitar_chords_basic',
+          targetCount: 16,
+          seed: 404,
+        );
+        final basicChordKeys = gtrBasicBatch.questions
+            .map((q) => q.correctOption.optionKey)
+            .toSet();
+        expect(
+          basicChordKeys.length,
+          equals(16),
+          reason:
+              'Mức Cơ bản Hợp âm Guitar phải có đủ 16 hợp âm khác nhau (không lặp lại trong 16 câu đầu)',
+        );
+        expect(
+          basicChordKeys.containsAll([
+            'GTR_CHORD_F',
+            'GTR_CHORD_Bm',
+            'GTR_CHORD_Fm',
+            'GTR_CHORD_Bb',
+          ]),
+          isTrue,
+          reason: 'Phải có các hợp âm chặn nền tảng (F, Bm, Fm, Bb)',
+        );
+
+        final gtrInterBatch = await generator.generateSessionQuestions(
+          mode: 'topic',
+          topicId: 'topic_guitar_chords',
+          levelId: 'lvl_guitar_chords_inter',
+          targetCount: 32,
+          seed: 505,
+        );
+        final interChordKeys = gtrInterBatch.questions
+            .map((q) => q.correctOption.optionKey)
+            .toSet();
+        expect(
+          interChordKeys.length,
+          equals(32),
+          reason:
+              'Mức Trung bình Hợp âm Guitar phải có đủ 32 hợp âm khác nhau (đủ 8 hợp âm chặn, 12 hợp âm 7, 4 hợp âm 5)',
+        );
+        expect(
+          interChordKeys.containsAll([
+            'GTR_CHORD_B',
+            'GTR_CHORD_F#m',
+            'GTR_CHORD_Gm',
+            'GTR_CHORD_Cm',
+          ]),
+          isTrue,
+        );
+
+        final gtrAdvBatch = await generator.generateSessionQuestions(
+          mode: 'topic',
+          topicId: 'topic_guitar_chords',
+          levelId: 'lvl_guitar_chords_adv',
+          targetCount: 49,
+          seed: 606,
+        );
+        final advChordKeys = gtrAdvBatch.questions
+            .map((q) => q.correctOption.optionKey)
+            .toSet();
+        expect(
+          advChordKeys.length,
+          equals(49),
+          reason:
+              'Mức Nâng cao Hợp âm Guitar phải có đủ 49 câu khác nhau (44 hợp âm + 5 câu lý thuyết vòng hòa âm)',
+        );
       },
     );
 

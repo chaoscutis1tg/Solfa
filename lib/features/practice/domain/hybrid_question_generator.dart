@@ -7,7 +7,7 @@ import '../../../core/utils/note_formatter.dart';
 import '../presentation/widgets/musical_staff_widget.dart';
 
 class HybridQuestionGenerator {
-  static const int _currentGeneratorVersion = 11;
+  static const int _currentGeneratorVersion = 12;
   static final Random _entropySource = Random();
 
   final AppDatabase _db;
@@ -27,6 +27,7 @@ class HybridQuestionGenerator {
     int? seed,
     String? excludeAudioAsset,
     String? excludeOptionKey,
+    Set<String>? excludeConceptKeys,
     bool ledgerOnly = false,
   }) async {
     final rng = seed != null
@@ -184,7 +185,10 @@ class HybridQuestionGenerator {
     };
 
     final List<QuestionModel> selected = [];
-    final int windowSize = min(3, max(1, conceptKeys.length - 1));
+    final int windowSize = min(
+      max(6, (conceptKeys.length * 0.65).floor()),
+      max(1, conceptKeys.length - 1),
+    );
 
     while (selected.length < targetCount) {
       final List<String> bag = [...conceptKeys]..shuffle(rng);
@@ -197,8 +201,11 @@ class HybridQuestionGenerator {
             ? selected.last.correctOption.optionKey.toUpperCase()
             : excludeOptionKey?.toUpperCase();
 
-        // Recent concept keys in sliding window
+        // Recent concept keys in sliding window (+ cross-batch exclusions at the start of a new batch)
         final Set<String> recentConceptKeys = {};
+        if (excludeConceptKeys != null && selected.length < windowSize) {
+          recentConceptKeys.addAll(excludeConceptKeys);
+        }
         for (int w = 1; w <= windowSize && selected.length - w >= 0; w++) {
           recentConceptKeys.add(_conceptGroupKey(selected[selected.length - w]));
         }
@@ -396,8 +403,10 @@ class HybridQuestionGenerator {
     final wrongSlotOpts = q.options.where((o) => !o.isCorrect).toList();
 
     List<QuestionOptionModel> assembledOptions;
-    if (q.topicId.startsWith('topic_guitar_')) {
-      // Guitar questions have curated homogeneous 4-option sets per question subtype;
+    if (q.topicId.startsWith('topic_guitar_') &&
+        q.type != 'guitar_chord_shape' &&
+        q.type != 'guitar_fret_note') {
+      // Guitar theory/scale/tab questions have curated homogeneous 4-option sets per question;
       // preserve the exact 4 options and only shuffle their A/B/C/D slot positions.
       assembledOptions = [...q.options];
     } else if (q.options.length >= 4 && wrongSlotOpts.isNotEmpty) {
@@ -1428,16 +1437,16 @@ class HybridQuestionGenerator {
           'Hợp âm 3 Trưởng (C – E – G): Quãng 3 trưởng ở dưới + quãng 3 thứ ở trên, âm hưởng tươi sáng vững chãi.'
         ),
         (
-          'chord_a_min',
-          'A_min',
-          'La Thứ (A Minor)',
-          'Hợp âm 3 Thứ (A – C – E): Quãng 3 thứ ở dưới + quãng 3 trưởng ở trên, âm hưởng mềm mại trầm lắng.'
+          'chord_d_maj',
+          'D_maj',
+          'Rê Trưởng (D Major)',
+          'Hợp âm Rê Trưởng (D – F# – A): Hợp âm 3 Trưởng rực rỡ với nốt Fa thăng ở bậc III.'
         ),
         (
-          'chord_c_min',
-          'C_min',
-          'Đô Thứ (C Minor)',
-          'Hợp âm Đô Thứ (C – Eb – G): Hạ bậc III nửa cung từ Mi xuống Mi giáng tạo màu sắc Thứ rõ rệt.'
+          'chord_e_maj',
+          'E_maj',
+          'Mi Trưởng (E Major)',
+          'Hợp âm Mi Trưởng (E – G# – B): Hợp âm 3 Trưởng vang sáng với nốt Sol thăng.'
         ),
         (
           'chord_f_maj',
@@ -1446,21 +1455,81 @@ class HybridQuestionGenerator {
           'Hợp âm Fa Trưởng (F – A – C): Bậc IV ấm áp và mở rộng trong giọng Đô Trưởng.'
         ),
         (
+          'chord_g_maj',
+          'G_maj',
+          'Sol Trưởng (G Major)',
+          'Hợp âm Sol Trưởng (G – B – D): Bậc V sáng rõ và giàu năng lượng.'
+        ),
+        (
+          'chord_a_maj',
+          'A_maj',
+          'La Trưởng (A Major)',
+          'Hợp âm La Trưởng (A – C# – E): Nâng bậc III từ Đô lên Đô thăng tạo màu sắc Trưởng tươi sáng.'
+        ),
+        (
+          'chord_bb_maj',
+          'Bb_maj',
+          'Si Giáng Trưởng (Bb Major)',
+          'Hợp âm Si Giáng Trưởng (Bb – D – F): Âm hưởng đầy đặn, ấm áp.'
+        ),
+        (
+          'chord_a_min',
+          'A_min',
+          'La Thứ (A Minor)',
+          'Hợp âm 3 Thứ (A – C – E): Quãng 3 thứ ở dưới + quãng 3 trưởng ở trên, âm hưởng mềm mại trầm lắng.'
+        ),
+        (
           'chord_d_min',
           'D_min',
           'Rê Thứ (D Minor)',
           'Hợp âm Rê Thứ (D – F – A): Hợp âm 3 Thứ bậc II mang màu sắc sâu lắng.'
         ),
         (
-          'chord_g_maj',
-          'G_maj',
-          'Sol Trưởng (G Major)',
-          'Hợp âm Sol Trưởng (G – B – D): Bậc V sáng rõ và giàu năng lượng.'
+          'chord_e_min',
+          'E_min',
+          'Mi Thứ (E Minor)',
+          'Hợp âm Mi Thứ (E – G – B): Hợp âm 3 Thứ mộc mạc, tự sự.'
+        ),
+        (
+          'chord_c_min',
+          'C_min',
+          'Đô Thứ (C Minor)',
+          'Hợp âm Đô Thứ (C – Eb – G): Hạ bậc III nửa cung từ Mi xuống Mi giáng tạo màu sắc Thứ rõ rệt.'
+        ),
+        (
+          'chord_b_min',
+          'B_min',
+          'Si Thứ (B Minor)',
+          'Hợp âm Si Thứ (B – D – F#): Hợp âm 3 Thứ trữ tình, song song với Rê Trưởng.'
         ),
       ];
 
       final interChords = [
         ...basicChords,
+        (
+          'chord_b_maj',
+          'B_maj',
+          'Si Trưởng (B Major)',
+          'Hợp âm Si Trưởng (B – D# – F#): Hợp âm 3 Trưởng sắc nét.'
+        ),
+        (
+          'chord_f_min',
+          'F_min',
+          'Fa Thứ (F Minor)',
+          'Hợp âm Fa Thứ (F – Ab – C): Màu sắc Thứ trầm sâu lắng.'
+        ),
+        (
+          'chord_fsharp_min',
+          'Fsharp_min',
+          'Fa Thăng Thứ (F#m)',
+          'Hợp âm Fa Thăng Thứ (F# – A – C#): Hợp âm Thứ song song của La Trưởng.'
+        ),
+        (
+          'chord_g_min',
+          'G_min',
+          'Sol Thứ (G Minor)',
+          'Hợp âm Sol Thứ (G – Bb – D): Màu sắc Thứ cổ điển đầy cảm xúc.'
+        ),
         (
           'chord_c_dim',
           'C_dim',
@@ -1473,33 +1542,117 @@ class HybridQuestionGenerator {
           'Hợp âm Tăng (Caug – C+)',
           'Hợp âm 3 Tăng (C – E – G#): Chồng 2 quãng 3 trưởng liên tiếp (quãng 5 tăng), mang màu sắc lơ lửng huyền ảo.'
         ),
+        (
+          'chord_c_sus4',
+          'C_sus4',
+          'Đô Treo Bậc 4 (Csus4)',
+          'Hợp âm Treo bậc 4 (C – F – G): Thay bậc 3 bằng bậc 4 đúng tạo cảm giác chờ đợi hút về hợp âm Trưởng.'
+        ),
+        (
+          'chord_d_sus2',
+          'D_sus2',
+          'Rê Treo Bậc 2 (Dsus2)',
+          'Hợp âm Treo bậc 2 (D – E – A): Thay bậc 3 bằng bậc 2 trưởng (Mi) tạo âm hưởng mở trong trẻo.'
+        ),
       ];
 
       final advChords = [
         ...interChords,
         (
-          'chord_c_sus4',
-          'C_sus4',
-          'Hợp âm Treo (Csus4)',
-          'Hợp âm Treo bậc 4 (C – F – G): Thay bậc 3 bằng bậc 4 đúng tạo cảm giác chờ đợi hút về hợp âm Trưởng.'
+          'chord_d_sus4',
+          'D_sus4',
+          'Rê Treo Bậc 4 (Dsus4)',
+          'Hợp âm Treo bậc 4 (D – G – A): Nâng bậc 3 (Fa#) lên bậc 4 (Sol) tạo lực hút về Rê Trưởng.'
+        ),
+        (
+          'chord_a_sus2',
+          'A_sus2',
+          'La Treo Bậc 2 (Asus2)',
+          'Hợp âm La Treo Bậc 2 (A – B – E): Màu sắc Acoustic thoáng đãng hiện đại.'
+        ),
+        (
+          'chord_a_sus4',
+          'A_sus4',
+          'La Treo Bậc 4 (Asus4)',
+          'Hợp âm La Treo Bậc 4 (A – D – E): Tạo cảm giác lơ lửng trước khi giải về A hoặc Am.'
+        ),
+        (
+          'chord_c_add9',
+          'C_add9',
+          'Đô Cộng 9 (Cadd9)',
+          'Hợp âm Đô Trưởng cộng thêm bậc 9 (C – E – G – D): Màu sắc Pop Ballad trong trẻo.'
         ),
         (
           'chord_c_maj7',
           'C_maj7',
-          'Hợp âm Bảy Trưởng (Cmaj7)',
+          'Đô Bảy Trưởng (Cmaj7)',
           'Hợp âm Bảy Trưởng (C – E – G – B): Hợp âm 3 Trưởng cộng thêm quãng 7 trưởng, màu sắc Jazz/Ballad sang trọng.'
+        ),
+        (
+          'chord_f_maj7',
+          'F_maj7',
+          'Fa Bảy Trưởng (Fmaj7)',
+          'Hợp âm Fa Bảy Trưởng (F – A – C – E): Bậc IVmaj7 êm dịu, mộng mơ.'
+        ),
+        (
+          'chord_g_maj7',
+          'G_maj7',
+          'Sol Bảy Trưởng (Gmaj7)',
+          'Hợp âm Sol Bảy Trưởng (G – B – D – F#): Âm sắc ấm áp, sang trọng.'
         ),
         (
           'chord_a_min7',
           'A_min7',
-          'Hợp âm Bảy Thứ (Am7)',
+          'La Bảy Thứ (Am7)',
           'Hợp âm Bảy Thứ (A – C – E – G): Hợp âm 3 Thứ cộng quãng 7 thứ êm dịu, rất phổ biến trong nhạc Pop & R&B.'
+        ),
+        (
+          'chord_d_min7',
+          'D_min7',
+          'Rê Bảy Thứ (Dm7)',
+          'Hợp âm Rê Bảy Thứ (D – F – A – C): Bậc ii7 không thể thiếu trong vòng hòa âm ii – V – I.'
+        ),
+        (
+          'chord_e_min7',
+          'E_min7',
+          'Mi Bảy Thứ (Em7)',
+          'Hợp âm Mi Bảy Thứ (E – G – B – D): Âm hưởng nhẹ nhàng, sâu lắng.'
         ),
         (
           'chord_g_dom7',
           'G_dom7',
-          'Hợp âm Bảy Át (G7 – Dominant 7)',
+          'Sol Bảy Át (G7 – Dominant 7)',
           'Hợp âm Bảy Át (G – B – D – F): Hợp âm 3 Trưởng cộng quãng 7 thứ (chứa quãng Tritone B–F), hút mạnh về chủ âm Đô.'
+        ),
+        (
+          'chord_c_dom7',
+          'C_dom7',
+          'Đô Bảy Át (C7 – Dominant 7)',
+          'Hợp âm Đô Bảy Át (C – E – G – Bb): Tạo lực hút mạnh mẽ về Fa Trưởng (F).'
+        ),
+        (
+          'chord_d_dom7',
+          'D_dom7',
+          'Rê Bảy Át (D7 – Dominant 7)',
+          'Hợp âm Rê Bảy Át (D – F# – A – C): Bậc V7 dẫn lối về chủ âm Sol Trưởng (G).'
+        ),
+        (
+          'chord_e_dom7',
+          'E_dom7',
+          'Mi Bảy Át (E7 – Dominant 7)',
+          'Hợp âm Mi Bảy Át (E – G# – B – D): Bậc V7 đặc trưng hút mạnh về chủ âm La Thứ (Am).'
+        ),
+        (
+          'chord_a_dom7',
+          'A_dom7',
+          'La Bảy Át (A7 – Dominant 7)',
+          'Hợp âm La Bảy Át (A – C# – E – G): Bậc V7 hút về Rê Trưởng (D) hoặc Rê Thứ (Dm).'
+        ),
+        (
+          'chord_b_dom7',
+          'B_dom7',
+          'Si Bảy Át (B7 – Dominant 7)',
+          'Hợp âm Si Bảy Át (B – D# – F# – A): Bậc V7 hút mạnh về chủ âm Mi Thứ (Em).'
         ),
       ];
 
@@ -2090,6 +2243,7 @@ class HybridQuestionGenerator {
         guitarSpecs =
             isAdvanced ? advNotes : (isInter ? interNotes : basicNotes);
       } else if (topicId == 'topic_guitar_chords') {
+        // Mức 1 (Cơ bản - 16 hợp âm): 8 Hợp âm Mở + 4 Hợp âm Chặn nền tảng (F, Bm, Fm, Bb) + 4 Hợp âm Bảy mở thông dụng
         final basicChords = [
           (
             'guitar_chord_shape',
@@ -2099,7 +2253,7 @@ class HybridQuestionGenerator {
             [
               ('GTR_CHORD_Am', 'La Thứ (Am • X-0-2-2-1-0)'),
               ('GTR_CHORD_G', 'Sol Trưởng (G • 3-2-0-0-0-3)'),
-              ('GTR_CHORD_F', 'Fa Trưởng (F • Chặn ngăn 1)'),
+              ('GTR_CHORD_F', 'Fa Trưởng Chặn (F • 1-3-3-2-1-1)'),
             ],
             'Nghe âm thanh & quan sát thế bấm trên cần đàn Guitar để chọn đúng hợp âm:',
             'Hợp âm Đô Trưởng (C): Ngón 1 Dây 2 ngăn 1 • Ngón 2 Dây 4 ngăn 2 • Ngón 3 Dây 5 ngăn 3.'
@@ -2169,23 +2323,6 @@ class HybridQuestionGenerator {
             'Nghe âm thanh & quan sát thế bấm hình tam giác ở 3 dây dưới để chọn tên hợp âm:',
             'Hợp âm Rê Trưởng (D): Ngón 1 Dây 3 ngăn 2 • Ngón 2 Dây 1 ngăn 2 • Ngón 3 Dây 2 ngăn 3.'
           ),
-        ];
-
-        final interChords = [
-          ...basicChords,
-          (
-            'guitar_chord_shape',
-            'assets/audio/keys/chord_f_maj.wav',
-            'GTR_CHORD_F',
-            'Fa Trưởng (F • Chặn ngăn 1)',
-            [
-              ('GTR_CHORD_C', 'Đô Trưởng (C • X-3-2-0-1-0)'),
-              ('GTR_CHORD_Dm', 'Rê Thứ (Dm • X-X-0-2-3-1)'),
-              ('GTR_CHORD_G', 'Sol Trưởng (G • 3-2-0-0-0-3)'),
-            ],
-            'Nghe âm thanh & quan sát thế bấm chặn ngăn 1 trên cần đàn để chọn tên hợp âm:',
-            'Hợp âm Fa Trưởng (F): Ngón 1 chặn ngăn 1 • Ngón 2 Dây 3 ngăn 2 • Ngón 3 Dây 4 ngăn 3.'
-          ),
           (
             'guitar_chord_shape',
             'assets/audio/keys/chord_e_maj.wav',
@@ -2194,10 +2331,288 @@ class HybridQuestionGenerator {
             [
               ('GTR_CHORD_Em', 'Mi Thứ (Em • 0-2-2-0-0-0)'),
               ('GTR_CHORD_Am', 'La Thứ (Am • X-0-2-2-1-0)'),
-              ('GTR_CHORD_D', 'Rê Trưởng (D • X-X-0-2-3-2)'),
+              ('GTR_CHORD_A', 'La Trưởng (A • X-0-2-2-2-0)'),
             ],
-            'Nghe âm thanh & quan sát thế bấm (dịch dáng Am lên 1 dây) để chọn tên hợp âm:',
+            'Nghe âm thanh & quan sát thế bấm (dịch dáng Am lên 1 dây, Bass dây 6 buông) để chọn hợp âm:',
             'Hợp âm Mi Trưởng (E): Ngón 1 Dây 3 ngăn 1 • Ngón 2 Dây 5 ngăn 2 • Ngón 3 Dây 4 ngăn 2.'
+          ),
+          (
+            'guitar_chord_shape',
+            'assets/audio/keys/chord_a_maj.wav',
+            'GTR_CHORD_A',
+            'La Trưởng (A • X-0-2-2-2-0)',
+            [
+              ('GTR_CHORD_Am', 'La Thứ (Am • X-0-2-2-1-0)'),
+              ('GTR_CHORD_D', 'Rê Trưởng (D • X-X-0-2-3-2)'),
+              ('GTR_CHORD_E', 'Mi Trưởng (E • 0-2-2-1-0-0)'),
+            ],
+            'Nghe âm thanh & quan sát thế bấm 3 ngón xếp dọc tại Ngăn 2 (Dây 4, 3, 2) để chọn hợp âm:',
+            'Hợp âm La Trưởng (A): Ngón 1, 2, 3 bấm Dây 4, 3, 2 tại ngăn 2 (Bass dây 5 buông).'
+          ),
+          (
+            'guitar_chord_shape',
+            'assets/audio/keys/chord_f_maj.wav',
+            'GTR_CHORD_F',
+            'Fa Trưởng Chặn (F • 1-3-3-2-1-1)',
+            [
+              ('GTR_CHORD_Fm', 'Fa Thứ Chặn (Fm • 1-3-3-1-1-1)'),
+              ('GTR_CHORD_Bm', 'Si Thứ Chặn (Bm • X-2-4-4-3-2)'),
+              ('GTR_CHORD_C', 'Đô Trưởng (C • X-3-2-0-1-0)'),
+            ],
+            'Nghe âm thanh & quan sát thế bấm Hợp âm Chặn cả 6 dây tại Ngăn 1 (kèm Dây 3 ngăn 2, Dây 5&4 ngăn 3):',
+            'Hợp âm Fa Trưởng Chặn (F): Ngón 1 chặn 6 dây ngăn 1 • Ngón 2 Dây 3 ngăn 2 • Ngón 3&4 Dây 5&4 ngăn 3.'
+          ),
+          (
+            'guitar_chord_shape',
+            'assets/audio/keys/chord_b_min.wav',
+            'GTR_CHORD_Bm',
+            'Si Thứ Chặn (Bm • X-2-4-4-3-2)',
+            [
+              ('GTR_CHORD_F', 'Fa Trưởng Chặn (F • 1-3-3-2-1-1)'),
+              ('GTR_CHORD_B', 'Si Trưởng Chặn (B • X-2-4-4-4-2)'),
+              ('GTR_CHORD_Am', 'La Thứ (Am • X-0-2-2-1-0)'),
+            ],
+            'Nghe âm thanh & quan sát thế bấm Hợp âm Chặn 5 dây dưới tại Ngăn 2 (dáng Am dịch lên 2 ngăn):',
+            'Hợp âm Si Thứ Chặn (Bm): Ngón 1 chặn 5 dây ngăn 2 • Ngón 2 Dây 2 ngăn 3 • Ngón 3&4 Dây 4&3 ngăn 4.'
+          ),
+          (
+            'guitar_chord_shape',
+            'assets/audio/keys/chord_f_min.wav',
+            'GTR_CHORD_Fm',
+            'Fa Thứ Chặn (Fm • 1-3-3-1-1-1)',
+            [
+              ('GTR_CHORD_F', 'Fa Trưởng Chặn (F • 1-3-3-2-1-1)'),
+              ('GTR_CHORD_F#m', 'Fa Thăng Thứ Chặn (F#m • 2-4-4-2-2-2)'),
+              ('GTR_CHORD_Gm', 'Sol Thứ Chặn (Gm • 3-5-5-3-3-3)'),
+            ],
+            'Nghe âm thanh & quan sát thế bấm Hợp âm Chặn 6 dây tại Ngăn 1 (nhấc ngón giữa ra so với F):',
+            'Hợp âm Fa Thứ Chặn (Fm): Ngón 1 chặn 6 dây ngăn 1 • Ngón 3 Dây 5 ngăn 3 • Ngón 4 Dây 4 ngăn 3.'
+          ),
+          (
+            'guitar_chord_shape',
+            'assets/audio/keys/chord_bb_maj.wav',
+            'GTR_CHORD_Bb',
+            'Si Giáng Trưởng Chặn (Bb • X-1-3-3-3-1)',
+            [
+              ('GTR_CHORD_F', 'Fa Trưởng Chặn (F • 1-3-3-2-1-1)'),
+              ('GTR_CHORD_B', 'Si Trưởng Chặn (B • X-2-4-4-4-2)'),
+              ('GTR_CHORD_Bm', 'Si Thứ Chặn (Bm • X-2-4-4-3-2)'),
+            ],
+            'Nghe âm thanh & quan sát thế bấm Hợp âm Chặn 5 dây tại Ngăn 1 (kèm Dây 4, 3, 2 tại Ngăn 3):',
+            'Hợp âm Si Giáng Trưởng (Bb): Ngón 1 chặn 5 dây ngăn 1 • Ngón 2, 3, 4 bấm Dây 4, 3, 2 tại ngăn 3.'
+          ),
+          (
+            'guitar_chord_shape',
+            'assets/audio/keys/chord_a_min7.wav',
+            'GTR_CHORD_Am7',
+            'La Bảy Thứ (Am7 • X-0-2-0-1-0)',
+            [
+              ('GTR_CHORD_Am', 'La Thứ (Am • X-0-2-2-1-0)'),
+              ('GTR_CHORD_Cmaj7', 'Đô Bảy Trưởng (Cmaj7 • X-3-2-0-0-0)'),
+              ('GTR_CHORD_Em7', 'Mi Bảy Thứ (Em7 • 0-2-2-0-3-0)'),
+            ],
+            'Nghe âm thanh & quan sát thế bấm 2 ngón (Dây 2 ngăn 1 + Dây 4 ngăn 2, buông Dây 3 Sol):',
+            'Hợp âm La Bảy Thứ (Am7): Từ La Thứ (Am) nhấc ngón áp út khỏi Dây 3 ngăn 2 để vang nốt Sol (bậc 7 thứ).'
+          ),
+          (
+            'guitar_chord_shape',
+            'assets/audio/keys/chord_c_maj7.wav',
+            'GTR_CHORD_Cmaj7',
+            'Đô Bảy Trưởng (Cmaj7 • X-3-2-0-0-0)',
+            [
+              ('GTR_CHORD_C', 'Đô Trưởng (C • X-3-2-0-1-0)'),
+              ('GTR_CHORD_Fmaj7', 'Fa Bảy Trưởng (Fmaj7 • X-X-3-2-1-0)'),
+              ('GTR_CHORD_Am7', 'La Bảy Thứ (Am7 • X-0-2-0-1-0)'),
+            ],
+            'Nghe âm thanh & quan sát thế bấm (Dây 5 ngăn 3 + Dây 4 ngăn 2, buông Dây 2 Si):',
+            'Hợp âm Đô Bảy Trưởng (Cmaj7): Từ Đô Trưởng (C) nhấc ngón trỏ khỏi Dây 2 ngăn 1 để vang nốt Si (bậc 7 trưởng).'
+          ),
+          (
+            'guitar_chord_shape',
+            'assets/audio/keys/chord_f_maj7.wav',
+            'GTR_CHORD_Fmaj7',
+            'Fa Bảy Trưởng (Fmaj7 • X-X-3-2-1-0)',
+            [
+              ('GTR_CHORD_F', 'Fa Trưởng Chặn (F • 1-3-3-2-1-1)'),
+              ('GTR_CHORD_Cmaj7', 'Đô Bảy Trưởng (Cmaj7 • X-3-2-0-0-0)'),
+              ('GTR_CHORD_Dm7', 'Rê Bảy Thứ (Dm7 • X-X-0-2-1-1)'),
+            ],
+            'Nghe âm thanh & quan sát thế bấm bậc thang 3 ngón (Dây 2 ngăn 1, Dây 3 ngăn 2, Dây 4 ngăn 3, buông Dây 1):',
+            'Hợp âm Fa Bảy Trưởng (Fmaj7): Thế bấm Fa mở cực êm dịu với Dây 1 buông (nốt Mi – bậc 7 trưởng).'
+          ),
+          (
+            'guitar_chord_shape',
+            'assets/audio/keys/chord_e_min7.wav',
+            'GTR_CHORD_Em7',
+            'Mi Bảy Thứ (Em7 • 0-2-2-0-3-0)',
+            [
+              ('GTR_CHORD_Em', 'Mi Thứ (Em • 0-2-2-0-0-0)'),
+              ('GTR_CHORD_E7', 'Mi Bảy Át (E7 • 0-2-0-1-0-0)'),
+              ('GTR_CHORD_Am7', 'La Bảy Thứ (Am7 • X-0-2-0-1-0)'),
+            ],
+            'Nghe âm thanh & quan sát thế bấm Mi Thứ (Em) có đặt thêm Ngón 4 tại Dây 2 ngăn 3 (nốt Rê):',
+            'Hợp âm Mi Bảy Thứ (Em7): Giữ thế bấm Em và thêm nốt Rê (D4 – bậc 7 thứ) tại Dây 2 ngăn 3.'
+          ),
+        ];
+
+        // Mức 2 (Trung bình - 32 hợp âm): Đủ 8 Hợp âm Chặn (Barre) + Đủ 12 Hợp âm Bảy + 4 Hợp âm 5 Guitar Điện
+        final interChords = [
+          ...basicChords,
+          (
+            'guitar_chord_shape',
+            'assets/audio/keys/chord_b_maj.wav',
+            'GTR_CHORD_B',
+            'Si Trưởng Chặn (B • X-2-4-4-4-2)',
+            [
+              ('GTR_CHORD_Bm', 'Si Thứ Chặn (Bm • X-2-4-4-3-2)'),
+              ('GTR_CHORD_Bb', 'Si Giáng Trưởng Chặn (Bb • X-1-3-3-3-1)'),
+              ('GTR_CHORD_F#m', 'Fa Thăng Thứ Chặn (F#m • 2-4-4-2-2-2)'),
+            ],
+            'Nghe âm thanh & quan sát thế bấm Hợp âm Chặn 5 dây tại Ngăn 2 (kèm Dây 4, 3, 2 tại Ngăn 4):',
+            'Hợp âm Si Trưởng Chặn (B): Ngón 1 chặn 5 dây ngăn 2 • Ngón 2, 3, 4 bấm Dây 4, 3, 2 tại ngăn 4.'
+          ),
+          (
+            'guitar_chord_shape',
+            'assets/audio/keys/chord_fsharp_min.wav',
+            'GTR_CHORD_F#m',
+            'Fa Thăng Thứ Chặn (F#m • 2-4-4-2-2-2)',
+            [
+              ('GTR_CHORD_Fm', 'Fa Thứ Chặn (Fm • 1-3-3-1-1-1)'),
+              ('GTR_CHORD_Gm', 'Sol Thứ Chặn (Gm • 3-5-5-3-3-3)'),
+              ('GTR_CHORD_Bm', 'Si Thứ Chặn (Bm • X-2-4-4-3-2)'),
+            ],
+            'Nghe âm thanh & quan sát thế bấm Hợp âm Chặn cả 6 dây tại Ngăn 2 (kèm Dây 5&4 ngăn 4):',
+            'Hợp âm Fa Thăng Thứ Chặn (F#m): Dịch dáng Fm lên ngăn 2 (Ngón 1 chặn 6 dây ngăn 2 • Ngón 3&4 Dây 5&4 ngăn 4).'
+          ),
+          (
+            'guitar_chord_shape',
+            'assets/audio/keys/chord_g_min.wav',
+            'GTR_CHORD_Gm',
+            'Sol Thứ Chặn (Gm • 3-5-5-3-3-3)',
+            [
+              ('GTR_CHORD_F#m', 'Fa Thăng Thứ Chặn (F#m • 2-4-4-2-2-2)'),
+              ('GTR_CHORD_Cm', 'Đô Thứ Chặn (Cm • X-3-5-5-4-3)'),
+              ('GTR_CHORD_Fm', 'Fa Thứ Chặn (Fm • 1-3-3-1-1-1)'),
+            ],
+            'Nghe âm thanh & quan sát thế bấm Hợp âm Chặn cả 6 dây tại Ngăn 3 (kèm Dây 5&4 ngăn 5):',
+            'Hợp âm Sol Thứ Chặn (Gm): Ngón 1 chặn 6 dây tại ngăn 3 • Ngón 3 Dây 5 ngăn 5 • Ngón 4 Dây 4 ngăn 5.'
+          ),
+          (
+            'guitar_chord_shape',
+            'assets/audio/keys/chord_c_min.wav',
+            'GTR_CHORD_Cm',
+            'Đô Thứ Chặn (Cm • X-3-5-5-4-3)',
+            [
+              ('GTR_CHORD_Bm', 'Si Thứ Chặn (Bm • X-2-4-4-3-2)'),
+              ('GTR_CHORD_Gm', 'Sol Thứ Chặn (Gm • 3-5-5-3-3-3)'),
+              ('GTR_CHORD_C', 'Đô Trưởng (C • X-3-2-0-1-0)'),
+            ],
+            'Nghe âm thanh & quan sát thế bấm Hợp âm Chặn 5 dây tại Ngăn 3 (dịch dáng Bm lên ngăn 3):',
+            'Hợp âm Đô Thứ Chặn (Cm): Ngón 1 chặn 5 dây ngăn 3 • Ngón 2 Dây 2 ngăn 4 • Ngón 3&4 Dây 4&3 ngăn 5.'
+          ),
+          (
+            'guitar_chord_shape',
+            'assets/audio/keys/chord_c_dom7.wav',
+            'GTR_CHORD_C7',
+            'Đô Bảy Át (C7 • X-3-2-3-1-0)',
+            [
+              ('GTR_CHORD_Cmaj7', 'Đô Bảy Trưởng (Cmaj7 • X-3-2-0-0-0)'),
+              ('GTR_CHORD_G7', 'Sol Bảy Át (G7 • 3-2-0-0-0-1)'),
+              ('GTR_CHORD_A7', 'La Bảy Át (A7 • X-0-2-0-2-0)'),
+            ],
+            'Nghe âm thanh & quan sát thế bấm Đô Trưởng có đặt thêm Ngón 4 vào Dây 3 ngăn 3 (nốt Sib):',
+            'Hợp âm Đô Bảy Át (C7): Giữ thế bấm C và thêm Ngón 4 tại Dây 3 ngăn 3 để tạo lực hút về Fa Trưởng.'
+          ),
+          (
+            'guitar_chord_shape',
+            'assets/audio/keys/chord_d_dom7.wav',
+            'GTR_CHORD_D7',
+            'Rê Bảy Át (D7 • X-X-0-2-1-2)',
+            [
+              ('GTR_CHORD_D', 'Rê Trưởng (D • X-X-0-2-3-2)'),
+              ('GTR_CHORD_Dm7', 'Rê Bảy Thứ (Dm7 • X-X-0-2-1-1)'),
+              ('GTR_CHORD_B7', 'Si Bảy Át (B7 • X-2-1-2-0-2)'),
+            ],
+            'Nghe âm thanh & quan sát thế bấm hình tam giác ngược ở 3 dây dưới (Dây 2 ngăn 1, Dây 3&1 ngăn 2):',
+            'Hợp âm Rê Bảy Át (D7): Ngón 1 Dây 2 ngăn 1 (Đô) • Ngón 2 Dây 3 ngăn 2 • Ngón 3 Dây 1 ngăn 2.'
+          ),
+          (
+            'guitar_chord_shape',
+            'assets/audio/keys/chord_e_dom7.wav',
+            'GTR_CHORD_E7',
+            'Mi Bảy Át (E7 • 0-2-0-1-0-0)',
+            [
+              ('GTR_CHORD_E', 'Mi Trưởng (E • 0-2-2-1-0-0)'),
+              ('GTR_CHORD_Em7', 'Mi Bảy Thứ (Em7 • 0-2-2-0-3-0)'),
+              ('GTR_CHORD_A7', 'La Bảy Át (A7 • X-0-2-0-2-0)'),
+            ],
+            'Nghe âm thanh & quan sát thế bấm 2 ngón (Dây 3 ngăn 1 + Dây 5 ngăn 2, buông Dây 4 Rê):',
+            'Hợp âm Mi Bảy Át (E7): Từ Mi Trưởng nhấc ngón áp út khỏi Dây 4 để vang Dây 4 buông (Rê D3), hút mạnh về Am.'
+          ),
+          (
+            'guitar_chord_shape',
+            'assets/audio/keys/chord_g_dom7.wav',
+            'GTR_CHORD_G7',
+            'Sol Bảy Át (G7 • 3-2-0-0-0-1)',
+            [
+              ('GTR_CHORD_G', 'Sol Trưởng (G • 3-2-0-0-0-3)'),
+              ('GTR_CHORD_Gmaj7', 'Sol Bảy Trưởng (Gmaj7 • 3-2-0-0-0-2)'),
+              ('GTR_CHORD_C7', 'Đô Bảy Át (C7 • X-3-2-3-1-0)'),
+            ],
+            'Nghe âm thanh & quan sát thế bấm 6 dây (Dây 1 ngăn 1 + Dây 5 ngăn 2 + Dây 6 ngăn 3):',
+            'Hợp âm Sol Bảy Át (G7): Ngón 1 bấm Dây 1 ngăn 1 (nốt Fa), tạo lực hút giải kết về Đô Trưởng (C).'
+          ),
+          (
+            'guitar_chord_shape',
+            'assets/audio/keys/chord_a_dom7.wav',
+            'GTR_CHORD_A7',
+            'La Bảy Át (A7 • X-0-2-0-2-0)',
+            [
+              ('GTR_CHORD_A', 'La Trưởng (A • X-0-2-2-2-0)'),
+              ('GTR_CHORD_Am7', 'La Bảy Thứ (Am7 • X-0-2-0-1-0)'),
+              ('GTR_CHORD_E7', 'Mi Bảy Át (E7 • 0-2-0-1-0-0)'),
+            ],
+            'Nghe âm thanh & quan sát thế bấm tại Ngăn 2 (bấm Dây 4 & Dây 2, nhấc ngón giữa để buông Dây 3 Sol):',
+            'Hợp âm La Bảy Át (A7): Từ La Trưởng (A) nhấc ngón giữa ở Dây 3 ra để vang nốt Sol (bậc 7 thứ).'
+          ),
+          (
+            'guitar_chord_shape',
+            'assets/audio/keys/chord_b_dom7.wav',
+            'GTR_CHORD_B7',
+            'Si Bảy Át (B7 • X-2-1-2-0-2)',
+            [
+              ('GTR_CHORD_Bm', 'Si Thứ Chặn (Bm • X-2-4-4-3-2)'),
+              ('GTR_CHORD_E7', 'Mi Bảy Át (E7 • 0-2-0-1-0-0)'),
+              ('GTR_CHORD_D7', 'Rê Bảy Át (D7 • X-X-0-2-1-2)'),
+            ],
+            'Nghe âm thanh & quan sát thế bấm 4 ngón mở (Dây 4 ngăn 1 + Dây 5, 3, 1 tại ngăn 2):',
+            'Hợp âm Si Bảy Át (B7): Hợp âm Bảy Át bậc V7 cực kỳ quan trọng để dẫn về chủ âm Mi Thứ (Em).'
+          ),
+          (
+            'guitar_chord_shape',
+            'assets/audio/keys/chord_d_min7.wav',
+            'GTR_CHORD_Dm7',
+            'Rê Bảy Thứ (Dm7 • X-X-0-2-1-1)',
+            [
+              ('GTR_CHORD_Dm', 'Rê Thứ (Dm • X-X-0-2-3-1)'),
+              ('GTR_CHORD_D7', 'Rê Bảy Át (D7 • X-X-0-2-1-2)'),
+              ('GTR_CHORD_Fmaj7', 'Fa Bảy Trưởng (Fmaj7 • X-X-3-2-1-0)'),
+            ],
+            'Nghe âm thanh & quan sát thế bấm ở 3 dây dưới (chặn nhẹ Dây 1&2 ngăn 1 + bấm Dây 3 ngăn 2):',
+            'Hợp âm Rê Bảy Thứ (Dm7): Ngón 1 chặn nhẹ Dây 1 & Dây 2 tại ngăn 1 • Ngón 2 bấm Dây 3 ngăn 2.'
+          ),
+          (
+            'guitar_chord_shape',
+            'assets/audio/keys/chord_g_maj7.wav',
+            'GTR_CHORD_Gmaj7',
+            'Sol Bảy Trưởng (Gmaj7 • 3-2-0-0-0-2)',
+            [
+              ('GTR_CHORD_G7', 'Sol Bảy Át (G7 • 3-2-0-0-0-1)'),
+              ('GTR_CHORD_G', 'Sol Trưởng (G • 3-2-0-0-0-3)'),
+              ('GTR_CHORD_Cmaj7', 'Đô Bảy Trưởng (Cmaj7 • X-3-2-0-0-0)'),
+            ],
+            'Nghe âm thanh & quan sát thế bấm 6 dây (Dây 1 ngăn 2 + Dây 5 ngăn 2 + Dây 6 ngăn 3):',
+            'Hợp âm Sol Bảy Trưởng (Gmaj7): Ngón 1 bấm Dây 1 ngăn 2 (Fa# – bậc 7 trưởng) tạo màu sắc Jazz/Ballad ấm áp.'
           ),
           (
             'guitar_chord_shape',
@@ -2225,35 +2640,192 @@ class HybridQuestionGenerator {
             'Nghe âm thanh & quan sát thế bấm Hợp âm 5 gốc Dây 5 buông (kèm Dây 4&3 ngăn 2) để chọn đáp án:',
             'Hợp âm La Năm (A5): Dây 5 buông (La A2) + Ngón 2&3 tại Dây 4&3 ngăn 2 (Mi E3 & La A3).'
           ),
+          (
+            'guitar_chord_shape',
+            'assets/audio/keys/chord_g5.wav',
+            'GTR_CHORD_G5',
+            'Sol Năm (G5 Power Chord • 3-5-5-X-X-X)',
+            [
+              ('GTR_CHORD_C5', 'Đô Năm (C5 Power Chord • X-3-5-5-X-X)'),
+              ('GTR_CHORD_F5', 'Fa Năm (F5 Power Chord • 1-3-3-X-X-X)'),
+              ('GTR_CHORD_E5', 'Mi Năm (E5 Power Chord • 0-2-2-X-X-X)'),
+            ],
+            'Nghe âm thanh & quan sát thế bấm Hợp âm 5 di động trên Dây 6 (Dây 6 ngăn 3 + Dây 5&4 ngăn 5):',
+            'Hợp âm Sol Năm (G5): Ngón 1 Dây 6 ngăn 3 (Sol) • Ngón 3 Dây 5 ngăn 5 • Ngón 4 Dây 4 ngăn 5.'
+          ),
+          (
+            'guitar_chord_shape',
+            'assets/audio/keys/chord_c5.wav',
+            'GTR_CHORD_C5',
+            'Đô Năm (C5 Power Chord • X-3-5-5-X-X)',
+            [
+              ('GTR_CHORD_G5', 'Sol Năm (G5 Power Chord • 3-5-5-X-X-X)'),
+              ('GTR_CHORD_D5', 'Rê Năm (D5 Power Chord • X-5-7-7-X-X)'),
+              ('GTR_CHORD_B5', 'Si Năm (B5 Power Chord • X-2-4-4-X-X)'),
+            ],
+            'Nghe âm thanh & quan sát thế bấm Hợp âm 5 di động trên Dây 5 (Dây 5 ngăn 3 + Dây 4&3 ngăn 5):',
+            'Hợp âm Đô Năm (C5): Ngón 1 Dây 5 ngăn 3 (Đô) • Ngón 3 Dây 4 ngăn 5 • Ngón 4 Dây 3 ngăn 5.'
+          ),
         ];
 
+        // Mức 3 (Nâng cao - 49 câu): Đầy đủ toàn bộ 44 Hợp âm (Mở, Chặn, Bảy, Màu Sus/Add9/Slash, Power 5th) + 5 câu Lý thuyết Hòa âm
         final advChords = [
           ...interChords,
           (
             'guitar_chord_shape',
-            'assets/audio/keys/chord_c_maj7.wav',
-            'GTR_CHORD_C',
-            'Đô Bảy Trưởng (Cmaj7 • X-3-2-0-0-0)',
+            'assets/audio/keys/chord_c_sus4.wav',
+            'GTR_CHORD_Csus4',
+            'Đô Treo Bậc 4 (Csus4 • X-3-3-0-1-0)',
             [
-              ('GTR_CHORD_Am7', 'La Bảy Thứ (Am7 • X-0-2-0-1-0)'),
-              ('GTR_CHORD_G7', 'Sol Bảy Át (G7 • 3-2-0-0-0-1)'),
-              ('GTR_CHORD_Csus4', 'Đô Treo Bậc 4 (Csus4 • X-3-3-0-1-1)'),
+              ('GTR_CHORD_C', 'Đô Trưởng (C • X-3-2-0-1-0)'),
+              ('GTR_CHORD_Cadd9', 'Đô Cộng 9 (Cadd9 • X-3-2-0-3-3)'),
+              ('GTR_CHORD_Dsus4', 'Rê Treo Bậc 4 (Dsus4 • X-X-0-2-3-3)'),
             ],
-            'Nghe hợp âm & cho biết: khi bấm Đô Trưởng (C) rồi nhấc ngón trỏ khỏi Dây 2 ngăn 1 để vang Dây 2 buông (Si), ta được hợp âm gì?',
-            'Thêm nốt Si (B – bậc 7 trưởng) vào hợp âm C tạo thành Đô Bảy Trưởng (Cmaj7) mang màu sắc sâu lắng.'
+            'Nghe âm thanh & quan sát thế bấm Đô Trưởng có đặt thêm Ngón 4 vào Dây 4 ngăn 3 (nốt Fa):',
+            'Hợp âm Đô Treo Bậc 4 (Csus4): Thay bậc 3 (Mi) trên Dây 4 bằng bậc 4 (Fa tại Dây 4 ngăn 3).'
           ),
           (
             'guitar_chord_shape',
-            'assets/audio/keys/chord_a_min7.wav',
-            'GTR_CHORD_Am',
-            'La Bảy Thứ (Am7 • X-0-2-0-1-0)',
+            'assets/audio/keys/chord_d_sus2.wav',
+            'GTR_CHORD_Dsus2',
+            'Rê Treo Bậc 2 (Dsus2 • X-X-0-2-3-0)',
             [
-              ('GTR_CHORD_Cmaj7', 'Đô Bảy Trưởng (Cmaj7 • X-3-2-0-0-0)'),
-              ('GTR_CHORD_G7', 'Sol Bảy Át (G7 • 3-2-0-0-0-1)'),
-              ('GTR_CHORD_Em7', 'Mi Bảy Thứ (Em7 • 0-2-0-0-0-0)'),
+              ('GTR_CHORD_Dsus4', 'Rê Treo Bậc 4 (Dsus4 • X-X-0-2-3-3)'),
+              ('GTR_CHORD_D', 'Rê Trưởng (D • X-X-0-2-3-2)'),
+              ('GTR_CHORD_Asus2', 'La Treo Bậc 2 (Asus2 • X-0-2-2-0-0)'),
             ],
-            'Nghe hợp âm & cho biết: khi bấm La Thứ (Am) rồi nhấc ngón áp út khỏi Dây 3 ngăn 2 để vang Dây 3 buông (Sol), ta được hợp âm gì?',
-            'Dây 3 buông là nốt Sol (bậc 7 thứ của La), kết hợp với La – Đô – Mi tạo thành hợp âm La Bảy Thứ (Am7).'
+            'Nghe âm thanh & quan sát thế bấm Rê Trưởng khi nhấc ngón giữa khỏi Dây 1 để vang Dây 1 buông (Mi):',
+            'Hợp âm Rê Treo Bậc 2 (Dsus2): Dây 1 buông (Mi – bậc 2 trưởng của Rê) tạo màu sắc trong trẻo bay bổng.'
+          ),
+          (
+            'guitar_chord_shape',
+            'assets/audio/keys/chord_d_sus4.wav',
+            'GTR_CHORD_Dsus4',
+            'Rê Treo Bậc 4 (Dsus4 • X-X-0-2-3-3)',
+            [
+              ('GTR_CHORD_Dsus2', 'Rê Treo Bậc 2 (Dsus2 • X-X-0-2-3-0)'),
+              ('GTR_CHORD_D', 'Rê Trưởng (D • X-X-0-2-3-2)'),
+              ('GTR_CHORD_Asus4', 'La Treo Bậc 4 (Asus4 • X-0-2-2-3-0)'),
+            ],
+            'Nghe âm thanh & quan sát thế bấm Rê Trưởng có đặt thêm Ngón 4 vào Dây 1 ngăn 3 (nốt Sol):',
+            'Hợp âm Rê Treo Bậc 4 (Dsus4): Ngón 4 bấm Dây 1 ngăn 3 (Sol – bậc 4 đúng của Rê), thường giải về D.'
+          ),
+          (
+            'guitar_chord_shape',
+            'assets/audio/keys/chord_e_sus4.wav',
+            'GTR_CHORD_Esus4',
+            'Mi Treo Bậc 4 (Esus4 • 0-2-2-2-0-0)',
+            [
+              ('GTR_CHORD_E', 'Mi Trưởng (E • 0-2-2-1-0-0)'),
+              ('GTR_CHORD_Asus4', 'La Treo Bậc 4 (Asus4 • X-0-2-2-3-0)'),
+              ('GTR_CHORD_Csus4', 'Đô Treo Bậc 4 (Csus4 • X-3-3-0-1-0)'),
+            ],
+            'Nghe âm thanh & quan sát thế bấm 3 ngón tại Ngăn 2 trên Dây 5, Dây 4, Dây 3 (Bass dây 6 buông):',
+            'Hợp âm Mi Treo Bậc 4 (Esus4): Từ Mi Trưởng đặt thêm Ngón 4 vào Dây 3 ngăn 2 (nốt La – bậc 4 của Mi).'
+          ),
+          (
+            'guitar_chord_shape',
+            'assets/audio/keys/chord_a_sus2.wav',
+            'GTR_CHORD_Asus2',
+            'La Treo Bậc 2 (Asus2 • X-0-2-2-0-0)',
+            [
+              ('GTR_CHORD_Asus4', 'La Treo Bậc 4 (Asus4 • X-0-2-2-3-0)'),
+              ('GTR_CHORD_Am', 'La Thứ (Am • X-0-2-2-1-0)'),
+              ('GTR_CHORD_Dsus2', 'Rê Treo Bậc 2 (Dsus2 • X-X-0-2-3-0)'),
+            ],
+            'Nghe âm thanh & quan sát thế bấm 2 ngón tại Dây 4&3 ngăn 2, buông cả Dây 5, Dây 2 (Si) và Dây 1 (Mi):',
+            'Hợp âm La Treo Bậc 2 (Asus2): Từ Am nhấc ngón trỏ khỏi Dây 2 để vang nốt Si (bậc 2 trưởng của La).'
+          ),
+          (
+            'guitar_chord_shape',
+            'assets/audio/keys/chord_a_sus4.wav',
+            'GTR_CHORD_Asus4',
+            'La Treo Bậc 4 (Asus4 • X-0-2-2-3-0)',
+            [
+              ('GTR_CHORD_Asus2', 'La Treo Bậc 2 (Asus2 • X-0-2-2-0-0)'),
+              ('GTR_CHORD_A', 'La Trưởng (A • X-0-2-2-2-0)'),
+              ('GTR_CHORD_Dsus4', 'Rê Treo Bậc 4 (Dsus4 • X-X-0-2-3-3)'),
+            ],
+            'Nghe âm thanh & quan sát thế bấm (Dây 4&3 ngăn 2 + Ngón 4 tại Dây 2 ngăn 3):',
+            'Hợp âm La Treo Bậc 4 (Asus4): Đặt Ngón 4 vào Dây 2 ngăn 3 (nốt Rê – bậc 4 đúng của La).'
+          ),
+          (
+            'guitar_chord_shape',
+            'assets/audio/keys/chord_c_add9.wav',
+            'GTR_CHORD_Cadd9',
+            'Đô Cộng 9 (Cadd9 • X-3-2-0-3-3)',
+            [
+              ('GTR_CHORD_G/B', 'Sol Bass Si (G/B • X-2-0-0-3-3)'),
+              ('GTR_CHORD_C', 'Đô Trưởng (C • X-3-2-0-1-0)'),
+              ('GTR_CHORD_Cmaj7', 'Đô Bảy Trưởng (Cmaj7 • X-3-2-0-0-0)'),
+            ],
+            'Nghe âm thanh & quan sát thế bấm hợp âm màu Acoustic (Dây 5 ngăn 3, Dây 4 ngăn 2, Dây 2&1 ngăn 3):',
+            'Hợp âm Đô Cộng 9 (Cadd9): Giữ Ngón 3&4 cố định ở Dây 2&1 ngăn 3 (nốt Rê – bậc 9 và Sol), chuyển cực êm từ G.'
+          ),
+          (
+            'guitar_chord_shape',
+            'assets/audio/keys/chord_g_slash_b.wav',
+            'GTR_CHORD_G/B',
+            'Sol Bass Si (G/B • X-2-0-0-3-3)',
+            [
+              ('GTR_CHORD_Cadd9', 'Đô Cộng 9 (Cadd9 • X-3-2-0-3-3)'),
+              ('GTR_CHORD_G', 'Sol Trưởng (G • 3-2-0-0-0-3)'),
+              ('GTR_CHORD_Am7', 'La Bảy Thứ (Am7 • X-0-2-0-1-0)'),
+            ],
+            'Nghe âm thanh & quan sát thế bấm hợp âm đảo Bass (Bass Dây 5 ngăn 2 là nốt Si + Dây 2&1 ngăn 3):',
+            'Hợp âm Sol Bass Si (G/B): Hợp âm cầu nối Bass đi bộ kinh điển nối giữa Đô Trưởng (C) và La Thứ (Am).'
+          ),
+          (
+            'guitar_chord_shape',
+            'assets/audio/keys/chord_d5.wav',
+            'GTR_CHORD_D5',
+            'Rê Năm (D5 Power Chord • X-5-7-7-X-X)',
+            [
+              ('GTR_CHORD_C5', 'Đô Năm (C5 Power Chord • X-3-5-5-X-X)'),
+              ('GTR_CHORD_G5', 'Sol Năm (G5 Power Chord • 3-5-5-X-X-X)'),
+              ('GTR_CHORD_B5', 'Si Năm (B5 Power Chord • X-2-4-4-X-X)'),
+            ],
+            'Nghe âm thanh & quan sát thế bấm Hợp âm 5 tại Ngăn 5 (Dây 5 ngăn 5 + Dây 4&3 ngăn 7):',
+            'Hợp âm Rê Năm (D5): Dịch dáng C5 lên 2 ngăn (Ngón 1 Dây 5 ngăn 5 • Ngón 3&4 Dây 4&3 ngăn 7).'
+          ),
+          (
+            'guitar_chord_shape',
+            'assets/audio/keys/chord_b5.wav',
+            'GTR_CHORD_B5',
+            'Si Năm (B5 Power Chord • X-2-4-4-X-X)',
+            [
+              ('GTR_CHORD_C5', 'Đô Năm (C5 Power Chord • X-3-5-5-X-X)'),
+              ('GTR_CHORD_F#5', 'Fa Thăng Năm (F#5 Power Chord • 2-4-4-X-X-X)'),
+              ('GTR_CHORD_A5', 'La Năm (A5 Power Chord • X-0-2-2-X-X)'),
+            ],
+            'Nghe âm thanh & quan sát thế bấm Hợp âm 5 trên Dây 5 tại Ngăn 2 (Dây 5 ngăn 2 + Dây 4&3 ngăn 4):',
+            'Hợp âm Si Năm (B5): Ngón 1 Dây 5 ngăn 2 • Ngón 3&4 Dây 4&3 ngăn 4.'
+          ),
+          (
+            'guitar_chord_shape',
+            'assets/audio/keys/chord_f5.wav',
+            'GTR_CHORD_F5',
+            'Fa Năm (F5 Power Chord • 1-3-3-X-X-X)',
+            [
+              ('GTR_CHORD_F#5', 'Fa Thăng Năm (F#5 Power Chord • 2-4-4-X-X-X)'),
+              ('GTR_CHORD_G5', 'Sol Năm (G5 Power Chord • 3-5-5-X-X-X)'),
+              ('GTR_CHORD_E5', 'Mi Năm (E5 Power Chord • 0-2-2-X-X-X)'),
+            ],
+            'Nghe âm thanh & quan sát thế bấm Hợp âm 5 trên Dây 6 tại Ngăn 1 (Dây 6 ngăn 1 + Dây 5&4 ngăn 3):',
+            'Hợp âm Fa Năm (F5): Ngón 1 Dây 6 ngăn 1 • Ngón 3&4 Dây 5&4 ngăn 3 (bịt 3 dây dưới).'
+          ),
+          (
+            'guitar_chord_shape',
+            'assets/audio/keys/chord_fsharp5.wav',
+            'GTR_CHORD_F#5',
+            'Fa Thăng Năm (F#5 Power Chord • 2-4-4-X-X-X)',
+            [
+              ('GTR_CHORD_F5', 'Fa Năm (F5 Power Chord • 1-3-3-X-X-X)'),
+              ('GTR_CHORD_G5', 'Sol Năm (G5 Power Chord • 3-5-5-X-X-X)'),
+              ('GTR_CHORD_B5', 'Si Năm (B5 Power Chord • X-2-4-4-X-X)'),
+            ],
+            'Nghe âm thanh & quan sát thế bấm Hợp âm 5 trên Dây 6 tại Ngăn 2 (Dây 6 ngăn 2 + Dây 5&4 ngăn 4):',
+            'Hợp âm Fa Thăng Năm (F#5): Dịch dáng F5 lên ngăn 2 (Ngón 1 Dây 6 ngăn 2 • Ngón 3&4 Dây 5&4 ngăn 4).'
           ),
           (
             'guitar_chord_theory',
@@ -2280,6 +2852,32 @@ class HybridQuestionGenerator {
             ],
             'Trong giọng Đô Trưởng, tiến trình hòa thanh Jazz / R&B kinh điển bậc ii – V – I gồm 3 hợp âm nào?',
             'Bậc ii (Rê Bảy Thứ Dm7) → Bậc V (Sol Bảy Át G7) → giải kết về Bậc I (Đô Bảy Trưởng Cmaj7).'
+          ),
+          (
+            'guitar_chord_theory',
+            'assets/audio/keys/a_minor.wav',
+            'GTR_THEORY_PROG_MIN',
+            'Am – Dm – E7 – Am (Bậc i – iv – V7 – i)',
+            [
+              ('GTR_THEORY_PROG_POP', 'C – G – Am – F (Bậc I – V – vi – IV)'),
+              ('GTR_THEORY_PROG_JAZZ', 'Dm7 – G7 – Cmaj7 (Bậc ii – V – I)'),
+              ('GTR_THEORY_PROG_ROCK5', 'E5 – G5 – A5 – C5 (Power Chords)'),
+            ],
+            'Vòng hòa âm Bolero / Ballad Thứ kinh điển bậc i – iv – V7 – i ở giọng La Thứ gồm những hợp âm nào?',
+            'Trong giọng La Thứ: Bậc i = Am, Bậc iv = Dm, Bậc V7 = E7 (hút mạnh về chủ âm Am).'
+          ),
+          (
+            'guitar_chord_theory',
+            'assets/audio/keys/chord_a_dom7.wav',
+            'GTR_THEORY_PROG_BLUES',
+            'A7 – D7 – E7 (Bậc I7 – IV7 – V7)',
+            [
+              ('GTR_THEORY_PROG_POP', 'C – G – Am – F (Bậc I – V – vi – IV)'),
+              ('GTR_THEORY_PROG_JAZZ', 'Dm7 – G7 – Cmaj7 (Bậc ii – V – I)'),
+              ('GTR_THEORY_PROG_MIN', 'Am – Dm – E7 – Am (Bậc i – iv – V7 – i)'),
+            ],
+            'Cấu trúc 12-Bar Blues kinh điển ở giọng La (A Blues) sử dụng bộ 3 hợp âm Bảy Át (Dominant 7) nào?',
+            'Blues 12 ô nhịp ở giọng A dùng 3 hợp âm Bảy Át ở bậc I7 (A7), bậc IV7 (D7) và bậc V7 (E7).'
           ),
           (
             'guitar_chord_theory',

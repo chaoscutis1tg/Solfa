@@ -177,7 +177,7 @@ class GuitarFretboardData {
       formula: 'X - 0 - 2 - 2 - 2 - 0',
       fretsByString1To6: [0, 2, 2, 2, 0, -1],
       fingersByString1To6: [0, 3, 2, 1, 0, 0],
-      audioAsset: 'assets/audio/keys/chord_c_maj.wav',
+      audioAsset: 'assets/audio/keys/chord_a_maj.wav',
       tip: 'Ngón 1, 2, 3 xếp dọc trên Dây 4, Dây 3, Dây 2 tại ngăn 2 (Bass dây 5 buông)',
     ),
     GuitarChordShape(
@@ -229,7 +229,7 @@ class GuitarFretboardData {
       formula: '1 - 3 - 3 - 1 - 1 - 1',
       fretsByString1To6: [1, 1, 1, 3, 3, 1],
       fingersByString1To6: [1, 1, 1, 4, 3, 1],
-      audioAsset: 'assets/audio/keys/chord_d_min.wav',
+      audioAsset: 'assets/audio/keys/chord_f_min.wav',
       tip: 'Ngón 1 chặn 6 dây ngăn 1 (nhấc ngón 2 ra) • Ngón 3 Dây 5 ngăn 3 • Ngón 4 Dây 4 ngăn 3',
     ),
     GuitarChordShape(
@@ -239,7 +239,7 @@ class GuitarFretboardData {
       formula: 'X - 2 - 4 - 4 - 3 - 2',
       fretsByString1To6: [2, 3, 4, 4, 2, -1],
       fingersByString1To6: [1, 2, 4, 3, 1, 0],
-      audioAsset: 'assets/audio/keys/chord_a_min.wav',
+      audioAsset: 'assets/audio/keys/chord_b_min.wav',
       tip: 'Ngón 1 chặn 5 dây dưới tại ngăn 2 • Ngón 2 Dây 2 ngăn 3 • Ngón 3 Dây 4 ngăn 4 • Ngón 4 Dây 3 ngăn 4',
     ),
     GuitarChordShape(
@@ -249,7 +249,7 @@ class GuitarFretboardData {
       formula: 'X - 2 - 4 - 4 - 4 - 2',
       fretsByString1To6: [2, 4, 4, 4, 2, -1],
       fingersByString1To6: [1, 4, 3, 2, 1, 0],
-      audioAsset: 'assets/audio/keys/chord_g_maj.wav',
+      audioAsset: 'assets/audio/keys/chord_b_maj.wav',
       tip: 'Ngón 1 chặn 5 dây ngăn 2 • Ngón 2, 3, 4 bấm Dây 4, 3, 2 tại ngăn 4',
     ),
     GuitarChordShape(
@@ -259,7 +259,7 @@ class GuitarFretboardData {
       formula: '2 - 4 - 4 - 2 - 2 - 2',
       fretsByString1To6: [2, 2, 2, 4, 4, 2],
       fingersByString1To6: [1, 1, 1, 4, 3, 1],
-      audioAsset: 'assets/audio/keys/chord_e_min.wav',
+      audioAsset: 'assets/audio/keys/chord_fsharp_min.wav',
       tip: 'Dịch dáng Fm lên ngăn 2: Ngón 1 chặn 6 dây ngăn 2 • Ngón 3 Dây 5 ngăn 4 • Ngón 4 Dây 4 ngăn 4',
     ),
     GuitarChordShape(
@@ -269,7 +269,7 @@ class GuitarFretboardData {
       formula: '3 - 5 - 5 - 3 - 3 - 3',
       fretsByString1To6: [3, 3, 3, 5, 5, 3],
       fingersByString1To6: [1, 1, 1, 4, 3, 1],
-      audioAsset: 'assets/audio/keys/chord_d_min.wav',
+      audioAsset: 'assets/audio/keys/chord_g_min.wav',
       tip: 'Ngón 1 chặn 6 dây tại ngăn 3 • Ngón 3 Dây 5 ngăn 5 • Ngón 4 Dây 4 ngăn 5',
     ),
     GuitarChordShape(
@@ -289,7 +289,7 @@ class GuitarFretboardData {
       formula: 'X - 1 - 3 - 3 - 3 - 1',
       fretsByString1To6: [1, 3, 3, 3, 1, -1],
       fingersByString1To6: [1, 4, 3, 2, 1, 0],
-      audioAsset: 'assets/audio/keys/chord_f_maj.wav',
+      audioAsset: 'assets/audio/keys/chord_bb_maj.wav',
       tip: 'Ngón 1 chặn 5 dây tại ngăn 1 • Ngón 2, 3, 4 bấm Dây 4, 3, 2 tại ngăn 3',
     ),
 
@@ -301,7 +301,7 @@ class GuitarFretboardData {
       formula: 'X - 3 - 2 - 3 - 1 - 0',
       fretsByString1To6: [0, 1, 3, 2, 3, -1],
       fingersByString1To6: [0, 1, 4, 2, 3, 0],
-      audioAsset: 'assets/audio/keys/chord_g_dom7.wav',
+      audioAsset: 'assets/audio/keys/chord_c_dom7.wav',
       tip: 'Giữ Đô Trưởng (C) và đặt thêm Ngón 4 (Út) vào Dây 3 ngăn 3 (nốt Sib)',
     ),
     GuitarChordShape(
@@ -311,7 +311,7 @@ class GuitarFretboardData {
       formula: 'X - X - 0 - 2 - 1 - 2',
       fretsByString1To6: [2, 1, 2, 0, -1, -1],
       fingersByString1To6: [3, 1, 2, 0, 0, 0],
-      audioAsset: 'assets/audio/keys/chord_g_dom7.wav',
+      audioAsset: 'assets/audio/keys/chord_d_dom7.wav',
       tip: 'Tam giác ngược ở 3 dây dưới: Ngón 1 Dây 2 ngăn 1 • Ngón 2 Dây 3 ngăn 2 • Ngón 3 Dây 1 ngăn 2',
     ),
     GuitarChordShape(
@@ -321,7 +321,7 @@ class GuitarFretboardData {
       formula: '0 - 2 - 0 - 1 - 0 - 0',
       fretsByString1To6: [0, 0, 1, 0, 2, 0],
       fingersByString1To6: [0, 0, 1, 0, 2, 0],
-      audioAsset: 'assets/audio/keys/chord_g_dom7.wav',
+      audioAsset: 'assets/audio/keys/chord_e_dom7.wav',
       tip: 'Từ Mi Trưởng (E) nhấc ngón áp út khỏi Dây 4 để vang Dây 4 buông (Rê D3)',
     ),
     GuitarChordShape(
@@ -341,7 +341,7 @@ class GuitarFretboardData {
       formula: 'X - 0 - 2 - 0 - 2 - 0',
       fretsByString1To6: [0, 2, 0, 2, 0, -1],
       fingersByString1To6: [0, 3, 0, 2, 0, 0],
-      audioAsset: 'assets/audio/keys/chord_g_dom7.wav',
+      audioAsset: 'assets/audio/keys/chord_a_dom7.wav',
       tip: 'Từ La Trưởng (A) nhấc ngón giữa ở Dây 3 ra để vang Dây 3 buông (Sol G3)',
     ),
     GuitarChordShape(
@@ -351,7 +351,7 @@ class GuitarFretboardData {
       formula: 'X - 2 - 1 - 2 - 0 - 2',
       fretsByString1To6: [2, 0, 2, 1, 2, -1],
       fingersByString1To6: [4, 0, 3, 1, 2, 0],
-      audioAsset: 'assets/audio/keys/chord_g_dom7.wav',
+      audioAsset: 'assets/audio/keys/chord_b_dom7.wav',
       tip: 'Ngón 1 Dây 4 ngăn 1 • Ngón 2 Dây 5 ngăn 2 • Ngón 3 Dây 3 ngăn 2 • Ngón 4 Dây 1 ngăn 2',
     ),
     GuitarChordShape(
@@ -371,7 +371,7 @@ class GuitarFretboardData {
       formula: 'X - X - 0 - 2 - 1 - 1',
       fretsByString1To6: [1, 1, 2, 0, -1, -1],
       fingersByString1To6: [1, 1, 2, 0, 0, 0],
-      audioAsset: 'assets/audio/keys/chord_a_min7.wav',
+      audioAsset: 'assets/audio/keys/chord_d_min7.wav',
       tip: 'Ngón 1 chặn nhẹ Dây 1 & Dây 2 ngăn 1 • Ngón 2 bấm Dây 3 ngăn 2 (Bass dây 4 buông)',
     ),
     GuitarChordShape(
@@ -381,7 +381,7 @@ class GuitarFretboardData {
       formula: '0 - 2 - 2 - 0 - 3 - 0',
       fretsByString1To6: [0, 3, 0, 2, 2, 0],
       fingersByString1To6: [0, 4, 0, 3, 2, 0],
-      audioAsset: 'assets/audio/keys/chord_a_min7.wav',
+      audioAsset: 'assets/audio/keys/chord_e_min7.wav',
       tip: 'Giữ Mi Thứ (Em) và đặt thêm Ngón 4 vào Dây 2 ngăn 3 (nốt Rê D4)',
     ),
     GuitarChordShape(
@@ -401,7 +401,7 @@ class GuitarFretboardData {
       formula: 'X - X - 3 - 2 - 1 - 0',
       fretsByString1To6: [0, 1, 2, 3, -1, -1],
       fingersByString1To6: [0, 1, 2, 3, 0, 0],
-      audioAsset: 'assets/audio/keys/chord_c_maj7.wav',
+      audioAsset: 'assets/audio/keys/chord_f_maj7.wav',
       tip: 'Thế bấm Fa mở cực dễ: Ngón 1 Dây 2 ngăn 1 • Ngón 2 Dây 3 ngăn 2 • Ngón 3 Dây 4 ngăn 3 • Dây 1 buông',
     ),
     GuitarChordShape(
@@ -411,7 +411,7 @@ class GuitarFretboardData {
       formula: '3 - 2 - 0 - 0 - 0 - 2',
       fretsByString1To6: [2, 0, 0, 0, 2, 3],
       fingersByString1To6: [1, 0, 0, 0, 2, 3],
-      audioAsset: 'assets/audio/keys/chord_c_maj7.wav',
+      audioAsset: 'assets/audio/keys/chord_g_maj7.wav',
       tip: 'Ngón 1 Dây 1 ngăn 2 (Fa#) • Ngón 2 Dây 5 ngăn 2 (Si) • Ngón 3 Dây 6 ngăn 3 (Sol)',
     ),
 
@@ -433,7 +433,7 @@ class GuitarFretboardData {
       formula: 'X - X - 0 - 2 - 3 - 0',
       fretsByString1To6: [0, 3, 2, 0, -1, -1],
       fingersByString1To6: [0, 3, 1, 0, 0, 0],
-      audioAsset: 'assets/audio/keys/chord_c_sus4.wav',
+      audioAsset: 'assets/audio/keys/chord_d_sus2.wav',
       tip: 'Từ Rê Trưởng (D) nhấc ngón giữa khỏi Dây 1 để vang Dây 1 buông (Mi E4) trong trẻo',
     ),
     GuitarChordShape(
@@ -443,7 +443,7 @@ class GuitarFretboardData {
       formula: 'X - X - 0 - 2 - 3 - 3',
       fretsByString1To6: [3, 3, 2, 0, -1, -1],
       fingersByString1To6: [4, 3, 1, 0, 0, 0],
-      audioAsset: 'assets/audio/keys/chord_c_sus4.wav',
+      audioAsset: 'assets/audio/keys/chord_d_sus4.wav',
       tip: 'Từ Rê Trưởng (D) đặt thêm Ngón 4 vào Dây 1 ngăn 3 (nốt Sol G4)',
     ),
     GuitarChordShape(
@@ -453,7 +453,7 @@ class GuitarFretboardData {
       formula: '0 - 2 - 2 - 2 - 0 - 0',
       fretsByString1To6: [0, 0, 2, 2, 2, 0],
       fingersByString1To6: [0, 0, 4, 3, 2, 0],
-      audioAsset: 'assets/audio/keys/chord_c_sus4.wav',
+      audioAsset: 'assets/audio/keys/chord_e_sus4.wav',
       tip: 'Từ Mi Trưởng (E) đặt thêm Ngón 4 vào Dây 3 ngăn 2 (nốt La A3) rồi giải về E',
     ),
     GuitarChordShape(
@@ -463,7 +463,7 @@ class GuitarFretboardData {
       formula: 'X - 0 - 2 - 2 - 0 - 0',
       fretsByString1To6: [0, 0, 2, 2, 0, -1],
       fingersByString1To6: [0, 0, 3, 2, 0, 0],
-      audioAsset: 'assets/audio/keys/chord_c_sus4.wav',
+      audioAsset: 'assets/audio/keys/chord_a_sus2.wav',
       tip: 'Từ La Thứ (Am) nhấc ngón trỏ khỏi Dây 2 để vang cả Dây 2 buông (Si) và Dây 1 buông (Mi)',
     ),
     GuitarChordShape(
@@ -473,7 +473,7 @@ class GuitarFretboardData {
       formula: 'X - 0 - 2 - 2 - 3 - 0',
       fretsByString1To6: [0, 3, 2, 2, 0, -1],
       fingersByString1To6: [0, 4, 3, 2, 0, 0],
-      audioAsset: 'assets/audio/keys/chord_c_sus4.wav',
+      audioAsset: 'assets/audio/keys/chord_a_sus4.wav',
       tip: 'Từ La Thứ (Am) đặt Ngón 4 vào Dây 2 ngăn 3 (nốt Rê D4)',
     ),
     GuitarChordShape(
@@ -483,7 +483,7 @@ class GuitarFretboardData {
       formula: 'X - 3 - 2 - 0 - 3 - 3',
       fretsByString1To6: [3, 3, 0, 2, 3, -1],
       fingersByString1To6: [4, 3, 0, 1, 2, 0],
-      audioAsset: 'assets/audio/keys/chord_c_maj7.wav',
+      audioAsset: 'assets/audio/keys/chord_c_add9.wav',
       tip: 'Hợp âm màu Acoustic: Ngón 1 Dây 4 ngăn 2 • Ngón 2 Dây 5 ngăn 3 • Ngón 3 Dây 2 ngăn 3 • Ngón 4 Dây 1 ngăn 3',
     ),
     GuitarChordShape(
@@ -493,7 +493,7 @@ class GuitarFretboardData {
       formula: 'X - 2 - 0 - 0 - 3 - 3',
       fretsByString1To6: [3, 3, 0, 0, 2, -1],
       fingersByString1To6: [4, 3, 0, 0, 1, 0],
-      audioAsset: 'assets/audio/keys/chord_g_maj.wav',
+      audioAsset: 'assets/audio/keys/chord_g_slash_b.wav',
       tip: 'Hợp âm cầu nối Bass đi bộ mượt mà giữa Đô Trưởng (C) và La Thứ (Am)',
     ),
 
@@ -575,7 +575,7 @@ class GuitarFretboardData {
       formula: '2 - 4 - 4 - X - X - X',
       fretsByString1To6: [-1, -1, -1, 4, 4, 2],
       fingersByString1To6: [0, 0, 0, 4, 3, 1],
-      audioAsset: 'assets/audio/keys/chord_e5.wav',
+      audioAsset: 'assets/audio/keys/chord_fsharp5.wav',
       tip: 'Dịch dáng F5 lên ngăn 2: Ngón 1 Dây 6 ngăn 2 (Fa#) • Ngón 3 Dây 5 ngăn 4 • Ngón 4 Dây 4 ngăn 4',
     ),
   ];
@@ -3353,11 +3353,16 @@ class InteractiveGuitarFretboard extends StatelessWidget {
       badgeColor = const Color(0xFF64748B);
       badgeText = 'X';
     } else if (isChordHit) {
+      final isBarreFinger1 =
+          chordShape?.category == 'barre' && (chordFinger ?? 1) == 1 && fret > 0;
       badgeColor = fret == 0
           ? const Color(0xFF10B981)
-          : const Color(0xFF3B82F6);
-      badgeText =
-          fret == 0 ? 'O' : 'Ngón ${chordFinger ?? 1}';
+          : (isBarreFinger1
+              ? const Color(0xFF8B5CF6)
+              : const Color(0xFF3B82F6));
+      badgeText = fret == 0
+          ? 'O'
+          : (isBarreFinger1 ? 'Chặn 1' : 'Ngón ${chordFinger ?? 1}');
     } else if (isScaleRoot) {
       badgeColor = const Color(0xFFEF4444);
       badgeText = '${note.vnLabel} (Gốc)';
@@ -3612,7 +3617,7 @@ class GuitarQuestionBoardWidget extends StatelessWidget {
       );
       return InteractiveGuitarFretboard(
         key: const Key('guitar_question_board'),
-        maxFrets: 4,
+        maxFrets: chord.maxFret > 4 ? chord.maxFret : 4,
         chordShape: chord,
       );
     }

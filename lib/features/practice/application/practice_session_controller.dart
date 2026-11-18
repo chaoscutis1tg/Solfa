@@ -693,17 +693,27 @@ class PracticeSessionNotifier extends StateNotifier<PracticeSessionState> {
       final nextIdx = state.currentIndex + 1;
 
       // If in Continuous Scoring Mode (60s, 15m, 1h, Unlimited) and running low on questions,
-      // generate more questions seamlessly without repeating the last question at the seam!
+      // generate more questions seamlessly without repeating recent questions at the seam!
       if (state.isContinuousScoringMode && nextIdx >= state.questions.length) {
         final lastQ =
             state.questions.isNotEmpty ? state.questions.last : null;
+        final recentTail = state.questions.length > 10
+            ? state.questions.sublist(state.questions.length - 10)
+            : state.questions;
+        final recentConcepts = <String>{
+          for (final rq in recentTail)
+            rq.options.length <= 2
+                ? '${rq.type}::${rq.audioAsset}'
+                : '${rq.type}::${rq.correctOption.optionKey.toUpperCase()}',
+        };
         final more = await _generator.generateSessionQuestions(
           mode: state.mode == 'review' ? 'topic' : state.mode,
           topicId: state.topicId,
           levelId: state.levelId,
-          targetCount: 15,
+          targetCount: 24,
           excludeAudioAsset: lastQ?.audioAsset,
           excludeOptionKey: lastQ?.correctOption.optionKey,
+          excludeConceptKeys: recentConcepts,
           ledgerOnly: _ref.read(staffLedgerOnlyProvider),
         );
         if (more.questions.isNotEmpty) {

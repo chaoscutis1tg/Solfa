@@ -437,20 +437,43 @@ def generate_keys() -> None:
     # 3a. Chords for topic_chords & topic_guitar_chords (Arpeggio + Full harmonic chord)
     chord_defs = {
         "chord_c_maj": [60, 64, 67],
-        "chord_a_min": [57, 60, 64],
-        "chord_c_min": [60, 63, 67],
-        "chord_f_maj": [53, 57, 60],
-        "chord_d_min": [62, 65, 69],
-        "chord_g_maj": [55, 59, 62],
-        "chord_e_min": [52, 59, 64, 67],
         "chord_d_maj": [50, 57, 62, 66],
         "chord_e_maj": [52, 59, 64, 68],
+        "chord_f_maj": [53, 57, 60],
+        "chord_g_maj": [55, 59, 62],
+        "chord_a_maj": [57, 61, 64],
+        "chord_b_maj": [59, 63, 66],
+        "chord_bb_maj": [58, 62, 65],
+        "chord_c_min": [60, 63, 67],
+        "chord_d_min": [62, 65, 69],
+        "chord_e_min": [52, 59, 64, 67],
+        "chord_f_min": [53, 56, 60],
+        "chord_fsharp_min": [54, 57, 61],
+        "chord_g_min": [55, 58, 62],
+        "chord_a_min": [57, 60, 64],
+        "chord_b_min": [59, 62, 66],
         "chord_c_dim": [60, 63, 66],
         "chord_c_aug": [60, 64, 68],
         "chord_c_sus4": [60, 65, 67],
+        "chord_d_sus2": [62, 64, 69],
+        "chord_d_sus4": [62, 67, 69],
+        "chord_e_sus4": [52, 57, 59, 64],
+        "chord_a_sus2": [57, 59, 64],
+        "chord_a_sus4": [57, 62, 64],
+        "chord_c_add9": [60, 64, 67, 74],
+        "chord_g_slash_b": [47, 55, 59, 62, 67],
         "chord_c_maj7": [60, 64, 67, 71],
+        "chord_f_maj7": [53, 57, 60, 64],
+        "chord_g_maj7": [55, 59, 62, 66],
         "chord_a_min7": [57, 60, 64, 67],
+        "chord_d_min7": [62, 65, 69, 72],
+        "chord_e_min7": [52, 59, 62, 67],
+        "chord_c_dom7": [60, 64, 67, 70],
+        "chord_d_dom7": [50, 57, 60, 66],
+        "chord_e_dom7": [52, 59, 62, 68],
         "chord_g_dom7": [55, 59, 62, 65],
+        "chord_a_dom7": [57, 61, 64, 67],
+        "chord_b_dom7": [59, 63, 66, 69],
     }
     for cname, midis in chord_defs.items():
         arp_notes = [synthesize_piano_note(midi_to_freq(m), 0.24) for m in midis]
@@ -853,22 +876,49 @@ def generate_guitar_audio_assets() -> None:
 
     # Real 6-string guitar chord voicings (low string -> high string MIDI notes)
     guitar_chord_voicings = {
+        # 1. Open Chords (Hợp âm Mở)
         "chord_c_maj": [48, 52, 55, 60, 64],         # X-3-2-0-1-0
-        "chord_a_min": [45, 52, 57, 60, 64],         # X-0-2-2-1-0
-        "chord_c_min": [48, 55, 60, 63, 67],         # X-3-5-5-4-3
-        "chord_f_maj": [41, 48, 53, 57, 60, 65],     # 1-3-3-2-1-1
-        "chord_d_min": [50, 57, 62, 65],             # X-X-0-2-3-1
-        "chord_g_maj": [43, 47, 50, 55, 59, 67],     # 3-2-0-0-0-3
-        "chord_e_min": [40, 47, 52, 55, 59, 64],     # 0-2-2-0-0-0
         "chord_d_maj": [50, 57, 62, 66],             # X-X-0-2-3-2
         "chord_e_maj": [40, 47, 52, 56, 59, 64],     # 0-2-2-1-0-0
+        "chord_g_maj": [43, 47, 50, 55, 59, 67],     # 3-2-0-0-0-3
+        "chord_a_maj": [45, 52, 57, 61, 64],         # X-0-2-2-2-0
+        "chord_a_min": [45, 52, 57, 60, 64],         # X-0-2-2-1-0
+        "chord_d_min": [50, 57, 62, 65],             # X-X-0-2-3-1
+        "chord_e_min": [40, 47, 52, 55, 59, 64],     # 0-2-2-0-0-0
+        # 2. Barre Chords (Hợp âm Chặn)
+        "chord_f_maj": [41, 48, 53, 57, 60, 65],     # 1-3-3-2-1-1
+        "chord_f_min": [41, 48, 53, 56, 60, 65],     # 1-3-3-1-1-1
+        "chord_b_min": [47, 54, 59, 62, 66],         # X-2-4-4-3-2
+        "chord_b_maj": [47, 54, 59, 63, 66],         # X-2-4-4-4-2
+        "chord_fsharp_min": [42, 49, 54, 57, 61, 66],# 2-4-4-2-2-2
+        "chord_g_min": [43, 50, 55, 58, 62, 67],     # 3-5-5-3-3-3
+        "chord_c_min": [48, 55, 60, 63, 67],         # X-3-5-5-4-3
+        "chord_bb_maj": [46, 53, 58, 62, 65],        # X-1-3-3-3-1
+        # 3. Seventh Chords (Hợp âm Bảy)
+        "chord_c_dom7": [48, 52, 58, 60, 64],        # X-3-2-3-1-0
+        "chord_d_dom7": [50, 57, 60, 66],            # X-X-0-2-1-2
+        "chord_e_dom7": [40, 47, 50, 56, 59, 64],    # 0-2-0-1-0-0
+        "chord_g_dom7": [43, 47, 50, 55, 59, 65],    # 3-2-0-0-0-1
+        "chord_a_dom7": [45, 52, 55, 61, 64],        # X-0-2-0-2-0
+        "chord_b_dom7": [47, 51, 57, 59, 66],        # X-2-1-2-0-2
+        "chord_a_min7": [45, 52, 55, 60, 64],        # X-0-2-0-1-0
+        "chord_d_min7": [50, 57, 60, 65],            # X-X-0-2-1-1
+        "chord_e_min7": [40, 47, 52, 55, 62, 64],    # 0-2-2-0-3-0
+        "chord_c_maj7": [48, 52, 55, 59, 64],        # X-3-2-0-0-0
+        "chord_f_maj7": [53, 57, 60, 64],            # X-X-3-2-1-0
+        "chord_g_maj7": [43, 47, 50, 55, 59, 66],    # 3-2-0-0-0-2
+        # 4. Color Chords (Hợp âm Màu: Sus2, Sus4, Add9, Slash, Dim, Aug)
         "chord_c_dim": [48, 54, 60, 63],
         "chord_c_aug": [48, 56, 60, 64],
         "chord_c_sus4": [48, 53, 55, 60, 64],        # X-3-3-0-1-0
-        "chord_c_maj7": [48, 52, 55, 59, 64],        # X-3-2-0-0-0
-        "chord_a_min7": [45, 52, 55, 60, 64],        # X-0-2-0-1-0
-        "chord_g_dom7": [43, 47, 50, 55, 59, 65],    # 3-2-0-0-0-1
-        # Power Chords (Hợp âm 5 Guitar Điện & Rock/Pop)
+        "chord_d_sus2": [50, 57, 62, 64],            # X-X-0-2-3-0
+        "chord_d_sus4": [50, 57, 62, 67],            # X-X-0-2-3-3
+        "chord_e_sus4": [40, 47, 52, 57, 59, 64],    # 0-2-2-2-0-0
+        "chord_a_sus2": [45, 52, 57, 59, 64],        # X-0-2-2-0-0
+        "chord_a_sus4": [45, 52, 57, 62, 64],        # X-0-2-2-3-0
+        "chord_c_add9": [48, 52, 55, 62, 67],        # X-3-2-0-3-3
+        "chord_g_slash_b": [47, 50, 55, 62, 67],     # X-2-0-0-3-3
+        # 5. Power Chords (Hợp âm 5 Guitar Điện & Rock/Pop)
         "chord_e5": [40, 47, 52],                    # 0-2-2-X-X-X
         "chord_a5": [45, 52, 57],                    # X-0-2-2-X-X
         "chord_g5": [43, 50, 55],                    # 3-5-5-X-X-X
@@ -876,6 +926,7 @@ def generate_guitar_audio_assets() -> None:
         "chord_d5": [50, 57, 62],                    # X-5-7-7-X-X
         "chord_b5": [47, 54, 59],                    # X-2-4-4-X-X
         "chord_f5": [41, 48, 53],                    # 1-3-3-X-X-X
+        "chord_fsharp5": [42, 49, 54],               # 2-4-4-X-X-X
     }
 
     for cname, midis in guitar_chord_voicings.items():
