@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:solfa/app/app.dart';
 import 'package:solfa/app/router.dart';
+import 'package:solfa/core/ads/admob_service.dart';
 import 'package:solfa/core/audio/audio_service.dart';
 import 'package:solfa/core/database/app_database.dart';
 import 'package:solfa/core/localization/app_locale.dart';
@@ -303,8 +304,20 @@ void main() {
     );
 
     test(
-      'TC-12: Mở quảng cáo khi offline -> Hiển thị thông báo thân thiện, không ảnh hưởng học tập',
+      'TC-12: Mở quảng cáo khi offline & Kiểm định cấu hình Google AdMob chính thức -> Hiển thị thông báo thân thiện, không ảnh hưởng học tập',
       () async {
+        expect(
+          AdMobService.kAndroidAppId,
+          equals('ca-app-pub-9062104579352036~8837018232'),
+        );
+        expect(
+          AdMobService.kProductionRewardedAdUnitId,
+          equals('ca-app-pub-9062104579352036/9476533675'),
+        );
+        final fallbackResult =
+            await AdMobService.instance.showRewardedAd(isTestMode: true);
+        expect(fallbackResult, equals(AdMobShowResult.unavailableFallback));
+
         final adNotifier = RewardedAdNotifier(
           db,
           customConnectivityCheck: () => false,

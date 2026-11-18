@@ -35,8 +35,8 @@ class AdMobService {
       'ca-app-pub-3940256099942544/5224354917';
 
   bool _isInitialized = false;
-  bool _isInitializing = false;
-  bool _isLoadingAd = false;
+  Future<void>? _initFuture;
+  Future<bool>? _preloadFuture;
   RewardedAd? _cachedRewardedAd;
 
   bool get isSupportedMobilePlatform {
@@ -48,51 +48,73 @@ class AdMobService {
   bool get hasPreloadedAd => _cachedRewardedAd != null;
 
   /// Initializes Google Mobile Ads SDK on Android/iOS and preloads a Rewarded Ad.
+  /// Concurrent callers safely await the same initialization Future.
   Future<void> initialize({bool isTestMode = false}) async {
     if (isTestMode || !isSupportedMobilePlatform) return;
-    if (_isInitialized || _isInitializing) return;
-    _isInitializing = true;
+    if (_isInitialized) return;
+    if (_initFuture != null) {
+      await _initFuture;
+      return;
+    }
+
+    final future = _performInitialize(isTestMode: isTestMode);
+    _initFuture = future;
+    try {
+      await future;
+    } finally {
+      _initFuture = null;
+    }
+  }
+
+  Future<void> _performInitialize({required bool isTestMode}) async {
     try {
       await MobileAds.instance.initialize();
       _isInitialized = true;
       unawaited(preloadRewardedAd(isTestMode: isTestMode));
     } catch (_) {
       // Safe fallback if Google Play Services is unavailable on device
-    } finally {
-      _isInitializing = false;
     }
   }
 
   /// Preloads a RewardedAd into memory so it opens instantaneously when the user taps Watch Ad.
+  /// Concurrent callers safely await the same in-flight preload Future.
   Future<bool> preloadRewardedAd({bool isTestMode = false}) async {
     if (isTestMode || !isSupportedMobilePlatform) return false;
     if (_cachedRewardedAd != null) return true;
-    if (_isLoadingAd) return false;
+    if (_preloadFuture != null) {
+      return await _preloadFuture!;
+    }
 
+    final future = _performPreload(isTestMode: isTestMode);
+    _preloadFuture = future;
+    try {
+      return await future;
+    } finally {
+      _preloadFuture = null;
+    }
+  }
+
+  Future<bool> _performPreload({required bool isTestMode}) async {
     if (!_isInitialized) {
       await initialize(isTestMode: isTestMode);
     }
+    if (_cachedRewardedAd != null) return true;
 
-    _isLoadingAd = true;
-    try {
-      final ad = await _loadSingleUnit(kProductionRewardedAdUnitId);
-      if (ad != null) {
-        _cachedRewardedAd = ad;
+    final ad = await _loadSingleUnit(kProductionRewardedAdUnitId);
+    if (ad != null) {
+      _cachedRewardedAd = ad;
+      return true;
+    }
+    // In debug mode, if the newly created production ad unit is still in its 1-hour warm-up period,
+    // fallback to Google's official test ad unit so developers can verify the full AdMob flow.
+    if (kDebugMode) {
+      final testAd = await _loadSingleUnit(kGoogleTestRewardedAdUnitId);
+      if (testAd != null) {
+        _cachedRewardedAd = testAd;
         return true;
       }
-      // In debug mode, if the newly created production ad unit is still in its 1-hour warm-up period,
-      // fallback to Google's official test ad unit so developers can verify the full AdMob flow.
-      if (kDebugMode) {
-        final testAd = await _loadSingleUnit(kGoogleTestRewardedAdUnitId);
-        if (testAd != null) {
-          _cachedRewardedAd = testAd;
-          return true;
-        }
-      }
-      return false;
-    } finally {
-      _isLoadingAd = false;
     }
+    return false;
   }
 
   Future<RewardedAd?> _loadSingleUnit(String adUnitId) async {
@@ -175,6 +197,7 @@ class AdMobService {
       );
     } catch (_) {
       ad.dispose();
+      unawaited(preloadRewardedAd(isTestMode: isTestMode));
       if (!completer.isCompleted) {
         completer.complete(AdMobShowResult.unavailableFallback);
       }
@@ -183,4 +206,3 @@ class AdMobService {
     return completer.future;
   }
 }
-
