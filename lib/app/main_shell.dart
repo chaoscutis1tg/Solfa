@@ -388,7 +388,7 @@ class _DiamondBattleCtaButton extends StatefulWidget {
 }
 
 class _DiamondBattleCtaButtonState extends State<_DiamondBattleCtaButton>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   AnimationController? _pulseController;
   late Animation<double> _pulseAnim;
   bool _isPressed = false;
@@ -402,6 +402,7 @@ class _DiamondBattleCtaButtonState extends State<_DiamondBattleCtaButton>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     if (!_isInWidgetTest) {
       _pulseController = AnimationController(
         vsync: this,
@@ -416,7 +417,26 @@ class _DiamondBattleCtaButtonState extends State<_DiamondBattleCtaButton>
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final ctrl = _pulseController;
+    if (ctrl == null) return;
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.hidden ||
+        state == AppLifecycleState.detached) {
+      if (ctrl.isAnimating) {
+        ctrl.stop();
+      }
+    } else if (state == AppLifecycleState.resumed) {
+      if (!ctrl.isAnimating) {
+        ctrl.repeat(reverse: true);
+      }
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _pulseController?.dispose();
     super.dispose();
   }

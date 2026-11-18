@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../app/theme/app_colors.dart';
 import '../../../app/widgets/solfa_gem_icon.dart';
+import '../../../app/widgets/solfa_guitar_icon.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../support_developer/application/rewarded_ad_controller.dart';
 import '../../support_developer/presentation/support_developer_screen.dart';
@@ -995,9 +996,9 @@ class GuitarTypeSwitchBar extends ConsumerWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      Icons.music_note_rounded,
+                    SolfaGuitarIcon(
                       size: 16,
+                      isElectric: false,
                       color: !isElectric
                           ? Colors.white
                           : const Color(0xFFD97706),
@@ -1041,9 +1042,9 @@ class GuitarTypeSwitchBar extends ConsumerWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      Icons.bolt_rounded,
-                      size: 17,
+                    SolfaGuitarIcon(
+                      size: 16,
+                      isElectric: true,
                       color: isElectric
                           ? Colors.white
                           : const Color(0xFF6366F1),
@@ -3204,99 +3205,101 @@ class InteractiveGuitarFretboard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cellWidth = maxFrets <= 5 ? 56.0 : 48.0;
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E1B18),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFF78350F), width: 1.5),
-      ),
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Hàng đánh số ngăn đàn (Ngăn 0..maxFrets)
-                Row(
-                  children: [
-                    const SizedBox(width: 48),
-                    for (int f = 0; f <= maxFrets; f++)
-                      SizedBox(
-                        width: cellWidth,
-                        child: Center(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 5,
-                              vertical: 1,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const {3, 5, 7, 9, 12}.contains(f)
-                                  ? const Color(0xFFF59E0B).withOpacity(0.25)
-                                  : Colors.transparent,
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              f == 0 ? 'Buông' : 'Ng.$f',
-                              style: TextStyle(
-                                fontSize: 9.5,
-                                fontWeight: const {3, 5, 7, 9, 12}.contains(f)
-                                    ? FontWeight.w900
-                                    : FontWeight.w600,
+    return RepaintBoundary(
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E1B18),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFF78350F), width: 1.5),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Hàng đánh số ngăn đàn (Ngăn 0..maxFrets)
+                  Row(
+                    children: [
+                      const SizedBox(width: 48),
+                      for (int f = 0; f <= maxFrets; f++)
+                        SizedBox(
+                          width: cellWidth,
+                          child: Center(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 5,
+                                vertical: 1,
+                              ),
+                              decoration: BoxDecoration(
                                 color: const {3, 5, 7, 9, 12}.contains(f)
-                                    ? const Color(0xFFFBBF24)
-                                    : Colors.white70,
+                                    ? const Color(0xFFF59E0B).withOpacity(0.25)
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                f == 0 ? 'Buông' : 'Ng.$f',
+                                style: TextStyle(
+                                  fontSize: 9.5,
+                                  fontWeight: const {3, 5, 7, 9, 12}.contains(f)
+                                      ? FontWeight.w900
+                                      : FontWeight.w600,
+                                  color: const {3, 5, 7, 9, 12}.contains(f)
+                                      ? const Color(0xFFFBBF24)
+                                      : Colors.white70,
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                // 6 Dây đàn (Dây 1 ở trên -> Dây 6 ở dưới)
-                for (int s = 1; s <= 6; s++)
-                  Row(
-                    children: [
-                      SizedBox(
-                        width: 48,
-                        height: 30,
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            GuitarFretboardData.stringLabels[s - 1],
-                            style: const TextStyle(
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w800,
-                              color: Color(0xFFFDE68A),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  // 6 Dây đàn (Dây 1 ở trên -> Dây 6 ở dưới)
+                  for (int s = 1; s <= 6; s++)
+                    Row(
+                      children: [
+                        SizedBox(
+                          width: 48,
+                          height: 30,
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              GuitarFretboardData.stringLabels[s - 1],
+                              style: const TextStyle(
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFFFDE68A),
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      for (int f = 0; f <= maxFrets; f++)
-                        _buildFretCell(s, f, cellWidth),
-                    ],
-                  ),
-              ],
-            ),
-          ),
-          if (chordShape != null) ...[
-            const SizedBox(height: 6),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: Text(
-                'Chú giải: O = Dây buông • X = Bịt dây • Ngón 1: Trỏ • Ngón 2: Giữa • Ngón 3: Áp út • Ngón 4: Út',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white.withOpacity(0.75),
-                ),
+                        for (int f = 0; f <= maxFrets; f++)
+                          _buildFretCell(s, f, cellWidth),
+                      ],
+                    ),
+                ],
               ),
             ),
+            if (chordShape != null) ...[
+              const SizedBox(height: 6),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Text(
+                  'Chú giải: O = Dây buông • X = Bịt dây • Ngón 1: Trỏ • Ngón 2: Giữa • Ngón 3: Áp út • Ngón 4: Út',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white.withOpacity(0.75),
+                  ),
+                ),
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -3460,107 +3463,109 @@ class GuitarTabViewerWidget extends StatelessWidget {
           (5, 4),
         ];
 
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isDark ? AppColors.borderDark : AppColors.borderLight,
+    return RepaintBoundary(
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isDark ? AppColors.borderDark : AppColors.borderLight,
+          ),
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          for (int s = 1; s <= 6; s++)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 2),
-              child: Row(
-                children: [
-                  SizedBox(
-                    width: 22,
-                    child: Text(
-                      tabStrings[s - 1],
-                      style: const TextStyle(
-                        fontFamily: 'monospace',
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.primary,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (int s = 1; s <= 6; s++)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 22,
+                      child: Text(
+                        tabStrings[s - 1],
+                        style: const TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.primary,
+                        ),
                       ),
                     ),
-                  ),
-                  Expanded(
-                    child: Stack(
-                      alignment: Alignment.centerLeft,
-                      children: [
-                        Container(
-                          height: 1,
-                          color: Colors.grey.withOpacity(0.45),
-                        ),
-                        if (highlightString != null && highlightFret != null)
-                          Padding(
-                            padding: const EdgeInsets.only(left: 48),
-                            child: s == highlightString
-                                ? Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 7,
-                                      vertical: 1,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.primary,
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    child: Text(
-                                      '$highlightFret',
-                                      style: const TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w900,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  )
-                                : const SizedBox(height: 16),
-                          )
-                        else
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: List.generate(steps.length, (idx) {
-                              final st = steps[idx];
-                              final isHere = st.$1 == s;
-                              final isActive = idx == activeStepIndex && isHere;
-                              if (!isHere) {
-                                return const SizedBox(width: 22, height: 16);
-                              }
-                              return Container(
-                                width: 22,
-                                height: 16,
-                                alignment: Alignment.center,
-                                decoration: BoxDecoration(
-                                  color: isActive
-                                      ? AppColors.correct
-                                      : AppColors.primary.withOpacity(0.16),
-                                  borderRadius: BorderRadius.circular(5),
-                                ),
-                                child: Text(
-                                  '${st.$2}',
-                                  style: TextStyle(
-                                    fontSize: 10.5,
-                                    fontWeight: FontWeight.w900,
-                                    color: isActive
-                                        ? Colors.white
-                                        : AppColors.primary,
-                                  ),
-                                ),
-                              );
-                            }),
+                    Expanded(
+                      child: Stack(
+                        alignment: Alignment.centerLeft,
+                        children: [
+                          Container(
+                            height: 1,
+                            color: Colors.grey.withOpacity(0.45),
                           ),
-                      ],
+                          if (highlightString != null && highlightFret != null)
+                            Padding(
+                              padding: const EdgeInsets.only(left: 48),
+                              child: s == highlightString
+                                  ? Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 7,
+                                        vertical: 1,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.primary,
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        '$highlightFret',
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w900,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    )
+                                  : const SizedBox(height: 16),
+                            )
+                          else
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: List.generate(steps.length, (idx) {
+                                final st = steps[idx];
+                                final isHere = st.$1 == s;
+                                final isActive = idx == activeStepIndex && isHere;
+                                if (!isHere) {
+                                  return const SizedBox(width: 22, height: 16);
+                                }
+                                return Container(
+                                  width: 22,
+                                  height: 16,
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    color: isActive
+                                        ? AppColors.correct
+                                        : AppColors.primary.withOpacity(0.16),
+                                    borderRadius: BorderRadius.circular(5),
+                                  ),
+                                  child: Text(
+                                    '${st.$2}',
+                                    style: TextStyle(
+                                      fontSize: 10.5,
+                                      fontWeight: FontWeight.w900,
+                                      color: isActive
+                                          ? Colors.white
+                                          : AppColors.primary,
+                                    ),
+                                  ),
+                                );
+                              }),
+                            ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }

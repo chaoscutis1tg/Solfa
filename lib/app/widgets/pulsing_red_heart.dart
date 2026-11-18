@@ -23,7 +23,7 @@ class PulsingRedHeart extends StatefulWidget {
 }
 
 class _PulsingRedHeartState extends State<PulsingRedHeart>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   AnimationController? _controller;
   late Animation<double> _scaleAnimation;
 
@@ -36,6 +36,7 @@ class _PulsingRedHeartState extends State<PulsingRedHeart>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     if (widget.enablePulse && !_isInWidgetTest) {
       _controller = AnimationController(
         vsync: this,
@@ -50,7 +51,26 @@ class _PulsingRedHeartState extends State<PulsingRedHeart>
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final ctrl = _controller;
+    if (ctrl == null) return;
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.hidden ||
+        state == AppLifecycleState.detached) {
+      if (ctrl.isAnimating) {
+        ctrl.stop();
+      }
+    } else if (state == AppLifecycleState.resumed && widget.enablePulse) {
+      if (!ctrl.isAnimating) {
+        ctrl.repeat(reverse: true);
+      }
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _controller?.dispose();
     super.dispose();
   }

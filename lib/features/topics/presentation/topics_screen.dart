@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../app/design_system/solfa_design_system.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../app/widgets/solfa_gem_icon.dart';
+import '../../../app/widgets/solfa_guitar_icon.dart';
 import '../../../core/localization/app_locale.dart';
 import '../../../core/models/domain_models.dart';
 import '../../../core/providers/app_providers.dart';
@@ -392,6 +393,12 @@ class TopicsScreen extends ConsumerWidget {
                     child: _AreaSwitchButton(
                       key: const Key('tab_practice_area_guitar'),
                       icon: Icons.grid_on_rounded,
+                      customIcon: SolfaGuitarIcon(
+                        size: 17,
+                        color: isGuitarArea
+                            ? Colors.white
+                            : const Color(0xFFD97706),
+                      ),
                       label: isEn
                           ? 'Guitar & Fretboard'
                           : 'Học Guitar & Cần đàn',
@@ -464,6 +471,7 @@ class TopicsScreen extends ConsumerWidget {
         key: Key('topic_grid_card_${topic.id}'),
         icon: topicIconForCode(topic.code),
         title: shortTopicTitle(topic, isEn: isEn),
+        subtitle: shortTopicSubtitle(topic, isEn: isEn),
         accentColor: isGuitarArea ? const Color(0xFFD97706) : AppColors.primary,
         isDark: isDark,
         onTap: () => showTopicPracticeSetupModal(context, ref, topic),
@@ -475,7 +483,14 @@ class TopicsScreen extends ConsumerWidget {
         return _BigTopicGridCard(
           key: const Key('topic_grid_card_guitar_studio'),
           icon: Icons.explore_rounded,
+          customIcon: const SolfaGuitarIcon(
+            size: 26,
+            color: Color(0xFFD97706),
+          ),
           title: isEn ? '6-String Fretboard' : 'Map Cần đàn 6 dây',
+          subtitle: isEn
+              ? '44 Chords • 7 Scales • Tuner'
+              : '44 Hợp âm • 7 Scale • So dây',
           accentColor: const Color(0xFFD97706),
           isDark: isDark,
           onTap: () => showGuitarStudioSheet(context, initialTab: 0),
@@ -485,6 +500,9 @@ class TopicsScreen extends ConsumerWidget {
         key: const Key('topic_grid_card_guitar_spider'),
         icon: Icons.touch_app_rounded,
         title: isEn ? 'Finger Workouts' : 'Luyện ngón 1-2-3-4',
+        subtitle: isEn
+            ? '12 Workouts • Lv.1–5 (★)'
+            : '12 Bài • Lộ trình Lv.1–5 (★)',
         accentColor: const Color(0xFFD97706),
         isDark: isDark,
         onTap: () => showGuitarFingerWorkoutPage(context),
@@ -496,6 +514,9 @@ class TopicsScreen extends ConsumerWidget {
       key: const Key('topic_grid_card_free_piano'),
       icon: Icons.piano_rounded,
       title: isEn ? 'Piano C3–C5 Studio' : 'Đàn Piano C3–C5',
+      subtitle: isEn
+          ? 'Staff Explorer & Dictation'
+          : 'Tra cứu Khuông & Chép nhạc',
       accentColor: AppColors.primary,
       isDark: isDark,
       onTap: () => showFreePianoExplorerSheet(context),
@@ -505,6 +526,7 @@ class TopicsScreen extends ConsumerWidget {
 
 class _AreaSwitchButton extends StatelessWidget {
   final IconData icon;
+  final Widget? customIcon;
   final String label;
   final bool isSelected;
   final Color accentColor;
@@ -513,6 +535,7 @@ class _AreaSwitchButton extends StatelessWidget {
   const _AreaSwitchButton({
     super.key,
     required this.icon,
+    this.customIcon,
     required this.label,
     required this.isSelected,
     required this.accentColor,
@@ -532,11 +555,12 @@ class _AreaSwitchButton extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                icon,
-                size: 17,
-                color: isSelected ? Colors.white : accentColor,
-              ),
+              customIcon ??
+                  Icon(
+                    icon,
+                    size: 17,
+                    color: isSelected ? Colors.white : accentColor,
+                  ),
               const SizedBox(width: 6),
               Flexible(
                 child: FittedBox(
@@ -560,10 +584,12 @@ class _AreaSwitchButton extends StatelessWidget {
 }
 
 /// Thẻ chủ đề lớn trên lưới 2 cột:
-/// Chỉ hiển thị Logo/Icon lớn + Tên bài luyện tập để giao diện cực kỳ thoáng và trực quan.
+/// Hiển thị Logo/Icon lớn + Tên bài luyện tập + Phụ đề ngắn gọn 1 dòng để giao diện thoáng và trực quan.
 class _BigTopicGridCard extends StatelessWidget {
   final IconData icon;
+  final Widget? customIcon;
   final String title;
+  final String? subtitle;
   final Color accentColor;
   final bool isDark;
   final VoidCallback onTap;
@@ -571,7 +597,9 @@ class _BigTopicGridCard extends StatelessWidget {
   const _BigTopicGridCard({
     super.key,
     required this.icon,
+    this.customIcon,
     required this.title,
+    this.subtitle,
     this.accentColor = AppColors.primary,
     required this.isDark,
     required this.onTap,
@@ -586,8 +614,8 @@ class _BigTopicGridCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         onTap: onTap,
         child: Container(
-          height: 132,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+          height: 136,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
@@ -599,30 +627,47 @@ class _BigTopicGridCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                width: 54,
-                height: 54,
+                width: 50,
+                height: 50,
                 decoration: BoxDecoration(
                   color: accentColor.withOpacity(isDark ? 0.16 : 0.10),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(15),
                 ),
                 alignment: Alignment.center,
-                child: Icon(
-                  icon,
-                  color: accentColor,
-                  size: 28,
-                ),
+                child: customIcon ??
+                    Icon(
+                      icon,
+                      color: accentColor,
+                      size: 26,
+                    ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 9),
               Text(
                 title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  fontSize: 15,
+                  fontSize: 14.5,
                   fontWeight: FontWeight.w800,
                 ),
               ),
+              if (subtitle != null && subtitle!.isNotEmpty) ...[
+                const SizedBox(height: 2),
+                Text(
+                  subtitle!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 10.8,
+                    fontWeight: FontWeight.w600,
+                    color: isDark
+                        ? AppColors.textSecondaryDark
+                        : AppColors.textSecondaryLight,
+                  ),
+                ),
+              ],
             ],
           ),
         ),

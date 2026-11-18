@@ -29,7 +29,8 @@ class FreePianoExplorerSheet extends ConsumerStatefulWidget {
 }
 
 class _FreePianoExplorerSheetState
-    extends ConsumerState<FreePianoExplorerSheet> {
+    extends ConsumerState<FreePianoExplorerSheet>
+    with WidgetsBindingObserver {
   int _selectedOctave = 4; // 3, 4, or 5
   String _selectedPitchClass = 'C'; // 'C', 'C#', 'D', ..., 'B'
   String? _overrideLedgerKey;
@@ -47,6 +48,30 @@ class _FreePianoExplorerSheetState
   bool _dictationCompleted = false;
   String? _dictationFeedback;
   bool _dictationFeedbackIsError = false;
+  int _melodyPlaybackToken = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.detached) {
+      _melodyPlaybackToken++;
+      ref.read(audioServiceProvider).stop(includePolyphony: true);
+    }
+  }
+
+  @override
+  void dispose() {
+    _melodyPlaybackToken++;
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
 
   static const List<(String title, String hint, List<String> notes)>
       _dictationMelodies = [
@@ -361,6 +386,7 @@ class _FreePianoExplorerSheetState
   }
 
   Future<void> _playCurrentDictationMelody() async {
+    final token = ++_melodyPlaybackToken;
     final melody = _dictationMelodies[_dictationIndex];
     final audio = ref.read(audioServiceProvider);
     if (audio.isTestMode) {
@@ -368,7 +394,9 @@ class _FreePianoExplorerSheetState
       return;
     }
     for (int i = 0; i < melody.$3.length; i++) {
-      if (!mounted || !_isDictationMode) return;
+      if (!mounted || !_isDictationMode || token != _melodyPlaybackToken) {
+        return;
+      }
       await audio.playPianoKey(melody.$3[i]);
       if (i < melody.$3.length - 1) {
         await Future.delayed(const Duration(milliseconds: 380));
@@ -501,12 +529,14 @@ class _FreePianoExplorerSheetState
               ),
               const SizedBox(height: 12),
 
-              // 1. Khuông nhạc ở phía trên
-              MusicalStaffWidget(
-                targetNoteKey: _activeNoteKey,
-                selectedNoteKey: _activeNoteKey,
-                showNote: true,
-                isSightReading: false,
+              // 1. Khuông nhạc ở phía trên (Cách ly RepaintBoundary để mượt 60/120 FPS)
+              RepaintBoundary(
+                child: MusicalStaffWidget(
+                  targetNoteKey: _activeNoteKey,
+                  selectedNoteKey: _activeNoteKey,
+                  showNote: true,
+                  isSightReading: false,
+                ),
               ),
               const SizedBox(height: 8),
 
@@ -595,20 +625,22 @@ class _FreePianoExplorerSheetState
               ),
               const SizedBox(height: 10),
 
-              // 3. Đàn Piano ở phía dưới (Ưu tiên diện tích thao tác chính)
-              PianoKeyboardWidget(
-                highlightedNoteKey: NoteFormatter.cleanNoteKey(_activeNoteKey),
-                highlightedNoteKeys: _activeHarmonyKeys,
-                selectedNoteKey: NoteFormatter.cleanNoteKey(_activeNoteKey),
-                showHighlight: true,
-                enableBlackKeys: true,
-                onKeyTap: (rawKey) {
-                  final pc =
-                      rawKey.replaceAll(RegExp(r'[0-9]'), '').toUpperCase();
-                  final clampedOctave =
-                      _selectedOctave > 5 ? 5 : _selectedOctave;
-                  _selectAndPlay(pc, clampedOctave, fromPianoTap: true);
-                },
+              // 3. Đàn Piano ở phía dưới (Ưu tiên diện tích thao tác chính + RepaintBoundary)
+              RepaintBoundary(
+                child: PianoKeyboardWidget(
+                  highlightedNoteKey: NoteFormatter.cleanNoteKey(_activeNoteKey),
+                  highlightedNoteKeys: _activeHarmonyKeys,
+                  selectedNoteKey: NoteFormatter.cleanNoteKey(_activeNoteKey),
+                  showHighlight: true,
+                  enableBlackKeys: true,
+                  onKeyTap: (rawKey) {
+                    final pc =
+                        rawKey.replaceAll(RegExp(r'[0-9]'), '').toUpperCase();
+                    final clampedOctave =
+                        _selectedOctave > 5 ? 5 : _selectedOctave;
+                    _selectAndPlay(pc, clampedOctave, fromPianoTap: true);
+                  },
+                ),
               ),
               const SizedBox(height: 10),
 

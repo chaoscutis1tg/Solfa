@@ -6,6 +6,7 @@ import '../../../app/design_system/solfa_design_system.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../app/widgets/crossed_swords_icon.dart';
 import '../../../app/widgets/solfa_gem_icon.dart';
+import '../../../app/widgets/solfa_guitar_icon.dart';
 import '../../../core/localization/app_locale.dart';
 import '../../../core/models/domain_models.dart';
 import '../../../core/providers/app_providers.dart';
@@ -491,6 +492,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             Expanded(
               child: _QuickAccessItem(
                 key: const Key('btn_open_guitar_studio'),
+                customIcon: const SolfaGuitarIcon(
+                  size: 22,
+                  color: Color(0xFFD97706),
+                ),
                 icon: Icons.grid_on_rounded,
                 title: isEn ? 'Guitar' : 'Đàn Guitar',
                 subtitle: 'Map & Tab',
