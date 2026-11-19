@@ -10,6 +10,7 @@ import '../../../core/localization/app_locale.dart';
 import '../../../core/models/domain_models.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../guitar/presentation/guitar_studio_sheet.dart';
+import '../../guitar/presentation/interactive_songbook_and_theory_sheet.dart';
 import '../../practice/application/practice_session_controller.dart';
 import '../../practice/presentation/widgets/free_piano_explorer_sheet.dart';
 import '../../support_developer/application/rewarded_ad_controller.dart';
@@ -305,8 +306,14 @@ class TopicsScreen extends ConsumerWidget {
       data: (topics) {
         final activeTopics =
             isGuitarArea ? guitarTopics : topics.where((t) => t.isEnabled).toList();
-        final totalItems = activeTopics.length + (isGuitarArea ? 2 : 1);
-        final rowCount = (totalItems / 2).ceil();
+        final quizRowCount = (activeTopics.length / 2).ceil();
+        final practiceTools = _buildStandaloneTools(
+          context,
+          isGuitarArea: isGuitarArea,
+          isDark: isDark,
+          isEn: isEn,
+        );
+        final toolRowCount = (practiceTools.length / 2).ceil();
 
         return ListView(
           physics: const AlwaysScrollableScrollPhysics(
@@ -314,57 +321,16 @@ class TopicsScreen extends ConsumerWidget {
           ),
           padding: const EdgeInsets.fromLTRB(16, 10, 16, 28),
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    isEn ? 'Practice Topics' : 'Chủ đề luyện tập',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: SolfaTypography.heading,
-                  ),
-                ),
-                TextButton.icon(
-                  key: const Key('btn_topics_open_free_piano'),
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 6,
-                    ),
-                    minimumSize: const Size(0, 32),
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    backgroundColor: (isGuitarArea
-                            ? const Color(0xFFD97706)
-                            : AppColors.primary)
-                        .withOpacity(0.12),
-                    foregroundColor: isGuitarArea
-                        ? const Color(0xFFD97706)
-                        : AppColors.primary,
-                  ),
-                  onPressed: () => isGuitarArea
-                      ? showGuitarStudioSheet(context)
-                      : showFreePianoExplorerSheet(context),
-                  icon: Icon(
-                    isGuitarArea
-                        ? Icons.grid_on_rounded
-                        : Icons.piano_rounded,
-                    size: 16,
-                  ),
-                  label: Text(
-                    isGuitarArea
-                        ? (isEn ? 'Fretboard Map' : 'Map Cần đàn')
-                        : (isEn ? 'Piano C3–C5' : 'Đàn Piano'),
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-              ],
+            // 1. Hero Banner: Kho Bản Nhạc & Chơi Đàn Tương Tác (Trang riêng 2 bước: Chọn bài -> Phòng chơi đàn)
+            _SongbookHeroCard(
+              key: const Key('btn_open_songbook_catalog'),
+              isDark: isDark,
+              isEn: isEn,
+              onTap: () => openSongbookCatalogScreen(context),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 14),
 
-            // Thanh chuyển đổi tách biệt rõ Khu vực Piano & Nhạc lý <-> Khu vực Guitar & Cần đàn
+            // 2. Thanh chuyển đổi Khu vực Piano & Nhạc lý <-> Khu vực Guitar & Cần đàn
             Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
@@ -416,31 +382,148 @@ class TopicsScreen extends ConsumerWidget {
               const SizedBox(height: 10),
               const GuitarTypeSwitchBar(),
             ],
-            const SizedBox(height: 14),
+            const SizedBox(height: 16),
 
-            for (int r = 0; r < rowCount; r++) ...[
-              if (r > 0) const SizedBox(height: 12),
+            // 3. Phân khu Công cụ Thực hành Trực tiếp (Đưa toàn bộ tab con ra ngoài — Mở thẳng không lồng tab)
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    isGuitarArea
+                        ? (isEn ? 'Guitar Studio Tools' : 'Công cụ Thực hành Guitar')
+                        : (isEn ? 'Interactive Instruments & Theory' : 'Công cụ Đàn & Hòa âm'),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: SolfaTypography.heading.copyWith(fontSize: 16.5),
+                  ),
+                ),
+                TextButton.icon(
+                  key: const Key('btn_topics_open_free_piano'),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    minimumSize: const Size(0, 32),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    backgroundColor: (isGuitarArea
+                            ? const Color(0xFFD97706)
+                            : AppColors.primary)
+                        .withOpacity(0.12),
+                    foregroundColor: isGuitarArea
+                        ? const Color(0xFFD97706)
+                        : AppColors.primary,
+                  ),
+                  onPressed: () => isGuitarArea
+                      ? showGuitarStudioSheet(
+                          context,
+                          initialTab: 0,
+                          singleTabMode: true,
+                        )
+                      : showFreePianoExplorerSheet(context),
+                  icon: Icon(
+                    isGuitarArea
+                        ? Icons.grid_on_rounded
+                        : Icons.piano_rounded,
+                    size: 16,
+                  ),
+                  label: Text(
+                    isGuitarArea
+                        ? (isEn ? 'Fretboard' : 'Map Cần đàn')
+                        : (isEn ? 'Piano C3–C5' : 'Đàn Piano'),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            for (int r = 0; r < toolRowCount; r++) ...[
+              if (r > 0) const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(child: practiceTools[r * 2]),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: (r * 2 + 1) < practiceTools.length
+                        ? practiceTools[r * 2 + 1]
+                        : const SizedBox.shrink(),
+                  ),
+                ],
+              ),
+            ],
+
+            const SizedBox(height: 20),
+
+            // 4. Phân khu Bài tập Cảm âm & Trắc nghiệm (Quiz)
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    isGuitarArea
+                        ? (isEn
+                            ? 'Guitar Quizzes & Ear Training'
+                            : 'Bài Luyện Trắc Nghiệm Guitar')
+                        : (isEn
+                            ? 'Ear Training & Sight-Reading'
+                            : 'Bài Luyện Cảm Âm & Thị Xướng'),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: SolfaTypography.heading.copyWith(fontSize: 16.5),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: (isGuitarArea
+                            ? const Color(0xFFD97706)
+                            : AppColors.primary)
+                        .withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                  child: Text(
+                    isEn
+                        ? '${activeTopics.length} topics'
+                        : '${activeTopics.length} chủ đề',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      color: isGuitarArea
+                          ? const Color(0xFFD97706)
+                          : AppColors.primary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+
+            for (int r = 0; r < quizRowCount; r++) ...[
+              if (r > 0) const SizedBox(height: 10),
               Row(
                 children: [
                   Expanded(
-                    child: _buildGridItem(
+                    child: _buildQuizTopicCard(
                       context,
                       ref,
-                      activeTopics,
-                      r * 2,
+                      activeTopics[r * 2],
                       isGuitarArea,
                       isDark,
                       isEn,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 10),
                   Expanded(
-                    child: (r * 2 + 1) < totalItems
-                        ? _buildGridItem(
+                    child: (r * 2 + 1) < activeTopics.length
+                        ? _buildQuizTopicCard(
                             context,
                             ref,
-                            activeTopics,
-                            r * 2 + 1,
+                            activeTopics[r * 2 + 1],
                             isGuitarArea,
                             isDark,
                             isEn,
@@ -456,70 +539,358 @@ class TopicsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildGridItem(
+  Widget _buildQuizTopicCard(
     BuildContext context,
     WidgetRef ref,
-    List<TopicModel> activeTopics,
-    int index,
+    TopicModel topic,
     bool isGuitarArea,
     bool isDark,
     bool isEn,
   ) {
-    if (index < activeTopics.length) {
-      final topic = activeTopics[index];
-      return _BigTopicGridCard(
-        key: Key('topic_grid_card_${topic.id}'),
-        icon: topicIconForCode(topic.code),
-        title: shortTopicTitle(topic, isEn: isEn),
-        subtitle: shortTopicSubtitle(topic, isEn: isEn),
-        accentColor: isGuitarArea ? const Color(0xFFD97706) : AppColors.primary,
-        isDark: isDark,
-        onTap: () => showTopicPracticeSetupModal(context, ref, topic),
-      );
+    return _BigTopicGridCard(
+      key: Key('topic_grid_card_${topic.id}'),
+      icon: topicIconForCode(topic.code),
+      title: shortTopicTitle(topic, isEn: isEn),
+      subtitle: shortTopicSubtitle(topic, isEn: isEn),
+      accentColor: isGuitarArea ? const Color(0xFFD97706) : AppColors.primary,
+      isDark: isDark,
+      onTap: () => showTopicPracticeSetupModal(context, ref, topic),
+    );
+  }
+
+  List<Widget> _buildStandaloneTools(
+    BuildContext context, {
+    required bool isGuitarArea,
+    required bool isDark,
+    required bool isEn,
+  }) {
+    if (!isGuitarArea) {
+      return [
+        _CompactToolCard(
+          key: const Key('topic_grid_card_free_piano'),
+          icon: Icons.piano_rounded,
+          title: isEn ? 'Piano C3–C5' : 'Đàn Piano C3–C5',
+          subtitle: isEn ? 'Staff & Dictation' : 'Khuông & Chép nhạc',
+          accentColor: AppColors.primary,
+          isDark: isDark,
+          onTap: () => showFreePianoExplorerSheet(context),
+        ),
+        _CompactToolCard(
+          key: const Key('topic_grid_card_circle_capo'),
+          icon: Icons.donut_large_rounded,
+          title: isEn ? 'Circle & Capo' : 'Vòng Bậc 5 & Capo',
+          subtitle: isEn ? '12 Keys • Transpose' : '12 Giọng • Dịch tông',
+          accentColor: const Color(0xFF0D9488),
+          isDark: isDark,
+          onTap: () => openCircleOfFifthsAndCapoScreen(context),
+        ),
+      ];
     }
 
-    if (isGuitarArea) {
-      if (index == activeTopics.length) {
-        return _BigTopicGridCard(
-          key: const Key('topic_grid_card_guitar_studio'),
-          icon: Icons.explore_rounded,
-          customIcon: const SolfaGuitarIcon(
-            size: 26,
-            color: Color(0xFFD97706),
-          ),
-          title: isEn ? '6-String Fretboard' : 'Map Cần đàn 6 dây',
-          subtitle: isEn
-              ? '44 Chords • 7 Scales • Tuner'
-              : '44 Hợp âm • 7 Scale • So dây',
-          accentColor: const Color(0xFFD97706),
-          isDark: isDark,
-          onTap: () => showGuitarStudioSheet(context, initialTab: 0),
-        );
-      }
-      return _BigTopicGridCard(
-        key: const Key('topic_grid_card_guitar_spider'),
-        icon: Icons.touch_app_rounded,
-        title: isEn ? 'Finger Workouts' : 'Luyện ngón 1-2-3-4',
-        subtitle: isEn
-            ? '12 Workouts • Lv.1–5 (★)'
-            : '12 Bài • Lộ trình Lv.1–5 (★)',
+    return [
+      _CompactToolCard(
+        key: const Key('topic_grid_card_guitar_studio'),
+        icon: Icons.grid_on_rounded,
+        customIcon: const SolfaGuitarIcon(
+          size: 20,
+          color: Color(0xFFD97706),
+        ),
+        title: isEn ? 'Fretboard & Hz' : 'Map Cần đàn',
+        subtitle: isEn ? '6 Strings • Tuner' : '6 Dây • So dây Hz',
         accentColor: const Color(0xFFD97706),
         isDark: isDark,
+        onTap: () => showGuitarStudioSheet(
+          context,
+          initialTab: 0,
+          singleTabMode: true,
+        ),
+      ),
+      _CompactToolCard(
+        key: const Key('topic_grid_card_guitar_chords_tool'),
+        icon: Icons.pan_tool_alt_rounded,
+        title: isEn ? '44 Chords' : '44 Hợp âm',
+        subtitle: isEn ? 'Open • Barre • 7th' : 'Mở • Chặn • Power 5',
+        accentColor: const Color(0xFFEA580C),
+        isDark: isDark,
+        onTap: () => showGuitarStudioSheet(
+          context,
+          initialTab: 1,
+          singleTabMode: true,
+        ),
+      ),
+      _CompactToolCard(
+        key: const Key('topic_grid_card_guitar_scales_tool'),
+        icon: Icons.timeline_rounded,
+        title: isEn ? '7 Scales & Jam' : 'Scale & Jam',
+        subtitle: isEn ? '12 Frets • Solo' : '12 Ngăn • Đệm Solo',
+        accentColor: const Color(0xFF6366F1),
+        isDark: isDark,
+        onTap: () => showGuitarStudioSheet(
+          context,
+          initialTab: 2,
+          singleTabMode: true,
+        ),
+      ),
+      _CompactToolCard(
+        key: const Key('topic_grid_card_guitar_spider'),
+        icon: Icons.touch_app_rounded,
+        title: isEn ? '12 Workouts' : 'Luyện ngón',
+        subtitle: isEn ? 'Lv.1–5 • Tab (★)' : '12 Bài • Đọc Tab',
+        accentColor: const Color(0xFF10B981),
+        isDark: isDark,
         onTap: () => showGuitarFingerWorkoutPage(context),
-      );
-    }
+      ),
+      _CompactToolCard(
+        key: const Key('topic_grid_card_circle_capo'),
+        icon: Icons.donut_large_rounded,
+        title: isEn ? 'Circle & Capo' : 'Bậc 5 & Capo',
+        subtitle: isEn ? 'Key & Transpose' : 'Dịch tông • Kẹp Capo',
+        accentColor: const Color(0xFF0D9488),
+        isDark: isDark,
+        onTap: () => openCircleOfFifthsAndCapoScreen(context),
+      ),
+    ];
+  }
+}
 
-    // Thẻ thứ 8 trên lưới Piano & Nhạc lý: Tra cứu Đàn Piano & Khuông C3–C5
-    return _BigTopicGridCard(
-      key: const Key('topic_grid_card_free_piano'),
-      icon: Icons.piano_rounded,
-      title: isEn ? 'Piano C3–C5 Studio' : 'Đàn Piano C3–C5',
-      subtitle: isEn
-          ? 'Staff Explorer & Dictation'
-          : 'Tra cứu Khuông & Chép nhạc',
-      accentColor: AppColors.primary,
-      isDark: isDark,
-      onTap: () => showFreePianoExplorerSheet(context),
+class _CompactToolCard extends StatelessWidget {
+  final IconData icon;
+  final Widget? customIcon;
+  final String title;
+  final String subtitle;
+  final Color accentColor;
+  final bool isDark;
+  final VoidCallback onTap;
+
+  const _CompactToolCard({
+    super.key,
+    required this.icon,
+    this.customIcon,
+    required this.title,
+    required this.subtitle,
+    required this.accentColor,
+    required this.isDark,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: isDark ? AppColors.surfaceDark : Colors.white,
+      borderRadius: BorderRadius.circular(15),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(15),
+        onTap: onTap,
+        child: Container(
+          height: 64,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(15),
+            border: Border.all(
+              color: accentColor.withOpacity(isDark ? 0.30 : 0.22),
+              width: 1.1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: accentColor.withOpacity(isDark ? 0.18 : 0.12),
+                  borderRadius: BorderRadius.circular(11),
+                ),
+                alignment: Alignment.center,
+                child: customIcon ??
+                    Icon(
+                      icon,
+                      color: accentColor,
+                      size: 20,
+                    ),
+              ),
+              const SizedBox(width: 9),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 1),
+                    Text(
+                      subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w600,
+                        color: isDark
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondaryLight,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SongbookHeroCard extends StatelessWidget {
+  final bool isDark;
+  final bool isEn;
+  final VoidCallback onTap;
+
+  const _SongbookHeroCard({
+    super.key,
+    required this.isDark,
+    required this.isEn,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: isDark
+                  ? const [Color(0xFF312E81), Color(0xFF1E3A8A)]
+                  : const [Color(0xFF4F46E5), Color(0xFF2563EB)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF4F46E5).withOpacity(isDark ? 0.30 : 0.22),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.18),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: Colors.white.withOpacity(0.28)),
+                ),
+                alignment: Alignment.center,
+                child: const Icon(
+                  Icons.queue_music_rounded,
+                  color: Colors.white,
+                  size: 26,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 7,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFBBF24),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            isEn ? '20 SONGS' : '20 BÀI MỚI',
+                            style: const TextStyle(
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w900,
+                              color: Color(0xFF1E1B4B),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            isEn ? 'Classical & Modern' : 'Cổ điển • Hiện đại',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white.withOpacity(0.86),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      isEn
+                          ? 'Interactive Songbook Room'
+                          : 'Kho Bản Nhạc & Phòng Chơi Đàn',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 15.5,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      isEn
+                          ? 'Pick a track, then play live on Guitar or Piano'
+                          : 'Chọn bài trước • Vào phòng bấm đàn Guitar & Piano thật',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white.withOpacity(0.86),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 6),
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.18),
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: const Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  color: Colors.white,
+                  size: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -587,7 +958,6 @@ class _AreaSwitchButton extends StatelessWidget {
 /// Hiển thị Logo/Icon lớn + Tên bài luyện tập + Phụ đề ngắn gọn 1 dòng để giao diện thoáng và trực quan.
 class _BigTopicGridCard extends StatelessWidget {
   final IconData icon;
-  final Widget? customIcon;
   final String title;
   final String? subtitle;
   final Color accentColor;
@@ -597,7 +967,6 @@ class _BigTopicGridCard extends StatelessWidget {
   const _BigTopicGridCard({
     super.key,
     required this.icon,
-    this.customIcon,
     required this.title,
     this.subtitle,
     this.accentColor = AppColors.primary,
@@ -634,12 +1003,11 @@ class _BigTopicGridCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(15),
                 ),
                 alignment: Alignment.center,
-                child: customIcon ??
-                    Icon(
-                      icon,
-                      color: accentColor,
-                      size: 26,
-                    ),
+                child: Icon(
+                  icon,
+                  color: accentColor,
+                  size: 26,
+                ),
               ),
               const SizedBox(height: 9),
               Text(

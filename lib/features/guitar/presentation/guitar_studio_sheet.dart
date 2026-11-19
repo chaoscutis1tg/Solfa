@@ -896,17 +896,20 @@ class GuitarWorkoutExercise {
   }
 }
 
-/// Mở Trang Bản Đồ Cần Đàn 6 Dây, Thư Viện 36 Hợp Âm & Bản Đồ Scale (Full-screen Page, KHÔNG dùng Bottom Sheet trượt lên).
+/// Mở Trang Bản Đồ Cần Đàn 6 Dây, Thư Viện 44 Hợp Âm hoặc Bản Đồ Scale (Full-screen Page).
+/// Truyền `singleTabMode: true` khi mở thẳng từng công cụ độc lập từ Phòng luyện tập để không lồng tab con.
 Future<void> showGuitarStudioSheet(
   BuildContext context, {
   int initialTab = 0,
   bool isWorkoutOnlyPage = false,
+  bool singleTabMode = false,
 }) async {
   await Navigator.of(context).push<void>(
     MaterialPageRoute<void>(
       builder: (ctx) => GuitarStudioSheet(
         initialTab: initialTab,
         isWorkoutOnlyPage: isWorkoutOnlyPage,
+        singleTabMode: singleTabMode,
       ),
     ),
   );
@@ -919,6 +922,7 @@ Future<void> showGuitarFingerWorkoutPage(BuildContext context) async {
       builder: (ctx) => const GuitarStudioSheet(
         initialTab: 3,
         isWorkoutOnlyPage: true,
+        singleTabMode: true,
       ),
     ),
   );
@@ -927,11 +931,13 @@ Future<void> showGuitarFingerWorkoutPage(BuildContext context) async {
 class GuitarStudioSheet extends ConsumerStatefulWidget {
   final int initialTab;
   final bool isWorkoutOnlyPage;
+  final bool singleTabMode;
 
   const GuitarStudioSheet({
     super.key,
     this.initialTab = 0,
     this.isWorkoutOnlyPage = false,
+    this.singleTabMode = false,
   });
 
   @override
@@ -1536,6 +1542,34 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet>
         isElectric ? const Color(0xFF6366F1) : const Color(0xFFD97706);
     final isEn = ref.watch(appSettingsProvider).isEnglish;
     final isWorkoutPage = widget.isWorkoutOnlyPage;
+    final hideInnerTabs = isWorkoutPage || widget.singleTabMode;
+
+    String resolveAppBarTitle() {
+      if (isWorkoutPage || _selectedTab == 3) {
+        return isEn
+            ? 'Guitar Workouts & Tab (Lv.1–5)'
+            : '12 Bài Luyện Ngón & Đọc Tab';
+      }
+      if (widget.singleTabMode) {
+        switch (_selectedTab) {
+          case 0:
+            return isEn
+                ? '6-String Fretboard & Hz Tuner'
+                : 'Map Cần Đàn 6 Dây & So Dây Hz';
+          case 1:
+            return isEn
+                ? '44 Guitar Chord Library'
+                : 'Thư Viện 44 Hợp Âm Guitar';
+          case 2:
+            return isEn
+                ? '7 Scale Maps & Jam Tracks'
+                : 'Bản Đồ 7 Scale & Nhạc Nền Jam';
+        }
+      }
+      return isEn
+          ? 'Guitar Fretboard, 44 Chords & Scales'
+          : 'Bản Đồ Cần Đàn, 44 Hợp Âm & Scale';
+    }
 
     // Đồng bộ âm sắc Guitar trong AudioService
     audioService.setGuitarType(guitarType);
@@ -1551,13 +1585,7 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet>
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
-          isWorkoutPage
-              ? (isEn
-                  ? 'Guitar Workouts, Licks & Tab (Lv.1–5)'
-                  : 'Luyện Ngón, Mẫu Chạy & Đọc Tab (Lv.1–5)')
-              : (isEn
-                  ? 'Guitar Fretboard, 44 Chords & Scales'
-                  : 'Bản Đồ Cần Đàn, 44 Hợp Âm & Scale'),
+          resolveAppBarTitle(),
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
         ),
       ),
@@ -1579,8 +1607,8 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet>
             ),
             const SizedBox(height: 10),
 
-            if (!isWorkoutPage) ...[
-              // 4 Phân khu trên Trang Bản Đồ Cần Đàn (Map Cần | 44 Hợp Âm | Bản đồ Scale | Bản nhạc & Capo)
+            if (!hideInnerTabs) ...[
+              // 3 Phân khu cốt lõi khi mở chế độ Studio gộp (Map Cần | 44 Hợp Âm | Bản đồ Scale)
               Row(
                 children: [
                   for (final (posIdx, idx, label, icon) in [
@@ -1592,12 +1620,6 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet>
                       Icons.pan_tool_alt_rounded
                     ),
                     (2, 2, isEn ? 'Scales (7)' : 'Bản đồ Scale', Icons.timeline_rounded),
-                    (
-                      3,
-                      4,
-                      isEn ? 'Songs & Capo' : 'Bản nhạc & Capo',
-                      Icons.queue_music_rounded
-                    ),
                   ]) ...[
                     if (posIdx > 0) const SizedBox(width: 6),
                     Expanded(
@@ -1682,8 +1704,6 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet>
               _buildFretboardMapTab(audioService, isDark, isEn)
             else if (_selectedTab == 1)
               _buildChordShapesTab(audioService, isDark, isEn)
-            else if (_selectedTab == 4)
-              const InteractiveSongbookAndTheoryTab()
             else
               _buildScaleMapTab(
                 context,

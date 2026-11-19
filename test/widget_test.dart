@@ -820,16 +820,38 @@ void main() {
         await tester.tap(find.byKey(const Key('tab_practice_area_guitar')));
         await pumpFrames(300);
         expect(find.byKey(const Key('guitar_type_switch_bar')), findsOneWidget);
+        expect(find.byKey(const Key('topic_grid_card_guitar_studio')), findsOneWidget);
+        expect(find.byKey(const Key('topic_grid_card_guitar_chords_tool')), findsOneWidget);
+        expect(find.byKey(const Key('topic_grid_card_guitar_scales_tool')), findsOneWidget);
+        expect(find.byKey(const Key('topic_grid_card_guitar_spider')), findsOneWidget);
+        expect(find.byKey(const Key('topic_grid_card_circle_capo')), findsOneWidget);
+
+        // Cuộn nhẹ kiểm tra đủ 4 bài tập trắc nghiệm Guitar đều hiển thị không tràn khung
+        await tester.dragUntilVisible(
+          find.byKey(const Key('topic_grid_card_topic_guitar_tabs')),
+          find.byType(ListView).first,
+          const Offset(0, -180),
+        );
+        await pumpFrames(200);
         expect(find.byKey(const Key('topic_grid_card_topic_guitar_notes')), findsOneWidget);
         expect(find.byKey(const Key('topic_grid_card_topic_guitar_chords')), findsOneWidget);
         expect(find.byKey(const Key('topic_grid_card_topic_guitar_scales')), findsOneWidget);
         expect(find.byKey(const Key('topic_grid_card_topic_guitar_tabs')), findsOneWidget);
+
+        // Cuộn lại lên đầu để kiểm tra đổi đàn Acoustic/Electric & mở thẳng từng công cụ độc lập (KHÔNG còn tab con lồng nhau!)
+        await tester.dragUntilVisible(
+          find.byKey(const Key('guitar_type_switch_bar')),
+          find.byType(ListView).first,
+          const Offset(0, 220),
+        );
+        await pumpFrames(200);
         await tester.tap(find.byKey(const Key('btn_guitar_type_electric')));
         await pumpFrames(200);
         await tester.tap(find.byKey(const Key('btn_guitar_type_acoustic')));
         await pumpFrames(200);
         expect(tester.takeException(), isNull);
 
+        // 9a. Mở thẳng Map Cần đàn & So dây (singleTabMode -> không còn chip_guitar_tab_1 lồng bên trong)
         await tester.ensureVisible(
           find.byKey(const Key('topic_grid_card_guitar_studio')),
         );
@@ -838,13 +860,32 @@ void main() {
         await pumpFrames(300);
         expect(find.byKey(const Key('guitar_studio_sheet')), findsOneWidget);
         expect(find.byKey(const Key('guitar_standard_tuner_bar')), findsOneWidget);
-        await tester.tap(find.byKey(const Key('chip_guitar_tab_1')));
+        expect(find.byKey(const Key('chip_guitar_tab_1')), findsNothing);
+        expect(tester.takeException(), isNull);
+        await tester.tap(find.byKey(const Key('btn_close_guitar_studio')));
         await pumpFrames(250);
+
+        // 9b. Mở thẳng Thư viện 44 Hợp âm từ Phòng luyện tập
+        await tester.ensureVisible(
+          find.byKey(const Key('topic_grid_card_guitar_chords_tool')),
+        );
+        await pumpFrames(200);
+        await tester.tap(find.byKey(const Key('topic_grid_card_guitar_chords_tool')));
+        await pumpFrames(300);
         expect(find.byKey(const Key('chip_chord_cat_power')), findsOneWidget);
         expect(find.byKey(const Key('chip_chord_cat_barre')), findsOneWidget);
         expect(find.byKey(const Key('guitar_chord_progression_bar')), findsOneWidget);
-        await tester.tap(find.byKey(const Key('chip_guitar_tab_2')));
+        expect(tester.takeException(), isNull);
+        await tester.tap(find.byKey(const Key('btn_close_guitar_studio')));
         await pumpFrames(250);
+
+        // 9c. Mở thẳng Bản đồ Scale & Jam từ Phòng luyện tập
+        await tester.ensureVisible(
+          find.byKey(const Key('topic_grid_card_guitar_scales_tool')),
+        );
+        await pumpFrames(200);
+        await tester.tap(find.byKey(const Key('topic_grid_card_guitar_scales_tool')));
+        await pumpFrames(300);
         expect(find.byKey(const Key('guitar_backing_track_jam_bar')), findsOneWidget);
         expect(find.byKey(const Key('btn_play_guitar_scale_run')), findsOneWidget);
         expect(tester.takeException(), isNull);
@@ -864,8 +905,10 @@ void main() {
         expect(tester.takeException(), isNull);
         await tester.tap(find.byKey(const Key('btn_close_guitar_studio')));
         await pumpFrames(250);
-        await tester.ensureVisible(
+        await tester.dragUntilVisible(
           find.byKey(const Key('tab_practice_area_piano')),
+          find.byType(ListView).first,
+          const Offset(0, 220),
         );
         await pumpFrames(200);
         await tester.tap(find.byKey(const Key('tab_practice_area_piano')));
@@ -2176,30 +2219,96 @@ void main() {
         await tester.pump(const Duration(milliseconds: 1500));
         expect(tester.takeException(), isNull);
 
-        // 2c-bis. Chuyển sang Tab 4 (Bản Nhạc & Capo): Kiểm tra Kho Bản Nhạc (Canon Rock 500 Gem, Ode to Joy) & Vòng Tròn Bậc 5 / Dịch Capo
+        // 2c-bis. Kiểm định Kho Bản Nhạc Tương Tác (20 bài: 12 Cổ điển + 8 Hiện đại, toàn bộ WAV tồn tại thật) & Phòng Chơi Đàn trực tiếp (Guitar + Piano) & Vòng Tròn Bậc 5 / Capo
+        expect(kInteractiveSongbookCatalog.length, equals(20));
+        expect(
+          kInteractiveSongbookCatalog.where((s) => s.isClassical).length,
+          equals(12),
+        );
+        expect(
+          kInteractiveSongbookCatalog.where((s) => !s.isClassical).length,
+          equals(8),
+        );
         expect(
           kInteractiveSongbookCatalog.any(
             (s) => s.id == 'song_canon_rock' && s.gemCost == 500,
           ),
           isTrue,
         );
-        await tester.tap(find.byKey(const Key('chip_guitar_tab_4')));
-        await tester.pump(const Duration(milliseconds: 200));
-        await tester.ensureVisible(
-          find.byKey(const Key('btn_tap_current_highway_note')),
+        for (final song in kInteractiveSongbookCatalog) {
+          expect(song.notes.isNotEmpty, isTrue);
+          for (final n in song.notes) {
+            expect(
+              File(n.audioAsset).existsSync(),
+              isTrue,
+              reason: 'Thiếu file WAV ${n.audioAsset} cho bài ${song.id}',
+            );
+          }
+        }
+
+        // Mở màn hình Danh sách Kho Bản Nhạc -> Lọc Hiện đại / Cổ điển -> Vào Phòng Chơi Đàn Ode to Joy
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: const MaterialApp(
+              key: ValueKey('app_songbook_catalog'),
+              home: SongbookCatalogScreen(),
+            ),
+          ),
         );
-        await tester.pump(const Duration(milliseconds: 100));
-        expect(find.byKey(const Key('btn_tap_current_highway_note')), findsOneWidget);
-        await tester.tap(find.byKey(const Key('btn_tap_current_highway_note')));
+        await tester.pump(const Duration(milliseconds: 200));
+        expect(find.byKey(const Key('chip_song_cat_classical')), findsOneWidget);
+        expect(find.byKey(const Key('chip_song_cat_modern')), findsOneWidget);
+        await tester.tap(find.byKey(const Key('chip_song_cat_modern')));
         await tester.pump(const Duration(milliseconds: 150));
+        expect(find.textContaining('Cơn Mưa Tháng Năm'), findsOneWidget);
+        await tester.tap(find.byKey(const Key('chip_song_cat_classical')));
+        await tester.pump(const Duration(milliseconds: 150));
+        await tester.tap(find.byKey(const Key('song_catalog_item_song_ode_to_joy')));
+        await tester.pumpAndSettle(const Duration(milliseconds: 300));
+
+        // Đang ở trong Phòng Chơi Đàn: Chơi nốt #1 bằng Cần đàn Guitar (Dây 1 Ngăn 0 = E4)
+        expect(find.byKey(const Key('playable_guitar_board')), findsOneWidget);
         await tester.ensureVisible(
-          find.byKey(const Key('chip_submode_circle_capo')),
+          find.byKey(const Key('play_guitar_cell_s1_f0')),
         );
-        await tester.pump(const Duration(milliseconds: 100));
-        await tester.tap(find.byKey(const Key('chip_submode_circle_capo')));
+        await tester.tap(find.byKey(const Key('play_guitar_cell_s1_f0')));
+        await tester.pump(const Duration(milliseconds: 150));
+        expect(find.textContaining('PERFECT! Combo x1'), findsOneWidget);
+
+        // Chuyển sang Đàn Piano và bấm tiếp nốt #2 (E4) trực tiếp trên bàn phím Piano
+        await tester.dragUntilVisible(
+          find.byKey(const Key('chip_playroom_piano')),
+          find.byKey(const Key('song_play_room_view')),
+          const Offset(0, 240),
+        );
+        await tester.tap(find.byKey(const Key('chip_playroom_piano')));
         await tester.pump(const Duration(milliseconds: 200));
-        await tester.ensureVisible(
+        expect(find.byKey(const Key('playable_piano_board')), findsOneWidget);
+        await tester.dragUntilVisible(
+          find.byKey(const Key('play_piano_key_E4')),
+          find.byKey(const Key('song_play_room_view')),
+          const Offset(0, -180),
+        );
+        await tester.tap(find.byKey(const Key('play_piano_key_E4')));
+        await tester.pump(const Duration(milliseconds: 150));
+        expect(find.textContaining('PERFECT! Combo x2'), findsOneWidget);
+
+        // Mở màn hình độc lập Vòng Tròn Bậc 5 & Dịch Capo (không còn nằm trong tab con)
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: const MaterialApp(
+              key: ValueKey('app_circle_fifths_capo'),
+              home: CircleOfFifthsAndCapoScreen(),
+            ),
+          ),
+        );
+        await tester.pump(const Duration(milliseconds: 200));
+        await tester.dragUntilVisible(
           find.byKey(const Key('btn_transpose_up')),
+          find.byKey(const Key('screen_circle_fifths_capo')),
+          const Offset(0, -180),
         );
         await tester.pump(const Duration(milliseconds: 100));
         expect(find.byKey(const Key('btn_transpose_up')), findsOneWidget);
@@ -2212,6 +2321,7 @@ void main() {
           UncontrolledProviderScope(
             container: container,
             child: const MaterialApp(
+              key: ValueKey('app_guitar_workouts'),
               home: GuitarStudioSheet(
                 initialTab: 3,
                 isWorkoutOnlyPage: true,

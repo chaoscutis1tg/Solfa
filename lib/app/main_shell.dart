@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -199,8 +197,9 @@ class MainShell extends ConsumerWidget {
   }
 }
 
-/// Custom Bottom Navigation Bar with a central elevated 45° rotated Diamond Battle CTA button
-/// matching the user's reference design ("w/ diamond CTA button") and Solfa's pastel indigo palette.
+/// Thanh điều hướng đáy phẳng (Flush 5-Slot Navigation Dock):
+/// - Nút Đấu trường 1v1 nằm ngang hàng gọn gàng bên trong thanh menu (không nhô cao lên trên).
+/// - Tab đang chọn có hiệu ứng vạch sáng trên đỉnh + khung pill màu nổi bật + phóng to icon mượt mà.
 class _DiamondBottomNavBar extends StatelessWidget {
   final int selectedIndex;
   final bool isEn;
@@ -220,94 +219,81 @@ class _DiamondBottomNavBar extends StatelessWidget {
     final bottomInset = MediaQuery.paddingOf(context).bottom;
 
     return Container(
-      margin: EdgeInsets.fromLTRB(12, 0, 12, bottomInset > 0 ? bottomInset : 10),
+      margin: EdgeInsets.fromLTRB(12, 4, 12, bottomInset > 0 ? bottomInset : 10),
       height: 68,
-      child: Stack(
-        clipBehavior: Clip.none,
-        alignment: Alignment.topCenter,
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
+      decoration: BoxDecoration(
+        color: isDark
+            ? const Color(0xFF161B2C).withOpacity(0.97)
+            : Colors.white.withOpacity(0.98),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withOpacity(0.10)
+              : const Color(0xFFE2E8F0),
+          width: 1.2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: isDark
+                ? Colors.black.withOpacity(0.45)
+                : const Color(0xFF4F46E5).withOpacity(0.10),
+            blurRadius: 20,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Rounded Bar Pill Surface
-          Container(
-            height: 68,
-            decoration: BoxDecoration(
-              color: isDark
-                  ? const Color(0xFF1A1E2E).withOpacity(0.96)
-                  : Colors.white.withOpacity(0.97),
-              borderRadius: BorderRadius.circular(26),
-              border: Border.all(
-                color: isDark
-                    ? Colors.white.withOpacity(0.08)
-                    : const Color(0xFFE2E8F0),
-                width: 1.2,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: isDark
-                      ? Colors.black.withOpacity(0.42)
-                      : const Color(0xFF4F46E5).withOpacity(0.10),
-                  blurRadius: 22,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                // Left 2 Tabs: Trang chủ (0) & Luyện tập (1)
-                Expanded(
-                  child: _AnimatedNavTabItem(
-                    key: const Key('nav_tab_home'),
-                    icon: Icons.home_outlined,
-                    selectedIcon: Icons.home_rounded,
-                    label: isEn ? 'Home' : 'Trang chủ',
-                    isSelected: selectedIndex == 0,
-                    onTap: () => onSelectTab(0),
-                  ),
-                ),
-                Expanded(
-                  child: _AnimatedNavTabItem(
-                    key: const Key('nav_tab_topics'),
-                    icon: Icons.headphones_outlined,
-                    selectedIcon: Icons.headphones_rounded,
-                    label: isEn ? 'Practice' : 'Luyện tập',
-                    isSelected: selectedIndex == 1,
-                    onTap: () => onSelectTab(1),
-                  ),
-                ),
-
-                // Center Spacer for the Floating Diamond Battle CTA
-                const SizedBox(width: 78),
-
-                // Right 2 Tabs: Công cụ (2) & Tiến trình (3)
-                Expanded(
-                  child: _AnimatedNavTabItem(
-                    key: const Key('nav_tab_metronome'),
-                    icon: Icons.av_timer_outlined,
-                    selectedIcon: Icons.av_timer_rounded,
-                    label: isEn ? 'Tools' : 'Công cụ',
-                    isSelected: selectedIndex == 2,
-                    onTap: () => onSelectTab(2),
-                  ),
-                ),
-                Expanded(
-                  child: _AnimatedNavTabItem(
-                    key: const Key('nav_tab_progress'),
-                    icon: Icons.insights_outlined,
-                    selectedIcon: Icons.insights_rounded,
-                    label: isEn ? 'Progress' : 'Tiến trình',
-                    isSelected: selectedIndex == 3,
-                    onTap: () => onSelectTab(3),
-                  ),
-                ),
-              ],
+          Expanded(
+            child: _AnimatedNavTabItem(
+              key: const Key('nav_tab_home'),
+              icon: Icons.home_outlined,
+              selectedIcon: Icons.home_rounded,
+              label: isEn ? 'Home' : 'Trang chủ',
+              isSelected: selectedIndex == 0,
+              onTap: () => onSelectTab(0),
             ),
           ),
-
-          // Elevated Center 45° Diamond Battle CTA Button
-          Positioned(
-            top: -18,
-            child: _DiamondBattleCtaButton(
-              key: const Key('btn_nav_diamond_battle'),
-              onTap: onTapDiamondBattle,
+          Expanded(
+            child: _AnimatedNavTabItem(
+              key: const Key('nav_tab_topics'),
+              icon: Icons.headphones_outlined,
+              selectedIcon: Icons.headphones_rounded,
+              label: isEn ? 'Practice' : 'Luyện tập',
+              isSelected: selectedIndex == 1,
+              onTap: () => onSelectTab(1),
+            ),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 1),
+              child: _InlineBattleNavButton(
+                key: const Key('btn_nav_diamond_battle'),
+                label: isEn ? 'Battle' : 'Chiến đấu',
+                onTap: onTapDiamondBattle,
+              ),
+            ),
+          ),
+          Expanded(
+            child: _AnimatedNavTabItem(
+              key: const Key('nav_tab_metronome'),
+              icon: Icons.av_timer_outlined,
+              selectedIcon: Icons.av_timer_rounded,
+              label: isEn ? 'Tools' : 'Công cụ',
+              isSelected: selectedIndex == 2,
+              onTap: () => onSelectTab(2),
+            ),
+          ),
+          Expanded(
+            child: _AnimatedNavTabItem(
+              key: const Key('nav_tab_progress'),
+              icon: Icons.insights_outlined,
+              selectedIcon: Icons.insights_rounded,
+              label: isEn ? 'Progress' : 'Tiến trình',
+              isSelected: selectedIndex == 3,
+              onTap: () => onSelectTab(3),
             ),
           ),
         ],
@@ -338,127 +324,111 @@ class _AnimatedNavTabItem extends StatelessWidget {
     final inactiveColor = isDark
         ? const Color(0xFF94A3B8)
         : const Color(0xFF64748B);
+    final activeTextColor =
+        isDark ? const Color(0xFF93C5FD) : AppColors.primary;
 
     return InkWell(
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(18),
       onTap: onTap,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          AnimatedScale(
-            scale: isSelected ? 1.12 : 1.0,
-            duration: const Duration(milliseconds: 220),
-            curve: Curves.easeOutBack,
-            child: isSelected
-                ? ShaderMask(
-                    shaderCallback: (bounds) => const LinearGradient(
-                      colors: [Color(0xFF38BDF8), Color(0xFF4F46E5)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ).createShader(bounds),
-                    child: Icon(
-                      selectedIcon,
-                      size: 24,
-                      color: Colors.white,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutCubic,
+        margin: const EdgeInsets.symmetric(horizontal: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.primary.withOpacity(isDark ? 0.22 : 0.11)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected
+                ? AppColors.primary.withOpacity(isDark ? 0.45 : 0.24)
+                : Colors.transparent,
+            width: 1.0,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Vạch sáng trên đỉnh tab đang chọn (Active Indicator Pill)
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOutCubic,
+              width: isSelected ? 22 : 0,
+              height: 3,
+              margin: const EdgeInsets.only(bottom: 3),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF38BDF8), Color(0xFF4F46E5)],
+                ),
+                borderRadius: BorderRadius.circular(99),
+              ),
+            ),
+            AnimatedScale(
+              scale: isSelected ? 1.12 : 1.0,
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOutBack,
+              child: isSelected
+                  ? ShaderMask(
+                      shaderCallback: (bounds) => const LinearGradient(
+                        colors: [Color(0xFF38BDF8), Color(0xFF4F46E5)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ).createShader(bounds),
+                      child: Icon(
+                        selectedIcon,
+                        size: 22,
+                        color: Colors.white,
+                      ),
+                    )
+                  : Icon(
+                      icon,
+                      size: 21,
+                      color: inactiveColor,
                     ),
-                  )
-                : Icon(
-                    icon,
-                    size: 23,
-                    color: inactiveColor,
-                  ),
-          ),
-          const SizedBox(height: 3),
-          AnimatedDefaultTextStyle(
-            duration: const Duration(milliseconds: 180),
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-              color: isSelected
-                  ? (isDark ? const Color(0xFF818CF8) : const Color(0xFF4F46E5))
-                  : inactiveColor,
             ),
-            child: Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+            const SizedBox(height: 2),
+            AnimatedDefaultTextStyle(
+              duration: const Duration(milliseconds: 180),
+              style: TextStyle(
+                fontSize: 10.5,
+                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                color: isSelected ? activeTextColor : inactiveColor,
+              ),
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 }
 
-class _DiamondBattleCtaButton extends StatefulWidget {
+/// Nút Chiến đấu 1v1 thiết kế phẳng ngang hàng với 4 tab menu (không nhô cao khỏi thanh điều hướng).
+class _InlineBattleNavButton extends StatefulWidget {
+  final String label;
   final VoidCallback onTap;
 
-  const _DiamondBattleCtaButton({
+  const _InlineBattleNavButton({
     super.key,
+    required this.label,
     required this.onTap,
   });
 
   @override
-  State<_DiamondBattleCtaButton> createState() =>
-      _DiamondBattleCtaButtonState();
+  State<_InlineBattleNavButton> createState() => _InlineBattleNavButtonState();
 }
 
-class _DiamondBattleCtaButtonState extends State<_DiamondBattleCtaButton>
-    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
-  AnimationController? _pulseController;
-  late Animation<double> _pulseAnim;
+class _InlineBattleNavButtonState extends State<_InlineBattleNavButton> {
   bool _isPressed = false;
-
-  bool get _isInWidgetTest {
-    final bindingType = WidgetsBinding.instance.runtimeType.toString();
-    return bindingType.contains('TestWidgetsFlutterBinding') ||
-        bindingType.contains('AutomatedTestWidgetsFlutterBinding');
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-    if (!_isInWidgetTest) {
-      _pulseController = AnimationController(
-        vsync: this,
-        duration: const Duration(milliseconds: 1400),
-      )..repeat(reverse: true);
-      _pulseAnim = Tween<double>(begin: 0.96, end: 1.06).animate(
-        CurvedAnimation(parent: _pulseController!, curve: Curves.easeInOut),
-      );
-    } else {
-      _pulseAnim = const AlwaysStoppedAnimation<double>(1.0);
-    }
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    final ctrl = _pulseController;
-    if (ctrl == null) return;
-    if (state == AppLifecycleState.paused ||
-        state == AppLifecycleState.inactive ||
-        state == AppLifecycleState.hidden ||
-        state == AppLifecycleState.detached) {
-      if (ctrl.isAnimating) {
-        ctrl.stop();
-      }
-    } else if (state == AppLifecycleState.resumed) {
-      if (!ctrl.isAnimating) {
-        ctrl.repeat(reverse: true);
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    _pulseController?.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Semantics(
       button: true,
       label: 'Đấu trường Chiến đấu 1v1',
@@ -469,51 +439,54 @@ class _DiamondBattleCtaButtonState extends State<_DiamondBattleCtaButton>
           widget.onTap();
         },
         onTapCancel: () => setState(() => _isPressed = false),
-        child: RepaintBoundary(
-          child: AnimatedScale(
-            scale: _isPressed ? 0.88 : 1.0,
-            duration: const Duration(milliseconds: 140),
-            curve: Curves.easeOutBack,
-            child: ScaleTransition(
-              scale: _pulseAnim,
-              child: SizedBox(
-                width: 68,
-                height: 68,
-                child: Center(
-                  child: Transform.rotate(
-                    angle: math.pi / 4,
-                    child: Container(
-                      width: 50,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(15),
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.85),
-                          width: 1.6,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primary.withOpacity(0.28),
-                            blurRadius: 10,
-                            offset: const Offset(2, 3),
-                          ),
-                        ],
-                      ),
-                      child: Transform.rotate(
-                        angle: -math.pi / 4,
-                        child: const Center(
-                          child: CrossedSwordsIcon(
-                            size: 26,
-                            color: Colors.white,
-                            guardColor: Color(0xFFFFE082),
-                          ),
-                        ),
-                      ),
+        child: AnimatedScale(
+          scale: _isPressed ? 0.92 : 1.0,
+          duration: const Duration(milliseconds: 140),
+          curve: Curves.easeOutBack,
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF4F46E5), Color(0xFF2563EB)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: Colors.white.withOpacity(isDark ? 0.20 : 0.45),
+                width: 1.0,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF4F46E5).withOpacity(0.28),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const CrossedSwordsIcon(
+                  size: 20,
+                  color: Colors.white,
+                  guardColor: Color(0xFFFFE082),
+                ),
+                const SizedBox(height: 2),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    widget.label,
+                    maxLines: 1,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                      letterSpacing: 0.1,
                     ),
                   ),
                 ),
-              ),
+              ],
             ),
           ),
         ),

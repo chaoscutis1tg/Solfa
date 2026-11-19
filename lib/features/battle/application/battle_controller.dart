@@ -486,6 +486,7 @@ class BattleNotifier extends StateNotifier<BattleState> {
   DateTime? _roundStartedAt;
   bool _isBusy = false;
   bool _isAppPaused = false;
+  final List<String> _recentBattleQuestionKeys = [];
 
   BattleNotifier(
     this._db,
@@ -812,6 +813,116 @@ class BattleNotifier extends StateNotifier<BattleState> {
     return 'lvl_${short}_$tierSuffix';
   }
 
+  String _questionSignature(QuestionModel q) =>
+      '${q.topicId}|${q.type}|${q.correctOption.optionKey}';
+
+  Future<void> _playQuestionAudio(QuestionModel q) async {
+    if (!q.hasQuestionAudio) return;
+    try {
+      if (q.topicId.startsWith('topic_guitar_') ||
+          q.type.startsWith('guitar_')) {
+        await _audioService.playGuitarAsset(q.audioAsset, polyphonic: false);
+      } else {
+        await _audioService.playAsset(q.audioAsset);
+      }
+    } catch (_) {}
+  }
+
+  /// Trộn ngẫu nhiên câu hỏi thông minh:
+  /// - Loại bỏ trùng lặp câu trong cùng 1 trận đấu
+  /// - Ưu tiên câu chưa xuất hiện ở các trận gần nhất (_recentBattleQuestionKeys)
+  /// - Hạn chế 2 hiệp liên tiếp trùng chủ đề khi đấu Tổng hợp (11 chủ đề)
+  List<QuestionModel> _selectDiverseQuestions({
+    required List<QuestionModel> pool,
+    required int targetCount,
+    required Random rng,
+    bool preferDistinctLevels = false,
+  }) {
+    final Map<String, QuestionModel> uniqueBySig = {};
+    final shuffledInput = List<QuestionModel>.from(pool)..shuffle(rng);
+    for (final q in shuffledInput) {
+      uniqueBySig.putIfAbsent(_questionSignature(q), () => q);
+    }
+
+    final recentSet = _recentBattleQuestionKeys.toSet();
+    final fresh = <QuestionModel>[];
+    final seenRecently = <QuestionModel>[];
+    for (final q in uniqueBySig.values) {
+      if (recentSet.contains(_questionSignature(q))) {
+        seenRecently.add(q);
+      } else {
+        fresh.add(q);
+      }
+    }
+    fresh.shuffle(rng);
+    seenRecently.shuffle(rng);
+
+    final orderedCandidates = <QuestionModel>[...fresh, ...seenRecently];
+    final List<QuestionModel> chosen = [];
+    final Set<String> chosenIds = {};
+
+    if (preferDistinctLevels && targetCount >= 2) {
+      final byLevel = <String, List<QuestionModel>>{};
+      for (final q in orderedCandidates) {
+        byLevel.putIfAbsent(q.levelId, () => []).add(q);
+      }
+      final levelKeys = byLevel.keys.toList()..shuffle(rng);
+      bool addedAny = true;
+      while (chosen.length < targetCount && addedAny) {
+        addedAny = false;
+        for (final lvl in levelKeys) {
+          final bucket = byLevel[lvl]!;
+          if (bucket.isNotEmpty && chosen.length < targetCount) {
+            final pick = bucket.removeAt(0);
+            if (chosenIds.add(pick.id)) {
+              chosen.add(pick);
+              addedAny = true;
+            }
+          }
+        }
+      }
+      chosen.shuffle(rng);
+    } else {
+      // Interleave topics so adjacent rounds vary smoothly in Mixed Arena
+      final remaining = List<QuestionModel>.from(orderedCandidates);
+      String? lastTopicId;
+      while (chosen.length < targetCount && remaining.isNotEmpty) {
+        final diffIdx = remaining.indexWhere((q) => q.topicId != lastTopicId);
+        final pickIdx = diffIdx >= 0 ? diffIdx : 0;
+        final pick = remaining.removeAt(pickIdx);
+        if (chosenIds.add(pick.id)) {
+          chosen.add(pick);
+          lastTopicId = pick.topicId;
+        }
+      }
+    }
+
+    // Fallback: if strict deduplication returned fewer than targetCount, top up from shuffledInput
+    if (chosen.length < targetCount) {
+      for (final q in shuffledInput) {
+        if (chosen.length >= targetCount) break;
+        if (chosenIds.add(q.id)) {
+          chosen.add(q);
+        }
+      }
+    }
+
+    // Record signatures into anti-repeat rolling buffer (keep latest 40)
+    for (final q in chosen) {
+      final sig = _questionSignature(q);
+      _recentBattleQuestionKeys.remove(sig);
+      _recentBattleQuestionKeys.add(sig);
+    }
+    if (_recentBattleQuestionKeys.length > 40) {
+      _recentBattleQuestionKeys.removeRange(
+        0,
+        _recentBattleQuestionKeys.length - 40,
+      );
+    }
+
+    return chosen.take(targetCount).toList();
+  }
+
   Future<List<QuestionModel>> _buildBattleQuestionSet({
     required String topicId,
     required int targetCount,
@@ -826,34 +937,29 @@ class BattleNotifier extends StateNotifier<BattleState> {
     };
 
     if (topicId != 'all') {
-      if (suffixes.length == 1) {
-        final res = await _generator.generateSessionQuestions(
-          mode: 'topic',
-          topicId: topicId,
-          levelId: _levelIdForTopic(topicId, suffixes.first),
-          targetCount: targetCount,
-          seed: seed,
-        );
-        return res.questions;
-      }
       final List<QuestionModel> topicPool = [];
-      final perLevelCount = (targetCount / suffixes.length).ceil() + 1;
+      final perLevelCount =
+          ((targetCount + 6) / suffixes.length).ceil().clamp(4, 16);
       for (int i = 0; i < suffixes.length; i++) {
         final res = await _generator.generateSessionQuestions(
           mode: 'topic',
           topicId: topicId,
           levelId: _levelIdForTopic(topicId, suffixes[i]),
           targetCount: perLevelCount,
-          seed: seed != null ? seed + i * 29 : null,
+          seed: seed != null ? seed + i * 29 : rng.nextInt(1 << 20),
         );
         topicPool.addAll(res.questions);
       }
-      topicPool.shuffle(rng);
-      return topicPool.take(targetCount).toList();
+      return _selectDiverseQuestions(
+        pool: topicPool,
+        targetCount: targetCount,
+        rng: rng,
+        preferDistinctLevels: suffixes.length > 1,
+      );
     }
 
-    // All-in-One mixed arena: sample across all 7 topics and shuffle!
-    const allTopicIds = [
+    // All-in-One mixed arena: sample randomly across all 11 topics (7 Music Theory + 4 Guitar)!
+    final allTopicIds = [
       'topic_notes',
       'topic_staff_reading',
       'topic_intervals',
@@ -861,22 +967,31 @@ class BattleNotifier extends StateNotifier<BattleState> {
       'topic_melody',
       'topic_rhythm',
       'topic_keys',
-    ];
+      'topic_guitar_notes',
+      'topic_guitar_chords',
+      'topic_guitar_scales',
+      'topic_guitar_tabs',
+    ]..shuffle(rng);
+
     final List<QuestionModel> mixed = [];
     for (int i = 0; i < allTopicIds.length; i++) {
       final tId = allTopicIds[i];
-      final chosenSuffix = suffixes[i % suffixes.length];
+      final chosenSuffix = suffixes[rng.nextInt(suffixes.length)];
       final res = await _generator.generateSessionQuestions(
         mode: 'topic',
         topicId: tId,
         levelId: _levelIdForTopic(tId, chosenSuffix),
         targetCount: 2,
-        seed: seed != null ? seed + i * 31 : null,
+        seed: seed != null ? seed + i * 31 : rng.nextInt(1 << 20),
       );
       mixed.addAll(res.questions);
     }
-    mixed.shuffle(rng);
-    return mixed.take(targetCount).toList();
+    return _selectDiverseQuestions(
+      pool: mixed,
+      targetCount: targetCount,
+      rng: rng,
+      preferDistinctLevels: suffixes.length > 1,
+    );
   }
 
   void _startRoundCountdownAndBotTimers() {
@@ -929,9 +1044,7 @@ class BattleNotifier extends StateNotifier<BattleState> {
 
     final settings = _ref.read(appSettingsProvider);
     if (settings.autoPlayQuestionAudio && curQ.hasQuestionAudio) {
-      try {
-        await _audioService.playAsset(curQ.audioAsset);
-      } catch (_) {}
+      await _playQuestionAudio(curQ);
     }
 
     _startRoundCountdownAndBotTimers();
@@ -1265,7 +1378,7 @@ class BattleNotifier extends StateNotifier<BattleState> {
       if (nextQ != null &&
           nextQ.hasQuestionAudio &&
           _ref.read(appSettingsProvider).autoPlayQuestionAudio) {
-        unawaited(_audioService.playAsset(nextQ.audioAsset));
+        unawaited(_playQuestionAudio(nextQ));
       }
       _startRoundCountdownAndBotTimers();
     } else {

@@ -10,6 +10,7 @@ import '../../../app/widgets/solfa_background.dart';
 import '../../../app/widgets/solfa_gem_icon.dart';
 import '../../../core/models/domain_models.dart';
 import '../../../core/providers/app_providers.dart';
+import '../../guitar/presentation/guitar_studio_sheet.dart';
 import '../../practice/presentation/widgets/musical_staff_widget.dart';
 import '../../support_developer/application/rewarded_ad_controller.dart';
 import '../../support_developer/presentation/support_developer_screen.dart';
@@ -28,7 +29,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
   bool _isTabletopOpposite180 = false;
 
   static const List<(String id, String label, IconData icon)> _battleTopics = [
-    ('all', 'Tổng hợp (7 Chủ đề)', Icons.auto_awesome_rounded),
+    ('all', 'Ngẫu nhiên (11 Chủ đề)', Icons.shuffle_rounded),
     ('topic_notes', 'Nghe nốt', Icons.graphic_eq_rounded),
     ('topic_staff_reading', 'Đọc khuông', Icons.music_note_rounded),
     ('topic_intervals', 'Quãng', Icons.compare_arrows_rounded),
@@ -36,7 +37,48 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
     ('topic_melody', 'Giai điệu', Icons.queue_music_rounded),
     ('topic_rhythm', 'Nhịp điệu', Icons.timer_rounded),
     ('topic_keys', 'Giọng', Icons.piano_rounded),
+    ('topic_guitar_notes', 'Guitar: Cần đàn', Icons.grid_on_rounded),
+    ('topic_guitar_chords', 'Guitar: Hợp âm', Icons.pan_tool_alt_rounded),
+    ('topic_guitar_scales', 'Guitar: Scale', Icons.timeline_rounded),
+    ('topic_guitar_tabs', 'Guitar: Tab', Icons.format_list_numbered_rounded),
   ];
+
+  (String label, IconData icon, Color accent) _topicMeta(String topicId) {
+    switch (topicId) {
+      case 'topic_notes':
+        return ('Luyện nghe nốt', Icons.graphic_eq_rounded, const Color(0xFF4F46E5));
+      case 'topic_staff_reading':
+        return ('Đọc khuông nhạc', Icons.music_note_rounded, const Color(0xFF2563EB));
+      case 'topic_intervals':
+        return ('Nhận biết quãng', Icons.compare_arrows_rounded, const Color(0xFF7C3AED));
+      case 'topic_chords':
+        return ('Nhận biết hợp âm', Icons.library_music_rounded, const Color(0xFF0D9488));
+      case 'topic_melody':
+        return ('Nghe giai điệu', Icons.queue_music_rounded, const Color(0xFFEC4899));
+      case 'topic_rhythm':
+        return ('Nhận biết nhịp điệu', Icons.timer_rounded, const Color(0xFFF59E0B));
+      case 'topic_keys':
+        return ('Nhận biết giọng', Icons.piano_rounded, const Color(0xFF0284C7));
+      case 'topic_guitar_notes':
+        return ('Guitar • Nốt cần đàn', Icons.grid_on_rounded, const Color(0xFFD97706));
+      case 'topic_guitar_chords':
+        return ('Guitar • Hợp âm', Icons.pan_tool_alt_rounded, const Color(0xFFEA580C));
+      case 'topic_guitar_scales':
+        return ('Guitar • Bản đồ Scale', Icons.timeline_rounded, const Color(0xFF6366F1));
+      case 'topic_guitar_tabs':
+        return ('Guitar • Đọc Tab', Icons.format_list_numbered_rounded, const Color(0xFF10B981));
+      default:
+        return ('Đấu trường Âm nhạc', Icons.auto_awesome_rounded, AppColors.primary);
+    }
+  }
+
+  void _playBattleQuestionAudio(dynamic audioService, QuestionModel q) {
+    if (q.topicId.startsWith('topic_guitar_') || q.type.startsWith('guitar_')) {
+      audioService.playGuitarAsset(q.audioAsset, polyphonic: false);
+    } else {
+      audioService.playAsset(q.audioAsset);
+    }
+  }
 
   @override
   void initState() {
@@ -1362,8 +1404,12 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
     final p2Q = state.player2Question ?? state.currentQuestion;
     if (p1Q == null) return const SizedBox.shrink();
 
-    final showStaff = p1Q.isSightReading ||
-        (p1Q.topicId == 'topic_notes' && state.isRoundResolved);
+    final isGuitarQ = p1Q.topicId.startsWith('topic_guitar_') ||
+        p1Q.type.startsWith('guitar_');
+    final showStaff = !isGuitarQ &&
+        (p1Q.isSightReading ||
+            (p1Q.topicId == 'topic_notes' && state.isRoundResolved));
+    final (topicLabel, topicIcon, topicAccent) = _topicMeta(p1Q.topicId);
 
     return TweenAnimationBuilder<double>(
       key: ValueKey('shake_${state.strikeSerial}'),
@@ -1623,60 +1669,157 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
                 color: isDark ? AppColors.surfaceDark : Colors.white,
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(
-                  color: isDark
-                      ? Colors.white.withOpacity(0.14)
-                      : const Color(0xFFD8E4F8),
+                  color: topicAccent.withOpacity(isDark ? 0.35 : 0.28),
+                  width: 1.3,
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: topicAccent.withOpacity(isDark ? 0.10 : 0.06),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  // Header thẻ câu hỏi: Nhãn Chủ đề + Phân loại Nghe / Quan sát
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Flexible(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 9,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: topicAccent.withOpacity(isDark ? 0.22 : 0.12),
+                            borderRadius: BorderRadius.circular(99),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(topicIcon, size: 13.5, color: topicAccent),
+                              const SizedBox(width: 5),
+                              Flexible(
+                                child: Text(
+                                  topicLabel,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                    color: topicAccent,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: (p1Q.hasQuestionAudio
+                                  ? AppColors.primary
+                                  : const Color(0xFF0D9488))
+                              .withOpacity(isDark ? 0.20 : 0.10),
+                          borderRadius: BorderRadius.circular(99),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              p1Q.hasQuestionAudio
+                                  ? Icons.headphones_rounded
+                                  : Icons.visibility_rounded,
+                              size: 12,
+                              color: p1Q.hasQuestionAudio
+                                  ? AppColors.primary
+                                  : const Color(0xFF0D9488),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              p1Q.hasQuestionAudio ? 'Cảm âm' : 'Quan sát',
+                              style: TextStyle(
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w800,
+                                color: p1Q.hasQuestionAudio
+                                    ? AppColors.primary
+                                    : const Color(0xFF0D9488),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
                   Text(
                     _shortBattlePrompt(p1Q.prompt),
                     textAlign: TextAlign.center,
                     style: const TextStyle(
-                      fontSize: 14,
+                      fontSize: 15,
                       fontWeight: FontWeight.w800,
+                      height: 1.3,
                     ),
                   ),
-                  const SizedBox(height: 10),
-                  if (showStaff) ...[
+                  if (isGuitarQ) ...[
+                    const SizedBox(height: 10),
+                    GuitarQuestionBoardWidget(
+                      topicId: p1Q.topicId,
+                      optionKey: p1Q.correctOption.optionKey,
+                      isRevealed: state.isRoundResolved,
+                    ),
+                  ] else if (showStaff) ...[
+                    const SizedBox(height: 10),
                     MusicalStaffWidget(
                       targetNoteKey: p1Q.correctOption.optionKey,
                       showNote: state.isRoundResolved,
                       isSightReading: p1Q.isSightReading,
                     ),
-                    const SizedBox(height: 8),
                   ],
-                  if (p1Q.hasQuestionAudio)
+                  if (p1Q.hasQuestionAudio) ...[
+                    const SizedBox(height: 10),
                     SizedBox(
                       width: double.infinity,
-                      child: OutlinedButton.icon(
+                      child: ElevatedButton.icon(
                         key: const Key('btn_battle_play_audio'),
-                        style: OutlinedButton.styleFrom(
+                        style: ElevatedButton.styleFrom(
                           minimumSize: const Size(0, 42),
+                          elevation: 0,
+                          backgroundColor:
+                              topicAccent.withOpacity(isDark ? 0.24 : 0.12),
+                          foregroundColor:
+                              isDark ? Colors.white : topicAccent,
                           padding: const EdgeInsets.symmetric(vertical: 10),
-                          side: const BorderSide(
-                            color: Color(0xFF6366F1),
-                            width: 1.5,
+                          side: BorderSide(
+                            color: topicAccent.withOpacity(0.55),
+                            width: 1.2,
                           ),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(13),
                           ),
                         ),
-                        onPressed: () => audioService.playAsset(p1Q.audioAsset),
-                        icon: const Icon(
+                        onPressed: () =>
+                            _playBattleQuestionAudio(audioService, p1Q),
+                        icon: Icon(
                           Icons.volume_up_rounded,
-                          color: Color(0xFF6366F1),
+                          size: 19,
+                          color: isDark ? Colors.white : topicAccent,
                         ),
                         label: const Text(
-                          'Nghe lại âm thanh câu này',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFF6366F1),
-                          ),
+                          'Nghe lại âm thanh câu hỏi',
+                          style: TextStyle(fontWeight: FontWeight.w800),
                         ),
                       ),
                     ),
+                  ],
                 ],
               ),
             ),
@@ -1824,6 +1967,39 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
     bool isDark,
   ) {
     const badges = ['A', 'B', 'C', 'D'];
+    final useTwoColumns = curQ.options.length == 4 &&
+        curQ.options.every((o) => o.label.length <= 18);
+
+    if (useTwoColumns) {
+      return Column(
+        children: [
+          for (int row = 0; row < 2; row++) ...[
+            if (row > 0) const SizedBox(height: 8),
+            Row(
+              children: [
+                for (int col = 0; col < 2; col++) ...[
+                  if (col > 0) const SizedBox(width: 8),
+                  Expanded(
+                    child: _buildBattleOptionTile(
+                      key: Key('battle_opt_${row * 2 + col}'),
+                      badge: badges[(row * 2 + col) % badges.length],
+                      option: curQ.options[row * 2 + col],
+                      isResolved: state.isRoundResolved,
+                      selectedOptionId: state.p1SelectedOptionId,
+                      accentColor: const Color(0xFF4F46E5),
+                      isDark: isDark,
+                      onTap: () => notifier
+                          .submitPlayer1Answer(curQ.options[row * 2 + col]),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ],
+        ],
+      );
+    }
+
     return Column(
       children: [
         for (int i = 0; i < curQ.options.length; i++) ...[
@@ -1845,7 +2021,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
 
   /// Giao diện Chiến đấu 2 Người 1 Máy:
   /// - Hỗ trợ chuyển đổi giữa "Ngồi cạnh nhau (Trái/Phải)" và "Ngồi đối diện bàn (Xoay 180° nửa trên)".
-  /// - Mỗi bên có một giao diện câu hỏi, nút nghe và 4 đáp án riêng biệt, đánh độc lập không chờ nhau!
+  /// - Mỗi bên có một giao diện câu hỏi, nút nghe, hình ảnh minh họa (Khuông/Guitar) và 4 đáp án riêng biệt!
   Widget _buildSplitScreenControls(
     BuildContext context,
     BattleNotifier notifier,
@@ -1856,6 +2032,12 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
     bool isDark,
   ) {
     const badges = ['A', 'B', 'C', 'D'];
+    final (p1TopicLabel, _, _) = _topicMeta(p1Q.topicId);
+    final (p2TopicLabel, _, _) = _topicMeta(p2Q.topicId);
+    final p1IsGuitar =
+        p1Q.topicId.startsWith('topic_guitar_') || p1Q.type.startsWith('guitar_');
+    final p2IsGuitar =
+        p2Q.topicId.startsWith('topic_guitar_') || p2Q.type.startsWith('guitar_');
 
     final p1Station = Container(
       padding: const EdgeInsets.all(8),
@@ -1896,23 +2078,41 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
                   ],
                 ),
               ),
-              IconButton(
-                visualDensity: VisualDensity.compact,
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(
-                  minWidth: 26,
-                  minHeight: 26,
+              if (p1Q.hasQuestionAudio)
+                IconButton(
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: 26,
+                    minHeight: 26,
+                  ),
+                  icon: const Icon(
+                    Icons.volume_up_rounded,
+                    size: 16,
+                    color: Color(0xFF4F46E5),
+                  ),
+                  onPressed: () => _playBattleQuestionAudio(audioService, p1Q),
                 ),
-                icon: const Icon(
-                  Icons.volume_up_rounded,
-                  size: 16,
-                  color: Color(0xFF4F46E5),
-                ),
-                onPressed: () => audioService.playAsset(p1Q.audioAsset),
-              ),
             ],
           ),
-          const SizedBox(height: 4),
+          Container(
+            margin: const EdgeInsets.only(top: 2, bottom: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: const Color(0xFF4F46E5).withOpacity(0.12),
+              borderRadius: BorderRadius.circular(99),
+            ),
+            child: Text(
+              p1TopicLabel,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 9.5,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF4F46E5),
+              ),
+            ),
+          ),
           Text(
             _shortBattlePrompt(p1Q.prompt),
             maxLines: 2,
@@ -1923,6 +2123,21 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
               fontWeight: FontWeight.w700,
             ),
           ),
+          if (p1IsGuitar) ...[
+            const SizedBox(height: 6),
+            GuitarQuestionBoardWidget(
+              topicId: p1Q.topicId,
+              optionKey: p1Q.correctOption.optionKey,
+              isRevealed: state.isRoundResolved || state.p1LockedOut,
+            ),
+          ] else if (p1Q.isSightReading) ...[
+            const SizedBox(height: 6),
+            MusicalStaffWidget(
+              targetNoteKey: p1Q.correctOption.optionKey,
+              showNote: state.isRoundResolved || state.p1LockedOut,
+              isSightReading: true,
+            ),
+          ],
           const SizedBox(height: 6),
           for (int i = 0; i < p1Q.options.length; i++) ...[
             if (i > 0) const SizedBox(height: 6),
@@ -1981,23 +2196,41 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
                   ],
                 ),
               ),
-              IconButton(
-                visualDensity: VisualDensity.compact,
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(
-                  minWidth: 26,
-                  minHeight: 26,
+              if (p2Q.hasQuestionAudio)
+                IconButton(
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: 26,
+                    minHeight: 26,
+                  ),
+                  icon: const Icon(
+                    Icons.volume_up_rounded,
+                    size: 16,
+                    color: Color(0xFFEC4899),
+                  ),
+                  onPressed: () => _playBattleQuestionAudio(audioService, p2Q),
                 ),
-                icon: const Icon(
-                  Icons.volume_up_rounded,
-                  size: 16,
-                  color: Color(0xFFEC4899),
-                ),
-                onPressed: () => audioService.playAsset(p2Q.audioAsset),
-              ),
             ],
           ),
-          const SizedBox(height: 4),
+          Container(
+            margin: const EdgeInsets.only(top: 2, bottom: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEC4899).withOpacity(0.12),
+              borderRadius: BorderRadius.circular(99),
+            ),
+            child: Text(
+              p2TopicLabel,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 9.5,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFFEC4899),
+              ),
+            ),
+          ),
           Text(
             _shortBattlePrompt(p2Q.prompt),
             maxLines: 2,
@@ -2008,6 +2241,21 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
               fontWeight: FontWeight.w700,
             ),
           ),
+          if (p2IsGuitar) ...[
+            const SizedBox(height: 6),
+            GuitarQuestionBoardWidget(
+              topicId: p2Q.topicId,
+              optionKey: p2Q.correctOption.optionKey,
+              isRevealed: state.isRoundResolved || state.p2LockedOut,
+            ),
+          ] else if (p2Q.isSightReading) ...[
+            const SizedBox(height: 6),
+            MusicalStaffWidget(
+              targetNoteKey: p2Q.correctOption.optionKey,
+              showNote: state.isRoundResolved || state.p2LockedOut,
+              isSightReading: true,
+            ),
+          ],
           const SizedBox(height: 6),
           for (int i = 0; i < p2Q.options.length; i++) ...[
             if (i > 0) const SizedBox(height: 6),
