@@ -809,7 +809,10 @@ class _SongbookCatalogScreenState extends ConsumerState<SongbookCatalogScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Row(
+                                  Wrap(
+                                    spacing: 6,
+                                    runSpacing: 3,
+                                    crossAxisAlignment: WrapCrossAlignment.center,
                                     children: [
                                       Container(
                                         padding: const EdgeInsets.symmetric(
@@ -823,6 +826,8 @@ class _SongbookCatalogScreenState extends ConsumerState<SongbookCatalogScreen> {
                                         ),
                                         child: Text(
                                           song.genreBadge,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
                                           style: TextStyle(
                                             fontSize: 10,
                                             fontWeight: FontWeight.w800,
@@ -830,7 +835,6 @@ class _SongbookCatalogScreenState extends ConsumerState<SongbookCatalogScreen> {
                                           ),
                                         ),
                                       ),
-                                      const SizedBox(width: 6),
                                       Text(
                                         '${song.defaultBpm} BPM • ${song.notes.length} nốt',
                                         style: TextStyle(
@@ -2207,14 +2211,18 @@ class _CircleOfFifthsAndCapoScreenState
                                     ),
                                   ),
                                   const SizedBox(height: 2),
-                                  Text(
-                                    currentKey.$4[cIdx],
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w900,
-                                      color: isDark
-                                          ? Colors.white
-                                          : AppColors.primaryDark,
+                                  FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Text(
+                                      currentKey.$4[cIdx],
+                                      maxLines: 1,
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w900,
+                                        color: isDark
+                                            ? Colors.white
+                                            : AppColors.primaryDark,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -2286,17 +2294,26 @@ class _CircleOfFifthsAndCapoScreenState
                   const SizedBox(height: 10),
                   Row(
                     children: [
-                      const Text(
-                        'Dịch nửa cung:',
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w700,
+                      const Expanded(
+                        child: Text(
+                          'Dịch nửa cung:',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 4),
                       IconButton(
                         key: const Key('btn_transpose_down'),
                         visualDensity: VisualDensity.compact,
+                        constraints: const BoxConstraints(
+                          minWidth: 34,
+                          minHeight: 34,
+                        ),
+                        padding: EdgeInsets.zero,
                         onPressed: () => setState(
                           () => _transposeSemitones =
                               (_transposeSemitones - 1).clamp(-6, 6),
@@ -2308,7 +2325,7 @@ class _CircleOfFifthsAndCapoScreenState
                       ),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
+                          horizontal: 9,
                           vertical: 5,
                         ),
                         decoration: BoxDecoration(
@@ -2317,10 +2334,10 @@ class _CircleOfFifthsAndCapoScreenState
                         ),
                         child: Text(
                           _transposeSemitones > 0
-                              ? '+$_transposeSemitones nửa cung'
-                              : '$_transposeSemitones nửa cung',
+                              ? '+$_transposeSemitones bán âm'
+                              : '$_transposeSemitones bán âm',
                           style: const TextStyle(
-                            fontSize: 12.5,
+                            fontSize: 12,
                             fontWeight: FontWeight.w900,
                           ),
                         ),
@@ -2328,6 +2345,11 @@ class _CircleOfFifthsAndCapoScreenState
                       IconButton(
                         key: const Key('btn_transpose_up'),
                         visualDensity: VisualDensity.compact,
+                        constraints: const BoxConstraints(
+                          minWidth: 34,
+                          minHeight: 34,
+                        ),
+                        padding: EdgeInsets.zero,
                         onPressed: () => setState(
                           () => _transposeSemitones =
                               (_transposeSemitones + 1).clamp(-6, 6),

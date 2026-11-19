@@ -2041,8 +2041,10 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
     Widget buildCompactVisualBoard(QuestionModel q, bool revealed) {
       final isGtr =
           q.topicId.startsWith('topic_guitar_') || q.type.startsWith('guitar_');
-      if (!isGtr && !q.isSightReading) return const SizedBox.shrink();
-      final Widget board = isGtr
+      final hasGtrBoard =
+          isGtr && GuitarQuestionBoardWidget.hasVisualBoard(q.correctOption.optionKey);
+      if (!hasGtrBoard && !q.isSightReading) return const SizedBox.shrink();
+      final Widget board = hasGtrBoard
           ? GuitarQuestionBoardWidget(
               topicId: q.topicId,
               optionKey: q.correctOption.optionKey,

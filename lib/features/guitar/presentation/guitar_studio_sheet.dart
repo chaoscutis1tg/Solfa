@@ -3639,15 +3639,21 @@ class GuitarQuestionBoardWidget extends StatelessWidget {
     required this.isRevealed,
   });
 
+  /// Kiểm tra câu hỏi Guitar có cần vẽ bảng cần đàn / Tab trực quan hay không
+  /// (các câu thuần lý thuyết vòng hợp âm / Capo / công thức tay phải trả về false).
+  static bool hasVisualBoard(String optionKey) {
+    return !(optionKey.startsWith('GTR_THEORY_') ||
+        optionKey.startsWith('GTR_TECH_') ||
+        optionKey == 'GTR_TAB_BALLAD_44' ||
+        optionKey == 'GTR_TAB_PIMA' ||
+        optionKey == 'GTR_TAB_VALSE_34');
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     // Các câu hỏi thuần lý thuyết vòng hợp âm / Capo / công thức tay phải / ký hiệu kỹ thuật không cần vẽ bảng cần đàn thừa
-    if (optionKey.startsWith('GTR_THEORY_') ||
-        optionKey.startsWith('GTR_TECH_') ||
-        optionKey == 'GTR_TAB_BALLAD_44' ||
-        optionKey == 'GTR_TAB_PIMA' ||
-        optionKey == 'GTR_TAB_VALSE_34') {
+    if (!hasVisualBoard(optionKey)) {
       return const SizedBox.shrink(key: Key('guitar_question_board'));
     }
 
