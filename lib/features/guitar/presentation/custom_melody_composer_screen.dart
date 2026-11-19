@@ -10,6 +10,7 @@ import '../../../app/theme/app_colors.dart';
 import '../../../app/widgets/solfa_background.dart';
 import '../../../core/audio/audio_service.dart';
 import '../../../core/providers/app_providers.dart';
+import '../../support_developer/presentation/support_developer_screen.dart';
 import 'guitar_studio_sheet.dart';
 import 'interactive_songbook_and_theory_sheet.dart';
 
@@ -324,6 +325,9 @@ class _CustomMelodyComposerScreenState
               maxLines: 1,
             ),
           ),
+          actions: const [
+            SolfaHeaderGemPill(),
+          ],
         ),
         body: SafeArea(
           child: ListView(

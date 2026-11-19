@@ -15,6 +15,7 @@ import 'package:solfa/features/guitar/presentation/guitar_studio_sheet.dart';
 import 'package:solfa/features/guitar/presentation/interactive_songbook_and_theory_sheet.dart';
 import 'package:solfa/features/home/presentation/streak_shield_and_reminder_sheet.dart';
 import 'package:solfa/features/metronome/application/metronome_controller.dart';
+import 'package:solfa/features/practice/application/practice_session_controller.dart';
 import 'package:solfa/features/practice/presentation/chord_progression_ear_screen.dart';
 import 'package:solfa/features/progress/presentation/achievements_trophy_screen.dart';
 import 'package:solfa/features/support_developer/application/rewarded_ad_controller.dart';
@@ -676,6 +677,184 @@ void main() {
           find.byKey(const Key('dialog_force_play_store_update')),
           findsNothing,
         );
+      },
+    );
+
+    testWidgets(
+      'AUDIT-07: Tổng duyệt Chức năng Guitar Quiz -> Tiến trình -> Ôn tập, Đánh hết bài nhạc 3 Sao & Chế độ Tiếng Anh + Phông chữ lớn 1.15x trên 360x680 Light/Dark',
+      (tester) async {
+        tester.view.physicalSize = const Size(360 * 3.0, 680 * 3.0);
+        tester.view.devicePixelRatio = 3.0;
+        tester.platformDispatcher.textScaleFactorTestValue = 1.15;
+        addTearDown(() {
+          tester.platformDispatcher.clearTextScaleFactorTestValue();
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+
+        // 1. Kiểm tra tính toàn vẹn 100% của cả 20 bản nhạc trong Kho Bản Nhạc
+        expect(kInteractiveSongbookCatalog.length, equals(20));
+        for (final song in kInteractiveSongbookCatalog) {
+          expect(song.notes, isNotEmpty, reason: 'Bài ${song.id} rỗng nốt');
+          expect(song.defaultBpm, inInclusiveRange(50, 220));
+          for (final n in song.notes) {
+            expect(n.stringNumber, inInclusiveRange(1, 6));
+            expect(n.fret, inInclusiveRange(0, 15));
+            expect(n.audioAsset, startsWith('assets/audio/'));
+          }
+        }
+
+        // 2. Luồng chức năng thực tế: Làm trọn 1 phiên Guitar Quiz (8 đúng, 2 sai) -> Lưu SQLite -> Tiến trình (11 chủ đề) -> Ôn câu sai
+        await tester.runAsync(() async {
+          await db.seedContent();
+          await container.read(appSettingsProvider.notifier).loadSettings();
+          await container
+              .read(appSettingsProvider.notifier)
+              .setLanguageMode('en');
+
+          final sess = container.read(practiceSessionProvider.notifier);
+          final started = await sess.startSession(
+            mode: 'topic',
+            topicId: 'topic_guitar_notes',
+            levelId: 'lvl_guitar_notes_basic',
+            targetCount: 10,
+            seed: 42,
+          );
+          expect(started, isTrue);
+
+          for (int i = 0; i < 10; i++) {
+            final q = container.read(practiceSessionProvider).currentQuestion!;
+            final chosen = i < 8
+                ? q.correctOption
+                : q.options.firstWhere((o) => !o.isCorrect);
+            await sess.submitAnswer(chosen);
+            await sess.nextQuestion();
+          }
+
+          expect(container.read(practiceSessionProvider).isCompleted, isTrue);
+
+          container.invalidate(overallProgressProvider);
+          final stats = await container.read(overallProgressProvider.future);
+          await container.read(topicsListProvider.future);
+          final gStat = stats.topicStats
+              .firstWhere((t) => t.topicId == 'topic_guitar_notes');
+          expect(gStat.completedSessions, equals(1));
+          expect(gStat.totalAnswered, equals(10));
+          expect(gStat.correctCount, equals(8));
+          expect(stats.completedSessionsCount, equals(1));
+
+          final pendingRev = await db.getPendingReviewItems();
+          expect(pendingRev.length, equals(2));
+        });
+
+        // 3. Kiểm thử Giao diện Tiếng Anh (EN) + Phông chữ lớn 1.15x trên 360x680 (Sáng & Tối)
+        final router = createSolfaRouter(initialLocation: '/home');
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: SolfaApp(customRouter: router),
+          ),
+        );
+        await pumpClean(tester);
+
+        for (final isDark in const [false, true]) {
+          await tester.runAsync(() async {
+            await container.read(appSettingsProvider.notifier).setThemeMode(
+                  isDark ? ThemeMode.dark : ThemeMode.light,
+                );
+          });
+          await pumpClean(tester);
+
+          // Duyệt cả 4 tab chính + Bảng chọn cấp độ/thời lượng Staff Reading 1h
+          await tester.tap(find.byKey(const Key('nav_tab_topics')));
+          await pumpClean(tester);
+          container.read(selectedPracticeDurationProvider.notifier).state = 3600;
+          await pumpClean(tester, 100);
+          await tester.dragUntilVisible(
+            find.byKey(const Key('topic_grid_card_topic_staff_reading')),
+            find.byKey(const Key('list_topics_screen')),
+            const Offset(0, -180),
+          );
+          await tester.tap(
+            find.byKey(const Key('topic_grid_card_topic_staff_reading')),
+          );
+          await pumpClean(tester, 300);
+          expect(
+            find.byKey(const Key('modal_topic_practice_setup')),
+            findsOneWidget,
+          );
+          Navigator.of(
+            tester.element(find.byKey(const Key('modal_topic_practice_setup'))),
+          ).pop();
+          await pumpClean(tester, 250);
+
+          await tester.tap(find.byKey(const Key('nav_tab_metronome')));
+          await pumpClean(tester);
+
+          await tester.tap(find.byKey(const Key('nav_tab_progress')));
+          await pumpClean(tester);
+
+          // Mở Ôn tập câu sai (có câu hỏi Guitar vừa sai!), Cài đặt & Trạm Gem ở chế độ Tiếng Anh 1.15x
+          router.push('/review');
+          await pumpClean(tester, 450);
+          router.pop();
+          await pumpClean(tester, 400);
+
+          router.push('/settings');
+          await pumpClean(tester, 450);
+          router.pop();
+          await pumpClean(tester, 400);
+
+          // Kiểm tra thêm toàn bộ các trang công cụ & Đấu Trường ở Tiếng Anh + Phông chữ lớn 1.15x
+          for (final rPath in const [
+            '/battle',
+            '/songbook',
+            '/chord-progression-ear',
+            '/circle-of-fifths',
+            '/achievements',
+            '/support-developer',
+          ]) {
+            router.push(rPath);
+            await pumpClean(tester, 450);
+            router.pop();
+            await pumpClean(tester, 400);
+          }
+
+          await tester.tap(find.byKey(const Key('nav_tab_home')));
+          await pumpClean(tester);
+        }
+
+        // 4. Đánh trọn vẹn từng nốt bản nhạc Ode to Joy trên Cần đàn Guitar đến 100% Hoàn thành (3 Sao + Nút thưởng QC)
+        final ode = kInteractiveSongbookCatalog.firstWhere(
+          (s) => s.id == 'song_ode_to_joy',
+        );
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: MaterialApp(
+              key: const ValueKey('audit07_play_ode_complete'),
+              theme: AppTheme.darkTheme,
+              home: SongPlayRoomScreen(song: ode),
+            ),
+          ),
+        );
+        await pumpClean(tester);
+
+        for (final note in ode.notes) {
+          final cellFinder = find.byKey(
+            Key('play_guitar_cell_s${note.stringNumber}_f${note.fret}'),
+          );
+          await tester.ensureVisible(cellFinder);
+          await tester.tap(cellFinder);
+          await pumpClean(tester, 60);
+        }
+
+        // Sau khi đánh hết nốt cuối cùng -> Thẻ hoàn thành 3 Sao & Nút thưởng Quảng Cáo xuất hiện không tràn viền
+        expect(
+          find.byKey(const Key('btn_song_complete_watch_ad')),
+          findsOneWidget,
+        );
+        expect(container.read(songbookStarsProvider)['song_ode_to_joy'], equals(3));
       },
     );
   });

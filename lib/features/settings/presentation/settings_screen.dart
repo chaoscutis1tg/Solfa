@@ -627,7 +627,7 @@ class SettingsScreen extends ConsumerWidget {
                             children: [
                               const Expanded(
                                 child: Text(
-                                  'ChaoNote Studio v2.0.2',
+                                  'ChaoNote Studio v2.0.3',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
@@ -725,23 +725,28 @@ class SettingsScreen extends ConsumerWidget {
                                     ),
                                   ),
                                   const SizedBox(width: 6),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 6,
-                                      vertical: 1.5,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.correct.withOpacity(0.14),
-                                      borderRadius: BorderRadius.circular(99),
-                                    ),
-                                    child: Text(
-                                      settings.countryCodeOverride.isEmpty
-                                          ? (isEn ? 'Auto Locale' : 'Tự động')
-                                          : (isEn ? 'Selected' : 'Đã chọn'),
-                                      style: const TextStyle(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w800,
-                                        color: AppColors.correct,
+                                  Flexible(
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 1.5,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color:
+                                            AppColors.correct.withOpacity(0.14),
+                                        borderRadius: BorderRadius.circular(99),
+                                      ),
+                                      child: Text(
+                                        settings.countryCodeOverride.isEmpty
+                                            ? (isEn ? 'Auto' : 'Tự động')
+                                            : (isEn ? 'Selected' : 'Đã chọn'),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w800,
+                                          color: AppColors.correct,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -1649,8 +1654,8 @@ class SettingsScreen extends ConsumerWidget {
                             ),
                             content: Text(
                               isEn
-                                  ? 'ChaoNote v2.0.2 is up to date!'
-                                  : 'Bạn đang sử dụng phiên bản mới nhất (v2.0.2)!',
+                                  ? 'ChaoNote v2.0.3 is up to date!'
+                                  : 'Bạn đang sử dụng phiên bản mới nhất (v2.0.3)!',
                               style: const TextStyle(
                                 fontWeight: FontWeight.w800,
                               ),
@@ -1695,7 +1700,7 @@ class SettingsScreen extends ConsumerWidget {
                     onTap: () => showLicensePage(
                       context: context,
                       applicationName: 'ChaoNote Studio',
-                      applicationVersion: '1.9.6 (Offline-First)',
+                      applicationVersion: '2.0.3 (Offline-First)',
                       applicationIcon: const Padding(
                         padding: EdgeInsets.all(8.0),
                         child: SolfaLogo(size: 56),

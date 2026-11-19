@@ -750,6 +750,33 @@ class AppDatabase {
       );
     }).toList();
 
+    // Đồng bộ thêm 4 chủ đề Guitar chuyên sâu vào bảng Tiến trình khi người dùng đã luyện tập
+    final guitarTopicRows = await db.rawQuery('''
+      SELECT
+        topic_id,
+        COALESCE(SUM(total_questions), 0) AS answered_cnt,
+        COALESCE(SUM(correct_count), 0) AS correct_cnt,
+        COUNT(*) AS session_cnt
+      FROM practice_sessions
+      WHERE status = 'completed' AND topic_id LIKE 'topic_guitar_%'
+      GROUP BY topic_id
+      ORDER BY topic_id ASC
+    ''');
+    for (final gr in guitarTopicRows) {
+      final gTopicId = gr['topic_id'] as String;
+      final gSessions = (gr['session_cnt'] as num?)?.toInt() ?? 0;
+      if (gSessions <= 0) continue;
+      topicStats.add(
+        TopicAccuracyStat(
+          topicId: gTopicId,
+          topicName: PracticeSessionModel.fallbackTopicName(gTopicId),
+          totalAnswered: (gr['answered_cnt'] as num?)?.toInt() ?? 0,
+          correctCount: (gr['correct_cnt'] as num?)?.toInt() ?? 0,
+          completedSessions: gSessions,
+        ),
+      );
+    }
+
     // Recent completed sessions
     final sessionRows = await db.rawQuery('''
       SELECT ps.*, t.name AS topic_name, l.name AS level_name

@@ -1233,10 +1233,12 @@ class _SongPlayRoomScreenState extends ConsumerState<SongPlayRoomScreen>
         (widget.song.defaultBpm * _speedFactor).round().clamp(35, 240);
     final intervalMs = (60000 / effectiveBpm).round();
 
+    final isEn = ref.read(appSettingsProvider).isEnglish;
     setState(() {
       _isAutoPlaying = true;
       _songCompleted = false;
-      _feedbackMessage = 'Đang phát mẫu giai điệu...';
+      _feedbackMessage =
+          isEn ? 'Playing melody demo...' : 'Đang phát mẫu giai điệu...';
       _feedbackColor = AppColors.primary;
     });
 
@@ -1875,6 +1877,7 @@ class _SongPlayRoomScreenState extends ConsumerState<SongPlayRoomScreen>
                   windowStartFret: windowStartFret,
                   windowEndFret: windowEndFret,
                   audio: audio,
+                  isEn: isEn,
                 )
               else
                 _buildInteractivePlayablePianoBoard(
@@ -1894,6 +1897,7 @@ class _SongPlayRoomScreenState extends ConsumerState<SongPlayRoomScreen>
     required int windowStartFret,
     required int windowEndFret,
     required AudioService audio,
+    required bool isEn,
   }) {
     const stringLabels = ['d1 (e4)', 'd2 (B3)', 'd3 (G3)', 'd4 (D3)', 'd5 (A2)', 'd6 (E2)'];
 
@@ -1912,7 +1916,9 @@ class _SongPlayRoomScreenState extends ConsumerState<SongPlayRoomScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '🎸 Chạm đúng ô đang sáng trên cần đàn (Ngăn $windowStartFret–$windowEndFret)',
+            isEn
+                ? '🎸 Tap the highlighted fret cell (Frets $windowStartFret–$windowEndFret)'
+                : '🎸 Chạm đúng ô đang sáng trên cần đàn (Ngăn $windowStartFret–$windowEndFret)',
             style: const TextStyle(
               fontSize: 11.5,
               fontWeight: FontWeight.w800,
@@ -1928,7 +1934,9 @@ class _SongPlayRoomScreenState extends ConsumerState<SongPlayRoomScreen>
                 Expanded(
                   child: Center(
                     child: Text(
-                      f == 0 ? 'Buông' : 'Ng.$f',
+                      f == 0
+                          ? (isEn ? 'Open' : 'Buông')
+                          : (isEn ? 'Fr.$f' : 'Ng.$f'),
                       style: TextStyle(
                         fontSize: 10.5,
                         fontWeight: FontWeight.w800,

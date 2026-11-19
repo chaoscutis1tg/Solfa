@@ -317,6 +317,7 @@ class TopicsScreen extends ConsumerWidget {
         final toolRowCount = (practiceTools.length / 2).ceil();
 
         return ListView(
+          key: const Key('list_topics_screen'),
           physics: const AlwaysScrollableScrollPhysics(
             parent: BouncingScrollPhysics(),
           ),
@@ -1150,7 +1151,7 @@ class _TopicPracticeSetupSheetState
       ),
       child: SafeArea(
         top: false,
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(18, 12, 18, 22),
           child: Column(
             mainAxisSize: MainAxisSize.min,

@@ -425,31 +425,45 @@ class ProgressScreen extends ConsumerWidget {
                                             idx >= stats.topicStats.length) {
                                           return const SizedBox.shrink();
                                         }
+                                        final tId =
+                                            stats.topicStats[idx].topicId;
                                         final rawName = stats
                                             .topicStats[idx].topicName;
-                                        final shortName = rawName ==
-                                                'Nhận biết nốt'
-                                            ? 'Nghe'
-                                            : rawName == 'Đọc nốt nhạc'
-                                                ? 'Đọc'
-                                                : rawName == 'Nhận biết quãng'
-                                                    ? 'Quãng'
-                                                    : rawName == 'Nhận biết giọng'
-                                                        ? 'Giọng'
+                                        final shortName = tId ==
+                                                'topic_guitar_notes'
+                                            ? 'G.Nốt'
+                                            : tId == 'topic_guitar_chords'
+                                                ? 'G.Hợp'
+                                                : tId == 'topic_guitar_scales'
+                                                    ? 'Scale'
+                                                    : tId == 'topic_guitar_tabs'
+                                                        ? 'Tab'
                                                         : rawName ==
-                                                                'Nhận biết hợp âm'
-                                                            ? 'H.âm'
-                                                            : rawName.contains(
-                                                                    'giai điệu')
-                                                                ? 'G.điệu'
-                                                                : rawName.contains(
-                                                                        'nhịp')
-                                                                    ? 'Nhịp'
-                                                                    : rawName
-                                                                        .replaceAll(
-                                                                        'Nhận biết ',
-                                                                        '',
-                                                                      );
+                                                                'Nhận biết nốt'
+                                                            ? 'Nghe'
+                                                            : rawName ==
+                                                                    'Đọc nốt nhạc'
+                                                                ? 'Đọc'
+                                                                : rawName ==
+                                                                        'Nhận biết quãng'
+                                                                    ? 'Quãng'
+                                                                    : rawName ==
+                                                                            'Nhận biết giọng'
+                                                                        ? 'Giọng'
+                                                                        : rawName ==
+                                                                                'Nhận biết hợp âm'
+                                                                            ? 'H.âm'
+                                                                            : rawName.contains(
+                                                                                    'giai điệu')
+                                                                                ? 'G.điệu'
+                                                                                : rawName.contains(
+                                                                                        'nhịp')
+                                                                                    ? 'Nhịp'
+                                                                                    : rawName
+                                                                                        .replaceAll(
+                                                                                        'Nhận biết ',
+                                                                                        '',
+                                                                                      );
                                         return Padding(
                                           padding:
                                               const EdgeInsets.only(top: 6),
@@ -477,7 +491,9 @@ class ProgressScreen extends ConsumerWidget {
                                               ? stats.topicStats[i]
                                                   .accuracyPercent
                                               : 0,
-                                          width: 14,
+                                          width: stats.topicStats.length > 7
+                                              ? 10
+                                              : 14,
                                           gradient:
                                               stats.topicStats[i].hasEnoughData
                                                   ? const LinearGradient(
