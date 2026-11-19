@@ -1122,6 +1122,8 @@ class _SongPlayRoomScreenState extends ConsumerState<SongPlayRoomScreen>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isEn = ref.watch(appSettingsProvider).isEnglish;
     final audio = ref.watch(audioServiceProvider);
+    final guitarType = ref.watch(selectedGuitarTypeProvider);
+    audio.setGuitarType(guitarType);
     final song = widget.song;
     final currentNote = song.notes[_currentNoteIndex];
     final accuracyPct = _attemptCount > 0
@@ -1471,16 +1473,19 @@ class _SongPlayRoomScreenState extends ConsumerState<SongPlayRoomScreen>
                                       mainAxisAlignment:
                                           MainAxisAlignment.center,
                                       children: [
-                                        Text(
-                                          isCurrent
-                                              ? 'BẤM NGAY'
-                                              : '#${idx + 1}',
-                                          style: TextStyle(
-                                            fontSize: 9,
-                                            fontWeight: FontWeight.w800,
-                                            color: isCurrent
-                                                ? const Color(0xFFFDE047)
-                                                : Colors.white54,
+                                        FittedBox(
+                                          fit: BoxFit.scaleDown,
+                                          child: Text(
+                                            isCurrent
+                                                ? 'BẤM NGAY'
+                                                : '#${idx + 1}',
+                                            style: TextStyle(
+                                              fontSize: 9,
+                                              fontWeight: FontWeight.w800,
+                                              color: isCurrent
+                                                  ? const Color(0xFFFDE047)
+                                                  : Colors.white54,
+                                            ),
                                           ),
                                         ),
                                         const SizedBox(height: 2),
@@ -1497,13 +1502,16 @@ class _SongPlayRoomScreenState extends ConsumerState<SongPlayRoomScreen>
                                             ),
                                           ),
                                         ),
-                                        Text(
-                                          n.noteLabel.split(' ').first,
-                                          maxLines: 1,
-                                          style: const TextStyle(
-                                            fontSize: 9.5,
-                                            color: Color(0xFF93C5FD),
-                                            fontWeight: FontWeight.w700,
+                                        FittedBox(
+                                          fit: BoxFit.scaleDown,
+                                          child: Text(
+                                            n.noteLabel.split(' ').first,
+                                            maxLines: 1,
+                                            style: const TextStyle(
+                                              fontSize: 9.5,
+                                              color: Color(0xFF93C5FD),
+                                              fontWeight: FontWeight.w700,
+                                            ),
                                           ),
                                         ),
                                       ],
@@ -1568,6 +1576,23 @@ class _SongPlayRoomScreenState extends ConsumerState<SongPlayRoomScreen>
                           fontWeight: FontWeight.w900,
                           color: AppColors.correct,
                         ),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          for (int s = 1; s <= 3; s++)
+                            Icon(
+                              Icons.star_rounded,
+                              size: 28,
+                              color: s <=
+                                      (accuracyPct >= 90
+                                          ? 3
+                                          : (accuracyPct >= 70 ? 2 : 1))
+                                  ? const Color(0xFFFBBF24)
+                                  : Colors.grey.withOpacity(0.32),
+                            ),
+                        ],
                       ),
                       const SizedBox(height: 6),
                       Text(
@@ -2016,11 +2041,38 @@ class _CircleOfFifthsAndCapoScreenState
     return '${_chromaticRoots[wrappedIdx]}$suffix';
   }
 
+  /// Phát chuẩn xác từng hợp âm trong Vòng Tròn Bậc 5 (dùng file WAV hợp âm thật; với C#m & G#m rải 3 nốt hợp âm thật đa âm để chuẩn cao độ 100%).
+  void _playCircleChord(String chordSymbol, String fallbackAsset, AudioService audio) {
+    final List<String>? customTriad = switch (chordSymbol) {
+      'C#m' => const [
+          'assets/audio/notes/csharp3.wav',
+          'assets/audio/notes/e3.wav',
+          'assets/audio/notes/gsharp3.wav',
+        ],
+      'G#m' => const [
+          'assets/audio/notes/gsharp3.wav',
+          'assets/audio/notes/b3.wav',
+          'assets/audio/notes/dsharp4.wav',
+        ],
+      _ => null,
+    };
+    if (customTriad != null) {
+      for (int i = 0; i < customTriad.length; i++) {
+        Future<void>.delayed(Duration(milliseconds: i * 28), () {
+          if (mounted) audio.playGuitarAsset(customTriad[i]);
+        });
+      }
+      return;
+    }
+    audio.playGuitarAsset(fallbackAsset);
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isEn = ref.watch(appSettingsProvider).isEnglish;
     final audio = ref.watch(audioServiceProvider);
+    audio.setGuitarType(ref.watch(selectedGuitarTypeProvider));
     final currentKey = _circleOfFifthsKeys[_selectedCircleKeyIndex];
     final baseProgression = _selectedProgressionPresetId == 'canon'
         ? const ['D', 'A', 'Bm', 'F#m', 'G', 'D', 'G', 'A']
@@ -2126,7 +2178,11 @@ class _CircleOfFifthsAndCapoScreenState
                             key: Key('btn_circle_chord_${currentKey.$4[cIdx]}'),
                             borderRadius: BorderRadius.circular(10),
                             onTap: () {
-                              audio.playGuitarAsset(currentKey.$5[cIdx]);
+                              _playCircleChord(
+                                currentKey.$4[cIdx],
+                                currentKey.$5[cIdx],
+                                audio,
+                              );
                             },
                             child: Container(
                               padding: const EdgeInsets.symmetric(vertical: 10),
@@ -2350,12 +2406,12 @@ class _ChromaticCentsTunerChallengeCardState
 
   static const Map<int, (String note, double baseHz440, String asset)>
       _standardStringData = {
-    6: ('E2 (Mi trầm)', 82.4, 'assets/audio/guitar_acoustic/notes/e2.wav'),
-    5: ('A2 (La)', 110.0, 'assets/audio/guitar_acoustic/notes/a2.wav'),
-    4: ('D3 (Rê)', 146.8, 'assets/audio/guitar_acoustic/notes/d3.wav'),
-    3: ('G3 (Sol)', 196.0, 'assets/audio/guitar_acoustic/notes/g3.wav'),
-    2: ('B3 (Si)', 246.9, 'assets/audio/guitar_acoustic/notes/b3.wav'),
-    1: ('E4 (Mi cao)', 329.6, 'assets/audio/guitar_acoustic/notes/e4.wav'),
+    6: ('E2 (Mi trầm)', 82.4, 'assets/audio/notes/e2.wav'),
+    5: ('A2 (La)', 110.0, 'assets/audio/notes/a2.wav'),
+    4: ('D3 (Rê)', 146.8, 'assets/audio/notes/d3.wav'),
+    3: ('G3 (Sol)', 196.0, 'assets/audio/notes/g3.wav'),
+    2: ('B3 (Si)', 246.9, 'assets/audio/notes/b3.wav'),
+    1: ('E4 (Mi cao)', 329.6, 'assets/audio/notes/e4.wav'),
   };
 
   void _startTuningChallenge(AudioService audio) {

@@ -2235,13 +2235,40 @@ void main() {
           ),
           isTrue,
         );
+        final audioForSongCheck = container.read(audioServiceProvider);
         for (final song in kInteractiveSongbookCatalog) {
           expect(song.notes.isNotEmpty, isTrue);
           for (final n in song.notes) {
             expect(
               File(n.audioAsset).existsSync(),
               isTrue,
-              reason: 'Thiếu file WAV ${n.audioAsset} cho bài ${song.id}',
+              reason: 'Thiếu file WAV Piano ${n.audioAsset} cho bài ${song.id}',
+            );
+            expect(
+              File(audioForSongCheck.resolveGuitarAssetPath(
+                n.audioAsset,
+                overrideGuitarType: 'acoustic',
+              )).existsSync(),
+              isTrue,
+              reason: 'Thiếu file WAV Guitar Thùng cho ${n.audioAsset}',
+            );
+            expect(
+              File(audioForSongCheck.resolveGuitarAssetPath(
+                n.audioAsset,
+                overrideGuitarType: 'electric',
+              )).existsSync(),
+              isTrue,
+              reason: 'Thiếu file WAV Guitar Điện cho ${n.audioAsset}',
+            );
+            final physicalNote = GuitarFretboardData.noteAt(
+              stringNumber: n.stringNumber,
+              fret: n.fret,
+            );
+            expect(
+              physicalNote.audioAsset,
+              equals(n.audioAsset),
+              reason:
+                  'Vị trí Dây ${n.stringNumber} Ngăn ${n.fret} trong ${song.id} phải khớp tuyệt đối với cao độ ${n.audioAsset}',
             );
           }
         }

@@ -388,17 +388,19 @@ class _AnimatedNavTabItem extends StatelessWidget {
                     ),
             ),
             const SizedBox(height: 2),
-            AnimatedDefaultTextStyle(
-              duration: const Duration(milliseconds: 180),
-              style: TextStyle(
-                fontSize: 10.5,
-                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                color: isSelected ? activeTextColor : inactiveColor,
-              ),
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: AnimatedDefaultTextStyle(
+                duration: const Duration(milliseconds: 180),
+                style: TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                  color: isSelected ? activeTextColor : inactiveColor,
+                ),
+                child: Text(
+                  label,
+                  maxLines: 1,
+                ),
               ),
             ),
           ],

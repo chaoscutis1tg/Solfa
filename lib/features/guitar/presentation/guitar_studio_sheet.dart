@@ -101,14 +101,14 @@ class GuitarFretboardData {
     4, // Dây 6: E2 (Mi)
   ];
 
-  /// Trả về thông tin nốt chuẩn xác tuyệt đối theo cao độ vật lý tại `stringNumber` (1..6) và `fret` (0..12).
+  /// Trả về thông tin nốt chuẩn xác tuyệt đối theo cao độ vật lý tại `stringNumber` (1..6) và `fret` (0..15).
   static ({String noteCode, String vnLabel, String fullLabel, String audioAsset})
       noteAt({
     required int stringNumber,
     required int fret,
   }) {
     final sIdx = (stringNumber - 1).clamp(0, 5);
-    final midi = openStringMidi[sIdx] + fret.clamp(0, 12);
+    final midi = openStringMidi[sIdx] + fret.clamp(0, 15);
     final semi = midi % 12;
     final octave = ((midi ~/ 12) - 1).clamp(2, 5);
     final info = chromaticNotes[semi];
@@ -3576,37 +3576,42 @@ class GuitarTabViewerWidget extends StatelessWidget {
                                   : const SizedBox(height: 16),
                             )
                           else
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: List.generate(steps.length, (idx) {
-                                final st = steps[idx];
-                                final isHere = st.$1 == s;
-                                final isActive = idx == activeStepIndex && isHere;
-                                if (!isHere) {
-                                  return const SizedBox(width: 22, height: 16);
-                                }
-                                return Container(
-                                  width: 22,
-                                  height: 16,
-                                  alignment: Alignment.center,
-                                  decoration: BoxDecoration(
-                                    color: isActive
-                                        ? AppColors.correct
-                                        : AppColors.primary.withOpacity(0.16),
-                                    borderRadius: BorderRadius.circular(5),
-                                  ),
-                                  child: Text(
-                                    '${st.$2}',
-                                    style: TextStyle(
-                                      fontSize: 10.5,
-                                      fontWeight: FontWeight.w900,
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: List.generate(steps.length, (idx) {
+                                  final st = steps[idx];
+                                  final isHere = st.$1 == s;
+                                  final isActive = idx == activeStepIndex && isHere;
+                                  if (!isHere) {
+                                    return const SizedBox(width: 24, height: 16);
+                                  }
+                                  return Container(
+                                    width: 24,
+                                    height: 16,
+                                    margin: const EdgeInsets.symmetric(horizontal: 1),
+                                    alignment: Alignment.center,
+                                    decoration: BoxDecoration(
                                       color: isActive
-                                          ? Colors.white
-                                          : AppColors.primary,
+                                          ? AppColors.correct
+                                          : AppColors.primary.withOpacity(0.16),
+                                      borderRadius: BorderRadius.circular(5),
                                     ),
-                                  ),
-                                );
-                              }),
+                                    child: Text(
+                                      '${st.$2}',
+                                      style: TextStyle(
+                                        fontSize: 10.5,
+                                        fontWeight: FontWeight.w900,
+                                        color: isActive
+                                            ? Colors.white
+                                            : AppColors.primary,
+                                      ),
+                                    ),
+                                  );
+                                }),
+                              ),
                             ),
                         ],
                       ),

@@ -1813,9 +1813,12 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
                           size: 19,
                           color: isDark ? Colors.white : topicAccent,
                         ),
-                        label: const Text(
-                          'Nghe lại âm thanh câu hỏi',
-                          style: TextStyle(fontWeight: FontWeight.w800),
+                        label: const FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            'Nghe lại âm thanh câu hỏi',
+                            style: TextStyle(fontWeight: FontWeight.w800),
+                          ),
                         ),
                       ),
                     ),
@@ -2034,10 +2037,37 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
     const badges = ['A', 'B', 'C', 'D'];
     final (p1TopicLabel, _, _) = _topicMeta(p1Q.topicId);
     final (p2TopicLabel, _, _) = _topicMeta(p2Q.topicId);
-    final p1IsGuitar =
-        p1Q.topicId.startsWith('topic_guitar_') || p1Q.type.startsWith('guitar_');
-    final p2IsGuitar =
-        p2Q.topicId.startsWith('topic_guitar_') || p2Q.type.startsWith('guitar_');
+
+    Widget buildCompactVisualBoard(QuestionModel q, bool revealed) {
+      final isGtr =
+          q.topicId.startsWith('topic_guitar_') || q.type.startsWith('guitar_');
+      if (!isGtr && !q.isSightReading) return const SizedBox.shrink();
+      final Widget board = isGtr
+          ? GuitarQuestionBoardWidget(
+              topicId: q.topicId,
+              optionKey: q.correctOption.optionKey,
+              isRevealed: revealed,
+            )
+          : MusicalStaffWidget(
+              targetNoteKey: q.correctOption.optionKey,
+              showNote: revealed,
+              isSightReading: true,
+            );
+      if (_isTabletopOpposite180) {
+        return Padding(
+          padding: const EdgeInsets.only(top: 6),
+          child: board,
+        );
+      }
+      // Chế độ ngồi cạnh nhau (mỗi bên 1/2 chiều rộng): thu phóng mượt bằng FittedBox để KHÔNG BAO GIỜ tràn khung 360px
+      return Padding(
+        padding: const EdgeInsets.only(top: 6),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: SizedBox(width: 280, child: board),
+        ),
+      );
+    }
 
     final p1Station = Container(
       padding: const EdgeInsets.all(8),
@@ -2092,6 +2122,16 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
                     color: Color(0xFF4F46E5),
                   ),
                   onPressed: () => _playBattleQuestionAudio(audioService, p1Q),
+                )
+              else
+                const SizedBox(
+                  width: 26,
+                  height: 26,
+                  child: Icon(
+                    Icons.visibility_rounded,
+                    size: 15,
+                    color: Color(0xFF4F46E5),
+                  ),
                 ),
             ],
           ),
@@ -2123,21 +2163,10 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
               fontWeight: FontWeight.w700,
             ),
           ),
-          if (p1IsGuitar) ...[
-            const SizedBox(height: 6),
-            GuitarQuestionBoardWidget(
-              topicId: p1Q.topicId,
-              optionKey: p1Q.correctOption.optionKey,
-              isRevealed: state.isRoundResolved || state.p1LockedOut,
-            ),
-          ] else if (p1Q.isSightReading) ...[
-            const SizedBox(height: 6),
-            MusicalStaffWidget(
-              targetNoteKey: p1Q.correctOption.optionKey,
-              showNote: state.isRoundResolved || state.p1LockedOut,
-              isSightReading: true,
-            ),
-          ],
+          buildCompactVisualBoard(
+            p1Q,
+            state.isRoundResolved || state.p1LockedOut,
+          ),
           const SizedBox(height: 6),
           for (int i = 0; i < p1Q.options.length; i++) ...[
             if (i > 0) const SizedBox(height: 6),
@@ -2210,6 +2239,16 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
                     color: Color(0xFFEC4899),
                   ),
                   onPressed: () => _playBattleQuestionAudio(audioService, p2Q),
+                )
+              else
+                const SizedBox(
+                  width: 26,
+                  height: 26,
+                  child: Icon(
+                    Icons.visibility_rounded,
+                    size: 15,
+                    color: Color(0xFFEC4899),
+                  ),
                 ),
             ],
           ),
@@ -2241,21 +2280,10 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
               fontWeight: FontWeight.w700,
             ),
           ),
-          if (p2IsGuitar) ...[
-            const SizedBox(height: 6),
-            GuitarQuestionBoardWidget(
-              topicId: p2Q.topicId,
-              optionKey: p2Q.correctOption.optionKey,
-              isRevealed: state.isRoundResolved || state.p2LockedOut,
-            ),
-          ] else if (p2Q.isSightReading) ...[
-            const SizedBox(height: 6),
-            MusicalStaffWidget(
-              targetNoteKey: p2Q.correctOption.optionKey,
-              showNote: state.isRoundResolved || state.p2LockedOut,
-              isSightReading: true,
-            ),
-          ],
+          buildCompactVisualBoard(
+            p2Q,
+            state.isRoundResolved || state.p2LockedOut,
+          ),
           const SizedBox(height: 6),
           for (int i = 0; i < p2Q.options.length; i++) ...[
             if (i > 0) const SizedBox(height: 6),
