@@ -14,6 +14,7 @@ import '../../../core/audio/audio_service.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../support_developer/application/rewarded_ad_controller.dart';
 import '../../support_developer/presentation/support_developer_screen.dart';
+import 'custom_melody_composer_screen.dart';
 import 'guitar_studio_sheet.dart';
 
 const String _kUnlockedVipSongsPrefsKey = 'solfa_unlocked_vip_songs_v1';
@@ -519,6 +520,7 @@ class _SongbookCatalogScreenState extends ConsumerState<SongbookCatalogScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         loadSongbookPreferences(ref);
+        loadCustomUserSongs(ref);
       }
     });
   }
@@ -648,16 +650,20 @@ class _SongbookCatalogScreenState extends ConsumerState<SongbookCatalogScreen> {
     final adState = ref.watch(rewardedAdProvider);
     final unlockedSongs = ref.watch(unlockedVipSongsProvider);
     final songStars = ref.watch(songbookStarsProvider);
+    final customSongs = ref.watch(customUserSongsProvider);
 
+    final allSongs = [...customSongs, ...kInteractiveSongbookCatalog];
     final classicalCount =
         kInteractiveSongbookCatalog.where((s) => s.isClassical).length;
     final modernCount =
         kInteractiveSongbookCatalog.where((s) => !s.isClassical).length;
     final filteredSongs = _selectedCategory == 'all'
-        ? kInteractiveSongbookCatalog
-        : kInteractiveSongbookCatalog
-            .where((s) => s.category == _selectedCategory)
-            .toList();
+        ? allSongs
+        : (_selectedCategory == 'custom'
+            ? customSongs
+            : kInteractiveSongbookCatalog
+                .where((s) => s.category == _selectedCategory)
+                .toList());
 
     return SolfaBackground(
       child: Scaffold(
@@ -673,8 +679,38 @@ class _SongbookCatalogScreenState extends ConsumerState<SongbookCatalogScreen> {
             ),
           ),
           actions: [
+            TextButton.icon(
+              key: const Key('btn_open_melody_composer'),
+              style: TextButton.styleFrom(
+                backgroundColor: AppColors.correct.withOpacity(0.14),
+                foregroundColor: AppColors.correct,
+                minimumSize: const Size(0, 28),
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              onPressed: () async {
+                final created = await openCustomMelodyComposerScreen(context);
+                if (created != null && context.mounted) {
+                  setState(() => _selectedCategory = 'custom');
+                  await Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => SongPlayRoomScreen(song: created),
+                    ),
+                  );
+                }
+              },
+              icon: const Icon(Icons.add_rounded, size: 16),
+              label: Text(
+                isEn ? 'Compose' : 'Tự soạn',
+                style: const TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+            const SizedBox(width: 6),
             Padding(
-              padding: const EdgeInsets.only(right: 14),
+              padding: const EdgeInsets.only(right: 12),
               child: InkWell(
                 borderRadius: BorderRadius.circular(99),
                 onTap: () => context.push('/support-developer'),
@@ -715,8 +751,9 @@ class _SongbookCatalogScreenState extends ConsumerState<SongbookCatalogScreen> {
         ),
         body: Column(
           children: [
-            // Thanh lọc danh mục rõ ràng: Tất cả | Cổ điển | Hiện đại / V-Pop
-            Padding(
+            // Thanh lọc danh mục rõ ràng: Tất cả | Cổ điển | Hiện đại | Bài của tôi
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
               child: Row(
                 children: [
@@ -724,8 +761,8 @@ class _SongbookCatalogScreenState extends ConsumerState<SongbookCatalogScreen> {
                     (
                       'all',
                       isEn
-                          ? 'All (${kInteractiveSongbookCatalog.length})'
-                          : 'Tất cả (${kInteractiveSongbookCatalog.length})',
+                          ? 'All (${allSongs.length})'
+                          : 'Tất cả (${allSongs.length})',
                     ),
                     (
                       'classical',
@@ -739,38 +776,67 @@ class _SongbookCatalogScreenState extends ConsumerState<SongbookCatalogScreen> {
                           ? '🎧 Modern ($modernCount)'
                           : '🎧 Hiện đại ($modernCount)',
                     ),
+                    (
+                      'custom',
+                      isEn
+                          ? '✍️ My Riffs (${customSongs.length})'
+                          : '✍️ Bài của tôi (${customSongs.length})',
+                    ),
                   ]) ...[
                     if (catId != 'all') const SizedBox(width: 6),
-                    Expanded(
-                      child: ChoiceChip(
-                        key: Key('chip_song_cat_$catId'),
-                        visualDensity: VisualDensity.compact,
-                        label: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text(
-                            lbl,
-                            style: TextStyle(
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w800,
-                              color: _selectedCategory == catId
-                                  ? Colors.white
-                                  : (isDark
-                                      ? AppColors.textPrimaryDark
-                                      : AppColors.textPrimaryLight),
-                            ),
-                          ),
+                    ChoiceChip(
+                      key: Key('chip_song_cat_$catId'),
+                      visualDensity: VisualDensity.compact,
+                      label: Text(
+                        lbl,
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w800,
+                          color: _selectedCategory == catId
+                              ? Colors.white
+                              : (isDark
+                                  ? AppColors.textPrimaryDark
+                                  : AppColors.textPrimaryLight),
                         ),
-                        selected: _selectedCategory == catId,
-                        onSelected: (_) =>
-                            setState(() => _selectedCategory = catId),
                       ),
+                      selected: _selectedCategory == catId,
+                      onSelected: (_) =>
+                          setState(() => _selectedCategory = catId),
                     ),
                   ],
                 ],
               ),
             ),
             Expanded(
-              child: ListView.separated(
+              child: filteredSongs.isEmpty
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.edit_note_rounded,
+                              size: 42,
+                              color: AppColors.primary,
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              isEn
+                                  ? 'No custom melodies yet.\nTap "+ Compose" above to create your own!'
+                                  : 'Bạn chưa có giai điệu tự soạn nào.\nBấm nút "+ Tự soạn" ở góc trên để sáng tác ngay nhé!',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                height: 1.4,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  : ListView.separated(
                 key: const Key('list_songbook_catalog'),
                 physics: const AlwaysScrollableScrollPhysics(
                   parent: BouncingScrollPhysics(),
@@ -944,23 +1010,51 @@ class _SongbookCatalogScreenState extends ConsumerState<SongbookCatalogScreen> {
                                     ],
                                   ),
                                   const SizedBox(height: 4),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                      vertical: 4,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.primary,
-                                      borderRadius: BorderRadius.circular(99),
-                                    ),
-                                    child: Text(
-                                      isEn ? 'Play' : 'Chơi ngay',
-                                      style: const TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w800,
-                                        color: Colors.white,
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      if (song.category == 'custom') ...[
+                                        InkWell(
+                                          key: Key(
+                                            'btn_delete_custom_song_${song.id}',
+                                          ),
+                                          borderRadius:
+                                              BorderRadius.circular(99),
+                                          onTap: () => deleteCustomUserSong(
+                                            ref,
+                                            song.id,
+                                          ),
+                                          child: const Padding(
+                                            padding: EdgeInsets.all(3),
+                                            child: Icon(
+                                              Icons.delete_outline_rounded,
+                                              size: 16,
+                                              color: AppColors.wrong,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 4),
+                                      ],
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.primary,
+                                          borderRadius:
+                                              BorderRadius.circular(99),
+                                        ),
+                                        child: Text(
+                                          isEn ? 'Play' : 'Chơi ngay',
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w800,
+                                            color: Colors.white,
+                                          ),
+                                        ),
                                       ),
-                                    ),
+                                    ],
                                   ),
                                 ],
                               ),

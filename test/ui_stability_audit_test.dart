@@ -9,9 +9,14 @@ import 'package:solfa/core/database/app_database.dart';
 import 'package:solfa/core/providers/app_providers.dart';
 import 'package:solfa/features/battle/application/battle_controller.dart';
 import 'package:solfa/features/battle/presentation/battle_screen.dart';
+import 'package:solfa/features/guitar/presentation/custom_melody_composer_screen.dart';
 import 'package:solfa/features/guitar/presentation/guitar_studio_sheet.dart';
 import 'package:solfa/features/guitar/presentation/interactive_songbook_and_theory_sheet.dart';
+import 'package:solfa/features/home/presentation/streak_shield_and_reminder_sheet.dart';
 import 'package:solfa/features/metronome/application/metronome_controller.dart';
+import 'package:solfa/features/practice/presentation/chord_progression_ear_screen.dart';
+import 'package:solfa/features/progress/presentation/achievements_trophy_screen.dart';
+import 'package:solfa/features/support_developer/application/rewarded_ad_controller.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -154,10 +159,19 @@ void main() {
             ),
           );
           await pumpClean(tester);
+          await tester.ensureVisible(
+            find.byKey(const Key('chip_song_cat_classical')),
+          );
           await tester.tap(find.byKey(const Key('chip_song_cat_classical')));
           await pumpClean(tester, 150);
+          await tester.ensureVisible(
+            find.byKey(const Key('chip_song_cat_modern')),
+          );
           await tester.tap(find.byKey(const Key('chip_song_cat_modern')));
           await pumpClean(tester, 150);
+          await tester.ensureVisible(
+            find.byKey(const Key('chip_song_cat_all')),
+          );
           await tester.tap(find.byKey(const Key('chip_song_cat_all')));
           await pumpClean(tester, 150);
 
@@ -307,6 +321,164 @@ void main() {
             await battleNotifier.backToLobby();
           });
           await pumpClean(tester);
+        }
+      },
+    );
+
+    testWidgets(
+      'AUDIT-04: 4 Tính năng mới v2.0.0 (Dò Vòng Hợp Âm Đệm Hát, Tự Soạn Giai Điệu, Huy Hiệu & Thẻ Thành Tích, Khiên Giữ Chuỗi + Nhắc Giờ Học) trên 360x680 Light & Dark',
+      (tester) async {
+        tester.view.physicalSize = const Size(360 * 3.0, 680 * 3.0);
+        tester.view.devicePixelRatio = 3.0;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+
+        await tester.runAsync(() async {
+          await db.seedContent();
+          await container.read(appSettingsProvider.notifier).loadSettings();
+          await container
+              .read(rewardedAdProvider.notifier)
+              .grantBonusPrestigePoints(200);
+          await container.read(overallProgressProvider.future);
+        });
+
+        int seq = 0;
+        for (final isDark in const [false, true]) {
+          final theme = isDark ? AppTheme.darkTheme : AppTheme.lightTheme;
+
+          // 1. Luyện Dò Vòng Hợp Âm Đệm Hát (C -> G -> Am -> F)
+          await tester.pumpWidget(
+            UncontrolledProviderScope(
+              container: container,
+              child: MaterialApp(
+                key: ValueKey('v2_prog_${seq++}'),
+                theme: theme,
+                home: const ChordProgressionEarScreen(),
+              ),
+            ),
+          );
+          await pumpClean(tester);
+          for (final ch in const ['C', 'G', 'Am', 'F']) {
+            await tester.dragUntilVisible(
+              find.byKey(Key('btn_prog_pad_$ch')),
+              find.byKey(const Key('screen_chord_progression_ear')),
+              const Offset(0, -140),
+            );
+            await tester.tap(find.byKey(Key('btn_prog_pad_$ch')));
+            await pumpClean(tester, 80);
+          }
+          expect(
+            find.byKey(const Key('card_prog_evaluation_result')),
+            findsOneWidget,
+          );
+
+          // 2. Phòng Tự Soạn Giai Điệu Cá Nhân (Guitar + Piano -> Lưu bài)
+          await tester.pumpWidget(
+            UncontrolledProviderScope(
+              container: container,
+              child: MaterialApp(
+                key: ValueKey('v2_comp_${seq++}'),
+                theme: theme,
+                home: const SongbookCatalogScreen(),
+              ),
+            ),
+          );
+          await pumpClean(tester);
+          await tester.tap(find.byKey(const Key('btn_open_melody_composer')));
+          await pumpClean(tester, 300);
+          await tester.dragUntilVisible(
+            find.byKey(const Key('composer_gtr_s1_f0')),
+            find.byKey(const Key('screen_custom_melody_composer')),
+            const Offset(0, -160),
+          );
+          await tester.tap(find.byKey(const Key('composer_gtr_s1_f0')));
+          await tester.tap(find.byKey(const Key('composer_gtr_s1_f3')));
+          await tester.tap(find.byKey(const Key('composer_gtr_s1_f5')));
+          await pumpClean(tester, 120);
+          await tester.dragUntilVisible(
+            find.byKey(const Key('btn_composer_save_song')),
+            find.byKey(const Key('screen_custom_melody_composer')),
+            const Offset(0, -180),
+          );
+          await tester.tap(find.byKey(const Key('btn_composer_save_song')));
+          await pumpClean(tester, 300);
+          expect(
+            container.read(customUserSongsProvider).isNotEmpty,
+            isTrue,
+          );
+
+          // 3. Phòng Truyền Thống Huy Hiệu & Thẻ Vinh Danh Cá Nhân (+25 Gem)
+          await tester.pumpWidget(
+            UncontrolledProviderScope(
+              container: container,
+              child: MaterialApp(
+                key: ValueKey('v2_ach_${seq++}'),
+                theme: theme,
+                home: const AchievementsTrophyScreen(),
+              ),
+            ),
+          );
+          await pumpClean(tester);
+          expect(
+            find.byKey(const Key('card_player_share_profile')),
+            findsOneWidget,
+          );
+          await tester.tap(
+            find.byKey(const Key('btn_copy_share_achievement_card')),
+          );
+          await pumpClean(tester, 150);
+
+          // 4. Khiên Bảo Vệ Chuỗi (150 Gem) & Giờ Nhắc Luyện Tập Hằng Ngày
+          await tester.pumpWidget(
+            UncontrolledProviderScope(
+              container: container,
+              child: MaterialApp(
+                key: ValueKey('v2_shield_${seq++}'),
+                theme: theme,
+                home: Builder(
+                  builder: (ctx) => Scaffold(
+                    body: Center(
+                      child: ElevatedButton(
+                        key: const Key('btn_test_open_shield_modal'),
+                        onPressed: () => showStreakShieldAndReminderSheet(ctx),
+                        child: const Text('Open'),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+          await pumpClean(tester);
+          await tester.tap(find.byKey(const Key('btn_test_open_shield_modal')));
+          await pumpClean(tester, 250);
+          expect(
+            find.byKey(const Key('modal_streak_shield_reminder')),
+            findsOneWidget,
+          );
+          if (!isDark) {
+            // Mua +1 Khiên (150 Gem) & Chọn giờ nhắc 20:30
+            await tester.ensureVisible(
+              find.byKey(const Key('btn_buy_streak_shield')),
+            );
+            await tester.tap(find.byKey(const Key('btn_buy_streak_shield')));
+            await pumpClean(tester, 150);
+            expect(
+              container.read(streakShieldReminderProvider).shieldCount,
+              equals(1),
+            );
+            await tester.ensureVisible(
+              find.byKey(const Key('chip_reminder_time_20:30')),
+            );
+            await tester.tap(find.byKey(const Key('chip_reminder_time_20:30')));
+            await pumpClean(tester, 120);
+            expect(
+              container.read(streakShieldReminderProvider).reminderEnabled,
+              isTrue,
+            );
+          }
         }
       },
     );

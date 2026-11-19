@@ -12,6 +12,7 @@ import '../../../core/providers/app_providers.dart';
 import '../../guitar/presentation/guitar_studio_sheet.dart';
 import '../../guitar/presentation/interactive_songbook_and_theory_sheet.dart';
 import '../../practice/application/practice_session_controller.dart';
+import '../../practice/presentation/chord_progression_ear_screen.dart';
 import '../../practice/presentation/widgets/free_piano_explorer_sheet.dart';
 import '../../support_developer/application/rewarded_ad_controller.dart';
 import '../../support_developer/presentation/support_developer_screen.dart';
@@ -576,6 +577,15 @@ class TopicsScreen extends ConsumerWidget {
           onTap: () => showFreePianoExplorerSheet(context),
         ),
         _CompactToolCard(
+          key: const Key('topic_grid_card_chord_prog_ear'),
+          icon: Icons.queue_music_rounded,
+          title: isEn ? 'Chord Loops' : 'Dò Vòng Hợp Âm',
+          subtitle: isEn ? 'I–V–vi–IV Ear' : 'Đệm hát I–V–vi–IV',
+          accentColor: const Color(0xFF7C3AED),
+          isDark: isDark,
+          onTap: () => openChordProgressionEarScreen(context),
+        ),
+        _CompactToolCard(
           key: const Key('topic_grid_card_circle_capo'),
           icon: Icons.donut_large_rounded,
           title: isEn ? 'Circle & Capo' : 'Vòng Bậc 5 & Capo',
@@ -639,6 +649,15 @@ class TopicsScreen extends ConsumerWidget {
         accentColor: const Color(0xFF10B981),
         isDark: isDark,
         onTap: () => showGuitarFingerWorkoutPage(context),
+      ),
+      _CompactToolCard(
+        key: const Key('topic_grid_card_chord_prog_ear'),
+        icon: Icons.queue_music_rounded,
+        title: isEn ? 'Chord Loops' : 'Dò Vòng Hợp Âm',
+        subtitle: isEn ? 'I–V–vi–IV Ear' : 'Đệm hát I–V–vi–IV',
+        accentColor: const Color(0xFF7C3AED),
+        isDark: isDark,
+        onTap: () => openChordProgressionEarScreen(context),
       ),
       _CompactToolCard(
         key: const Key('topic_grid_card_circle_capo'),

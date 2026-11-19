@@ -762,15 +762,21 @@ class AppDatabase {
     ''');
     final recentSessions = sessionRows.map(PracticeSessionModel.fromMap).toList();
 
-    // Daily activities & Streak calculation
+    // Daily activities & Streak calculation (hỗ trợ Khiên Bảo Vệ Chuỗi tối đa 3 khiên)
     final dailyRows = await db.query(
       'daily_activity',
       where: 'answered_count > 0',
       orderBy: 'activity_date DESC',
-      limit: 30,
+      limit: 45,
     );
     final dailyList = dailyRows.map(DailyActivityModel.fromMap).toList();
-    final streak = _calculateStreakDays(dailyList);
+    final shieldCount =
+        (int.tryParse(await getSetting('streak_freeze_shields') ?? '0') ?? 0)
+            .clamp(0, 3);
+    final streak = _calculateStreakDays(
+      dailyList,
+      availableShields: shieldCount,
+    );
 
     // Note Mastery Heatmap per pitch class (C, C#, D, D#, E, F, F#, G, G#, A, A#, B)
     final noteRows = await db.rawQuery('''
@@ -864,19 +870,29 @@ class AppDatabase {
     );
   }
 
-  int _calculateStreakDays(List<DailyActivityModel> sortedDescActivities) {
+  int _calculateStreakDays(
+    List<DailyActivityModel> sortedDescActivities, {
+    int availableShields = 0,
+  }) {
     if (sortedDescActivities.isEmpty) return 0;
     final activeDates = sortedDescActivities.map((d) => d.activityDate).toSet();
     final today = DateTime.now();
     final todayKey = DateFormat('yyyy-MM-dd').format(today);
     final yesterdayKey =
         DateFormat('yyyy-MM-dd').format(today.subtract(const Duration(days: 1)));
+    final twoDaysAgoKey =
+        DateFormat('yyyy-MM-dd').format(today.subtract(const Duration(days: 2)));
 
+    int shieldsLeft = availableShields;
     DateTime cursor;
     if (activeDates.contains(todayKey)) {
       cursor = today;
     } else if (activeDates.contains(yesterdayKey)) {
       cursor = today.subtract(const Duration(days: 1));
+    } else if (shieldsLeft > 0 && activeDates.contains(twoDaysAgoKey)) {
+      // Khiên bảo vệ tự động nối liền nếu người học bận nghỉ hôm qua
+      shieldsLeft--;
+      cursor = today.subtract(const Duration(days: 2));
     } else {
       return 0;
     }
@@ -888,7 +904,14 @@ class AppDatabase {
         streak++;
         cursor = cursor.subtract(const Duration(days: 1));
       } else {
-        break;
+        final prevKey = DateFormat('yyyy-MM-dd')
+            .format(cursor.subtract(const Duration(days: 1)));
+        if (shieldsLeft > 0 && activeDates.contains(prevKey)) {
+          shieldsLeft--;
+          cursor = cursor.subtract(const Duration(days: 1));
+        } else {
+          break;
+        }
       }
     }
     return streak;

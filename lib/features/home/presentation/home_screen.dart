@@ -16,6 +16,7 @@ import '../../practice/application/practice_session_controller.dart';
 import '../../practice/presentation/widgets/free_piano_explorer_sheet.dart';
 import '../../support_developer/application/rewarded_ad_controller.dart';
 import '../../topics/presentation/topics_screen.dart';
+import 'streak_shield_and_reminder_sheet.dart';
 
 /// Màn hình Trang chủ tinh gọn 4 khối:
 /// 1. Lời chào & Streak ngày
@@ -177,67 +178,140 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final streak = stats?.currentStreakDays ?? 0;
     final goalMet = stats?.isDailyGoalReached ?? false;
     final isEn = ref.watch(appSettingsProvider).isEnglish;
+    final shieldState = ref.watch(streakShieldReminderProvider);
+    final reminderDue = shieldState.isReminderDueNow(
+      isDailyGoalReached: goalMet,
+    );
 
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                isEn ? 'Daily Ear & Music Training' : 'Học cảm âm mỗi ngày',
-                style: SolfaTypography.heading,
+        Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isEn ? 'Daily Ear & Music Training' : 'Học cảm âm mỗi ngày',
+                    style: SolfaTypography.heading,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    goalMet
+                        ? (isEn
+                            ? 'Daily goal completed!'
+                            : 'Đã hoàn thành mục tiêu hôm nay')
+                        : (isEn
+                            ? 'Choose a lesson in Practice or continue below'
+                            : 'Chọn bài học tại tab Luyện tập hoặc tiếp tục bên dưới'),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      color: isDark
+                          ? AppColors.textSecondaryDark
+                          : AppColors.textSecondaryLight,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 2),
-              Text(
-                goalMet
-                    ? (isEn
-                        ? 'Daily goal completed!'
-                        : 'Đã hoàn thành mục tiêu hôm nay')
-                    : (isEn
-                        ? 'Choose a lesson in Practice or continue below'
-                        : 'Chọn bài học tại tab Luyện tập hoặc tiếp tục bên dưới'),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 12.5,
-                  color: isDark
-                      ? AppColors.textSecondaryDark
-                      : AppColors.textSecondaryLight,
+            ),
+            const SizedBox(width: 8),
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                key: const Key('btn_home_streak_shield'),
+                borderRadius: BorderRadius.circular(SolfaRadius.pill),
+                onTap: () => showStreakShieldAndReminderSheet(context),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color:
+                        AppColors.surfaceLight.withOpacity(isDark ? 0.08 : 1.0),
+                    borderRadius: BorderRadius.circular(SolfaRadius.pill),
+                    border: Border.all(
+                      color:
+                          isDark ? AppColors.borderDark : AppColors.borderLight,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.local_fire_department_rounded,
+                        size: 16,
+                        color: AppColors.accentAmber,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        isEn ? '$streak d' : '$streak ngày',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Icon(
+                        Icons.shield_rounded,
+                        size: 14.5,
+                        color: shieldState.shieldCount > 0
+                            ? const Color(0xFF0EA5E9)
+                            : Colors.grey.withOpacity(0.55),
+                      ),
+                      if (shieldState.shieldCount > 0) ...[
+                        const SizedBox(width: 2),
+                        Text(
+                          '${shieldState.shieldCount}',
+                          style: const TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFF0EA5E9),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
-        const SizedBox(width: 10),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceLight.withOpacity(isDark ? 0.06 : 1.0),
-            borderRadius: BorderRadius.circular(SolfaRadius.pill),
-            border: Border.all(
-              color: isDark ? AppColors.borderDark : AppColors.borderLight,
+        if (reminderDue) ...[
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+            decoration: BoxDecoration(
+              color: AppColors.accentAmber.withOpacity(0.14),
+              borderRadius: BorderRadius.circular(11),
+              border: Border.all(color: AppColors.accentAmber.withOpacity(0.45)),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.notifications_active_rounded,
+                  size: 15,
+                  color: Color(0xFFD97706),
+                ),
+                const SizedBox(width: 7),
+                Expanded(
+                  child: Text(
+                    isEn
+                        ? 'Study reminder (${shieldState.reminderTime}): Finish today\'s goal to keep your streak!'
+                        : 'Đến giờ học (${shieldState.reminderTime}) rồi! Luyện vài phút để giữ chuỗi ngày nhé.',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.local_fire_department_rounded,
-                size: 16,
-                color: AppColors.accentAmber,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                isEn ? '$streak days' : '$streak ngày',
-                style: const TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-        ),
+        ],
       ],
     );
   }

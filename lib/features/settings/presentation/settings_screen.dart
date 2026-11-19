@@ -13,6 +13,7 @@ import '../../metronome/application/metronome_controller.dart';
 import '../../practice/application/practice_session_controller.dart';
 import '../../support_developer/application/rewarded_ad_controller.dart';
 import '../../topics/presentation/topic_detail_screen.dart';
+import '../../home/presentation/streak_shield_and_reminder_sheet.dart';
 
 /// Màn hình Cài đặt hệ thống
 class SettingsScreen extends ConsumerWidget {
@@ -625,7 +626,7 @@ class SettingsScreen extends ConsumerWidget {
                             children: [
                               const Expanded(
                                 child: Text(
-                                  'ChaoNote Studio v1.9.6',
+                                  'ChaoNote Studio v2.0.0',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
@@ -1069,6 +1070,50 @@ class SettingsScreen extends ConsumerWidget {
                         ),
                       ],
                     ),
+                  ),
+                  const Divider(height: 1),
+                  Consumer(
+                    builder: (ctx, innerRef, _) {
+                      final shieldState =
+                          innerRef.watch(streakShieldReminderProvider);
+                      return ListTile(
+                        key: const Key('tile_study_reminder_and_shield'),
+                        leading: Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0EA5E9).withOpacity(0.14),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          alignment: Alignment.center,
+                          child: const Icon(
+                            Icons.shield_rounded,
+                            size: 20,
+                            color: Color(0xFF0EA5E9),
+                          ),
+                        ),
+                        title: Text(
+                          isEn
+                              ? 'Streak Shield & Daily Reminder'
+                              : 'Khiên giữ chuỗi & Giờ nhắc học',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                          ),
+                        ),
+                        subtitle: Text(
+                          isEn
+                              ? 'Shields: ${shieldState.shieldCount}/3 • Reminder: ${shieldState.reminderEnabled ? shieldState.reminderTime : "Off"}'
+                              : 'Khiên: ${shieldState.shieldCount}/3 • Hẹn giờ: ${shieldState.reminderEnabled ? shieldState.reminderTime : "Đang tắt"}',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                        trailing: const Icon(
+                          Icons.chevron_right_rounded,
+                          size: 20,
+                        ),
+                        onTap: () => showStreakShieldAndReminderSheet(context),
+                      );
+                    },
                   ),
                   const Divider(height: 1),
                   SwitchListTile(

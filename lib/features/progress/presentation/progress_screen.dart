@@ -10,6 +10,11 @@ import '../../../core/localization/app_locale.dart';
 import '../../../core/models/domain_models.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../../core/utils/note_formatter.dart';
+import '../../battle/application/battle_controller.dart';
+import '../../guitar/presentation/custom_melody_composer_screen.dart';
+import '../../guitar/presentation/interactive_songbook_and_theory_sheet.dart';
+import '../../support_developer/application/rewarded_ad_controller.dart';
+import 'achievements_trophy_screen.dart';
 
 /// UI-09: Tiến trình & Lịch sử (UC-13)
 class ProgressScreen extends ConsumerWidget {
@@ -19,6 +24,11 @@ class ProgressScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final progressAsync = ref.watch(overallProgressProvider);
     final isEn = ref.watch(appSettingsProvider).isEnglish;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final battle = ref.watch(battleProvider);
+    final songStars = ref.watch(songbookStarsProvider);
+    final customSongs = ref.watch(customUserSongsProvider);
+    final adState = ref.watch(rewardedAdProvider);
 
     return progressAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -26,6 +36,15 @@ class ProgressScreen extends ConsumerWidget {
         child: Text(isEn ? 'Failed to load progress: $e' : 'Lỗi tải tiến trình: $e'),
       ),
       data: (stats) {
+        final badges = evaluateAllAchievements(
+          stats: stats,
+          battle: battle,
+          songStars: songStars,
+          customSongsCount: customSongs.length,
+          adState: adState,
+        );
+        final unlockedBadges = badges.where((b) => b.isUnlocked).length;
+
         return RefreshIndicator(
           onRefresh: () async {
             ref.invalidate(overallProgressProvider);
@@ -36,6 +55,88 @@ class ProgressScreen extends ConsumerWidget {
             ),
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
             children: [
+              // 0. Phòng Truyền Thống Huy Hiệu & Thẻ Vinh Danh Cá Nhân
+              FadeSlideIn(
+                index: 0,
+                child: Material(
+                  color: isDark ? AppColors.surfaceDark : Colors.white,
+                  borderRadius: BorderRadius.circular(18),
+                  child: InkWell(
+                    key: const Key('card_open_achievements_trophy'),
+                    borderRadius: BorderRadius.circular(18),
+                    onTap: () => openAchievementsTrophyScreen(context),
+                    child: Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(
+                          color: const Color(0xFFF59E0B).withOpacity(0.45),
+                          width: 1.2,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF59E0B).withOpacity(0.16),
+                              borderRadius: BorderRadius.circular(13),
+                            ),
+                            alignment: Alignment.center,
+                            child: const Icon(
+                              Icons.emoji_events_rounded,
+                              color: Color(0xFFD97706),
+                              size: 25,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  isEn
+                                      ? 'Trophy Room & Share Card ($unlockedBadges/${badges.length})'
+                                      : 'Huy Hiệu & Thẻ Thành Tích ($unlockedBadges/${badges.length})',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  isEn
+                                      ? 'Claim +25 Gems per badge & share your profile'
+                                      : 'Nhận +25 Gem mỗi huy hiệu & chia sẻ Hồ sơ',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: isDark
+                                        ? AppColors.textSecondaryDark
+                                        : AppColors.textSecondaryLight,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          const Icon(
+                            Icons.arrow_forward_ios_rounded,
+                            size: 15,
+                            color: Color(0xFFD97706),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+
               // Top Review Wrong Answers Action Card (Spacious vertical layout - no edge crowding!)
               FadeSlideIn(
                 index: 0,
