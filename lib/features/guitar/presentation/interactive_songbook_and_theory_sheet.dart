@@ -540,6 +540,7 @@ class _SongbookCatalogScreenState extends ConsumerState<SongbookCatalogScreen> {
     // Hộp thoại xác nhận mở khóa bản nhạc VIP bằng Gem
     final currentGems = ref.read(rewardedAdProvider).prestigePoints;
     final hasEnough = currentGems >= song.gemCost;
+    final isEn = ref.read(appSettingsProvider).isEnglish;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -549,14 +550,14 @@ class _SongbookCatalogScreenState extends ConsumerState<SongbookCatalogScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Row(
+            Row(
               children: [
-                SolfaGemIcon(size: 26),
-                SizedBox(width: 10),
+                const SolfaGemIcon(size: 26),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'Mở khóa bản nhạc VIP?',
-                    style: TextStyle(
+                    isEn ? 'Unlock VIP Track?' : 'Mở khóa bản nhạc VIP?',
+                    style: const TextStyle(
                       fontSize: 16.5,
                       fontWeight: FontWeight.w900,
                     ),
@@ -566,9 +567,11 @@ class _SongbookCatalogScreenState extends ConsumerState<SongbookCatalogScreen> {
             ),
             const SizedBox(height: 10),
             Text(
-              '"${song.titleVi}" (${song.composer})\n\n'
-              'Cần ${song.gemCost} Gem để mở khóa vĩnh viễn và chơi trực tiếp trên Đàn Guitar 6 Dây & Đàn Piano.\n'
-              'Số dư hiện tại của bạn: $currentGems Gem.',
+              isEn
+                  ? '"${song.titleEn}"\n\nRequires ${song.gemCost} Gems to unlock permanently for both 6-String Guitar & Piano.\nYour balance: $currentGems Gems.'
+                  : '"${song.titleVi}" (${song.composer})\n\n'
+                      'Cần ${song.gemCost} Gem để mở khóa vĩnh viễn và chơi trực tiếp trên Đàn Guitar 6 Dây & Đàn Piano.\n'
+                      'Số dư hiện tại của bạn: $currentGems Gem.',
               style: const TextStyle(fontSize: 13.2, height: 1.4),
             ),
             const SizedBox(height: 16),
@@ -579,7 +582,7 @@ class _SongbookCatalogScreenState extends ConsumerState<SongbookCatalogScreen> {
                     height: 42,
                     child: OutlinedButton(
                       onPressed: () => Navigator.of(ctx).pop(false),
-                      child: const Text('Để sau'),
+                      child: Text(isEn ? 'Later' : 'Để sau'),
                     ),
                   ),
                 ),
@@ -599,8 +602,10 @@ class _SongbookCatalogScreenState extends ConsumerState<SongbookCatalogScreen> {
                         fit: BoxFit.scaleDown,
                         child: Text(
                           hasEnough
-                              ? 'Mở (${song.gemCost} Gem)'
-                              : 'Xem QC (+100G)',
+                              ? (isEn
+                                  ? 'Unlock (${song.gemCost}G)'
+                                  : 'Mở (${song.gemCost} Gem)')
+                              : (isEn ? 'Watch Ad (+100G)' : 'Xem QC (+100G)'),
                           style: const TextStyle(fontWeight: FontWeight.w800),
                         ),
                       ),
@@ -716,9 +721,24 @@ class _SongbookCatalogScreenState extends ConsumerState<SongbookCatalogScreen> {
               child: Row(
                 children: [
                   for (final (catId, lbl) in [
-                    ('all', 'Tất cả (${kInteractiveSongbookCatalog.length})'),
-                    ('classical', '🎻 Cổ điển ($classicalCount)'),
-                    ('modern', '🎧 Hiện đại ($modernCount)'),
+                    (
+                      'all',
+                      isEn
+                          ? 'All (${kInteractiveSongbookCatalog.length})'
+                          : 'Tất cả (${kInteractiveSongbookCatalog.length})',
+                    ),
+                    (
+                      'classical',
+                      isEn
+                          ? '🎻 Classical ($classicalCount)'
+                          : '🎻 Cổ điển ($classicalCount)',
+                    ),
+                    (
+                      'modern',
+                      isEn
+                          ? '🎧 Modern ($modernCount)'
+                          : '🎧 Hiện đại ($modernCount)',
+                    ),
                   ]) ...[
                     if (catId != 'all') const SizedBox(width: 6),
                     Expanded(
@@ -836,7 +856,9 @@ class _SongbookCatalogScreenState extends ConsumerState<SongbookCatalogScreen> {
                                         ),
                                       ),
                                       Text(
-                                        '${song.defaultBpm} BPM • ${song.notes.length} nốt',
+                                        isEn
+                                            ? '${song.defaultBpm} BPM • ${song.notes.length} notes'
+                                            : '${song.defaultBpm} BPM • ${song.notes.length} nốt',
                                         style: TextStyle(
                                           fontSize: 10.5,
                                           fontWeight: FontWeight.w600,
@@ -931,9 +953,9 @@ class _SongbookCatalogScreenState extends ConsumerState<SongbookCatalogScreen> {
                                       color: AppColors.primary,
                                       borderRadius: BorderRadius.circular(99),
                                     ),
-                                    child: const Text(
-                                      'Chơi ngay',
-                                      style: TextStyle(
+                                    child: Text(
+                                      isEn ? 'Play' : 'Chơi ngay',
+                                      style: const TextStyle(
                                         fontSize: 11,
                                         fontWeight: FontWeight.w800,
                                         color: Colors.white,
@@ -986,6 +1008,7 @@ class _SongPlayRoomScreenState extends ConsumerState<SongPlayRoomScreen>
   String? _feedbackMessage;
   Color _feedbackColor = AppColors.correct;
   Timer? _playTimer;
+  AudioService? _audioServiceRef;
 
   @override
   void initState() {
@@ -994,9 +1017,16 @@ class _SongPlayRoomScreenState extends ConsumerState<SongPlayRoomScreen>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _audioServiceRef = ref.read(audioServiceProvider);
+  }
+
+  @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _playTimer?.cancel();
+    _audioServiceRef?.stop(includePolyphony: true);
     super.dispose();
   }
 
@@ -1200,7 +1230,7 @@ class _SongPlayRoomScreenState extends ConsumerState<SongPlayRoomScreen>
                       label: FittedBox(
                         fit: BoxFit.scaleDown,
                         child: Text(
-                          '🎸 Chơi bằng Đàn Guitar',
+                          isEn ? '🎸 Play Guitar' : '🎸 Chơi bằng Đàn Guitar',
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w800,
@@ -1223,7 +1253,7 @@ class _SongPlayRoomScreenState extends ConsumerState<SongPlayRoomScreen>
                       label: FittedBox(
                         fit: BoxFit.scaleDown,
                         child: Text(
-                          '🎹 Chơi bằng Đàn Piano',
+                          isEn ? '🎹 Play Piano' : '🎹 Chơi bằng Đàn Piano',
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w800,
@@ -1331,7 +1361,9 @@ class _SongPlayRoomScreenState extends ConsumerState<SongPlayRoomScreen>
                               label: FittedBox(
                                 fit: BoxFit.scaleDown,
                                 child: Text(
-                                  _isAutoPlaying ? 'Dừng mẫu' : 'Nghe mẫu',
+                                  _isAutoPlaying
+                                      ? (isEn ? 'Stop' : 'Dừng mẫu')
+                                      : (isEn ? 'Demo' : 'Nghe mẫu'),
                                   style: const TextStyle(
                                     fontSize: 11.5,
                                     fontWeight: FontWeight.w800,
@@ -1348,7 +1380,7 @@ class _SongPlayRoomScreenState extends ConsumerState<SongPlayRoomScreen>
                           child: IconButton(
                             key: const Key('btn_song_reset'),
                             padding: EdgeInsets.zero,
-                            tooltip: 'Chơi lại từ đầu',
+                            tooltip: isEn ? 'Restart' : 'Chơi lại từ đầu',
                             onPressed: _resetSong,
                             icon: const Icon(Icons.replay_rounded, size: 19),
                           ),
@@ -1391,8 +1423,12 @@ class _SongPlayRoomScreenState extends ConsumerState<SongPlayRoomScreen>
                           Expanded(
                             child: Text(
                               _songCompleted
-                                  ? '🎉 Hoàn thành xuất sắc bài "${song.titleVi}"!'
-                                  : 'Nốt #${_currentNoteIndex + 1}/${song.notes.length}: ${currentNote.noteLabel} (${_isPianoMode ? 'Phím ${currentNote.pitchKey}' : 'Dây ${currentNote.stringNumber} • Ngăn ${currentNote.fret}'})',
+                                  ? (isEn
+                                      ? '🎉 Completed "${song.titleEn}"!'
+                                      : '🎉 Hoàn thành xuất sắc bài "${song.titleVi}"!')
+                                  : (isEn
+                                      ? 'Note #${_currentNoteIndex + 1}/${song.notes.length}: ${currentNote.pitchKey} (${_isPianoMode ? 'Key ${currentNote.pitchKey}' : 'String ${currentNote.stringNumber} • Fret ${currentNote.fret}'})'
+                                      : 'Nốt #${_currentNoteIndex + 1}/${song.notes.length}: ${currentNote.noteLabel} (${_isPianoMode ? 'Phím ${currentNote.pitchKey}' : 'Dây ${currentNote.stringNumber} • Ngăn ${currentNote.fret}'})'),
                               style: const TextStyle(
                                 fontSize: 12.5,
                                 fontWeight: FontWeight.w800,
@@ -1443,9 +1479,9 @@ class _SongPlayRoomScreenState extends ConsumerState<SongPlayRoomScreen>
                                         ),
                                       ),
                                       alignment: Alignment.center,
-                                      child: const Text(
-                                        'Hết',
-                                        style: TextStyle(
+                                      child: Text(
+                                        isEn ? 'End' : 'Hết',
+                                        style: const TextStyle(
                                           fontSize: 10,
                                           color: Colors.white24,
                                         ),
@@ -1481,7 +1517,7 @@ class _SongPlayRoomScreenState extends ConsumerState<SongPlayRoomScreen>
                                           fit: BoxFit.scaleDown,
                                           child: Text(
                                             isCurrent
-                                                ? 'BẤM NGAY'
+                                                ? (isEn ? 'PLAY NOW' : 'BẤM NGAY')
                                                 : '#${idx + 1}',
                                             style: TextStyle(
                                               fontSize: 9,
@@ -1573,9 +1609,11 @@ class _SongPlayRoomScreenState extends ConsumerState<SongPlayRoomScreen>
                   ),
                   child: Column(
                     children: [
-                      const Text(
-                        '🎉 HOÀN THÀNH BẢN NHẠC!',
-                        style: TextStyle(
+                      Text(
+                        isEn
+                            ? '🎉 SONG COMPLETED!'
+                            : '🎉 HOÀN THÀNH BẢN NHẠC!',
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w900,
                           color: AppColors.correct,
@@ -1600,7 +1638,9 @@ class _SongPlayRoomScreenState extends ConsumerState<SongPlayRoomScreen>
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        'Độ chính xác: $accuracyPct% • Combo tối đa: x$_maxCombo',
+                        isEn
+                            ? 'Accuracy: $accuracyPct% • Best Combo: x$_maxCombo'
+                            : 'Độ chính xác: $accuracyPct% • Combo tối đa: x$_maxCombo',
                         style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
@@ -1612,14 +1652,14 @@ class _SongPlayRoomScreenState extends ConsumerState<SongPlayRoomScreen>
                           Expanded(
                             child: OutlinedButton(
                               onPressed: () => Navigator.of(context).pop(),
-                              child: const Text('Chọn bài khác'),
+                              child: Text(isEn ? 'Other Songs' : 'Chọn bài khác'),
                             ),
                           ),
                           const SizedBox(width: 10),
                           Expanded(
                             child: ElevatedButton(
                               onPressed: _resetSong,
-                              child: const Text('Chơi lại'),
+                              child: Text(isEn ? 'Play Again' : 'Chơi lại'),
                             ),
                           ),
                         ],
@@ -2294,12 +2334,12 @@ class _CircleOfFifthsAndCapoScreenState
                   const SizedBox(height: 10),
                   Row(
                     children: [
-                      const Expanded(
+                      Expanded(
                         child: Text(
-                          'Dịch nửa cung:',
+                          isEn ? 'Transpose:' : 'Dịch nửa cung:',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w700,
                           ),
@@ -2333,9 +2373,13 @@ class _CircleOfFifthsAndCapoScreenState
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
-                          _transposeSemitones > 0
-                              ? '+$_transposeSemitones bán âm'
-                              : '$_transposeSemitones bán âm',
+                          isEn
+                              ? (_transposeSemitones > 0
+                                  ? '+$_transposeSemitones st'
+                                  : '$_transposeSemitones st')
+                              : (_transposeSemitones > 0
+                                  ? '+$_transposeSemitones bán âm'
+                                  : '$_transposeSemitones bán âm'),
                           style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w900,

@@ -11,6 +11,7 @@ import '../../../core/localization/app_locale.dart';
 import '../../../core/models/domain_models.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../guitar/presentation/guitar_studio_sheet.dart';
+import '../../guitar/presentation/interactive_songbook_and_theory_sheet.dart';
 import '../../practice/application/practice_session_controller.dart';
 import '../../practice/presentation/widgets/free_piano_explorer_sheet.dart';
 import '../../support_developer/application/rewarded_ad_controller.dart';
@@ -155,8 +156,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           const SizedBox(height: SolfaSpacing.md),
 
-          // KHỐI 3 – Tiện ích nhanh (Đàn Piano C3–C5, Đàn Guitar, Ôn câu sai, Đấu trường)
+          // KHỐI 3 – Tiện ích nhanh (Đàn Piano C3–C5, Đàn Guitar, Ôn câu sai, Đấu trường) + Lối vào Kho 20 Bản Nhạc
           _buildUnifiedQuickAccessGroup(context, stats, isDark),
+          const SizedBox(height: 10),
+          _buildHomeSongbookShortcutCard(context, isDark),
           const SizedBox(height: SolfaSpacing.md),
 
           // KHỐI 4 – Mục tiêu hôm nay (+20 Gem) & Nhiệm vụ ngày
@@ -528,9 +531,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
                 icon: Icons.grid_on_rounded,
                 title: isEn ? 'Guitar' : 'Đàn Guitar',
-                subtitle: 'Map & Tab',
+                subtitle: isEn ? 'Fretboard' : 'Cần đàn',
                 accentColor: const Color(0xFFD97706),
-                onTap: () => showGuitarStudioSheet(context),
+                onTap: () => showGuitarStudioSheet(
+                  context,
+                  initialTab: 0,
+                  singleTabMode: true,
+                ),
               ),
             ),
             VerticalDivider(width: 1, thickness: 1, color: dividerColor),
@@ -561,6 +568,90 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHomeSongbookShortcutCard(BuildContext context, bool isDark) {
+    final isEn = ref.watch(appSettingsProvider).isEnglish;
+    return Material(
+      color: isDark ? AppColors.surfaceDark : Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        key: const Key('btn_home_open_songbook'),
+        borderRadius: BorderRadius.circular(16),
+        onTap: () => openSongbookCatalogScreen(context),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: AppColors.primary.withOpacity(isDark ? 0.35 : 0.24),
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF4F46E5), Color(0xFF2563EB)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(11),
+                ),
+                alignment: Alignment.center,
+                child: const Icon(
+                  Icons.queue_music_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 11),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isEn
+                          ? 'Interactive Songbook (20 Songs)'
+                          : 'Kho 20 Bản Nhạc & Phòng Chơi Đàn',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 1),
+                    Text(
+                      isEn
+                          ? 'Classical & Modern • Play live on Guitar & Piano'
+                          : '12 Cổ điển • 8 Hiện đại • Chơi trực tiếp Guitar & Piano',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: isDark
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondaryLight,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 6),
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 14,
+                color: isDark ? AppColors.secondary : AppColors.primary,
+              ),
+            ],
+          ),
         ),
       ),
     );

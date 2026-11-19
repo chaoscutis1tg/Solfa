@@ -28,47 +28,51 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
   BattleNotifier? _battleNotifier;
   bool _isTabletopOpposite180 = false;
 
-  static const List<(String id, String label, IconData icon)> _battleTopics = [
-    ('all', 'Ngẫu nhiên (11 Chủ đề)', Icons.shuffle_rounded),
-    ('topic_notes', 'Nghe nốt', Icons.graphic_eq_rounded),
-    ('topic_staff_reading', 'Đọc khuông', Icons.music_note_rounded),
-    ('topic_intervals', 'Quãng', Icons.compare_arrows_rounded),
-    ('topic_chords', 'Hợp âm', Icons.library_music_rounded),
-    ('topic_melody', 'Giai điệu', Icons.queue_music_rounded),
-    ('topic_rhythm', 'Nhịp điệu', Icons.timer_rounded),
-    ('topic_keys', 'Giọng', Icons.piano_rounded),
-    ('topic_guitar_notes', 'Guitar: Cần đàn', Icons.grid_on_rounded),
-    ('topic_guitar_chords', 'Guitar: Hợp âm', Icons.pan_tool_alt_rounded),
-    ('topic_guitar_scales', 'Guitar: Scale', Icons.timeline_rounded),
-    ('topic_guitar_tabs', 'Guitar: Tab', Icons.format_list_numbered_rounded),
+  static const List<(String id, String labelVi, String labelEn, IconData icon)>
+      _battleTopics = [
+    ('all', 'Ngẫu nhiên (11 Chủ đề)', 'Random (11 Topics)', Icons.shuffle_rounded),
+    ('topic_notes', 'Nghe nốt', 'Pitch', Icons.graphic_eq_rounded),
+    ('topic_staff_reading', 'Đọc khuông', 'Staff Reading', Icons.music_note_rounded),
+    ('topic_intervals', 'Quãng', 'Intervals', Icons.compare_arrows_rounded),
+    ('topic_chords', 'Hợp âm', 'Chords', Icons.library_music_rounded),
+    ('topic_melody', 'Giai điệu', 'Melody', Icons.queue_music_rounded),
+    ('topic_rhythm', 'Nhịp điệu', 'Rhythm', Icons.timer_rounded),
+    ('topic_keys', 'Giọng', 'Keys', Icons.piano_rounded),
+    ('topic_guitar_notes', 'Guitar: Cần đàn', 'Guitar: Fretboard', Icons.grid_on_rounded),
+    ('topic_guitar_chords', 'Guitar: Hợp âm', 'Guitar: Chords', Icons.pan_tool_alt_rounded),
+    ('topic_guitar_scales', 'Guitar: Scale', 'Guitar: Scales', Icons.timeline_rounded),
+    ('topic_guitar_tabs', 'Guitar: Tab', 'Guitar: Tabs', Icons.format_list_numbered_rounded),
   ];
 
-  (String label, IconData icon, Color accent) _topicMeta(String topicId) {
+  (String label, IconData icon, Color accent) _topicMeta(
+    String topicId, {
+    bool isEn = false,
+  }) {
     switch (topicId) {
       case 'topic_notes':
-        return ('Luyện nghe nốt', Icons.graphic_eq_rounded, const Color(0xFF4F46E5));
+        return (isEn ? 'Pitch Ear Training' : 'Luyện nghe nốt', Icons.graphic_eq_rounded, const Color(0xFF4F46E5));
       case 'topic_staff_reading':
-        return ('Đọc khuông nhạc', Icons.music_note_rounded, const Color(0xFF2563EB));
+        return (isEn ? 'Sight Reading' : 'Đọc khuông nhạc', Icons.music_note_rounded, const Color(0xFF2563EB));
       case 'topic_intervals':
-        return ('Nhận biết quãng', Icons.compare_arrows_rounded, const Color(0xFF7C3AED));
+        return (isEn ? 'Intervals' : 'Nhận biết quãng', Icons.compare_arrows_rounded, const Color(0xFF7C3AED));
       case 'topic_chords':
-        return ('Nhận biết hợp âm', Icons.library_music_rounded, const Color(0xFF0D9488));
+        return (isEn ? 'Chords' : 'Nhận biết hợp âm', Icons.library_music_rounded, const Color(0xFF0D9488));
       case 'topic_melody':
-        return ('Nghe giai điệu', Icons.queue_music_rounded, const Color(0xFFEC4899));
+        return (isEn ? 'Melody' : 'Nghe giai điệu', Icons.queue_music_rounded, const Color(0xFFEC4899));
       case 'topic_rhythm':
-        return ('Nhận biết nhịp điệu', Icons.timer_rounded, const Color(0xFFF59E0B));
+        return (isEn ? 'Rhythm' : 'Nhận biết nhịp điệu', Icons.timer_rounded, const Color(0xFFF59E0B));
       case 'topic_keys':
-        return ('Nhận biết giọng', Icons.piano_rounded, const Color(0xFF0284C7));
+        return (isEn ? 'Key Signatures' : 'Nhận biết giọng', Icons.piano_rounded, const Color(0xFF0284C7));
       case 'topic_guitar_notes':
-        return ('Guitar • Nốt cần đàn', Icons.grid_on_rounded, const Color(0xFFD97706));
+        return (isEn ? 'Guitar • Fretboard' : 'Guitar • Nốt cần đàn', Icons.grid_on_rounded, const Color(0xFFD97706));
       case 'topic_guitar_chords':
-        return ('Guitar • Hợp âm', Icons.pan_tool_alt_rounded, const Color(0xFFEA580C));
+        return (isEn ? 'Guitar • Chords' : 'Guitar • Hợp âm', Icons.pan_tool_alt_rounded, const Color(0xFFEA580C));
       case 'topic_guitar_scales':
-        return ('Guitar • Bản đồ Scale', Icons.timeline_rounded, const Color(0xFF6366F1));
+        return (isEn ? 'Guitar • Scales' : 'Guitar • Bản đồ Scale', Icons.timeline_rounded, const Color(0xFF6366F1));
       case 'topic_guitar_tabs':
-        return ('Guitar • Đọc Tab', Icons.format_list_numbered_rounded, const Color(0xFF10B981));
+        return (isEn ? 'Guitar • Tab Reading' : 'Guitar • Đọc Tab', Icons.format_list_numbered_rounded, const Color(0xFF10B981));
       default:
-        return ('Đấu trường Âm nhạc', Icons.auto_awesome_rounded, AppColors.primary);
+        return (isEn ? 'Music Arena' : 'Đấu trường Âm nhạc', Icons.auto_awesome_rounded, AppColors.primary);
     }
   }
 
@@ -656,16 +660,16 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
         const SizedBox(height: 14),
 
         // 4. Chọn nội dung thi đấu
-        const Text(
-          'Nội dung thi đấu',
-          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+        Text(
+          isEn ? 'Battle Topic' : 'Nội dung thi đấu',
+          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
         ),
         const SizedBox(height: 8),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
             children: [
-              for (final (tId, tLabel, tIcon) in _battleTopics)
+              for (final (tId, tLabelVi, tLabelEn, tIcon) in _battleTopics)
                 Padding(
                   padding: const EdgeInsets.only(right: 6),
                   child: ChoiceChip(
@@ -681,7 +685,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
                               : AppColors.textSecondaryLight),
                     ),
                     label: Text(
-                      tLabel,
+                      isEn ? tLabelEn : tLabelVi,
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: state.selectedTopicId == tId
@@ -1404,12 +1408,14 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
     final p2Q = state.player2Question ?? state.currentQuestion;
     if (p1Q == null) return const SizedBox.shrink();
 
+    final isEn = ref.watch(appSettingsProvider).isEnglish;
     final isGuitarQ = p1Q.topicId.startsWith('topic_guitar_') ||
         p1Q.type.startsWith('guitar_');
     final showStaff = !isGuitarQ &&
         (p1Q.isSightReading ||
             (p1Q.topicId == 'topic_notes' && state.isRoundResolved));
-    final (topicLabel, topicIcon, topicAccent) = _topicMeta(p1Q.topicId);
+    final (topicLabel, topicIcon, topicAccent) =
+        _topicMeta(p1Q.topicId, isEn: isEn);
 
     return TweenAnimationBuilder<double>(
       key: ValueKey('shake_${state.strikeSerial}'),
@@ -1745,7 +1751,9 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              p1Q.hasQuestionAudio ? 'Cảm âm' : 'Quan sát',
+                              p1Q.hasQuestionAudio
+                                  ? (isEn ? 'Ear' : 'Cảm âm')
+                                  : (isEn ? 'Visual' : 'Quan sát'),
                               style: TextStyle(
                                 fontSize: 10.5,
                                 fontWeight: FontWeight.w800,
@@ -1813,11 +1821,13 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
                           size: 19,
                           color: isDark ? Colors.white : topicAccent,
                         ),
-                        label: const FittedBox(
+                        label: FittedBox(
                           fit: BoxFit.scaleDown,
                           child: Text(
-                            'Nghe lại âm thanh câu hỏi',
-                            style: TextStyle(fontWeight: FontWeight.w800),
+                            isEn
+                                ? 'Replay Question Audio'
+                                : 'Nghe lại âm thanh câu hỏi',
+                            style: const TextStyle(fontWeight: FontWeight.w800),
                           ),
                         ),
                       ),
