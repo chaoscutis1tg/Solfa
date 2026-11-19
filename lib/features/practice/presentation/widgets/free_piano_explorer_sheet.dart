@@ -3,17 +3,24 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../app/theme/app_colors.dart';
 import '../../../../core/providers/app_providers.dart';
 import '../../../../core/utils/note_formatter.dart';
 import '../../../support_developer/application/rewarded_ad_controller.dart';
+import '../../../support_developer/presentation/support_developer_screen.dart';
 import 'musical_staff_widget.dart';
 import 'piano_keyboard_widget.dart';
 
 /// Opens the interactive "Đàn Piano & Tra cứu Khuông nhạc tự do (C3–C5)" as a full-screen page (no sliding bottom sheet).
 Future<void> showFreePianoExplorerSheet(BuildContext context) {
-  return Navigator.of(context).push<void>(
+  final router = GoRouter.maybeOf(context);
+  final isRouterPage = ModalRoute.of(context)?.settings is Page;
+  if (router != null && isRouterPage) {
+    return router.push('/piano-explorer');
+  }
+  return Navigator.of(context, rootNavigator: true).push<void>(
     MaterialPageRoute<void>(
       builder: (ctx) => const FreePianoExplorerSheet(),
     ),
@@ -472,18 +479,27 @@ class _FreePianoExplorerSheetState
       backgroundColor:
           isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
       appBar: AppBar(
+        titleSpacing: 0,
         leading: IconButton(
           key: const Key('btn_close_free_piano_explorer'),
           onPressed: () => Navigator.of(context).pop(),
           icon: const Icon(Icons.arrow_back_rounded),
           tooltip: isEn ? 'Back' : 'Quay lại',
         ),
-        title: Text(
-          isEn
-              ? 'Piano C3–C5 & Staff Explorer'
-              : 'Đàn Piano & Khuông Nhạc C3–C5',
-          style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.w800),
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            isEn
+                ? 'Piano C3–C5 & Staff Explorer'
+                : 'Đàn Piano & Khuông Nhạc C3–C5',
+            maxLines: 1,
+            style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.w800),
+          ),
         ),
+        actions: const [
+          SolfaHeaderGemPill(),
+        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(

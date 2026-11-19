@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../app/theme/app_colors.dart';
 import '../../../app/widgets/animated_ui.dart';
@@ -126,6 +127,73 @@ Future<bool> showRewardedVideoAdSimulationDialog(
   WidgetRef ref,
 ) =>
     showSolfaRewardedVideoAdModal(context, ref);
+
+/// Mở Trạm Gem & Xem Quảng Cáo từ bất kỳ màn hình nào (kể cả GoRouter page lẫn MaterialPageRoute).
+Future<void> openGemStationScreen(BuildContext context) {
+  final router = GoRouter.maybeOf(context);
+  final isRouterPage = ModalRoute.of(context)?.settings is Page;
+  if (router != null && isRouterPage) {
+    return router.push('/support-developer');
+  }
+  return Navigator.of(context, rootNavigator: true).push<void>(
+    MaterialPageRoute<void>(
+      builder: (_) => const SupportDeveloperScreen(),
+    ),
+  );
+}
+
+/// Huy hiệu [💎 Số Gem] chuẩn hóa cho AppBar trên toàn bộ các trang công cụ độc lập.
+class SolfaHeaderGemPill extends ConsumerWidget {
+  final Key? pillKey;
+
+  const SolfaHeaderGemPill({super.key, this.pillKey});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final gems = ref.watch(rewardedAdProvider).prestigePoints;
+
+    return Padding(
+      padding: const EdgeInsets.only(right: 12),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          key: pillKey,
+          borderRadius: BorderRadius.circular(99),
+          onTap: () => openGemStationScreen(context),
+          child: Container(
+            height: 28,
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(isDark ? 0.16 : 0.11),
+              borderRadius: BorderRadius.circular(99),
+              border: Border.all(
+                color: AppColors.primary.withOpacity(isDark ? 0.45 : 0.35),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SolfaGemIcon(size: 13.5),
+                const SizedBox(width: 4),
+                Text(
+                  '$gems',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: isDark
+                        ? const Color(0xFF93C5FD)
+                        : AppColors.primaryDark,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 /// Exchanges accumulated Developer Supporter Prestige Points (`prestigePoints`)
 /// into Battle Arena Turns (`remainingBattlesToday`). Works 100% offline!

@@ -143,7 +143,7 @@ class AdMobService {
     }
 
     return completer.future.timeout(
-      const Duration(seconds: 5),
+      const Duration(seconds: 10),
       onTimeout: () => null,
     );
   }

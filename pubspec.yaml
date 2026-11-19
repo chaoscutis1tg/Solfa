@@ -1,7 +1,7 @@
 name: solfa
 description: "Solfa – Ứng dụng luyện cảm âm, kiến thức âm nhạc và máy đếm nhịp offline-first."
 publish_to: 'none'
-version: 2.0.0+30
+version: 2.0.1+31
 
 environment:
   sdk: ^3.5.3

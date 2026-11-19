@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/providers/app_providers.dart';
+import '../features/home/presentation/streak_shield_and_reminder_sheet.dart';
 import '../features/metronome/application/metronome_controller.dart';
 import '../features/support_developer/application/rewarded_ad_controller.dart';
 import 'theme/app_colors.dart';
@@ -60,6 +61,7 @@ class MainShell extends ConsumerWidget {
     final currentIndex = navigationShell.currentIndex;
     final progressAsync = ref.watch(overallProgressProvider);
     final streakDays = progressAsync.valueOrNull?.currentStreakDays ?? 0;
+    final shieldCount = ref.watch(streakShieldReminderProvider).shieldCount;
     final adState = ref.watch(rewardedAdProvider);
     final isEn = ref.watch(appSettingsProvider).isEnglish;
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -135,38 +137,56 @@ class MainShell extends ConsumerWidget {
               ),
             ),
             const SizedBox(width: 6),
-            // Compact Streak Pill: [🔥 0]
-            Container(
-              height: 28,
-              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-              decoration: BoxDecoration(
-                color: AppColors.accentAmber.withOpacity(isDark ? 0.16 : 0.12),
+            // Compact Streak & Shield Pill: [🔥 0 🛡️] -> Mở bảng Khiên Giữ Chuỗi & Giờ Nhắc Học ở mọi tab
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                key: const Key('btn_header_streak_shield'),
                 borderRadius: BorderRadius.circular(99),
-                border: Border.all(
-                  color:
-                      AppColors.accentAmber.withOpacity(isDark ? 0.45 : 0.35),
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.local_fire_department_rounded,
-                    color: AppColors.accentAmber,
-                    size: 14,
-                  ),
-                  const SizedBox(width: 3),
-                  Text(
-                    '$streakDays',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w800,
-                      color: isDark
-                          ? const Color(0xFFFBBF24)
-                          : const Color(0xFFD97706),
+                onTap: () => showStreakShieldAndReminderSheet(context),
+                child: Container(
+                  height: 28,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                  decoration: BoxDecoration(
+                    color:
+                        AppColors.accentAmber.withOpacity(isDark ? 0.16 : 0.12),
+                    borderRadius: BorderRadius.circular(99),
+                    border: Border.all(
+                      color: AppColors.accentAmber
+                          .withOpacity(isDark ? 0.45 : 0.35),
                     ),
                   ),
-                ],
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.local_fire_department_rounded,
+                        color: AppColors.accentAmber,
+                        size: 14,
+                      ),
+                      const SizedBox(width: 3),
+                      Text(
+                        '$streakDays',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: isDark
+                              ? const Color(0xFFFBBF24)
+                              : const Color(0xFFD97706),
+                        ),
+                      ),
+                      if (shieldCount > 0) ...[
+                        const SizedBox(width: 4),
+                        const Icon(
+                          Icons.shield_rounded,
+                          color: Color(0xFF0EA5E9),
+                          size: 12.5,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
               ),
             ),
             const SizedBox(width: 2),

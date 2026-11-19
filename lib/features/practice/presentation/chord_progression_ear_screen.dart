@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../app/theme/app_colors.dart';
 import '../../../app/widgets/solfa_background.dart';
@@ -12,6 +13,7 @@ import '../../../core/audio/audio_service.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../guitar/presentation/guitar_studio_sheet.dart';
 import '../../support_developer/application/rewarded_ad_controller.dart';
+import '../../support_developer/presentation/support_developer_screen.dart';
 
 /// Mô hình 1 bài tập Dò Vòng Hợp Âm Đệm Hát 4 ô nhịp thực tế.
 class ChordProgressionChallenge {
@@ -194,7 +196,12 @@ const List<ChordProgressionChallenge> kChordProgressionChallenges = [
 ];
 
 Future<void> openChordProgressionEarScreen(BuildContext context) {
-  return Navigator.of(context).push(
+  final router = GoRouter.maybeOf(context);
+  final isRouterPage = ModalRoute.of(context)?.settings is Page;
+  if (router != null && isRouterPage) {
+    return router.push('/chord-progression-ear');
+  }
+  return Navigator.of(context, rootNavigator: true).push(
     MaterialPageRoute<void>(
       builder: (_) => const ChordProgressionEarScreen(),
     ),
@@ -455,9 +462,11 @@ class _ChordProgressionEarScreenState
             IconButton(
               key: const Key('btn_shuffle_chord_progs'),
               tooltip: isEn ? 'Shuffle' : 'Trộn ngẫu nhiên',
+              visualDensity: VisualDensity.compact,
               onPressed: () => _rebuildQueue(shuffle: true),
               icon: const Icon(Icons.shuffle_rounded, size: 20),
             ),
+            const SolfaHeaderGemPill(),
           ],
         ),
         body: SafeArea(

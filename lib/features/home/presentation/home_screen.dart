@@ -15,6 +15,7 @@ import '../../guitar/presentation/interactive_songbook_and_theory_sheet.dart';
 import '../../practice/application/practice_session_controller.dart';
 import '../../practice/presentation/widgets/free_piano_explorer_sheet.dart';
 import '../../support_developer/application/rewarded_ad_controller.dart';
+import '../../support_developer/presentation/support_developer_screen.dart';
 import '../../topics/presentation/topics_screen.dart';
 import 'streak_shield_and_reminder_sheet.dart';
 
@@ -133,6 +134,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ref.invalidate(pendingReviewItemsProvider);
       },
       child: ListView(
+        key: const Key('list_home_screen'),
         physics: const AlwaysScrollableScrollPhysics(
           parent: BouncingScrollPhysics(),
         ),
@@ -169,6 +171,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             const SizedBox(height: SolfaSpacing.md),
           ],
           _buildDailyQuestsChecklist(context, stats, adState, isDark),
+          const SizedBox(height: SolfaSpacing.md),
+          _buildHomeFreeGemAdCard(context, adState, isDark),
         ],
       ),
     );
@@ -1073,6 +1077,98 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildHomeFreeGemAdCard(
+    BuildContext context,
+    RewardedAdState adState,
+    bool isDark,
+  ) {
+    final isEn = ref.watch(appSettingsProvider).isEnglish;
+    return Container(
+      key: const Key('card_home_watch_rewarded_ad'),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF59E0B).withOpacity(isDark ? 0.14 : 0.09),
+        borderRadius: BorderRadius.circular(SolfaRadius.lg),
+        border: Border.all(
+          color: const Color(0xFFF59E0B).withOpacity(0.45),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: const Color(0xFFD97706).withOpacity(0.16),
+              borderRadius: BorderRadius.circular(11),
+            ),
+            alignment: Alignment.center,
+            child: const Icon(
+              Icons.smart_display_rounded,
+              color: Color(0xFFD97706),
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isEn
+                      ? 'Free Gem & Battle Turn Station'
+                      : 'Nhận Miễn Phí +100 Gem & +1 Lượt Đấu',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w900,
+                    color: isDark
+                        ? const Color(0xFFFDE68A)
+                        : const Color(0xFF92400E),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  isEn
+                      ? 'Watch 15s ad • Balance: ${adState.prestigePoints} Gems'
+                      : 'Xem video 15s • Đang có: ${adState.prestigePoints} Gem',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    color: isDark
+                        ? AppColors.textSecondaryDark
+                        : AppColors.textSecondaryLight,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          ElevatedButton.icon(
+            key: const Key('btn_home_watch_rewarded_ad'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFD97706),
+              foregroundColor: Colors.white,
+              minimumSize: const Size(0, 36),
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+            ),
+            onPressed: () => showSolfaRewardedVideoAdModal(context, ref),
+            icon: const SolfaGemIcon(size: 13),
+            label: Text(
+              isEn ? '+100G' : '+100 Gem',
+              style: const TextStyle(
+                fontSize: 11.8,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

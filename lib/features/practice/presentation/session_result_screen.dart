@@ -451,6 +451,73 @@ class _SessionResultScreenState extends ConsumerState<SessionResultScreen> {
                 const SizedBox(height: 12),
               ],
 
+              // 1c. Voluntary Post-Session Bonus Ad Card (+100 Gems & +1 Battle Turn)
+              Container(
+                key: const Key('card_result_watch_rewarded_ad'),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF59E0B).withOpacity(isDark ? 0.14 : 0.09),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: const Color(0xFFF59E0B).withOpacity(0.45),
+                    width: 1.3,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.smart_display_rounded,
+                      color: Color(0xFFD97706),
+                      size: 22,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Thưởng thêm phiên học!',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w900,
+                              color: isDark
+                                  ? const Color(0xFFFDE68A)
+                                  : const Color(0xFF92400E),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          const Text(
+                            'Xem video 15s nhận +100 Gem & +1 Lượt Đấu Trường',
+                            style: TextStyle(fontSize: 11.5),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton.icon(
+                      key: const Key('btn_result_watch_rewarded_ad'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFD97706),
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(0, 36),
+                        padding: const EdgeInsets.symmetric(horizontal: 11),
+                      ),
+                      onPressed: () =>
+                          showSolfaRewardedVideoAdModal(context, ref),
+                      icon: const SolfaGemIcon(size: 13),
+                      label: const Text(
+                        '+100 Gem',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+
               // 2. Primary Action: Retry Session
               ElevatedButton.icon(
                 key: const Key('btn_retry_session'),

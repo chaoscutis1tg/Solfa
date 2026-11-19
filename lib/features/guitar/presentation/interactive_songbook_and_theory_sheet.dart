@@ -484,7 +484,12 @@ final List<InteractiveSongItem> kInteractiveSongbookCatalog = [
 
 /// Mở thẳng màn hình Danh sách Kho Bản Nhạc (20 bài Cổ điển & Hiện đại).
 Future<void> openSongbookCatalogScreen(BuildContext context) {
-  return Navigator.of(context).push(
+  final router = GoRouter.maybeOf(context);
+  final isRouterPage = ModalRoute.of(context)?.settings is Page;
+  if (router != null && isRouterPage) {
+    return router.push('/songbook');
+  }
+  return Navigator.of(context, rootNavigator: true).push(
     MaterialPageRoute<void>(
       builder: (_) => const SongbookCatalogScreen(),
     ),
@@ -493,7 +498,12 @@ Future<void> openSongbookCatalogScreen(BuildContext context) {
 
 /// Mở thẳng màn hình Vòng Tròn Bậc 5 & Dịch Giọng Capo độc lập.
 Future<void> openCircleOfFifthsAndCapoScreen(BuildContext context) {
-  return Navigator.of(context).push(
+  final router = GoRouter.maybeOf(context);
+  final isRouterPage = ModalRoute.of(context)?.settings is Page;
+  if (router != null && isRouterPage) {
+    return router.push('/circle-of-fifths');
+  }
+  return Navigator.of(context, rootNavigator: true).push(
     MaterialPageRoute<void>(
       builder: (_) => const CircleOfFifthsAndCapoScreen(),
     ),
@@ -712,8 +722,9 @@ class _SongbookCatalogScreenState extends ConsumerState<SongbookCatalogScreen> {
             Padding(
               padding: const EdgeInsets.only(right: 12),
               child: InkWell(
+                key: const Key('btn_songbook_header_gem'),
                 borderRadius: BorderRadius.circular(99),
-                onTap: () => context.push('/support-developer'),
+                onTap: () => openGemStationScreen(context),
                 child: Container(
                   height: 28,
                   padding: const EdgeInsets.symmetric(
@@ -805,6 +816,72 @@ class _SongbookCatalogScreenState extends ConsumerState<SongbookCatalogScreen> {
                     ),
                   ],
                 ],
+              ),
+            ),
+            // Thanh nhận Gem miễn phí mở khóa bài nhạc VIP (Rewarded Video Ad chính thức)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Container(
+                key: const Key('banner_songbook_watch_ad'),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF59E0B).withOpacity(isDark ? 0.14 : 0.10),
+                  borderRadius: BorderRadius.circular(13),
+                  border: Border.all(
+                    color: const Color(0xFFF59E0B).withOpacity(0.42),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.smart_display_rounded,
+                      color: Color(0xFFD97706),
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        isEn
+                            ? 'Unlock VIP tracks: Watch 15s ad for +100 Gems'
+                            : 'Mở bài VIP: Xem QC 15s nhận +100 Gem miễn phí',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 11.8,
+                          fontWeight: FontWeight.w800,
+                          color: isDark
+                              ? const Color(0xFFFDE68A)
+                              : const Color(0xFF92400E),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    TextButton.icon(
+                      key: const Key('btn_songbook_watch_ad'),
+                      style: TextButton.styleFrom(
+                        backgroundColor: const Color(0xFFD97706),
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(0, 28),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 9,
+                          vertical: 4,
+                        ),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      onPressed: () =>
+                          showSolfaRewardedVideoAdModal(context, ref),
+                      icon: const SolfaGemIcon(size: 12),
+                      label: const Text(
+                        '+100G',
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
             Expanded(
@@ -1283,11 +1360,11 @@ class _SongPlayRoomScreenState extends ConsumerState<SongPlayRoomScreen>
           ),
           actions: [
             Padding(
-              padding: const EdgeInsets.only(right: 12),
+              padding: const EdgeInsets.only(right: 6),
               child: Center(
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 9,
+                    horizontal: 8,
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
@@ -1297,7 +1374,7 @@ class _SongPlayRoomScreenState extends ConsumerState<SongPlayRoomScreen>
                   child: Text(
                     'x$_combo • $accuracyPct%',
                     style: const TextStyle(
-                      fontSize: 11.5,
+                      fontSize: 11,
                       fontWeight: FontWeight.w900,
                       color: AppColors.correct,
                     ),
@@ -1305,6 +1382,7 @@ class _SongPlayRoomScreenState extends ConsumerState<SongPlayRoomScreen>
                 ),
               ),
             ),
+            const SolfaHeaderGemPill(),
           ],
         ),
         body: SafeArea(
@@ -1741,6 +1819,36 @@ class _SongPlayRoomScreenState extends ConsumerState<SongPlayRoomScreen>
                         ),
                       ),
                       const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 42,
+                        child: ElevatedButton.icon(
+                          key: const Key('btn_song_complete_watch_ad'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFD97706),
+                            foregroundColor: Colors.white,
+                            minimumSize: const Size(double.infinity, 42),
+                          ),
+                          onPressed: () =>
+                              showSolfaRewardedVideoAdModal(context, ref),
+                          icon: const Icon(
+                            Icons.smart_display_rounded,
+                            size: 18,
+                          ),
+                          label: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              isEn
+                                  ? 'Bonus: Watch 15s Ad (+100 Gems & +1 Turn)'
+                                  : 'Thưởng thêm: Xem QC 15s (+100 Gem & +1 Lượt Đấu)',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
                       Row(
                         children: [
                           Expanded(
@@ -2240,6 +2348,9 @@ class _CircleOfFifthsAndCapoScreenState
               maxLines: 1,
             ),
           ),
+          actions: const [
+            SolfaHeaderGemPill(),
+          ],
         ),
         body: ListView(
           key: const Key('screen_circle_fifths_capo'),

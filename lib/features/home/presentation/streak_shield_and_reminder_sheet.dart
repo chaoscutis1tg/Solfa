@@ -2,13 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../app/theme/app_colors.dart';
-import '../../../app/widgets/solfa_gem_icon.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/providers/app_providers.dart';
 import '../../support_developer/application/rewarded_ad_controller.dart';
+import '../../support_developer/presentation/support_developer_screen.dart';
 
 /// Cấu hình Khiên Bảo Vệ Chuỗi (Streak Freeze) & Nhắc giờ luyện tập hằng ngày (100% Offline SQLite).
 class StreakShieldReminderState {
@@ -333,8 +332,10 @@ class _StreakShieldAndReminderModal extends ConsumerWidget {
                           ? null
                           : () async {
                               if (!canAfford) {
-                                Navigator.of(context).pop();
-                                context.push('/support-developer');
+                                await showSolfaRewardedVideoAdModal(
+                                  context,
+                                  ref,
+                                );
                                 return;
                               }
                               final ok = await notifier.purchaseStreakShield();
@@ -355,7 +356,12 @@ class _StreakShieldAndReminderModal extends ConsumerWidget {
                                 );
                               }
                             },
-                      icon: const SolfaGemIcon(size: 15),
+                      icon: Icon(
+                        !isFull && !canAfford
+                            ? Icons.smart_display_rounded
+                            : Icons.shield_rounded,
+                        size: 17,
+                      ),
                       label: FittedBox(
                         fit: BoxFit.scaleDown,
                         child: Text(
@@ -368,11 +374,42 @@ class _StreakShieldAndReminderModal extends ConsumerWidget {
                                       ? 'Equip +1 Shield (${StreakShieldReminderState.kShieldGemCost} Gems)'
                                       : 'Đổi ${StreakShieldReminderState.kShieldGemCost} Gem → +1 Khiên Bảo Vệ')
                                   : (isEn
-                                      ? 'Need ${StreakShieldReminderState.kShieldGemCost} Gems • Get Free Gems'
-                                      : 'Cần ${StreakShieldReminderState.kShieldGemCost} Gem • Tới Trạm Nhận Gem')),
+                                      ? 'Watch 15s Ad for +100 Gems (Need ${StreakShieldReminderState.kShieldGemCost}G)'
+                                      : 'Xem QC 15s nhận +100 Gem (Cần ${StreakShieldReminderState.kShieldGemCost}G)')),
                         ),
                       ),
                     ),
+                    if (!isFull && canAfford) ...[
+                      const SizedBox(height: 6),
+                      TextButton.icon(
+                        key: const Key('btn_shield_sheet_watch_ad'),
+                        style: TextButton.styleFrom(
+                          minimumSize: const Size(double.infinity, 32),
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        onPressed: () =>
+                            showSolfaRewardedVideoAdModal(context, ref),
+                        icon: const Icon(
+                          Icons.smart_display_rounded,
+                          size: 15,
+                          color: Color(0xFFD97706),
+                        ),
+                        label: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            isEn
+                                ? 'Get +100 Free Gems (Watch 15s Ad)'
+                                : 'Nhận thêm +100 Gem miễn phí (Xem QC 15s)',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFFD97706),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),

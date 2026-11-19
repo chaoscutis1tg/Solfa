@@ -49,10 +49,10 @@ Future<bool> checkAndSpendGemsForDurationIfNeeded(
             borderRadius: BorderRadius.circular(14),
           ),
           action: SnackBarAction(
-            label: isEn ? 'Get Gems' : 'Nhận Gem',
+            label: isEn ? 'Watch Ad +100G' : 'Xem QC +100G',
             textColor: Colors.white,
             onPressed: () {
-              context.push('/support-developer');
+              showSolfaRewardedVideoAdModal(context, ref);
             },
           ),
           content: Row(

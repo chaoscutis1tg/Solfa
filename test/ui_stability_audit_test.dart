@@ -482,5 +482,109 @@ void main() {
         }
       },
     );
+
+    testWidgets(
+      'AUDIT-05: Full-Screen Root Navigation (Zero Double-AppBar) & Toàn bộ vị trí Quảng Cáo Nhận Thưởng trên 360x680 Light & Dark',
+      (tester) async {
+        tester.view.physicalSize = const Size(360 * 3.0, 680 * 3.0);
+        tester.view.devicePixelRatio = 3.0;
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+
+        await tester.runAsync(() async {
+          await db.seedContent();
+          await container.read(appSettingsProvider.notifier).loadSettings();
+          await container.read(overallProgressProvider.future);
+          await container.read(topicsListProvider.future);
+        });
+
+        final router = createSolfaRouter(initialLocation: '/home');
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: SolfaApp(customRouter: router),
+          ),
+        );
+        await pumpClean(tester);
+
+        for (final isDark in const [false, true]) {
+          await tester.runAsync(() async {
+            await container.read(appSettingsProvider.notifier).setThemeMode(
+                  isDark ? ThemeMode.dark : ThemeMode.light,
+                );
+          });
+          await pumpClean(tester);
+
+          // 1. Thẻ Quảng cáo nhận +100 Gem ở Trang chủ & Nút Streak trên Header MainShell
+          await tester.dragUntilVisible(
+            find.byKey(const Key('card_home_watch_rewarded_ad')),
+            find.byKey(const Key('list_home_screen')),
+            const Offset(0, -180),
+          );
+          expect(
+            find.byKey(const Key('card_home_watch_rewarded_ad')),
+            findsOneWidget,
+          );
+          await tester.tap(find.byKey(const Key('btn_header_streak_shield')));
+          await pumpClean(tester, 250);
+          expect(
+            find.byKey(const Key('modal_streak_shield_reminder')),
+            findsOneWidget,
+          );
+          Navigator.of(
+            tester.element(find.byKey(const Key('modal_streak_shield_reminder'))),
+          ).pop();
+          await pumpClean(tester, 200);
+
+          // 2. Kiểm định mở Full-Screen cho tất cả 6 trang công cụ (Chỉ có ĐÚNG 1 AppBar hiển thị, không chồng 2 AppBar!)
+          for (final routePath in const [
+            '/songbook',
+            '/chord-progression-ear',
+            '/circle-of-fifths',
+            '/achievements',
+            '/piano-explorer',
+            '/guitar-studio?tab=0&workout=0&single=1',
+          ]) {
+            router.push(routePath);
+            await pumpClean(tester, 450);
+            expect(
+              find.byType(AppBar),
+              findsOneWidget,
+              reason: 'Route $routePath phải mở full-screen với đúng 1 AppBar duy nhất',
+            );
+            expect(
+              find.byKey(const Key('nav_tab_home')),
+              findsNothing,
+              reason: 'Route $routePath không được hiện đè thanh menu đáy MainShell',
+            );
+            if (routePath == '/songbook') {
+              expect(
+                find.byKey(const Key('banner_songbook_watch_ad')),
+                findsOneWidget,
+              );
+              // Bấm nút [💎] trên AppBar Kho Bản Nhạc mở Trạm Gem mượt mà
+              await tester.tap(find.byKey(const Key('btn_songbook_header_gem')));
+              await pumpClean(tester, 450);
+              router.pop();
+              await pumpClean(tester, 400);
+            }
+            router.pop();
+            await pumpClean(tester, 400);
+          }
+
+          // 3. Màn hình Kết quả Phiên Luyện Tập chứa thẻ thưởng Quảng Cáo +100 Gem
+          router.push('/session-result');
+          await pumpClean(tester, 450);
+          expect(
+            find.byKey(const Key('card_result_watch_rewarded_ad')),
+            findsOneWidget,
+          );
+          router.pop();
+          await pumpClean(tester, 400);
+        }
+      },
+    );
   });
 }

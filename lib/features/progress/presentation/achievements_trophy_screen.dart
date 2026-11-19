@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../app/theme/app_colors.dart';
@@ -12,6 +13,7 @@ import '../../battle/application/battle_controller.dart';
 import '../../guitar/presentation/custom_melody_composer_screen.dart';
 import '../../guitar/presentation/interactive_songbook_and_theory_sheet.dart';
 import '../../support_developer/application/rewarded_ad_controller.dart';
+import '../../support_developer/presentation/support_developer_screen.dart';
 
 const String _kClaimedAchievementsKey = 'solfa_claimed_achievements_v1';
 
@@ -213,7 +215,12 @@ List<SolfaAchievementBadge> evaluateAllAchievements({
 }
 
 Future<void> openAchievementsTrophyScreen(BuildContext context) {
-  return Navigator.of(context).push(
+  final router = GoRouter.maybeOf(context);
+  final isRouterPage = ModalRoute.of(context)?.settings is Page;
+  if (router != null && isRouterPage) {
+    return router.push('/achievements');
+  }
+  return Navigator.of(context, rootNavigator: true).push(
     MaterialPageRoute<void>(
       builder: (_) => const AchievementsTrophyScreen(),
     ),
@@ -355,6 +362,9 @@ class _AchievementsTrophyScreenState
               maxLines: 1,
             ),
           ),
+          actions: const [
+            SolfaHeaderGemPill(),
+          ],
         ),
         body: SafeArea(
           child: ListView(

@@ -626,7 +626,7 @@ class SettingsScreen extends ConsumerWidget {
                             children: [
                               const Expanded(
                                 child: Text(
-                                  'ChaoNote Studio v2.0.0',
+                                  'ChaoNote Studio v2.0.1',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(

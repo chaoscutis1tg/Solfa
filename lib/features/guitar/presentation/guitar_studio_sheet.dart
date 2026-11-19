@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../app/theme/app_colors.dart';
@@ -904,7 +905,15 @@ Future<void> showGuitarStudioSheet(
   bool isWorkoutOnlyPage = false,
   bool singleTabMode = false,
 }) async {
-  await Navigator.of(context).push<void>(
+  final router = GoRouter.maybeOf(context);
+  final isRouterPage = ModalRoute.of(context)?.settings is Page;
+  if (router != null && isRouterPage) {
+    final w = isWorkoutOnlyPage ? '1' : '0';
+    final s = singleTabMode ? '1' : '0';
+    await router.push('/guitar-studio?tab=$initialTab&workout=$w&single=$s');
+    return;
+  }
+  await Navigator.of(context, rootNavigator: true).push<void>(
     MaterialPageRoute<void>(
       builder: (ctx) => GuitarStudioSheet(
         initialTab: initialTab,
@@ -917,7 +926,13 @@ Future<void> showGuitarStudioSheet(
 
 /// Mở Trang Luyện Ngón Guitar & Thực Hành Tab Chuyên Sâu tách biệt hoàn toàn với Map Cần Đàn.
 Future<void> showGuitarFingerWorkoutPage(BuildContext context) async {
-  await Navigator.of(context).push<void>(
+  final router = GoRouter.maybeOf(context);
+  final isRouterPage = ModalRoute.of(context)?.settings is Page;
+  if (router != null && isRouterPage) {
+    await router.push('/guitar-studio?tab=3&workout=1&single=1');
+    return;
+  }
+  await Navigator.of(context, rootNavigator: true).push<void>(
     MaterialPageRoute<void>(
       builder: (ctx) => const GuitarStudioSheet(
         initialTab: 3,
@@ -1579,15 +1594,24 @@ class _GuitarStudioSheetState extends ConsumerState<GuitarStudioSheet>
       backgroundColor:
           isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
       appBar: AppBar(
+        titleSpacing: 0,
         leading: IconButton(
           key: const Key('btn_close_guitar_studio'),
           icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: Text(
-          resolveAppBarTitle(),
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+        title: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            resolveAppBarTitle(),
+            maxLines: 1,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+          ),
         ),
+        actions: const [
+          SolfaHeaderGemPill(),
+        ],
       ),
       body: SafeArea(
         child: ListView(
