@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/providers/app_providers.dart';
+import '../core/update/play_store_update_service.dart';
 import '../features/home/presentation/streak_shield_and_reminder_sheet.dart';
 import '../features/metronome/application/metronome_controller.dart';
 import '../features/support_developer/application/rewarded_ad_controller.dart';
@@ -13,7 +14,7 @@ import 'widgets/solfa_background.dart';
 import 'widgets/solfa_gem_icon.dart';
 import 'widgets/solfa_logo.dart';
 
-class MainShell extends ConsumerWidget {
+class MainShell extends ConsumerStatefulWidget {
   final StatefulNavigationShell navigationShell;
 
   const MainShell({
@@ -21,6 +22,12 @@ class MainShell extends ConsumerWidget {
     required this.navigationShell,
   });
 
+  @override
+  ConsumerState<MainShell> createState() => _MainShellState();
+}
+
+class _MainShellState extends ConsumerState<MainShell>
+    with WidgetsBindingObserver {
   static const List<String> _tabTitlesVi = [
     'ChaoNote',
     'Phòng luyện tập',
@@ -35,18 +42,43 @@ class MainShell extends ConsumerWidget {
     'Progress',
   ];
 
-  void _onSelectTab(WidgetRef ref, int currentIndex, int targetIndex) {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      PlayStoreUpdateService.instance
+          .enforceImmediateUpdateIfAvailable(context, ref);
+    });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) {
+      PlayStoreUpdateService.instance
+          .enforceImmediateUpdateIfAvailable(context, ref);
+    }
+  }
+
+  void _onSelectTab(int currentIndex, int targetIndex) {
     if (currentIndex == 2 && targetIndex != 2) {
       // Stop metronome when leaving the Tools tab (Section 12.4)
       ref.read(metronomeProvider.notifier).stop();
     }
-    navigationShell.goBranch(
+    widget.navigationShell.goBranch(
       targetIndex,
-      initialLocation: targetIndex == navigationShell.currentIndex,
+      initialLocation: targetIndex == widget.navigationShell.currentIndex,
     );
   }
 
-  void _onOpenBattleArena(BuildContext context, WidgetRef ref, int currentIndex) {
+  void _onOpenBattleArena(BuildContext context, int currentIndex) {
     if (currentIndex == 2) {
       ref.read(metronomeProvider.notifier).stop();
     }
@@ -57,8 +89,8 @@ class MainShell extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final currentIndex = navigationShell.currentIndex;
+  Widget build(BuildContext context) {
+    final currentIndex = widget.navigationShell.currentIndex;
     final progressAsync = ref.watch(overallProgressProvider);
     final streakDays = progressAsync.valueOrNull?.currentStreakDays ?? 0;
     final shieldCount = ref.watch(streakShieldReminderProvider).shieldCount;
@@ -204,13 +236,12 @@ class MainShell extends ConsumerWidget {
             const SizedBox(width: 8),
           ],
         ),
-        body: navigationShell,
+        body: widget.navigationShell,
         bottomNavigationBar: _DiamondBottomNavBar(
           selectedIndex: currentIndex,
           isEn: isEn,
-          onSelectTab: (idx) => _onSelectTab(ref, currentIndex, idx),
-          onTapDiamondBattle: () =>
-              _onOpenBattleArena(context, ref, currentIndex),
+          onSelectTab: (idx) => _onSelectTab(currentIndex, idx),
+          onTapDiamondBattle: () => _onOpenBattleArena(context, currentIndex),
         ),
       ),
     );

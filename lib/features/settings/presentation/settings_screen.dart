@@ -9,6 +9,7 @@ import '../../../app/widgets/solfa_gem_icon.dart';
 import '../../../app/widgets/solfa_logo.dart';
 import '../../../core/localization/app_locale.dart';
 import '../../../core/providers/app_providers.dart';
+import '../../../core/update/play_store_update_service.dart';
 import '../../metronome/application/metronome_controller.dart';
 import '../../practice/application/practice_session_controller.dart';
 import '../../support_developer/application/rewarded_ad_controller.dart';
@@ -626,7 +627,7 @@ class SettingsScreen extends ConsumerWidget {
                             children: [
                               const Expanded(
                                 child: Text(
-                                  'ChaoNote Studio v2.0.1',
+                                  'ChaoNote Studio v2.0.2',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
@@ -1594,6 +1595,70 @@ class SettingsScreen extends ConsumerWidget {
                       context,
                       initialEnglish: isEn,
                     ),
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    key: const Key('tile_check_play_store_update'),
+                    leading: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.14),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.system_update_rounded,
+                        color: AppColors.primary,
+                        size: 20,
+                      ),
+                    ),
+                    title: Text(
+                      isEn
+                          ? 'Check for Updates on Google Play'
+                          : 'Kiểm tra cập nhật trên CH Play',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 14.5,
+                      ),
+                    ),
+                    subtitle: Text(
+                      isEn
+                          ? 'Auto Force-Update active • Tap to check or open Google Play'
+                          : 'Tự động bắt buộc cập nhật bản mới • Chạm để kiểm tra ngay',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                    trailing: const Icon(Icons.open_in_new_rounded, size: 19),
+                    onTap: () async {
+                      final svc = PlayStoreUpdateService.instance;
+                      final info = await svc.checkForUpdate();
+                      if (!context.mounted) return;
+                      if (info.updateAvailable) {
+                        await svc.enforceImmediateUpdateIfAvailable(
+                          context,
+                          ref,
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            backgroundColor: AppColors.correct,
+                            behavior: SnackBarBehavior.floating,
+                            action: SnackBarAction(
+                              label: isEn ? 'Google Play' : 'Mở CH Play',
+                              textColor: Colors.white,
+                              onPressed: () => svc.openPlayStoreListing(),
+                            ),
+                            content: Text(
+                              isEn
+                                  ? 'ChaoNote v2.0.2 is up to date!'
+                                  : 'Bạn đang sử dụng phiên bản mới nhất (v2.0.2)!',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                        );
+                      }
+                    },
                   ),
                   const Divider(height: 1),
                   ListTile(

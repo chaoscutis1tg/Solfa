@@ -7,6 +7,7 @@ import 'package:solfa/app/theme/app_theme.dart';
 import 'package:solfa/core/audio/audio_service.dart';
 import 'package:solfa/core/database/app_database.dart';
 import 'package:solfa/core/providers/app_providers.dart';
+import 'package:solfa/core/update/play_store_update_service.dart';
 import 'package:solfa/features/battle/application/battle_controller.dart';
 import 'package:solfa/features/battle/presentation/battle_screen.dart';
 import 'package:solfa/features/guitar/presentation/custom_melody_composer_screen.dart';
@@ -586,5 +587,133 @@ void main() {
         }
       },
     );
+
+    testWidgets(
+      'AUDIT-06: Cổng Bắt Buộc Cập Nhật CH Play (Immediate Force Update — chống bấm Back bỏ qua, mở CH Play & mở khóa khi cập nhật xong) trên 360x680 Light & Dark',
+      (tester) async {
+        tester.view.physicalSize = const Size(360 * 3.0, 680 * 3.0);
+        tester.view.devicePixelRatio = 3.0;
+        final fakeAdapter = _FakePlayUpdateAdapter(
+          updateAvailable: true,
+          immediateAllowed: true,
+          availableVersionCode: 99,
+          immediateOutcome: 'canceled',
+        );
+        PlayStoreUpdateService.instance.setTestAdapter(fakeAdapter);
+        addTearDown(() {
+          PlayStoreUpdateService.instance.setTestAdapter(null);
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+
+        await tester.runAsync(() async {
+          await db.seedContent();
+          await container.read(appSettingsProvider.notifier).loadSettings();
+          await container.read(overallProgressProvider.future);
+          await container.read(topicsListProvider.future);
+        });
+
+        final router = createSolfaRouter(initialLocation: '/home');
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: SolfaApp(customRouter: router),
+          ),
+        );
+        await pumpClean(tester, 350);
+
+        // 1. Tự động gọi startImmediateUpdate() ngay khi vào ứng dụng; khi bị hủy thì khóa bằng hộp thoại bắt buộc
+        expect(fakeAdapter.immediateStartedCount, equals(1));
+        expect(
+          find.byKey(const Key('dialog_force_play_store_update')),
+          findsOneWidget,
+        );
+
+        // 2. Bấm nút Back hệ thống KHÔNG thể đóng hộp thoại khóa (PopScope canPop: false)
+        await tester.binding.handlePopRoute();
+        await pumpClean(tester, 200);
+        expect(
+          find.byKey(const Key('dialog_force_play_store_update')),
+          findsOneWidget,
+        );
+
+        // 3. Kiểm tra hiển thị Dark Mode của hộp thoại khóa trên 360x680 không tràn viền
+        await tester.runAsync(() async {
+          await container
+              .read(appSettingsProvider.notifier)
+              .setThemeMode(ThemeMode.dark);
+        });
+        await pumpClean(tester, 200);
+
+        // 4. Bấm "Cập nhật ngay trên CH Play" -> gọi lại luồng cập nhật & dẫn thẳng lên CH Play
+        await tester.tap(find.byKey(const Key('btn_force_update_now')));
+        await pumpClean(tester, 200);
+        expect(fakeAdapter.playStoreOpenedCount, equals(1));
+        expect(
+          find.byKey(const Key('dialog_force_play_store_update')),
+          findsOneWidget,
+        );
+
+        // 5. Khi chưa cập nhật xong mà bấm "Kiểm tra lại" -> vẫn khóa chặt
+        await tester.ensureVisible(
+          find.byKey(const Key('btn_recheck_play_update')),
+        );
+        await tester.tap(find.byKey(const Key('btn_recheck_play_update')));
+        await pumpClean(tester, 200);
+        expect(
+          find.byKey(const Key('dialog_force_play_store_update')),
+          findsOneWidget,
+        );
+
+        // 6. Khi đã cập nhật lên bản mới nhất trên CH Play -> bấm "Kiểm tra lại" tự mở khóa vào học bình thường
+        fakeAdapter.updateAvailable = false;
+        await tester.ensureVisible(
+          find.byKey(const Key('btn_recheck_play_update')),
+        );
+        await tester.tap(find.byKey(const Key('btn_recheck_play_update')));
+        await pumpClean(tester, 300);
+        expect(
+          find.byKey(const Key('dialog_force_play_store_update')),
+          findsNothing,
+        );
+      },
+    );
   });
+}
+
+class _FakePlayUpdateAdapter implements PlayUpdatePlatformAdapter {
+  bool updateAvailable;
+  bool immediateAllowed;
+  int availableVersionCode;
+  String immediateOutcome;
+  int immediateStartedCount = 0;
+  int playStoreOpenedCount = 0;
+
+  _FakePlayUpdateAdapter({
+    required this.updateAvailable,
+    required this.immediateAllowed,
+    required this.availableVersionCode,
+    required this.immediateOutcome,
+  });
+
+  @override
+  Future<PlayUpdateCheckResult> checkForUpdate() async {
+    return PlayUpdateCheckResult(
+      updateAvailable: updateAvailable,
+      immediateAllowed: immediateAllowed,
+      availableVersionCode: availableVersionCode,
+    );
+  }
+
+  @override
+  Future<String> startImmediateUpdate() async {
+    immediateStartedCount++;
+    return immediateOutcome;
+  }
+
+  @override
+  Future<bool> openPlayStoreListing() async {
+    playStoreOpenedCount++;
+    return true;
+  }
 }
